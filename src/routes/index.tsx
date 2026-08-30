@@ -55,7 +55,10 @@ function LoginPage() {
             label="이메일"
             placeholder="이메일을 입력하세요"
             value={email}
-            onChange={setEmail}
+            onChange={(value) => {
+              setEmail(value);
+              setEmailTouched(false);
+            }}
             onBlur={() => setEmailTouched(true)}
             error={emailError}
             autoComplete="email"
