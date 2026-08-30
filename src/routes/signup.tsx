@@ -3,10 +3,64 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { AuthDivider, AuthField, AuthLayout, GoogleButton } from "@/components/auth/AuthLayout";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/signup")({
   component: SignupPage,
 });
+
+interface AgreementRowProps {
+  checked: boolean;
+  onCheckedChange: (checked: boolean) => void;
+  label: string;
+  title: string;
+}
+
+function AgreementRow({
+  checked,
+  onCheckedChange,
+  label,
+  title,
+}: AgreementRowProps) {
+  return (
+    <div className="flex h-6 items-center justify-between gap-3">
+      <label className="flex min-w-0 cursor-pointer items-center gap-2">
+        <Checkbox
+          checked={checked}
+          onCheckedChange={(value) => onCheckedChange(value === true)}
+          className="size-[18px] rounded-[5px] border-[#D8E1DD] [&_svg]:size-3 data-[state=checked]:border-brand data-[state=checked]:bg-brand data-[state=checked]:text-white"
+        />
+        <span className="truncate">{label}</span>
+      </label>
+      <Dialog>
+        <DialogTrigger asChild>
+          <button
+            type="button"
+            className="shrink-0 font-semibold text-brand underline-offset-2 hover:underline"
+          >
+            보기
+          </button>
+        </DialogTrigger>
+        <DialogContent className="max-w-[480px] rounded-[20px] border-field-border bg-white p-7">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-ink">{title}</DialogTitle>
+            <DialogDescription className="pt-3 text-left leading-6 text-ink-muted">
+              약관 내용이 들어갈 자리예요. 실제 서비스 약관이 준비되면 이 영역의
+              내용을 교체할 수 있어요.
+            </DialogDescription>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
 
 function SignupPage() {
   const navigate = useNavigate();
@@ -86,22 +140,18 @@ function SignupPage() {
             <span className="font-semibold">전체 동의</span>
           </label>
           <div className="my-1 h-px bg-[#D8E1DD]" />
-          <label className="flex h-6 cursor-pointer items-center gap-2">
-            <Checkbox
-              checked={terms}
-              onCheckedChange={(checked) => setTerms(checked === true)}
-              className="size-[18px] rounded-[5px] border-[#D8E1DD] [&_svg]:size-3 data-[state=checked]:border-brand data-[state=checked]:bg-brand data-[state=checked]:text-white"
-            />
-            이용약관 동의 (필수)
-          </label>
-          <label className="flex h-6 cursor-pointer items-center gap-2">
-            <Checkbox
-              checked={privacy}
-              onCheckedChange={(checked) => setPrivacy(checked === true)}
-              className="size-[18px] rounded-[5px] border-[#D8E1DD] [&_svg]:size-3 data-[state=checked]:border-brand data-[state=checked]:bg-brand data-[state=checked]:text-white"
-            />
-            개인정보 처리방침 동의 (필수)
-          </label>
+          <AgreementRow
+            checked={terms}
+            onCheckedChange={setTerms}
+            label="이용약관 동의 (필수)"
+            title="이용약관"
+          />
+          <AgreementRow
+            checked={privacy}
+            onCheckedChange={setPrivacy}
+            label="개인정보 수집·이용 동의 (필수)"
+            title="개인정보 수집·이용 동의"
+          />
         </div>
 
         <Button
