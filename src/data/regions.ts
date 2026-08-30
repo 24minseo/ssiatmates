@@ -4,10 +4,11 @@ export interface Region {
   /** 시·도 */
   sido: string;
   /** 시·군·구 */
-  sigungu?: string;
+  sigungu?: string | undefined;
   /** 일반구 */
-  gu?: string;
+  gu?: string | undefined;
 }
+
 
 const raw: Array<[string, string?, string?]> = [
   ["서울특별시", "종로구"],
