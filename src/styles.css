@@ -105,7 +105,17 @@
   --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
   --sidebar-border: oklch(0.929 0.013 255.508);
   --sidebar-ring: oklch(0.704 0.04 256.788);
+  --brand: #1f8064;
+  --brand-foreground: #ffffff;
+  --ink: #163b31;
+  --ink-muted: #62756e;
+  --pill: #d7f5ea;
+  --pill-foreground: #1f8064;
+  --page: rgba(158, 169, 174, 0.5);
+  --surface: #ffffff;
+  --field-border: #dfe4e2;
 }
+
 
 .dark {
   --background: oklch(0.129 0.042 264.695);
