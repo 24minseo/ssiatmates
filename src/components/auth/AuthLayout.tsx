@@ -89,9 +89,9 @@ export function GoogleButton({ label }: GoogleButtonProps) {
   return (
     <button
       type="button"
-      disabled
       aria-disabled="true"
-      className="flex h-[50px] w-full cursor-default items-center justify-center gap-3 rounded-[10px] border border-[#D8E1DD] bg-white text-[15px] font-semibold text-ink shadow-[0_0.6px_0.3px_#D6DBD5,0_4px_16px_rgba(238,238,238,0.5)]"
+      onClick={(event) => event.preventDefault()}
+      className="flex h-[50px] w-full cursor-pointer items-center justify-center gap-3 rounded-[10px] border border-[#D8E1DD] bg-white text-[15px] font-semibold text-ink shadow-[0_0.6px_0.3px_#D6DBD5,0_4px_16px_rgba(238,238,238,0.5)] transition-[border-color,background-color,box-shadow] duration-150 hover:border-brand/45 hover:bg-[#FAFCFB] hover:shadow-[0_1px_1px_rgba(0,61,59,0.08),0_5px_18px_rgba(0,61,59,0.10)]"
     >
       <svg
         aria-hidden
