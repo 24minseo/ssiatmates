@@ -12,6 +12,7 @@ export function OptionCards({ options, value, onChange }: OptionCardsProps) {
     <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
       {options.map((option, index) => {
         const selected = value === option;
+        const isFirst = index === 0;
         return (
           <button
             key={option}
@@ -20,8 +21,7 @@ export function OptionCards({ options, value, onChange }: OptionCardsProps) {
             onClick={() => onChange(option)}
             className={cn(
               "flex h-12 items-center justify-center gap-1.5 rounded-[12px] border bg-surface px-3 text-sm transition-colors",
-              index === 0 ? "col-span-2" : "col-span-1",
-              index >= 3 && "sm:col-span-2",
+              isFirst ? "col-span-2 sm:col-span-4" : "col-span-1",
               selected
                 ? "border-[1.5px] border-brand font-semibold text-brand"
                 : "border-field-border text-ink-muted hover:border-brand/40",

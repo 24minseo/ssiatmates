@@ -46,7 +46,7 @@ export function StepBusinessInfo({
         />
       </FormField>
 
-      <FormField label="지원카테고리" required>
+      <FormField label="지원카테고리">
         <PillGroup
           options={SUPPORT_CATEGORIES}
           value={state.supportCategories}
