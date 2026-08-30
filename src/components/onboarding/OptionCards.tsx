@@ -20,10 +20,10 @@ export function OptionCards({ options, value, onChange }: OptionCardsProps) {
             aria-pressed={selected}
             onClick={() => onChange(option)}
             className={cn(
-              "flex h-[62px] min-w-0 items-center justify-center overflow-hidden rounded-[8px] border-[1.5px] bg-surface px-1 text-[12px] font-medium leading-[14px] shadow-[0_2px_6px_rgba(85,113,78,0.10)] transition-colors",
+              "flex h-[62px] min-w-0 items-center justify-center overflow-hidden rounded-[8px] border border-transparent bg-surface px-1 text-[12px] font-medium leading-[14px] shadow-[0_2px_6px_rgba(85,113,78,0.10)] transition-colors",
               selected
-                ? "border-brand font-semibold text-brand"
-                : "border-transparent text-[#62756E] hover:border-brand/40",
+                ? "border-[1.5px] border-brand font-semibold text-brand"
+                : "text-[#62756E] hover:border-brand/40",
             )}
           >
             <span className="whitespace-pre-line text-center">{label}</span>
