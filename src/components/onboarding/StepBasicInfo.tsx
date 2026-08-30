@@ -99,6 +99,7 @@ export function StepBasicInfo({ state, update, onNext }: StepBasicInfoProps) {
                 checked={state.sameAsResidence}
                 disabled={isPreFounder}
                 onCheckedChange={(checked) => handleSame(checked === true)}
+                className="border-field-border data-[state=checked]:border-brand data-[state=checked]:bg-brand data-[state=checked]:text-brand-foreground"
               />
               거주지역과 동일
             </label>
@@ -120,7 +121,7 @@ export function StepBasicInfo({ state, update, onNext }: StepBasicInfoProps) {
         type="button"
         disabled={!canProceed}
         onClick={onNext}
-        className="mt-2 h-12 w-full rounded-xl bg-brand text-base font-semibold text-brand-foreground hover:bg-brand/90 disabled:bg-muted disabled:text-ink-muted"
+        className="mt-2 h-12 w-full rounded-[12px] bg-brand text-base font-semibold text-brand-foreground transition-colors hover:bg-brand/88 active:bg-brand-pressed disabled:bg-brand-disabled disabled:text-brand-foreground disabled:opacity-100"
       >
         다음
       </Button>

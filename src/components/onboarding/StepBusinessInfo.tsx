@@ -57,9 +57,9 @@ export function StepBusinessInfo({
       <div className="mt-2 flex gap-3">
         <Button
           type="button"
-          variant="outline"
+          variant="ghost"
           onClick={onPrev}
-          className="h-12 flex-1 rounded-xl border-field-border bg-surface text-base font-semibold text-ink-muted hover:bg-muted/50"
+          className="h-12 flex-1 rounded-[12px] border-0 bg-secondary-btn text-base font-semibold text-secondary-btn-text transition-colors hover:bg-secondary-btn-hover hover:text-secondary-btn-text-hover"
         >
           이전
         </Button>
@@ -67,7 +67,7 @@ export function StepBusinessInfo({
           type="button"
           disabled={state.businessFields.length === 0}
           onClick={onComplete}
-          className="h-12 flex-[2] rounded-xl bg-brand text-base font-semibold text-brand-foreground hover:bg-brand/90 disabled:bg-muted disabled:text-ink-muted"
+          className="h-12 flex-1 rounded-[12px] bg-brand text-base font-semibold text-brand-foreground transition-colors hover:bg-brand/88 active:bg-brand-pressed disabled:bg-brand-disabled disabled:text-brand-foreground disabled:opacity-100"
         >
           완료
         </Button>
