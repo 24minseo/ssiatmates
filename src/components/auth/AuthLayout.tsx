@@ -91,7 +91,7 @@ export function GoogleButton({ label }: GoogleButtonProps) {
       type="button"
       aria-disabled="true"
       onClick={(event) => event.preventDefault()}
-      className="flex h-[50px] w-full cursor-pointer items-center justify-center gap-3 rounded-[10px] border border-[#D8E1DD] bg-white text-[15px] font-semibold text-ink shadow-[0_0.6px_0.3px_#D6DBD5,0_4px_16px_rgba(238,238,238,0.5)] transition-shadow duration-150 hover:shadow-[0_0.6px_0.3px_#D6DBD5,0_4px_16px_rgba(238,238,238,0.5),0_4px_10px_rgba(202,202,202,0.22)]"
+      className="flex h-[50px] w-full cursor-pointer items-center justify-center gap-3 rounded-[10px] border border-[#D8E1DD] bg-white text-[15px] font-semibold text-ink shadow-[0_0.6px_0.3px_#D6DBD5,0_4px_16px_rgba(238,238,238,0.5)] transition-[box-shadow,transform,background-color] duration-150 hover:shadow-[0_0.6px_0.3px_#D6DBD5,0_4px_16px_rgba(238,238,238,0.5),0_4px_10px_rgba(202,202,202,0.22)] active:translate-y-px active:bg-[#FAFBFA] active:shadow-[inset_0_1px_2px_rgba(22,59,49,0.10),0_0.6px_0.3px_#D6DBD5]"
     >
       <svg
         aria-hidden
