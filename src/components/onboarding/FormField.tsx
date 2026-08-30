@@ -33,9 +33,10 @@ export function FormField({
   children,
 }: {
   label: string;
-  required?: boolean;
-  htmlFor?: string;
-  labelRight?: ReactNode;
+  required?: boolean | undefined;
+  htmlFor?: string | undefined;
+  labelRight?: ReactNode | undefined;
+
   error?: string | undefined;
   children: ReactNode;
 }) {
