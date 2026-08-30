@@ -71,6 +71,7 @@ export function GoogleButton({ label }: GoogleButtonProps) {
   return (
     <button
       type="button"
+      disabled
       aria-disabled="true"
       className="flex h-[50px] w-full cursor-default items-center justify-center gap-3 rounded-[10px] border border-[#D8E1DD] bg-white text-[15px] font-semibold text-ink shadow-[0_0.6px_0.3px_#D6DBD5,0_4px_16px_rgba(238,238,238,0.5)]"
     >
