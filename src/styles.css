@@ -77,7 +77,7 @@
   --color-page: var(--page);
   --color-surface: var(--surface);
   --color-field-border: var(--field-border);
-  --shadow-dropdown: 8px 8px 30px 0 rgba(0, 13, 59, 0.1);
+  --shadow-dropdown: 8px 8px 30px 0 rgba(0, 13, 59, 0.09);
   --font-sans:
     "Asta Sans", "42dot Sans", ui-sans-serif, system-ui, sans-serif;
 }
