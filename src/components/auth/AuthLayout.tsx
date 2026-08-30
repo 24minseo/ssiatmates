@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 
 interface AuthLayoutProps {
   children: ReactNode;
@@ -36,6 +37,8 @@ interface AuthFieldProps {
   value: string;
   onChange: (value: string) => void;
   autoComplete?: string;
+  error?: string;
+  onBlur?: () => void;
 }
 
 export function AuthField({
@@ -46,6 +49,8 @@ export function AuthField({
   value,
   onChange,
   autoComplete,
+  error,
+  onBlur,
 }: AuthFieldProps) {
   return (
     <label htmlFor={id} className="flex flex-col gap-2">
@@ -57,8 +62,21 @@ export function AuthField({
         placeholder={placeholder}
         autoComplete={autoComplete}
         onChange={(event) => onChange(event.target.value)}
-        className="h-12 rounded-[12px] border-field-border bg-surface px-4 text-[15px] font-medium text-ink shadow-none placeholder:text-ink-muted focus-visible:border-[1.5px] focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft"
+        onBlur={onBlur}
+        aria-invalid={!!error}
+        aria-describedby={error ? `${id}-error` : undefined}
+        className={cn(
+          "h-12 rounded-[12px] bg-surface px-4 text-[15px] font-medium text-ink shadow-none placeholder:text-ink-muted focus-visible:border-[1.5px] focus-visible:ring-[3.2px]",
+          error
+            ? "border-destructive focus-visible:border-destructive focus-visible:ring-destructive/20"
+            : "border-field-border focus-visible:border-brand focus-visible:ring-focus-soft",
+        )}
       />
+      {error ? (
+        <span id={`${id}-error`} className="text-xs text-destructive">
+          {error}
+        </span>
+      ) : null}
     </label>
   );
 }
