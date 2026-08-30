@@ -49,7 +49,7 @@ function OnboardingPage() {
             />
           </div>
           <h1 className="mt-2 text-2xl font-bold text-ink">
-            {step === 1 ? "기본 자격 정보" : "사업 및 매칭 정보"}
+            {step === 1 ? "기본 정보" : "사업 및 매칭 정보"}
           </h1>
 
           <p
