@@ -43,7 +43,7 @@ function AgreementRow({
         <DialogTrigger asChild>
           <button
             type="button"
-            className="shrink-0 font-semibold text-brand underline-offset-2 hover:underline"
+            className="shrink-0 font-medium text-[#9A9D9B] underline-offset-2 hover:text-brand hover:underline"
           >
             보기
           </button>
