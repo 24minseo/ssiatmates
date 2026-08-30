@@ -75,11 +75,11 @@ export function GoogleButton({ label }: GoogleButtonProps) {
       aria-disabled="true"
       className="flex h-[50px] w-full cursor-default items-center justify-center gap-3 rounded-[10px] border border-[#D8E1DD] bg-white text-[15px] font-semibold text-ink shadow-[0_0.6px_0.3px_#D6DBD5,0_4px_16px_rgba(238,238,238,0.5)]"
     >
-      <span aria-hidden className="flex size-[14px] shrink-0 items-center justify-center">
+      <span aria-hidden className="flex size-[15px] shrink-0 items-center justify-center">
         <img
           src="/google-logo.svg"
           alt=""
-          className="block h-[14px] w-auto max-w-[14px]"
+          className="block h-[15px] w-auto max-w-none"
         />
       </span>
       {label}
