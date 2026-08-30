@@ -1,3 +1,4 @@
+import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface PillGroupProps {
@@ -18,13 +19,14 @@ export function PillGroup({ options, value, onToggle }: PillGroupProps) {
             aria-pressed={selected}
             onClick={() => onToggle(option)}
             className={cn(
-              "rounded-full px-4 py-2 text-sm transition-colors",
+              "inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm transition-colors",
               selected
                 ? "bg-pill font-semibold text-pill-foreground"
                 : "bg-muted text-ink-muted hover:bg-muted/70",
             )}
           >
-            {option}
+            {selected ? <Check aria-hidden className="size-3.5" /> : null}
+            <span>{option}</span>
           </button>
         );
       })}
