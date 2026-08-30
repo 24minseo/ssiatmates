@@ -128,7 +128,7 @@ export function StepBasicInfo({ state, update, onNext }: StepBasicInfoProps) {
         type="button"
         disabled={!canProceed}
         onClick={onNext}
-        className="mt-2 h-12 w-full rounded-[12px] bg-brand text-base font-semibold text-brand-foreground transition-colors hover:bg-brand/88 active:bg-brand-pressed disabled:bg-brand-disabled disabled:text-brand-foreground disabled:opacity-100"
+        className="mt-4 h-12 w-full rounded-[12px] bg-brand text-base font-semibold text-brand-foreground transition-colors hover:bg-brand/88 active:bg-brand-pressed disabled:bg-brand-disabled disabled:text-brand-foreground disabled:opacity-100"
       >
         다음
       </Button>
