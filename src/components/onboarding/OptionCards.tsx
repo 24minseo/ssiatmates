@@ -19,11 +19,11 @@ export function OptionCards({ options, value, onChange }: OptionCardsProps) {
             aria-pressed={selected}
             onClick={() => onChange(option)}
             className={cn(
-              "flex h-12 items-center justify-center gap-1.5 rounded-xl border bg-surface px-3 text-sm transition-colors",
+              "flex h-12 items-center justify-center gap-1.5 rounded-[12px] border bg-surface px-3 text-sm transition-colors",
               index === 0 ? "col-span-2" : "col-span-1",
               index >= 3 && "sm:col-span-2",
               selected
-                ? "border-brand font-semibold text-brand"
+                ? "border-[1.5px] border-brand font-semibold text-brand"
                 : "border-field-border text-ink-muted hover:border-brand/40",
             )}
           >
