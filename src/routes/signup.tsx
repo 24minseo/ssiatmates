@@ -176,7 +176,7 @@ function SignupPage() {
 
         <p className="mt-3 text-center text-[13px] font-medium text-ink-muted">
           이미 계정이 있으신가요?{" "}
-          <Link to="/" className="font-semibold text-brand hover:underline">
+          <Link to="/" viewTransition className="font-semibold text-brand hover:underline">
             로그인
           </Link>
         </p>
