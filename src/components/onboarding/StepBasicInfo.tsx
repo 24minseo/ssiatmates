@@ -54,7 +54,7 @@ export function StepBasicInfo({ state, update, onNext }: StepBasicInfoProps) {
     (isPreFounder || !!state.businessLocation);
 
   return (
-    <div className="flex flex-col gap-7">
+    <div className="flex flex-col gap-6">
       <FormField
         label="생년월일"
         required
@@ -128,7 +128,7 @@ export function StepBasicInfo({ state, update, onNext }: StepBasicInfoProps) {
         type="button"
         disabled={!canProceed}
         onClick={onNext}
-        className="mt-9 h-12 w-full rounded-[12px] bg-brand text-base font-semibold text-brand-foreground transition-colors hover:bg-brand/88 active:bg-brand-pressed disabled:bg-brand-disabled disabled:text-brand-foreground disabled:opacity-100"
+        className="mt-10 h-12 w-full rounded-[12px] bg-brand text-base font-semibold text-brand-foreground transition-colors hover:bg-brand/88 active:bg-brand-pressed disabled:bg-brand-disabled disabled:text-brand-foreground disabled:opacity-100"
       >
         다음
       </Button>
