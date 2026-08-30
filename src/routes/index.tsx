@@ -20,8 +20,14 @@ function LoginPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [emailTouched, setEmailTouched] = useState(false);
 
-  const canSubmit = email.trim().length > 0 && password.length > 0;
+  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  const emailError =
+    emailTouched && email.length > 0 && !emailValid
+      ? "올바른 이메일 형식으로 입력해주세요."
+      : undefined;
+  const canSubmit = emailValid && password.length > 0;
 
   return (
     <AuthLayout>
@@ -50,6 +56,8 @@ function LoginPage() {
             placeholder="이메일을 입력하세요"
             value={email}
             onChange={setEmail}
+            onBlur={() => setEmailTouched(true)}
+            error={emailError}
             autoComplete="email"
           />
           <AuthField
