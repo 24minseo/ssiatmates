@@ -53,10 +53,13 @@ export function RegionCombobox({
       <PopoverContent
         className="w-[--radix-popover-trigger-width] rounded-[12px] p-0 shadow-dropdown"
         align="start"
+        side="bottom"
+        sideOffset={4}
+        avoidCollisions={false}
       >
         <Command className="rounded-[12px]">
           <CommandInput placeholder="지역 검색" />
-          <CommandList>
+          <CommandList className="max-h-[220px]">
             <CommandEmpty>검색 결과가 없습니다.</CommandEmpty>
             <CommandGroup>
               {regions.map((region) => (
