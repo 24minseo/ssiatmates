@@ -67,8 +67,9 @@ export function StepBasicInfo({ state, update, onNext }: StepBasicInfoProps) {
           onChange={(event) =>
             update({ birthDate: formatBirthDate(event.target.value) })
           }
-          className="h-12 rounded-xl border-field-border bg-surface px-4 text-sm text-ink placeholder:text-ink-muted focus-visible:border-brand focus-visible:ring-brand/20"
+          className="h-12 rounded-[12px] border-field-border bg-surface px-4 text-sm text-ink placeholder:text-ink-muted focus-visible:border-[1.5px] focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft"
         />
+
       </FormField>
 
       <FormField label="창업단계" required>
