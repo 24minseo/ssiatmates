@@ -35,7 +35,7 @@ export function StepBusinessInfo({
   };
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-6">
       <FormField label="사업분야" required htmlFor="businessFields">
         <MultiSelectDropdown
           id="businessFields"
@@ -54,7 +54,7 @@ export function StepBusinessInfo({
         />
       </FormField>
 
-      <div className="mt-2 flex gap-3">
+      <div className="mt-10 flex gap-3">
         <Button
           type="button"
           variant="ghost"
