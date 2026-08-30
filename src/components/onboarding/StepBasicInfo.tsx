@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { FormField } from "./FormField";
 import { OptionCards } from "./OptionCards";
 import { RegionCombobox } from "./RegionCombobox";
@@ -21,6 +22,7 @@ interface StepBasicInfoProps {
 
 export function StepBasicInfo({ state, update, onNext }: StepBasicInfoProps) {
   const birth = useMemo(() => validateBirthDate(state.birthDate), [state.birthDate]);
+  const hasBirthError = birth.complete && !birth.valid;
   const isPreFounder = state.startupStage === PRE_FOUNDER;
 
   const handleStage = (stage: string) => {
@@ -67,7 +69,12 @@ export function StepBasicInfo({ state, update, onNext }: StepBasicInfoProps) {
           onChange={(event) =>
             update({ birthDate: formatBirthDate(event.target.value) })
           }
-          className="h-12 rounded-[12px] border-field-border bg-surface px-4 text-sm text-ink placeholder:text-ink-muted focus-visible:border-[1.5px] focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft"
+          className={cn(
+            "h-12 rounded-[12px] bg-surface px-4 text-sm text-ink placeholder:text-ink-muted focus-visible:border-[1.5px] focus-visible:ring-[3.2px]",
+            hasBirthError
+              ? "border-destructive focus-visible:border-destructive focus-visible:ring-destructive/20"
+              : "border-field-border focus-visible:border-brand focus-visible:ring-focus-soft",
+          )}
         />
 
       </FormField>
