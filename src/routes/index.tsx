@@ -39,7 +39,15 @@ function OnboardingPage() {
     <main className="flex min-h-screen items-center justify-center bg-page px-4 py-12">
       <div className="w-full max-w-3xl rounded-2xl bg-surface px-6 py-10 shadow-sm sm:px-12 sm:py-14">
         <header className="mb-10">
-          <p className="text-sm font-medium text-brand">{step}/2</p>
+          <div className="relative inline-flex w-fit items-center rounded-2xl bg-pill px-4 py-1.5">
+            <span className="text-base font-extrabold tracking-tight text-brand">
+              {step}/2
+            </span>
+            <span
+              aria-hidden
+              className="absolute -bottom-1.5 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 rounded-[2px] bg-pill"
+            />
+          </div>
           <h1 className="mt-2 text-2xl font-bold text-ink">
             {step === 1 ? "기본 자격 정보" : "사업 및 매칭 정보"}
           </h1>
