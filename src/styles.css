@@ -216,21 +216,17 @@
 }
 
 ::view-transition-old(auth-card) {
-  animation: auth-card-out 140ms ease-out both;
+  animation: auth-card-out 100ms ease-out both;
+  mix-blend-mode: normal;
 }
 
 ::view-transition-new(auth-card) {
-  animation: auth-card-in 180ms 100ms ease-out both;
+  animation: none;
+  mix-blend-mode: normal;
 }
 
 @keyframes auth-card-out {
   to {
-    opacity: 0;
-  }
-}
-
-@keyframes auth-card-in {
-  from {
     opacity: 0;
   }
 }
