@@ -179,6 +179,11 @@
 @layer base {
   * {
     border-color: var(--color-border);
+    scrollbar-color: #9a9d9b transparent;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background-color: #9a9d9b;
   }
 
   body {
