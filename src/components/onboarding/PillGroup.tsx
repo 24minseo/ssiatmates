@@ -25,7 +25,7 @@ export function PillGroup({ options, value, onToggle }: PillGroupProps) {
                 : "bg-muted text-ink-muted hover:bg-muted/70",
             )}
           >
-            {selected ? <Check aria-hidden className="size-3.5" /> : null}
+            {selected ? <Check aria-hidden className="size-3.5" strokeWidth={2.5} /> : null}
             <span>{option}</span>
           </button>
         );
