@@ -67,7 +67,7 @@ export function StepBusinessInfo({
           type="button"
           disabled={state.businessFields.length === 0}
           onClick={onComplete}
-          className="h-12 flex-1 rounded-[12px] bg-brand text-base font-semibold text-brand-foreground transition-colors hover:bg-brand/88 active:bg-brand-pressed disabled:bg-brand-disabled disabled:text-brand-foreground disabled:opacity-100"
+          className="h-12 flex-1 rounded-[12px] bg-brand text-base font-semibold shadow-primary-button text-brand-foreground transition-colors hover:bg-brand/88 active:bg-brand-pressed disabled:bg-brand-disabled disabled:text-brand-foreground disabled:opacity-100"
         >
           완료
         </Button>
