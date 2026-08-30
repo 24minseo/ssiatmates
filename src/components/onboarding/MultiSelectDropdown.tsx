@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, ChevronDown } from "lucide-react";
+import { Check, ChevronDown, X } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Command,
@@ -35,6 +35,10 @@ export function MultiSelectDropdown({
     );
   };
 
+  const remove = (option: string) => {
+    onChange(value.filter((item) => item !== option));
+  };
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -55,9 +59,33 @@ export function MultiSelectDropdown({
               {value.map((item) => (
                 <span
                   key={item}
-                  className="rounded-md border border-brand/30 px-2 py-0.5 text-xs text-brand"
+                  className="inline-flex items-center gap-1 rounded-md border border-brand/30 px-2 py-0.5 text-xs text-brand"
                 >
-                  {item}
+                  <span>{item}</span>
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`${item} 선택 해제`}
+                    className="inline-flex rounded-sm text-brand hover:bg-pill"
+                    onPointerDown={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                    }}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      remove(item);
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        remove(item);
+                      }
+                    }}
+                  >
+                    <X aria-hidden className="size-3" strokeWidth={2.5} />
+                  </span>
                 </span>
               ))}
             </span>
