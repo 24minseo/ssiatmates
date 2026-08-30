@@ -9,8 +9,8 @@ interface OptionCardsProps {
 
 export function OptionCards({ options, value, onChange }: OptionCardsProps) {
   return (
-    <div className="flex flex-wrap gap-2">
-      {options.map((option) => {
+    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+      {options.map((option, index) => {
         const selected = value === option;
         return (
           <button
@@ -19,7 +19,10 @@ export function OptionCards({ options, value, onChange }: OptionCardsProps) {
             aria-pressed={selected}
             onClick={() => onChange(option)}
             className={cn(
-              "flex h-12 flex-1 min-w-[128px] items-center justify-center gap-1.5 rounded-xl border bg-surface px-3 text-sm transition-colors",
+              "flex h-12 items-center justify-center gap-1.5 rounded-xl border bg-surface px-3 text-sm transition-colors",
+              index === 0
+                ? "col-span-2"
+                : "col-span-1 max-sm:last:col-span-2",
               selected
                 ? "border-brand font-semibold text-brand"
                 : "border-field-border text-ink-muted hover:border-brand/40",
