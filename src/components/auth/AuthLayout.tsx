@@ -77,7 +77,7 @@ export function GoogleButton({ label }: GoogleButtonProps) {
     >
       <span aria-hidden className="flex size-[15px] shrink-0 items-center justify-center">
         <img
-          src="/google-logo.svg"
+          src="/google-logo.svg?v=2"
           alt=""
           className="block h-[15px] w-auto max-w-none"
         />
