@@ -8,10 +8,11 @@ export function FieldLabel({
   htmlFor,
 }: {
   children: ReactNode;
-  required?: boolean;
-  className?: string;
-  htmlFor?: string;
+  required?: boolean | undefined;
+  className?: string | undefined;
+  htmlFor?: string | undefined;
 }) {
+
   return (
     <label
       htmlFor={htmlFor}
