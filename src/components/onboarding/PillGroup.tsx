@@ -22,7 +22,7 @@ export function PillGroup({ options, value, onToggle }: PillGroupProps) {
               "inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm transition-colors",
               selected
                 ? "bg-pill font-semibold text-pill-foreground"
-                : "bg-muted text-ink-muted hover:bg-muted/70",
+                : "bg-[#F8F8F8] text-ink-muted hover:bg-muted/70",
             )}
           >
             {selected ? <Check aria-hidden className="size-3.5" strokeWidth={2.5} /> : null}
