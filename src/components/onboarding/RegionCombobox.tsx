@@ -39,8 +39,8 @@ export function RegionCombobox({
           aria-expanded={open}
           disabled={disabled}
           className={cn(
-            "flex h-12 w-full items-center justify-between rounded-xl border border-field-border bg-surface px-4 text-left text-sm text-ink transition-colors",
-            "focus:outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/20",
+            "flex h-12 w-full items-center justify-between rounded-[12px] border border-field-border bg-surface px-4 text-left text-sm text-ink transition-colors",
+            "focus:outline-none focus-visible:border-[1.5px] focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft",
             "disabled:cursor-not-allowed disabled:bg-muted/60 disabled:text-ink-muted",
           )}
         >
@@ -51,10 +51,10 @@ export function RegionCombobox({
         </button>
       </PopoverTrigger>
       <PopoverContent
-        className="w-[--radix-popover-trigger-width] p-0"
+        className="w-[--radix-popover-trigger-width] rounded-[12px] p-0 shadow-dropdown"
         align="start"
       >
-        <Command>
+        <Command className="rounded-[12px]">
           <CommandInput placeholder="지역 검색" />
           <CommandList>
             <CommandEmpty>검색 결과가 없습니다.</CommandEmpty>
@@ -67,7 +67,11 @@ export function RegionCombobox({
                     onChange(region.label);
                     setOpen(false);
                   }}
-                  className="text-ink"
+                  className={cn(
+                    "text-ink data-[selected=true]:bg-item-hover data-[selected=true]:text-ink",
+                    value === region.label &&
+                      "data-[selected=true]:bg-item-hover-selected",
+                  )}
                 >
                   <span className="flex-1">{region.label}</span>
                   {value === region.label ? (

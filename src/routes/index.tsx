@@ -37,20 +37,21 @@ function OnboardingPage() {
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-page px-4 py-12">
-      <div className="w-full max-w-3xl rounded-2xl bg-surface px-6 py-10 shadow-sm sm:px-12 sm:py-14">
+      <div className="w-full max-w-3xl rounded-[20px] bg-surface px-6 py-10 shadow-sm sm:px-12 sm:py-14">
         <header className="mb-10">
-          <div className="relative inline-flex w-fit items-center rounded-2xl bg-pill px-4 py-1.5">
-            <span className="text-base font-extrabold tracking-tight text-brand">
+          <div className="relative mb-2 inline-flex h-4 w-7 items-center justify-center rounded-[4px] bg-pill">
+            <span className="text-[11px] font-bold leading-none tracking-tight text-brand">
               {step}/2
             </span>
             <span
               aria-hidden
-              className="absolute -bottom-1.5 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 rounded-[2px] bg-pill"
+              className="absolute -bottom-[5px] left-1/2 h-0 w-0 -translate-x-1/2 border-x-4 border-t-[6px] border-x-transparent border-t-pill"
             />
           </div>
           <h1 className="mt-2 text-2xl font-bold text-ink">
             {step === 1 ? "기본 자격 정보" : "사업 및 매칭 정보"}
           </h1>
+
           <p className="mt-2 text-sm text-ink-muted">
             {step === 1
               ? "맞춤 지원사업 추천을 위해 기본 정보를 입력해주세요."
