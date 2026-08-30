@@ -106,7 +106,7 @@ export function StepBasicInfo({ state, update, onNext }: StepBasicInfoProps) {
                 checked={state.sameAsResidence}
                 disabled={isPreFounder}
                 onCheckedChange={(checked) => handleSame(checked === true)}
-                className="rounded-[5px] border-field-border [&_svg]:size-3 [&_svg]:[stroke-width:2.5] data-[state=checked]:border-brand data-[state=checked]:bg-brand data-[state=checked]:text-brand-foreground"
+                className="rounded-[5px] border-field-border [&_svg]:size-3 data-[state=checked]:border-brand data-[state=checked]:bg-brand data-[state=checked]:text-brand-foreground"
               />
               거주지역과 동일
             </label>
