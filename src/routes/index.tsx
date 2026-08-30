@@ -1,24 +1,67 @@
+import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import { toast } from "sonner";
+import { Toaster } from "@/components/ui/sonner";
+import { StepBasicInfo } from "@/components/onboarding/StepBasicInfo";
+import { StepBusinessInfo } from "@/components/onboarding/StepBusinessInfo";
+import {
+  initialOnboardingState,
+  type OnboardingState,
+} from "@/components/onboarding/constants";
 
-// No head() here: the home route inherits title/description/og/twitter from
-// __root.tsx, and ships no og:image so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
 export const Route = createFileRoute("/")({
-  component: Index,
+  head: () => ({
+    meta: [
+      { title: "온보딩 · 창업 지원사업 매칭" },
+      {
+        name: "description",
+        content:
+          "생년월일, 창업단계, 지역, 사업분야와 지원카테고리를 입력해 맞춤 창업 지원사업을 추천받으세요.",
+      },
+      { property: "og:title", content: "온보딩 · 창업 지원사업 매칭" },
+      {
+        property: "og:description",
+        content: "2단계 온보딩으로 나에게 맞는 창업 지원사업을 매칭받아 보세요.",
+      },
+    ],
+  }),
+  component: OnboardingPage,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
-function Index() {
+function OnboardingPage() {
+  const [step, setStep] = useState<1 | 2>(1);
+  const [state, setState] = useState<OnboardingState>(initialOnboardingState);
+
+  const update = (patch: Partial<OnboardingState>) =>
+    setState((prev) => ({ ...prev, ...patch }));
+
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
-    </div>
+    <main className="flex min-h-screen items-center justify-center bg-page px-4 py-12">
+      <div className="w-full max-w-3xl rounded-2xl bg-surface px-6 py-10 shadow-sm sm:px-12 sm:py-14">
+        <header className="mb-10">
+          <p className="text-sm font-medium text-brand">{step}/2</p>
+          <h1 className="mt-2 text-2xl font-bold text-ink">
+            {step === 1 ? "기본 자격 정보" : "사업 및 매칭 정보"}
+          </h1>
+          <p className="mt-2 text-sm text-ink-muted">
+            {step === 1
+              ? "맞춤 지원사업 추천을 위해 기본 정보를 입력해주세요."
+              : "관심 있는 사업분야와 지원카테고리를 선택해주세요."}
+          </p>
+        </header>
+
+        {step === 1 ? (
+          <StepBasicInfo state={state} update={update} onNext={() => setStep(2)} />
+        ) : (
+          <StepBusinessInfo
+            state={state}
+            update={update}
+            onPrev={() => setStep(1)}
+            onComplete={() => toast.success("온보딩이 완료되었습니다.")}
+          />
+        )}
+      </div>
+      <Toaster />
+    </main>
   );
 }
