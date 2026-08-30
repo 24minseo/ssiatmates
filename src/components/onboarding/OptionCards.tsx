@@ -9,10 +9,9 @@ interface OptionCardsProps {
 
 export function OptionCards({ options, value, onChange }: OptionCardsProps) {
   return (
-    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-      {options.map((option, index) => {
+    <div className="grid grid-cols-5 gap-2">
+      {options.map((option) => {
         const selected = value === option;
-        const isFirst = index === 0;
         return (
           <button
             key={option}
@@ -21,14 +20,13 @@ export function OptionCards({ options, value, onChange }: OptionCardsProps) {
             onClick={() => onChange(option)}
             className={cn(
               "flex h-12 items-center justify-center gap-1.5 rounded-[12px] border bg-surface px-3 text-sm transition-colors",
-              isFirst ? "col-span-2 sm:col-span-4" : "col-span-1",
               selected
                 ? "border-[1.5px] border-brand font-semibold text-brand"
                 : "border-field-border text-ink-muted hover:border-brand/40",
             )}
           >
             {selected ? <Check className="size-4" /> : null}
-            <span className="whitespace-nowrap">{option}</span>
+            <span className="text-center leading-tight">{option}</span>
           </button>
         );
       })}
