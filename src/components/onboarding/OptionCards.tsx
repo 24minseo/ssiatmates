@@ -1,4 +1,3 @@
-import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface OptionCardsProps {
@@ -9,9 +8,11 @@ interface OptionCardsProps {
 
 export function OptionCards({ options, value, onChange }: OptionCardsProps) {
   return (
-    <div className="grid grid-cols-5 gap-2">
+    <div className="grid grid-cols-5 gap-1.5 rounded-[12px] bg-[#F6F8F7] p-1.5">
       {options.map((option) => {
         const selected = value === option;
+        const label = option.includes(" ~ ") ? option.replace(" ~ ", "\n~ ") : option;
+
         return (
           <button
             key={option}
@@ -19,14 +20,13 @@ export function OptionCards({ options, value, onChange }: OptionCardsProps) {
             aria-pressed={selected}
             onClick={() => onChange(option)}
             className={cn(
-              "flex h-12 items-center justify-center gap-1.5 rounded-[12px] border bg-surface px-3 text-sm transition-colors",
+              "flex h-[62px] min-w-0 items-center justify-center overflow-hidden rounded-[8px] border-[1.5px] bg-surface px-1 text-[12px] font-medium leading-[14px] shadow-[0_2px_6px_rgba(85,113,78,0.10)] transition-colors",
               selected
-                ? "border-[1.5px] border-brand font-semibold text-brand"
-                : "border-field-border text-ink-muted hover:border-brand/40",
+                ? "border-brand font-semibold text-brand"
+                : "border-transparent text-[#62756E] hover:border-brand/40",
             )}
           >
-            {selected ? <Check className="size-4" /> : null}
-            <span className="text-center leading-tight">{option}</span>
+            <span className="whitespace-pre-line text-center">{label}</span>
           </button>
         );
       })}
