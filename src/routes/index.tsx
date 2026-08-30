@@ -93,7 +93,7 @@ function LoginPage() {
 
         <p className="mt-3 text-center text-[13px] font-medium text-ink-muted">
           계정이 없으신가요?{" "}
-          <Link to="/signup" className="font-semibold text-brand hover:underline">
+          <Link to="/signup" viewTransition className="font-semibold text-brand hover:underline">
             회원가입
           </Link>
         </p>
