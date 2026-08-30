@@ -59,7 +59,7 @@ export function MultiSelectDropdown({
               {value.map((item) => (
                 <span
                   key={item}
-                  className="inline-flex items-center gap-1 rounded-md border border-brand/30 px-2 py-0.5 text-xs text-brand"
+                  className="inline-flex items-center gap-1 rounded-full border border-brand/30 px-2 py-0.5 text-xs text-brand"
                 >
                   <span>{item}</span>
                   <span
