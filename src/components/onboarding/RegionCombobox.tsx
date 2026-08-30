@@ -30,7 +30,7 @@ export function RegionCombobox({
   const [open, setOpen] = useState(false);
 
   return (
-    <Popover open={open} onOpenChange={disabled ? undefined : setOpen}>
+    <Popover open={open} onOpenChange={(next) => !disabled && setOpen(next)}>
       <PopoverTrigger asChild>
         <button
           id={id}
