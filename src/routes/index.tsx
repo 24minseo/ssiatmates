@@ -68,7 +68,7 @@ function OnboardingPage() {
             state={state}
             update={update}
             onPrev={() => setStep(1)}
-            onComplete={() => toast.success("온보딩이 완료되었습니다.")}
+            onComplete={() => toast.success("정보 입력이 완료되었어요.")}
           />
         )}
       </div>
