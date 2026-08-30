@@ -53,7 +53,7 @@ function OnboardingPage() {
           </h1>
 
           <p
-            className={`text-sm ${step === 1 ? "text-[#9A9D9B]" : "text-ink-muted"}`}
+            className="text-sm text-[#9A9D9B]"
           >
             {step === 1
               ? "맞춤 지원사업 추천을 위해 기본 정보를 입력해주세요."
