@@ -52,7 +52,9 @@ function OnboardingPage() {
             {step === 1 ? "기본 자격 정보" : "사업 및 매칭 정보"}
           </h1>
 
-          <p\n            className={`mt-2 text-sm ${step === 1 ? "text-[#9A9D9B]" : "text-ink-muted"}`}\n          >
+          <p
+            className={`mt-2 text-sm ${step === 1 ? "text-[#9A9D9B]" : "text-ink-muted"}`}
+          >
             {step === 1
               ? "맞춤 지원사업 추천을 위해 기본 정보를 입력해주세요."
               : "관심 있는 사업분야와 지원카테고리를 선택해주세요."}
