@@ -83,7 +83,7 @@ export function MultiSelectDropdown({
                     className={cn(
                       "text-ink data-[selected=true]:bg-item-hover data-[selected=true]:text-ink",
                       selected &&
-                        "font-semibold text-brand data-[selected=true]:bg-item-hover-selected data-[selected=true]:text-brand",
+                        "font-bold text-brand data-[selected=true]:bg-item-hover-selected data-[selected=true]:text-brand",
                     )}
                   >
                     <span className="flex-1">{option}</span>
