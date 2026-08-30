@@ -66,13 +66,20 @@ function SignupPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [emailTouched, setEmailTouched] = useState(false);
   const [name, setName] = useState("");
   const [terms, setTerms] = useState(false);
   const [privacy, setPrivacy] = useState(false);
 
+  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  const emailError =
+    emailTouched && email.length > 0 && !emailValid
+      ? "올바른 이메일 형식으로 입력해주세요."
+      : undefined;
+
   const allAgreed = terms && privacy;
   const canSubmit =
-    email.trim().length > 0 &&
+    emailValid &&
     password.length >= 8 &&
     name.trim().length > 0 &&
     allAgreed;
@@ -109,6 +116,8 @@ function SignupPage() {
             placeholder="이메일을 입력하세요"
             value={email}
             onChange={setEmail}
+            onBlur={() => setEmailTouched(true)}
+            error={emailError}
             autoComplete="email"
           />
           <AuthField
