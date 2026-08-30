@@ -1,78 +1,92 @@
 import { useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
-import { toast } from "sonner";
-import { Toaster } from "@/components/ui/sonner";
-import { StepBasicInfo } from "@/components/onboarding/StepBasicInfo";
-import { StepBusinessInfo } from "@/components/onboarding/StepBusinessInfo";
-import {
-  initialOnboardingState,
-  type OnboardingState,
-} from "@/components/onboarding/constants";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { AuthDivider, AuthField, AuthLayout, GoogleButton } from "@/components/auth/AuthLayout";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "온보딩 · 창업 지원사업 매칭" },
+      { title: "로그인 · 메이츠" },
       {
         name: "description",
-        content:
-          "생년월일, 창업단계, 지역, 사업분야와 지원카테고리를 입력해 맞춤 창업 지원사업을 추천받으세요.",
-      },
-      { property: "og:title", content: "온보딩 · 창업 지원사업 매칭" },
-      {
-        property: "og:description",
-        content: "2단계 온보딩으로 나에게 맞는 창업 지원사업을 매칭받아 보세요.",
+        content: "메이츠에 로그인해 맞춤 지원사업을 확인하세요.",
       },
     ],
   }),
-  component: OnboardingPage,
+  component: LoginPage,
 });
 
-function OnboardingPage() {
-  const [step, setStep] = useState<1 | 2>(1);
-  const [state, setState] = useState<OnboardingState>(initialOnboardingState);
+function LoginPage() {
+  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
-  const update = (patch: Partial<OnboardingState>) =>
-    setState((prev) => ({ ...prev, ...patch }));
+  const canSubmit = email.trim().length > 0 && password.length > 0;
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-page px-4 py-12">
-      <div className="w-full max-w-[542px] rounded-[20px] bg-surface px-6 py-10 shadow-sm sm:px-12 sm:py-14">
-        <header className="mb-10 flex flex-col items-start">
-          <div className="relative mb-[9px] inline-flex h-5 w-7 items-center justify-center rounded-[4px] bg-pill">
-            <span className="text-[11px] font-semibold leading-none tracking-tight text-brand">
-              {step}/2
-            </span>
-            <span
-              aria-hidden
-              className="absolute -bottom-[5px] left-1/2 h-0 w-0 -translate-x-1/2 border-x-4 border-t-[6px] border-x-transparent border-t-pill"
-            />
-          </div>
-          <h1 className="text-2xl font-bold text-ink">
-            {step === 1 ? "기본 정보" : "사업 및 매칭 정보"}
-          </h1>
-
-          <p
-            className="mt-1 text-sm text-[#9A9D9B]"
-          >
-            {step === 1
-              ? "맞춤 지원사업 추천을 위해 기본 정보를 입력해주세요."
-              : "관심 있는 사업분야와 지원카테고리를 선택해주세요."}
-          </p>
-        </header>
-
-        {step === 1 ? (
-          <StepBasicInfo state={state} update={update} onNext={() => setStep(2)} />
-        ) : (
-          <StepBusinessInfo
-            state={state}
-            update={update}
-            onPrev={() => setStep(1)}
-            onComplete={() => toast.success("정보 입력이 완료되었어요.")}
-          />
-        )}
+    <AuthLayout>
+      <div className="flex min-h-[55px] items-center">
+        <h1 className="text-2xl font-bold leading-[29px] text-ink">로그인</h1>
       </div>
-      <Toaster />
-    </main>
+
+      <form
+        className="mt-5"
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (canSubmit) void navigate({ to: "/myhome" });
+        }}
+      >
+        <GoogleButton label="Google로 로그인" />
+
+        <div className="mt-3">
+          <AuthDivider />
+        </div>
+
+        <div className="mt-3 flex flex-col gap-[15px]">
+          <AuthField
+            id="login-email"
+            type="email"
+            label="이메일"
+            placeholder="이메일을 입력하세요"
+            value={email}
+            onChange={setEmail}
+            autoComplete="email"
+          />
+          <AuthField
+            id="login-password"
+            type="password"
+            label="비밀번호"
+            placeholder="비밀번호를 입력하세요"
+            value={password}
+            onChange={setPassword}
+            autoComplete="current-password"
+          />
+        </div>
+
+        <div className="mt-3 flex h-5 items-center justify-end">
+          <button
+            type="button"
+            className="text-[13px] font-medium text-brand"
+          >
+            비밀번호를 잊으셨나요?
+          </button>
+        </div>
+
+        <Button
+          type="submit"
+          disabled={!canSubmit}
+          className="mt-3 h-[50px] w-full rounded-[12px] bg-brand text-[15px] font-semibold text-white shadow-primary-button hover:bg-brand/88 active:bg-brand-pressed disabled:bg-brand-disabled disabled:text-white disabled:opacity-100"
+        >
+          로그인
+        </Button>
+
+        <p className="mt-3 text-center text-[13px] font-medium text-ink-muted">
+          계정이 없으신가요?{" "}
+          <Link to="/signup" className="font-semibold text-brand hover:underline">
+            회원가입
+          </Link>
+        </p>
+      </form>
+    </AuthLayout>
   );
 }
