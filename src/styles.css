@@ -61,6 +61,15 @@
   --color-sidebar-ring: var(--sidebar-ring);
   --color-brand: var(--brand);
   --color-brand-foreground: var(--brand-foreground);
+  --color-brand-pressed: var(--brand-pressed);
+  --color-brand-disabled: var(--brand-disabled);
+  --color-focus-soft: var(--focus-soft);
+  --color-item-hover: var(--item-hover);
+  --color-item-hover-selected: var(--item-hover-selected);
+  --color-secondary-btn: var(--secondary-btn);
+  --color-secondary-btn-hover: var(--secondary-btn-hover);
+  --color-secondary-btn-text: var(--secondary-btn-text);
+  --color-secondary-btn-text-hover: var(--secondary-btn-text-hover);
   --color-ink: var(--ink);
   --color-ink-muted: var(--ink-muted);
   --color-pill: var(--pill);
@@ -68,7 +77,11 @@
   --color-page: var(--page);
   --color-surface: var(--surface);
   --color-field-border: var(--field-border);
+  --shadow-dropdown: 8px 8px 30px 0 rgba(0, 13, 59, 0.1);
+  --font-sans:
+    "Asta Sans", "42dot Sans", ui-sans-serif, system-ui, sans-serif;
 }
+
 
 
 :root {
