@@ -1,0 +1,93 @@
+import { useState } from "react";
+import { Check, ChevronDown } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { cn } from "@/lib/utils";
+
+interface MultiSelectDropdownProps {
+  options: readonly string[];
+  value: string[];
+  onChange: (value: string[]) => void;
+  placeholder?: string | undefined;
+  id?: string | undefined;
+}
+
+export function MultiSelectDropdown({
+  options,
+  value,
+  onChange,
+  placeholder = "선택해주세요",
+  id,
+}: MultiSelectDropdownProps) {
+  const [open, setOpen] = useState(false);
+
+  const toggle = (option: string) => {
+    onChange(
+      value.includes(option)
+        ? value.filter((item) => item !== option)
+        : [...value, option],
+    );
+  };
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          id={id}
+          type="button"
+          role="combobox"
+          aria-expanded={open}
+          className={cn(
+            "flex min-h-12 w-full items-center justify-between gap-2 rounded-xl border border-field-border bg-surface px-4 py-2 text-left text-sm text-ink transition-colors",
+            "focus:outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/20",
+          )}
+        >
+          {value.length === 0 ? (
+            <span className="text-ink-muted">{placeholder}</span>
+          ) : (
+            <span className="flex flex-wrap gap-1.5">
+              {value.map((item) => (
+                <span
+                  key={item}
+                  className="rounded-md border border-brand/30 px-2 py-0.5 text-xs text-brand"
+                >
+                  {item}
+                </span>
+              ))}
+            </span>
+          )}
+          <ChevronDown className="ml-1 size-4 shrink-0 text-ink-muted" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+        <Command>
+          <CommandList>
+            <CommandEmpty>항목이 없습니다.</CommandEmpty>
+            <CommandGroup>
+              {options.map((option) => {
+                const selected = value.includes(option);
+                return (
+                  <CommandItem
+                    key={option}
+                    value={option}
+                    onSelect={() => toggle(option)}
+                    className={cn("text-ink", selected && "font-semibold text-brand")}
+                  >
+                    <span className="flex-1">{option}</span>
+                    {selected ? <Check className="size-4 text-brand" /> : null}
+                  </CommandItem>
+                );
+              })}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
