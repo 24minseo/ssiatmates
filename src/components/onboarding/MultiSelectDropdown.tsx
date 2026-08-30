@@ -44,8 +44,8 @@ export function MultiSelectDropdown({
           role="combobox"
           aria-expanded={open}
           className={cn(
-            "flex min-h-12 w-full items-center justify-between gap-2 rounded-xl border border-field-border bg-surface px-4 py-2 text-left text-sm text-ink transition-colors",
-            "focus:outline-none focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/20",
+            "flex min-h-12 w-full items-center justify-between gap-2 rounded-[12px] border border-field-border bg-surface px-4 py-2 text-left text-sm text-ink transition-colors",
+            "focus:outline-none focus-visible:border-[1.5px] focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft",
           )}
         >
           {value.length === 0 ? (
@@ -65,8 +65,11 @@ export function MultiSelectDropdown({
           <ChevronDown className="ml-1 size-4 shrink-0 text-ink-muted" />
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-        <Command>
+      <PopoverContent
+        className="w-[--radix-popover-trigger-width] rounded-[12px] p-0 shadow-dropdown"
+        align="start"
+      >
+        <Command className="rounded-[12px]">
           <CommandList>
             <CommandEmpty>항목이 없습니다.</CommandEmpty>
             <CommandGroup>
@@ -77,7 +80,11 @@ export function MultiSelectDropdown({
                     key={option}
                     value={option}
                     onSelect={() => toggle(option)}
-                    className={cn("text-ink", selected && "font-semibold text-brand")}
+                    className={cn(
+                      "text-ink data-[selected=true]:bg-item-hover data-[selected=true]:text-ink",
+                      selected &&
+                        "font-semibold text-brand data-[selected=true]:bg-item-hover-selected data-[selected=true]:text-brand",
+                    )}
                   >
                     <span className="flex-1">{option}</span>
                     {selected ? <Check className="size-4 text-brand" /> : null}
