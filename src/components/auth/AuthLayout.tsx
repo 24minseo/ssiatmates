@@ -36,9 +36,9 @@ interface AuthFieldProps {
   placeholder: string;
   value: string;
   onChange: (value: string) => void;
-  autoComplete?: string;
-  error?: string;
-  onBlur?: () => void;
+  autoComplete?: string | undefined;
+  error?: string | undefined;
+  onBlur?: (() => void) | undefined;
 }
 
 export function AuthField({
