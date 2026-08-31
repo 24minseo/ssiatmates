@@ -47,7 +47,12 @@ export function RegionCombobox({
           <span className={cn("truncate", !value && "text-ink-muted")}>
             {value ?? placeholder}
           </span>
-          <ChevronDown className="ml-2 size-4 shrink-0 text-ink-muted" />
+          <ChevronDown
+            className={cn(
+              "ml-2 size-4 shrink-0 text-ink-muted transition-transform duration-200",
+              open && "rotate-180",
+            )}
+          />
         </button>
       </PopoverTrigger>
       <PopoverContent
