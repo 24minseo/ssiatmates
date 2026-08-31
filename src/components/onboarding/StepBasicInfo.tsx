@@ -87,7 +87,7 @@ export function StepBasicInfo({ state, update, onNext }: StepBasicInfoProps) {
         />
       </FormField>
 
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-x-3 gap-y-6 md:grid-cols-2">
         <FormField label="거주지역" required htmlFor="residence">
           <RegionCombobox
             id="residence"
