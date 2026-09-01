@@ -66,7 +66,7 @@ export function AuthField({
         aria-invalid={!!error}
         aria-describedby={error ? `${id}-error` : undefined}
         className={cn(
-          "h-12 rounded-[12px] bg-surface px-4 text-[15px] font-medium text-ink shadow-none placeholder:text-ink-muted focus-visible:border-[1.5px] focus-visible:ring-[3.2px]",
+          "h-12 rounded-[12px] bg-surface px-4 text-[15px] font-medium text-ink shadow-none placeholder:text-placeholder focus-visible:border-[1.5px] focus-visible:ring-[3.2px]",
           error
             ? "border-destructive focus-visible:border-destructive focus-visible:ring-destructive/20"
             : "border-field-border focus-visible:border-brand focus-visible:ring-focus-soft",
