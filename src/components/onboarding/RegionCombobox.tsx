@@ -44,7 +44,7 @@ export function RegionCombobox({
             "disabled:cursor-not-allowed disabled:bg-muted/60 disabled:text-ink-muted",
           )}
         >
-          <span className={cn("truncate", !value && "text-ink-muted")}>
+          <span className={cn("truncate", !value && "text-placeholder")}>
             {value ?? placeholder}
           </span>
           <ChevronDown
