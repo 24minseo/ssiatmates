@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Check, ChevronDown, X } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
@@ -26,6 +26,21 @@ export function MultiSelectDropdown({
   id,
 }: MultiSelectDropdownProps) {
   const [open, setOpen] = useState(false);
+  const [activeValue, setActiveValue] = useState("");
+  const activeItemRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open || !activeValue) return;
+
+    const frame = requestAnimationFrame(() => {
+      activeItemRef.current?.scrollIntoView({
+        block: "start",
+        behavior: "auto",
+      });
+    });
+
+    return () => cancelAnimationFrame(frame);
+  }, [open, activeValue]);
 
   const toggle = (option: string) => {
     onChange(
@@ -40,7 +55,15 @@ export function MultiSelectDropdown({
   };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover
+      open={open}
+      onOpenChange={(next) => {
+        if (next) {
+          setActiveValue(value.at(-1) ?? options.at(0) ?? "");
+        }
+        setOpen(next);
+      }}
+    >
       <PopoverTrigger asChild>
         <button
           id={id}
@@ -105,7 +128,7 @@ export function MultiSelectDropdown({
         sideOffset={4}
         avoidCollisions={false}
       >
-        <Command className="rounded-[12px]">
+        <Command value={activeValue} onValueChange={setActiveValue} className="rounded-[12px]">
           <CommandList className="max-h-[220px]">
             <CommandEmpty>항목이 없습니다.</CommandEmpty>
             <CommandGroup>
@@ -113,6 +136,7 @@ export function MultiSelectDropdown({
                 const selected = value.includes(option);
                 return (
                   <CommandItem
+                    ref={activeValue === option ? activeItemRef : undefined}
                     key={option}
                     value={option}
                     onSelect={() => toggle(option)}
