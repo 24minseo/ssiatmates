@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Check, ChevronDown } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
@@ -29,8 +29,17 @@ export function RegionCombobox({
 }: RegionComboboxProps) {
   const [open, setOpen] = useState(false);
 
+  useEffect(() => {
+    if (disabled) setOpen(false);
+  }, [disabled]);
+
   return (
-    <Popover open={open} onOpenChange={(next) => !disabled && setOpen(next)}>
+    <Popover
+      open={open}
+      onOpenChange={(next) => {
+        if (!next || !disabled) setOpen(next);
+      }}
+    >
       <PopoverTrigger asChild>
         <button
           id={id}
