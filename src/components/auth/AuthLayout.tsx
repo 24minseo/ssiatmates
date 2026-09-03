@@ -22,7 +22,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
         <div className="absolute left-72 right-10 top-12 h-9 rounded bg-white/50" />
       </div>
       <div aria-hidden className="absolute inset-0 bg-[rgba(158,169,174,0.5)] backdrop-blur-[4px]" />
-      <section className="auth-card relative z-10 w-full max-w-[542px] rounded-[20px] bg-surface px-6 py-[38px] shadow-[0_0_15px_rgba(64,72,66,0.10)] sm:px-12">
+      <section className="auth-card relative z-10 w-full max-w-[542px] rounded-[20px] bg-surface px-6 py-[38px] shadow-surface-card sm:px-12">
         {children}
       </section>
     </main>
