@@ -39,7 +39,7 @@ export function RegionCombobox({
 
     const frame = requestAnimationFrame(() => {
       selectedItemRef.current?.scrollIntoView({
-        block: "center",
+        block: "start",
         behavior: "auto",
       });
     });
