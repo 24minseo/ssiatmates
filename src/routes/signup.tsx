@@ -43,7 +43,7 @@ function AgreementRow({
         <DialogTrigger asChild>
           <button
             type="button"
-            className="shrink-0 font-medium text-[#9A9D9B] underline-offset-2 hover:text-brand hover:underline"
+            className="shrink-0 font-normal text-[#9A9D9B] underline-offset-2 hover:text-brand hover:underline"
           >
             보기
           </button>
@@ -174,7 +174,7 @@ function SignupPage() {
           회원가입
         </Button>
 
-        <p className="mt-3 text-center text-[13px] font-medium text-ink-muted">
+        <p className="mt-3 text-center text-[13px] font-normal text-ink-muted">
           이미 계정이 있으신가요?{" "}
           <Link to="/" viewTransition className="font-semibold text-brand hover:underline">
             로그인
