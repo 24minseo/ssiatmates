@@ -102,7 +102,7 @@ function SignupPage() {
           if (canSubmit) void navigate({ to: "/onboarding" });
         }}
       >
-        <GoogleButton label="Google로 회원가입" />
+        <GoogleButton label="Google 계정으로 회원가입" />
 
         <div className="mt-3">
           <AuthDivider />
