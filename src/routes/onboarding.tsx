@@ -40,7 +40,7 @@ function OnboardingPage() {
       <div className="w-full max-w-[542px] rounded-[20px] bg-surface px-6 py-10 shadow-surface-card sm:px-12 sm:py-14">
         <header className="mb-10 flex flex-col items-start">
           <div className="relative mb-[9px] inline-flex h-5 w-7 items-center justify-center rounded-[4px] bg-pill">
-            <span className="text-[11px] font-semibold leading-none tracking-tight text-brand">
+            <span className="text-[12px] font-semibold leading-none text-brand">
               {step}/2
             </span>
             <span
