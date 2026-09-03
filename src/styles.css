@@ -182,7 +182,7 @@
 @layer base {
   * {
     border-color: var(--color-border);
-    scrollbar-color: var(--brand) rgba(31, 128, 100, 0.06);
+    scrollbar-color: #bdbdbd #f5f5f5;
     scrollbar-width: thin;
   }
 
@@ -193,16 +193,16 @@
 
   *::-webkit-scrollbar-track {
     border-radius: 999px;
-    background-color: rgba(31, 128, 100, 0.06);
+    background-color: #f5f5f5;
   }
 
   *::-webkit-scrollbar-thumb {
     border-radius: 999px;
-    background-color: var(--brand);
+    background-color: #bdbdbd;
   }
 
   *::-webkit-scrollbar-thumb:hover {
-    background-color: var(--brand-pressed);
+    background-color: #9a9d9b;
   }
 
   body {
