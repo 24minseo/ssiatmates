@@ -42,7 +42,7 @@ function LoginPage() {
           if (canSubmit) void navigate({ to: "/myhome" });
         }}
       >
-        <GoogleButton label="Google로 로그인" />
+        <GoogleButton label="Google 계정으로 로그인" />
 
         <div className="mt-3">
           <AuthDivider />
