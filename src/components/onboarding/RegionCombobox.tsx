@@ -48,7 +48,7 @@ export function RegionCombobox({
           aria-expanded={open}
           disabled={disabled}
           className={cn(
-            "flex h-12 w-full items-center justify-between rounded-[12px] border border-field-border bg-surface px-4 text-left text-sm text-ink transition-colors",
+            "flex h-12 w-full items-center justify-between rounded-[12px] border border-field-border bg-surface px-4 text-left text-[15px] text-ink transition-colors",
             "focus:outline-none focus-visible:border-[1.5px] focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft",
             "disabled:cursor-not-allowed disabled:bg-muted/60 disabled:text-ink-muted",
           )}
@@ -72,7 +72,7 @@ export function RegionCombobox({
         avoidCollisions={false}
       >
         <Command className="rounded-[12px] [&_[cmdk-input-wrapper]]:px-4 [&_[cmdk-input-wrapper]_svg]:size-5 [&_[cmdk-input-wrapper]_svg]:-translate-x-0.5">
-          <CommandInput placeholder="지역 검색" className="h-11" />
+          <CommandInput placeholder="지역 검색" className="h-11 text-[15px]" />
           <CommandList className="max-h-[220px]">
             <CommandEmpty>검색 결과가 없습니다.</CommandEmpty>
             <CommandGroup>
