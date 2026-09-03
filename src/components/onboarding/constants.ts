@@ -102,7 +102,7 @@ export function validateBirthDate(formatted: string): {
     return {
       complete: true,
       valid: false,
-      error: "생년월일은 만 120세 이내로 입력해주세요.",
+      error: "생년월일을 다시 확인해주세요.",
     };
   }
 
