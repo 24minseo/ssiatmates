@@ -56,7 +56,7 @@ export function RegionCombobox({
         </button>
       </PopoverTrigger>
       <PopoverContent
-        className="w-[var(--radix-popover-trigger-width)] rounded-[12px] p-0 shadow-dropdown"
+        className="w-[var(--radix-popover-trigger-width)] rounded-[12px] border-0 p-0 shadow-dropdown"
         align="start"
         side="bottom"
         sideOffset={4}
