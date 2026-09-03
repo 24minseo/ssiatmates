@@ -72,7 +72,7 @@ export function RegionCombobox({
         avoidCollisions={false}
       >
         <Command className="rounded-[12px]">
-          <CommandInput placeholder="지역 검색" />
+          <CommandInput placeholder="지역 검색" className="h-11" />
           <CommandList className="max-h-[220px]">
             <CommandEmpty>검색 결과가 없습니다.</CommandEmpty>
             <CommandGroup>
@@ -85,7 +85,7 @@ export function RegionCombobox({
                     setOpen(false);
                   }}
                   className={cn(
-                    "text-ink data-[selected=true]:bg-item-hover data-[selected=true]:text-ink",
+                    "min-h-10 text-ink data-[selected=true]:bg-item-hover data-[selected=true]:text-ink",
                     value === region.label &&
                       "font-bold text-brand data-[selected=true]:bg-item-hover-selected data-[selected=true]:text-brand",
                   )}
