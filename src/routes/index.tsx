@@ -77,7 +77,7 @@ function LoginPage() {
         <div className="mt-3 flex h-5 items-center justify-end">
           <button
             type="button"
-            className="text-[13px] font-medium text-brand"
+            className="text-[13px] font-normal text-brand"
           >
             비밀번호를 잊으셨나요?
           </button>
@@ -91,7 +91,7 @@ function LoginPage() {
           로그인
         </Button>
 
-        <p className="mt-3 text-center text-[13px] font-medium text-ink-muted">
+        <p className="mt-3 text-center text-[13px] font-normal text-ink-muted">
           계정이 없으신가요?{" "}
           <Link to="/signup" viewTransition className="font-semibold text-brand hover:underline">
             회원가입
