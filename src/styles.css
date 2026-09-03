@@ -2,6 +2,14 @@
 @source "../src";
 @import "tw-animate-css";
 
+@font-face {
+  font-family: "Asta Sans";
+  font-style: normal;
+  font-weight: 300 800;
+  font-display: swap;
+  src: url("/fonts/asta-sans/AstaSans-Variable.woff2") format("woff2");
+}
+
 @custom-variant dark (&:is(.dark *));
 
 /*
@@ -82,8 +90,7 @@
   --shadow-dropdown: 8px 8px 30px 0 rgba(0, 13, 59, 0.1);
   --shadow-primary-button: inset 0 2px 2px 0 rgba(255, 255, 255, 0.25),
     0 2px 2px 0 rgba(0, 0, 0, 0.1);
-  --font-sans:
-    "Asta Sans", "42dot Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Asta Sans", ui-sans-serif, system-ui, sans-serif;
 }
 
 
