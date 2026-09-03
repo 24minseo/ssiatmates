@@ -30,7 +30,7 @@ export function MultiSelectDropdown({
   const activeItemRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!open || !activeValue) return;
+    if (!open) return;
 
     const frame = requestAnimationFrame(() => {
       activeItemRef.current?.scrollIntoView({
@@ -40,7 +40,7 @@ export function MultiSelectDropdown({
     });
 
     return () => cancelAnimationFrame(frame);
-  }, [open, activeValue]);
+  }, [open]);
 
   const toggle = (option: string) => {
     onChange(
