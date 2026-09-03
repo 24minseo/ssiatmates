@@ -23,7 +23,7 @@ export function OptionCards({ options, value, onChange }: OptionCardsProps) {
               "flex h-[62px] min-w-0 items-center justify-center overflow-hidden rounded-[8px] border border-transparent bg-surface px-1 text-[12px] font-medium leading-[14px] shadow-[0_2px_6px_rgba(85,113,78,0.10)] transition-[box-shadow,border-color]",
               selected
                 ? "border-[1.5px] border-brand font-semibold text-brand"
-                : "text-[#62756E] hover:shadow-[0_3px_8px_rgba(85,113,78,0.18)]",
+                : "text-ink-muted hover:shadow-[0_3px_8px_rgba(85,113,78,0.18)]",
             )}
           >
             <span className="whitespace-pre-line text-center">{label}</span>
