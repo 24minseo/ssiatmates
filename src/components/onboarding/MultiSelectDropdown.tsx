@@ -59,14 +59,14 @@ export function MultiSelectDropdown({
               {value.map((item) => (
                 <span
                   key={item}
-                  className="inline-flex items-center gap-1 rounded-full border border-brand/30 px-2 py-0.5 text-xs text-brand"
+                  className="inline-flex items-center gap-1 rounded-full border-0 bg-[#F8F8F8] px-2 py-0.5 text-xs text-ink"
                 >
                   <span>{item}</span>
                   <span
                     role="button"
                     tabIndex={0}
                     aria-label={`${item} 선택 해제`}
-                    className="inline-flex rounded-sm text-brand hover:bg-pill"
+                    className="inline-flex rounded-sm text-ink hover:bg-[#ECEFED]"
                     onPointerDown={(event) => {
                       event.preventDefault();
                       event.stopPropagation();
