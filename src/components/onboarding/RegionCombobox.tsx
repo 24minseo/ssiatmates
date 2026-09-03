@@ -71,7 +71,7 @@ export function RegionCombobox({
         sideOffset={4}
         avoidCollisions={false}
       >
-        <Command className="rounded-[12px]">
+        <Command className="rounded-[12px] [&_[cmdk-input-wrapper]_svg]:size-5">
           <CommandInput placeholder="지역 검색" className="h-11" />
           <CommandList className="max-h-[220px]">
             <CommandEmpty>검색 결과가 없습니다.</CommandEmpty>
@@ -90,7 +90,7 @@ export function RegionCombobox({
                       "font-bold text-brand data-[selected=true]:bg-item-hover-selected data-[selected=true]:text-brand",
                   )}
                 >
-                  <span className="flex-1">{region.label}</span>
+                  <span className="flex-1 pl-7">{region.label}</span>
                   {value === region.label ? (
                     <Check className="size-4 text-brand" />
                   ) : null}
