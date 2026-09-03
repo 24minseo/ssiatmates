@@ -84,8 +84,7 @@ export function validateBirthDate(formatted: string): {
   const realDate =
     date.getFullYear() === year &&
     date.getMonth() === month - 1 &&
-    date.getDate() === day &&
-    year >= 1900;
+    date.getDate() === day;
 
   if (!realDate) {
     return { complete: true, valid: false, error: "존재하지 않는 날짜입니다." };
@@ -95,6 +94,16 @@ export function validateBirthDate(formatted: string): {
   today.setHours(0, 0, 0, 0);
   if (date.getTime() > today.getTime()) {
     return { complete: true, valid: false, error: "미래 날짜는 입력할 수 없습니다." };
+  }
+
+  const earliestBirthDate = new Date(today);
+  earliestBirthDate.setFullYear(today.getFullYear() - 120);
+  if (date.getTime() < earliestBirthDate.getTime()) {
+    return {
+      complete: true,
+      valid: false,
+      error: "생년월일은 만 120세 이내로 입력해주세요.",
+    };
   }
 
   return { complete: true, valid: true, error: null };
