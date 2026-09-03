@@ -105,7 +105,7 @@ export function RegionCombobox({
                     setOpen(false);
                   }}
                   className={cn(
-                    "min-h-10 text-ink data-[selected=true]:bg-item-hover data-[selected=true]:text-ink",
+                    "min-h-10 scroll-mt-2 text-ink data-[selected=true]:bg-item-hover data-[selected=true]:text-ink",
                     value === region.label &&
                       "font-bold text-brand data-[selected=true]:bg-item-hover-selected data-[selected=true]:text-brand",
                   )}
