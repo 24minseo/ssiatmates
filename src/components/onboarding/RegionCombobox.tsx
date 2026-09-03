@@ -90,7 +90,7 @@ export function RegionCombobox({
                       "font-bold text-brand data-[selected=true]:bg-item-hover-selected data-[selected=true]:text-brand",
                   )}
                 >
-                  <span className="flex-1 pl-7">{region.label}</span>
+                  <span className="flex-1">{region.label}</span>
                   {value === region.label ? (
                     <Check className="size-4 text-brand" />
                   ) : null}
