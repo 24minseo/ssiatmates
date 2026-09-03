@@ -101,12 +101,12 @@ export function StepBasicInfo({ state, update, onNext }: StepBasicInfoProps) {
           required={!isPreFounder}
           htmlFor="businessLocation"
           labelRight={
-            <label className="flex items-center gap-2 text-xs text-ink-muted">
+            <label className="flex items-center gap-2 text-[12px] text-ink-muted">
               <Checkbox
                 checked={state.sameAsResidence}
                 disabled={isPreFounder}
                 onCheckedChange={(checked) => handleSame(checked === true)}
-                className="rounded-[5px] border-field-border [&_svg]:size-3 data-[state=checked]:border-brand data-[state=checked]:bg-brand data-[state=checked]:text-brand-foreground"
+                className="size-[18px] rounded-[5px] border-field-border [&_svg]:size-3 data-[state=checked]:border-brand data-[state=checked]:bg-brand data-[state=checked]:text-brand-foreground"
               />
               거주지역과 동일
             </label>
