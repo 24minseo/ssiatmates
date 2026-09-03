@@ -66,7 +66,7 @@ export function AuthField({
         aria-invalid={!!error}
         aria-describedby={error ? `${id}-error` : undefined}
         className={cn(
-          "h-12 rounded-[12px] bg-surface px-4 text-[15px] font-medium text-ink shadow-none placeholder:text-placeholder focus-visible:border-[1.5px] focus-visible:ring-[3.2px]",
+          "h-12 rounded-[12px] bg-surface px-4 text-[15px] font-normal text-ink shadow-none placeholder:text-placeholder focus-visible:border-[1.5px] focus-visible:ring-[3.2px]",
           error
             ? "border-destructive focus-visible:border-destructive focus-visible:ring-destructive/20"
             : "border-field-border focus-visible:border-brand focus-visible:ring-focus-soft",
@@ -124,7 +124,7 @@ export function AuthDivider() {
   return (
     <div className="flex h-5 items-center gap-3">
       <span className="h-px flex-1 bg-[#D8E1DD]" />
-      <span className="text-[13px] font-medium text-ink-muted">또는</span>
+      <span className="text-[13px] font-normal text-ink-muted">또는</span>
       <span className="h-px flex-1 bg-[#D8E1DD]" />
     </div>
   );
