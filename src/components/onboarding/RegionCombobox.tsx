@@ -50,17 +50,17 @@ export function RegionCombobox({
           className={cn(
             "flex h-12 w-full items-center justify-between rounded-[12px] border border-field-border bg-surface px-4 text-left text-[15px] text-ink transition-colors",
             "focus:outline-none focus-visible:border-[1.5px] focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft",
-            "disabled:cursor-not-allowed disabled:bg-field-border/50",
+            "disabled:cursor-not-allowed disabled:bg-field-border/25",
           )}
         >
-          <span className={cn("truncate", !value && "text-placeholder", disabled && "text-[#84968E]")}>
+          <span className={cn("truncate", !value && "text-placeholder", disabled && "text-[#A8B4B0]")}>
             {value ?? placeholder}
           </span>
           <ChevronDown
             className={cn(
               "ml-2 size-4 shrink-0 text-ink-muted transition-transform duration-200",
               open && "rotate-180",
-              disabled && "text-[#84968E]",
+              disabled && "text-[#A8B4B0]",
             )}
           />
         </button>
