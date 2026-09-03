@@ -52,7 +52,7 @@ export function StepBasicInfo({ state, update, onNext }: StepBasicInfoProps) {
     let formattedCaret = 0;
     let seenDigits = 0;
     while (formattedCaret < formatted.length && seenDigits < digitsBeforeCaret) {
-      if (/\d/.test(formatted[formattedCaret])) seenDigits += 1;
+      if (/\d/.test(formatted.charAt(formattedCaret))) seenDigits += 1;
       formattedCaret += 1;
     }
 
