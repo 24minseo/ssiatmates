@@ -123,7 +123,7 @@ export function MultiSelectDropdown({
                     )}
                   >
                     <span className="flex-1">{option}</span>
-                    {selected ? <Check className="size-4 text-brand" /> : null}
+                    {selected ? <Check className="size-[18px] text-brand" /> : null}
                   </CommandItem>
                 );
               })}
