@@ -48,7 +48,7 @@ function OnboardingPage() {
               className="absolute -bottom-[5px] left-1/2 h-0 w-0 -translate-x-1/2 border-x-4 border-t-[6px] border-x-transparent border-t-pill"
             />
           </div>
-          <h1 className="text-2xl font-extrabold text-ink">
+          <h1 className={`text-2xl text-ink ${step === 1 ? "font-extrabold" : "font-bold"}`}>
             {step === 1 ? "기본 정보" : "사업 및 매칭 정보"}
           </h1>
 
