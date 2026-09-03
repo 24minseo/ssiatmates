@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Check, ChevronDown } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
@@ -28,10 +28,24 @@ export function RegionCombobox({
   id,
 }: RegionComboboxProps) {
   const [open, setOpen] = useState(false);
+  const selectedItemRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (disabled) setOpen(false);
   }, [disabled]);
+
+  useEffect(() => {
+    if (!open || !value) return;
+
+    const frame = requestAnimationFrame(() => {
+      selectedItemRef.current?.scrollIntoView({
+        block: "center",
+        behavior: "auto",
+      });
+    });
+
+    return () => cancelAnimationFrame(frame);
+  }, [open, value]);
 
   return (
     <Popover
@@ -79,6 +93,7 @@ export function RegionCombobox({
             <CommandGroup>
               {regions.map((region) => (
                 <CommandItem
+                  ref={value === region.label ? selectedItemRef : undefined}
                   key={region.label}
                   value={region.label}
                   onSelect={() => {
