@@ -28,6 +28,7 @@ export function RegionCombobox({
   id,
 }: RegionComboboxProps) {
   const [open, setOpen] = useState(false);
+  const [activeValue, setActiveValue] = useState("");
   const selectedItemRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -51,6 +52,9 @@ export function RegionCombobox({
     <Popover
       open={open}
       onOpenChange={(next) => {
+        if (next && !disabled) {
+          setActiveValue(value ?? regions.at(0)?.label ?? "");
+        }
         if (!next || !disabled) setOpen(next);
       }}
     >
@@ -86,7 +90,7 @@ export function RegionCombobox({
         sideOffset={4}
         avoidCollisions={false}
       >
-        <Command className="rounded-[12px] [&_[cmdk-input-wrapper]]:px-4 [&_[cmdk-input-wrapper]_svg]:size-5 [&_[cmdk-input-wrapper]_svg]:-translate-x-0.5">
+        <Command value={activeValue} onValueChange={setActiveValue} className="rounded-[12px] [&_[cmdk-input-wrapper]]:px-4 [&_[cmdk-input-wrapper]_svg]:size-5 [&_[cmdk-input-wrapper]_svg]:-translate-x-0.5">
           <CommandInput placeholder="지역 검색" className="h-11 text-[15px]" />
           <CommandList className="max-h-[220px]">
             <CommandEmpty>검색 결과가 없습니다.</CommandEmpty>
