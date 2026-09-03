@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,8 @@ interface StepBasicInfoProps {
 
 export function StepBasicInfo({ state, update, onNext }: StepBasicInfoProps) {
   const [birthTouched, setBirthTouched] = useState(false);
+  const birthInputRef = useRef<HTMLInputElement>(null);
+  const pendingBirthCaretRef = useRef<number | null>(null);
   const birth = useMemo(() => validateBirthDate(state.birthDate), [state.birthDate]);
   const birthError = birthTouched
     ? state.birthDate.length === 0
@@ -32,6 +34,32 @@ export function StepBasicInfo({ state, update, onNext }: StepBasicInfoProps) {
     : null;
   const hasBirthError = !!birthError;
   const isPreFounder = state.startupStage === PRE_FOUNDER;
+
+  useLayoutEffect(() => {
+    const caret = pendingBirthCaretRef.current;
+    const input = birthInputRef.current;
+    if (caret === null || !input) return;
+
+    input.setSelectionRange(caret, caret);
+    pendingBirthCaretRef.current = null;
+  }, [state.birthDate]);
+
+  const handleBirthChange = (rawValue: string, selectionStart: number | null) => {
+    const rawCaret = selectionStart ?? rawValue.length;
+    const digitsBeforeCaret = rawValue.slice(0, rawCaret).replace(/\D/g, "").length;
+    const formatted = formatBirthDate(rawValue);
+
+    let formattedCaret = 0;
+    let seenDigits = 0;
+    while (formattedCaret < formatted.length && seenDigits < digitsBeforeCaret) {
+      if (/\d/.test(formatted[formattedCaret])) seenDigits += 1;
+      formattedCaret += 1;
+    }
+
+    pendingBirthCaretRef.current = formattedCaret;
+    setBirthTouched(false);
+    update({ birthDate: formatted });
+  };
 
   const handleStage = (stage: string) => {
     if (stage === PRE_FOUNDER) {
@@ -70,14 +98,14 @@ export function StepBasicInfo({ state, update, onNext }: StepBasicInfoProps) {
         error={birthError ?? undefined}
       >
         <Input
+          ref={birthInputRef}
           id="birthDate"
           inputMode="numeric"
           placeholder="YYYY.MM.DD"
           value={state.birthDate}
-          onChange={(event) => {
-            setBirthTouched(false);
-            update({ birthDate: formatBirthDate(event.target.value) });
-          }}
+          onChange={(event) =>
+            handleBirthChange(event.target.value, event.target.selectionStart)
+          }
           onBlur={() => setBirthTouched(true)}
           className={cn(
             "h-12 rounded-[12px] bg-surface px-4 text-[15px] text-ink shadow-none placeholder:text-placeholder focus-visible:border-[1.5px] focus-visible:ring-[3.2px]",
