@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -21,8 +21,16 @@ interface StepBasicInfoProps {
 }
 
 export function StepBasicInfo({ state, update, onNext }: StepBasicInfoProps) {
+  const [birthTouched, setBirthTouched] = useState(false);
   const birth = useMemo(() => validateBirthDate(state.birthDate), [state.birthDate]);
-  const hasBirthError = birth.complete && !birth.valid;
+  const birthError = birthTouched
+    ? state.birthDate.length === 0
+      ? "생년월일을 입력해주세요."
+      : !birth.complete
+        ? "생년월일 8자리를 입력해주세요."
+        : birth.error
+    : null;
+  const hasBirthError = !!birthError;
   const isPreFounder = state.startupStage === PRE_FOUNDER;
 
   const handleStage = (stage: string) => {
@@ -59,16 +67,18 @@ export function StepBasicInfo({ state, update, onNext }: StepBasicInfoProps) {
         label="생년월일"
         required
         htmlFor="birthDate"
-        error={birth.complete && !birth.valid ? (birth.error ?? undefined) : undefined}
+        error={birthError ?? undefined}
       >
         <Input
           id="birthDate"
           inputMode="numeric"
           placeholder="YYYY.MM.DD"
           value={state.birthDate}
-          onChange={(event) =>
-            update({ birthDate: formatBirthDate(event.target.value) })
-          }
+          onChange={(event) => {
+            setBirthTouched(false);
+            update({ birthDate: formatBirthDate(event.target.value) });
+          }}
+          onBlur={() => setBirthTouched(true)}
           className={cn(
             "h-12 rounded-[12px] bg-surface px-4 text-[15px] text-ink shadow-none placeholder:text-placeholder focus-visible:border-[1.5px] focus-visible:ring-[3.2px]",
             hasBirthError
