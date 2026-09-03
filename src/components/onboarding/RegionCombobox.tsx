@@ -92,7 +92,7 @@ export function RegionCombobox({
                 >
                   <span className="flex-1 pl-1">{region.label}</span>
                   {value === region.label ? (
-                    <Check className="size-4 text-brand" />
+                    <Check className="size-[18px] text-brand" />
                   ) : null}
                 </CommandItem>
               ))}
