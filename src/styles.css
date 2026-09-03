@@ -228,6 +228,10 @@
 }
 
 
+.google-auth-button {
+  letter-spacing: normal !important;
+}
+
 .auth-card {
   view-transition-name: auth-card;
 }
