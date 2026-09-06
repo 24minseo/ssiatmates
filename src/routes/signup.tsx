@@ -169,7 +169,7 @@ function SignupPage() {
         <Button
           type="submit"
           disabled={!canSubmit}
-          className="mt-3 h-[50px] w-full rounded-[12px] bg-brand text-[15px] font-semibold text-white shadow-primary-button hover:bg-brand/88 active:bg-brand-pressed disabled:bg-brand-disabled disabled:text-white disabled:opacity-100"
+          className="mt-3 h-[50px] w-full rounded-[12px] bg-brand text-base font-semibold text-white shadow-primary-button hover:bg-brand/88 active:bg-brand-pressed disabled:bg-brand-disabled disabled:text-white disabled:opacity-100"
         >
           회원가입
         </Button>
