@@ -144,7 +144,7 @@
   --brand-disabled: #a1ddc8;
   --focus-soft: #d7f5ea;
   --item-hover: rgb(246 248 247);
-  --item-hover-selected: rgb(242 247 244);
+  --item-hover-selected: rgba(234, 241, 236, 0.5);
   --secondary-btn: #f6f8f7;
   --secondary-btn-hover: #f1f1f1;
   --secondary-btn-text: #78827d;
