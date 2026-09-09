@@ -16,7 +16,7 @@ export const Route = createFileRoute("/onboarding")({
       {
         name: "description",
         content:
-          "생년월일, 창업단계, 지역, 사업분야와 지원 카테고리를 입력해 맞춤 창업 지원사업을 추천받으세요.",
+          "생년월일, 창업단계, 지역, 사업분야와 관심 카테고리를 입력해 맞춤 창업 지원사업을 추천받으세요.",
       },
       { property: "og:title", content: "온보딩 · 창업 지원사업 매칭" },
       {
@@ -57,7 +57,7 @@ function OnboardingPage() {
           >
             {step === 1
               ? "맞춤 지원사업 추천을 위해 기본 정보를 입력해주세요."
-              : "관심 있는 사업분야와 지원 카테고리를 선택해주세요."}
+              : "관심 있는 사업분야와 관심 카테고리를 선택해주세요."}
           </p>
         </header>
 
