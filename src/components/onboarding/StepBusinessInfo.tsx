@@ -46,7 +46,7 @@ export function StepBusinessInfo({
         />
       </FormField>
 
-      <FormField label="지원 카테고리">
+      <FormField label="관심 카테고리">
         <PillGroup
           options={SUPPORT_CATEGORIES}
           value={state.supportCategories}
