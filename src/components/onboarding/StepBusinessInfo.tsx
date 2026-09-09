@@ -36,13 +36,13 @@ export function StepBusinessInfo({
 
   return (
     <div className="flex flex-col gap-6">
-      <FormField label="사업분야" required htmlFor="businessFields">
+      <FormField label="사업 분야" required htmlFor="businessFields">
         <MultiSelectDropdown
           id="businessFields"
           options={BUSINESS_FIELDS}
           value={state.businessFields}
           onChange={(value) => update({ businessFields: value })}
-          placeholder="사업분야를 선택해주세요"
+          placeholder="사업 분야를 선택해주세요"
         />
       </FormField>
 
