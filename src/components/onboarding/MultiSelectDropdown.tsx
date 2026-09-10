@@ -141,7 +141,7 @@ export function MultiSelectDropdown({
                     value={option}
                     onSelect={() => toggle(option)}
                     className={cn(
-                      "min-h-10 scroll-mt-1 text-ink data-[selected=true]:bg-item-hover data-[selected=true]:text-ink",
+                      "min-h-10 scroll-mt-1 rounded-[8px] text-ink data-[selected=true]:bg-item-hover data-[selected=true]:text-ink",
                       selected &&
                         "font-bold text-brand data-[selected=true]:bg-item-hover-selected data-[selected=true]:text-brand",
                     )}
