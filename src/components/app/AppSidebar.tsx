@@ -52,7 +52,13 @@ function NavigationIcon({ src }: { src: string }) {
     maskSize: "contain",
   } satisfies CSSProperties;
 
-  return <span aria-hidden className="size-6 shrink-0 bg-current" style={maskStyle} />;
+  return (
+    <span
+      aria-hidden
+      className="size-6 shrink-0 bg-current"
+      style={maskStyle}
+    />
+  );
 }
 
 export function AppSidebar({ active }: AppSidebarProps) {
@@ -66,11 +72,21 @@ export function AppSidebar({ active }: AppSidebarProps) {
       }`}
     >
       <div className="relative flex h-full flex-col px-4 pt-5">
-        <div className={`flex h-8 items-center ${expanded ? "px-[15px]" : "justify-center"}`}>
+        <div
+          className={`flex h-8 items-center ${expanded ? "px-[15px]" : "justify-center"}`}
+        >
           {expanded ? (
-            <img src="/assets/sidebar/ssiat-logo.svg" alt="SSIAT" className="h-5 w-[104px]" />
+            <img
+              src="/assets/sidebar/ssiat-logo.svg"
+              alt="SSIAT"
+              className="h-5 w-[104px]"
+            />
           ) : (
-            <img src="/favicon.ico" alt="SSIAT" className="h-7 w-9 object-contain" />
+            <img
+              src="/favicon.ico"
+              alt="SSIAT"
+              className="h-7 w-9 object-contain"
+            />
           )}
         </div>
 
@@ -102,7 +118,9 @@ export function AppSidebar({ active }: AppSidebarProps) {
           {expanded ? (
             <>
               <span className="flex w-full items-center justify-between">
-                <strong className="text-base font-bold text-ink">구마구마</strong>
+                <strong className="text-base font-bold text-ink">
+                  구마구마
+                </strong>
                 <span className="flex size-[18px] items-center justify-center rounded-[3px] border border-field-border text-[#84968E]">
                   <Pencil aria-hidden className="size-3" strokeWidth={1.8} />
                 </span>
@@ -116,10 +134,14 @@ export function AppSidebar({ active }: AppSidebarProps) {
           )}
         </button>
 
-        <nav aria-label="주요 메뉴" className={`mt-8 ${expanded ? "w-[208px]" : "w-12 self-center"}`}>
+        <nav
+          aria-label="주요 메뉴"
+          className={`mt-8 ${expanded ? "w-[208px]" : "w-12 self-center"}`}
+        >
           <ul>
             {navigation.map((item) => {
-              const selected = item.key === "calendar" ? calendarActive : item.key === active;
+              const selected =
+                item.key === "calendar" ? calendarActive : item.key === active;
 
               return (
                 <li key={item.key}>
@@ -136,16 +158,25 @@ export function AppSidebar({ active }: AppSidebarProps) {
                     }`}
                   >
                     <NavigationIcon src={item.icon} />
-                    {expanded && <span className="whitespace-nowrap text-base">{item.label}</span>}
+                    {expanded && (
+                      <span className="whitespace-nowrap text-base">
+                        {item.label}
+                      </span>
+                    )}
                   </Link>
 
                   {item.key === "calendar" && expanded && calendarActive && (
                     <Link
                       to="/calendar/growth-journal"
-                      aria-current={active === "growth-journal" ? "page" : undefined}
+                      aria-current={
+                        active === "growth-journal" ? "page" : undefined
+                      }
                       className="relative flex h-[46px] items-start pl-12 pt-[5px]"
                     >
-                      <span aria-hidden className="mt-[2px] h-6 w-px shrink-0 bg-field-border" />
+                      <span
+                        aria-hidden
+                        className="mt-[2px] h-6 w-px shrink-0 bg-field-border"
+                      />
                       <span
                         className={`ml-[5px] flex h-7 w-[154px] items-center rounded-[7px] px-[10px] text-sm ${
                           active === "growth-journal"

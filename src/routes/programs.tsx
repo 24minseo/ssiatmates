@@ -9,7 +9,9 @@ export const Route = createFileRoute("/programs")({
 function ProgramsPage() {
   return (
     <AppShell active="programs">
-      <h1 className="text-[28px] font-bold leading-tight text-ink">지원사업 탐색</h1>
+      <h1 className="text-[28px] font-bold leading-tight text-ink">
+        지원사업 탐색
+      </h1>
     </AppShell>
   );
 }

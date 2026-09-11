@@ -15,7 +15,11 @@ export function AppHeader() {
         type="button"
         className="flex h-8 items-center gap-1.5 rounded-lg px-1.5 text-sm font-medium text-ink-muted hover:bg-item-hover"
       >
-        <UserRound aria-hidden className="size-5 text-[#84968E]" strokeWidth={1.8} />
+        <UserRound
+          aria-hidden
+          className="size-5 text-[#84968E]"
+          strokeWidth={1.8}
+        />
         <span>아무개님</span>
         <ChevronDown aria-hidden className="size-4" strokeWidth={1.8} />
       </button>
