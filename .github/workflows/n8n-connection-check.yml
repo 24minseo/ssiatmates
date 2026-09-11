@@ -1,0 +1,77 @@
+name: n8n connection check
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/n8n-connection-check.yml'
+
+permissions: {}
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Verify n8n secrets and workflow access
+        env:
+          N8N_BASE_URL: ${{ secrets.N8N_BASE_URL }}
+          N8N_API_KEY: ${{ secrets.N8N_API_KEY }}
+          N8N_WORKFLOW_ID: ${{ secrets.N8N_WORKFLOW_ID }}
+        shell: python
+        run: |
+          import json, os, re, sys
+          import urllib.request, urllib.error, urllib.parse
+
+          def fail(message):
+              print("::error::" + message)
+              sys.exit(1)
+
+          names = ("N8N_BASE_URL", "N8N_API_KEY", "N8N_WORKFLOW_ID")
+          values = {name: os.environ.get(name, "").strip() for name in names}
+          missing = [name for name, value in values.items() if not value]
+          if missing:
+              fail("Missing repository secrets: " + ", ".join(missing))
+
+          base = values["N8N_BASE_URL"].rstrip("/")
+          url = urllib.parse.urlsplit(base)
+          if (url.scheme != "https" or not
+              re.fullmatch(r"[a-zA-Z0-9-]+\.app\.n8n\.cloud", url.netloc)
+              or url.path or url.query or url.fragment):
+              fail("N8N_BASE_URL must be https://YOUR-INSTANCE.app.n8n.cloud without any path.")
+          workflow_id = values["N8N_WORKFLOW_ID"]
+          if not re.fullmatch(r"[a-zA-Z0-9_-]+", workflow_id):
+              fail("N8N_WORKFLOW_ID must contain only the workflow ID, not a URL.")
+
+          class NoRedirect(urllib.request.HTTPRedirectHandler):
+              def redirect_request(self, req, fp, code, msg, headers, newurl):
+                  return None
+
+          request = urllib.request.Request(
+              base + "/api/v1/workflows/" + workflow_id,
+              headers={"X-N8N-API-KEY": values["N8N_API_KEY"], "Accept": "application/json"},
+              method="GET")
+          try:
+              with urllib.request.build_opener(NoRedirect()).open(request, timeout=30) as response:
+                  workflow = json.load(response)
+          except urllib.error.HTTPError as error:
+              explanations = {
+                  401: "API key was rejected. Check N8N_API_KEY and its expiration.",
+                  403: "Access denied. Check the API key permissions and n8n plan.",
+                  404: "Workflow not found. Check the instance URL and workflow ID."
+              }
+              fail(explanations.get(error.code, "n8n returned HTTP " + str(error.code)))
+          except Exception:
+              fail("Connection failed or the response was not valid JSON. Check the instance URL and availability.")
+
+          if not isinstance(workflow, dict) or str(workflow.get("id")) != workflow_id or not isinstance(workflow.get("nodes"), list):
+              fail("The response did not match the requested n8n workflow.")
+
+          print("Connection successful. Workflow read access verified. No workflow was changed.")
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
+              summary.write("## n8n connection verified\n\n")
+              summary.write("- All three repository secrets are present.\n")
+              summary.write("- API authentication and target workflow read access succeeded.\n")
+              summary.write("- No workflow was changed or published.\n")
+              summary.write("- Automatic deployment is not enabled yet.\n")
