@@ -19,28 +19,38 @@ const navigation = [
     label: "MY홈",
     to: "/myhome",
     icon: "/assets/sidebar/home.svg",
+    iconSize: "size-6",
   },
   {
     key: "programs",
     label: "지원사업 탐색",
     to: "/programs",
     icon: "/assets/sidebar/program-search.svg",
+    iconSize: "h-[19px] w-[18px]",
   },
   {
     key: "my-programs",
     label: "내 지원사업",
     to: "/my-programs",
     icon: "/assets/sidebar/my-programs.svg",
+    iconSize: "size-6",
   },
   {
     key: "calendar",
     label: "전체 캘린더",
     to: "/calendar",
     icon: "/assets/sidebar/calendar.svg",
+    iconSize: "size-6",
   },
 ] as const;
 
-function NavigationIcon({ src }: { src: string }) {
+function NavigationIcon({
+  src,
+  iconSize,
+}: {
+  src: string;
+  iconSize: string;
+}) {
   const maskStyle = {
     WebkitMaskImage: `url(${src})`,
     maskImage: `url(${src})`,
@@ -55,9 +65,10 @@ function NavigationIcon({ src }: { src: string }) {
   return (
     <span
       aria-hidden
-      className="size-6 shrink-0 bg-current"
-      style={maskStyle}
-    />
+      className="flex size-6 shrink-0 items-center justify-center"
+    >
+      <span className={`${iconSize} bg-current`} style={maskStyle} />
+    </span>
   );
 }
 
@@ -157,7 +168,7 @@ export function AppSidebar({ active }: AppSidebarProps) {
                         : "font-medium"
                     }`}
                   >
-                    <NavigationIcon src={item.icon} />
+                    <NavigationIcon src={item.icon} iconSize={item.iconSize} />
                     {expanded && (
                       <span className="whitespace-nowrap text-base">
                         {item.label}
