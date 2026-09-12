@@ -136,7 +136,9 @@ export function AppSidebar({ active }: AppSidebarProps) {
 
         <nav
           aria-label="주요 메뉴"
-          className={`mt-8 ${expanded ? "w-[208px]" : "w-12 self-center"}`}
+          className={`mt-8 transition-[width] duration-200 ease-out motion-reduce:transition-none ${
+            expanded ? "w-[208px]" : "w-12"
+          }`}
         >
           <ul>
             {navigation.map((item) => {
@@ -149,8 +151,8 @@ export function AppSidebar({ active }: AppSidebarProps) {
                     to={item.to}
                     aria-current={selected ? "page" : undefined}
                     title={expanded ? undefined : item.label}
-                    className={`flex h-[46px] items-center rounded-lg text-[#84968E] transition-colors hover:bg-item-hover hover:text-[#596963] ${
-                      expanded ? "gap-[10px] px-[13px]" : "justify-center"
+                    className={`flex h-[46px] items-center overflow-hidden rounded-lg text-[#84968E] transition-[gap,padding,background-color,color] duration-200 ease-out motion-reduce:transition-none hover:bg-item-hover hover:text-[#596963] ${
+                      expanded ? "gap-[10px] px-[13px]" : "gap-0 px-3"
                     } ${
                       selected
                         ? "bg-item-hover-selected font-bold text-brand hover:bg-item-hover-selected hover:text-brand"
@@ -158,11 +160,16 @@ export function AppSidebar({ active }: AppSidebarProps) {
                     }`}
                   >
                     <NavigationIcon src={item.icon} />
-                    {expanded && (
-                      <span className="whitespace-nowrap text-base">
-                        {item.label}
-                      </span>
-                    )}
+                    <span
+                      aria-hidden={!expanded}
+                      className={`overflow-hidden whitespace-nowrap text-base transition-[max-width,opacity,transform] duration-200 ease-out motion-reduce:transition-none ${
+                        expanded
+                          ? "max-w-[160px] translate-x-0 opacity-100"
+                          : "max-w-0 -translate-x-1 opacity-0"
+                      }`}
+                    >
+                      {item.label}
+                    </span>
                   </Link>
 
                   {item.key === "calendar" && (
