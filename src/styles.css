@@ -75,6 +75,8 @@
   --color-focus-soft: var(--focus-soft);
   --color-item-hover: var(--item-hover);
   --color-item-hover-selected: var(--item-hover-selected);
+  --color-menu-hover: var(--menu-hover);
+  --color-menu-badge: var(--menu-badge);
   --color-secondary-btn: var(--secondary-btn);
   --color-secondary-btn-hover: var(--secondary-btn-hover);
   --color-secondary-btn-text: var(--secondary-btn-text);
@@ -90,6 +92,8 @@
   --color-field-border: var(--field-border);
   --shadow-surface-card: 0 0 30px 0 rgba(64, 72, 66, 0.1);
   --shadow-dropdown: 8px 8px 30px 0 rgba(0, 13, 59, 0.1);
+  --shadow-menu-hover: inset -1px -1px 1px #ffffff,
+    inset 1px 1px 1px rgba(255, 255, 255, 0.5);
   --shadow-primary-button: inset 0 2px 2px 0 rgba(255, 255, 255, 0.25),
     0 2px 2px 0 rgba(0, 0, 0, 0.1);
   --font-sans: "Asta Sans", ui-sans-serif, system-ui, sans-serif;
@@ -146,7 +150,9 @@
   --brand-disabled: #a1ddc8;
   --focus-soft: #d7f5ea;
   --item-hover: rgb(246 248 247);
-  --item-hover-selected: #e2ede5;
+  --item-hover-selected: rgba(234, 241, 236, 0.5);
+  --menu-hover: #f1f3f2;
+  --menu-badge: #e2ede5;
   --secondary-btn: #f6f8f7;
   --secondary-btn-hover: #f1f1f1;
   --secondary-btn-text: #78827d;
