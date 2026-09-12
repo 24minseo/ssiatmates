@@ -85,7 +85,7 @@ export function AppSidebar({ active }: AppSidebarProps) {
             <img
               src="/assets/sidebar/ssiat-symbol.svg"
               alt="SSIAT"
-              className="h-[28px] w-[37px] -translate-x-[2px] object-contain"
+              className="h-[26px] w-8 object-contain"
             />
           )}
         </div>
