@@ -37,7 +37,7 @@ const navigation = [
   {
     key: "calendar",
     label: "전체 캘린더",
-    to: "/calendar/",
+    to: "/calendar",
     icon: "/assets/sidebar/calendar.svg",
   },
 ] as const;
