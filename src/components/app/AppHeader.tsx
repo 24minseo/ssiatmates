@@ -2,7 +2,7 @@ import { Bell, ChevronDown, UserRound } from "lucide-react";
 
 export function AppHeader() {
   return (
-    <header className="flex h-16 items-center justify-end gap-5 px-10 text-[#84968E]">
+    <header className="flex h-[74px] items-center justify-end gap-5 px-10 text-[#84968E]">
       <button
         type="button"
         aria-label="알림"
