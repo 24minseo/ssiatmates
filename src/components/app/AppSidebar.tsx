@@ -205,7 +205,7 @@ export function AppSidebar({ active }: AppSidebarProps) {
                       <span
                         className={`ml-[5px] flex h-7 w-[154px] items-center rounded-[7px] px-[10px] text-sm ${
                           active === "growth-journal"
-                            ? "bg-[#EAF1EC] font-semibold text-brand"
+                            ? "bg-item-hover-selected font-semibold text-brand"
                             : "font-medium text-[#73807A] hover:bg-item-hover"
                         }`}
                       >
