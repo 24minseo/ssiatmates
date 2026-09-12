@@ -5,7 +5,7 @@ export function AppHeader() {
       className="flex h-[74px] w-full shrink-0 items-center justify-end bg-surface py-4 pl-8 pr-16"
       data-figma-node="903:284"
     >
-      <div className="flex h-9 items-center gap-[14px]">
+      <div className="flex h-9 items-center gap-2">
         <button
           type="button"
           aria-label="알림"
@@ -48,13 +48,14 @@ export function AppHeader() {
         <button
           type="button"
           aria-label="사용자 메뉴 열기"
-          className="group relative flex h-9 w-[91px] shrink-0 items-center gap-[5px] px-px text-sm font-medium text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+          className="group relative -mr-1.5 flex h-9 w-[103px] shrink-0 items-center justify-center text-sm font-medium text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
         >
           <span
             aria-hidden="true"
-            className="pointer-events-none absolute -inset-x-1.5 inset-y-0 rounded-lg bg-item-hover opacity-0 transition-opacity duration-150 ease-out group-hover:opacity-100 group-focus-visible:opacity-100 motion-reduce:transition-none"
+            className="pointer-events-none absolute inset-0 rounded-lg bg-item-hover opacity-0 transition-opacity duration-150 ease-out group-hover:opacity-100 group-focus-visible:opacity-100 motion-reduce:transition-none"
           />
-          <span className="relative flex shrink-0 items-center justify-center text-icon-muted transition-colors duration-150 ease-out group-hover:text-ink-muted group-focus-visible:text-ink-muted motion-reduce:transition-none">
+          <span className="relative flex h-9 w-[91px] items-center gap-[5px] px-px">
+            <span className="flex shrink-0 items-center justify-center text-icon-muted transition-colors duration-150 ease-out group-hover:text-ink-muted group-focus-visible:text-ink-muted motion-reduce:transition-none">
             <span className="relative size-6 overflow-hidden">
               <svg
                 aria-hidden="true"
@@ -74,13 +75,14 @@ export function AppHeader() {
                 />
               </svg>
             </span>
+            </span>
+            <span className="shrink-0 whitespace-nowrap">아무개님</span>
+            <img
+              src="/assets/header/chevron-down.svg"
+              alt=""
+              className="h-[3.5px] w-[7px] shrink-0"
+            />
           </span>
-          <span className="relative shrink-0 whitespace-nowrap">아무개님</span>
-          <img
-            src="/assets/header/chevron-down.svg"
-            alt=""
-            className="relative h-[3.5px] w-[7px] shrink-0"
-          />
         </button>
       </div>
     </header>
