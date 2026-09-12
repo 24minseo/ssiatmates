@@ -134,10 +134,10 @@ export function AppSidebar({ active }: AppSidebarProps) {
         <button
           type="button"
           aria-label="현재 프로젝트 정보 수정"
-          className={`mt-[27px] bg-[#FEFEFE] shadow-[1px_1px_0_1px_rgba(185,201,194,0.25)] ${
+          className={`bg-[#FEFEFE] shadow-[1px_1px_0_1px_rgba(185,201,194,0.25)] ${
             expanded
-              ? "flex h-[66px] w-[208px] flex-col items-start rounded-[10px] px-[14px] py-[12px] text-left"
-              : "flex size-12 items-center justify-center self-center rounded-[10px]"
+              ? "absolute left-4 top-[79px] flex h-[65px] w-[208px] flex-col items-start gap-[2px] rounded-[10px] px-[14px] py-[13px] text-left"
+              : "mt-[27px] flex size-12 items-center justify-center self-center rounded-[10px]"
           }`}
         >
           {expanded ? (
