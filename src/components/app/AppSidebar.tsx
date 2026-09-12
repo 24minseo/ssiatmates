@@ -196,7 +196,7 @@ export function AppSidebar({ active }: AppSidebarProps) {
                         : "font-medium hover:bg-menu-hover hover:shadow-menu-hover"
                     }`}
                   >
-                    <NavigationIcon src={item.icon} />
+                    <NavigationIcon src={item.icon} selected={selected} />
                     <span
                       aria-hidden={!expanded}
                       className={`overflow-hidden whitespace-nowrap text-base transition-[max-width,opacity,transform] duration-200 ease-out motion-reduce:transition-none ${
