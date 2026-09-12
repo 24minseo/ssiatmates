@@ -1,6 +1,8 @@
 import { Link } from "@tanstack/react-router";
 import { Pencil } from "lucide-react";
-import { useState, type CSSProperties } from "react";
+import type { CSSProperties } from "react";
+
+import { useAppSidebar } from "./AppSidebarState";
 
 export type AppNavigationKey =
   | "home"
@@ -62,12 +64,13 @@ function NavigationIcon({ src }: { src: string }) {
 }
 
 export function AppSidebar({ active }: AppSidebarProps) {
-  const [expanded, setExpanded] = useState(false);
-  const calendarActive = active === "calendar" || active === "growth-journal";\n  const growthJournalVisible = expanded && calendarActive;
+  const { expanded, toggleSidebar } = useAppSidebar();
+  const calendarActive = active === "calendar" || active === "growth-journal";
+  const growthJournalVisible = expanded && calendarActive;
 
   return (
     <aside
-      className={`sticky top-0 z-30 h-screen shrink-0 bg-[#F6F8F7] transition-[width] duration-200 ease-out ${
+      className={`sticky top-0 z-30 h-screen shrink-0 bg-[#F6F8F7] transition-[width] duration-200 ease-out motion-reduce:transition-none ${
         expanded ? "w-[240px]" : "w-20"
       }`}
     >
@@ -94,15 +97,15 @@ export function AppSidebar({ active }: AppSidebarProps) {
           type="button"
           aria-label={expanded ? "사이드바 접기" : "사이드바 펼치기"}
           aria-expanded={expanded}
-          onClick={() => setExpanded((value) => !value)}
-          className={`absolute top-5 flex size-8 items-center justify-center rounded-lg bg-[#F6F8F7] text-[#BDBDBD] transition-colors hover:bg-[#EEF2F0] ${
+          onClick={toggleSidebar}
+          className={`absolute top-5 flex size-8 items-center justify-center rounded-lg bg-[#F6F8F7] text-[#BDBDBD] transition-[right,background-color,color,border-color] duration-200 ease-out motion-reduce:transition-none hover:bg-[#EEF2F0] ${
             expanded ? "right-[14px]" : "-right-[15px] border-2 border-white"
           }`}
         >
           <img
             src="/assets/sidebar/sidebar-toggle.svg"
             alt=""
-            className={`h-4 w-5 transition-transform duration-200 ${expanded ? "" : "rotate-180"}`}
+            className={`h-4 w-5 transition-transform duration-200 ease-out motion-reduce:transition-none ${expanded ? "" : "rotate-180"}`}
           />
         </button>
 
@@ -149,7 +152,8 @@ export function AppSidebar({ active }: AppSidebarProps) {
                 <li key={item.key}>
                   <Link
                     to={item.to}
-                    aria-current={selected ? "page" : undefined}
+                    aria-current={item.key === active ? "page" : undefined}
+                    aria-label={expanded ? undefined : item.label}
                     title={expanded ? undefined : item.label}
                     className={`flex h-[46px] items-center overflow-hidden rounded-lg text-[#84968E] transition-[gap,padding,background-color,color] duration-200 ease-out motion-reduce:transition-none hover:bg-item-hover hover:text-[#596963] ${
                       expanded ? "gap-[10px] px-[13px]" : "gap-0 px-3"
