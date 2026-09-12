@@ -41,7 +41,13 @@ const navigation = [
   },
 ] as const;
 
-function NavigationIcon({ src }: { src: string }) {
+function NavigationIcon({
+  src,
+  selected,
+}: {
+  src: string;
+  selected: boolean;
+}) {
   const maskStyle = {
     WebkitMaskImage: `url(${src})`,
     maskImage: `url(${src})`,
@@ -56,7 +62,7 @@ function NavigationIcon({ src }: { src: string }) {
   return (
     <span
       aria-hidden
-      className="size-6 shrink-0 bg-current"
+      className={`size-6 shrink-0 ${selected ? "bg-brand" : "bg-current"}`}
       style={maskStyle}
     />
   );
