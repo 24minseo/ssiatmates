@@ -81,6 +81,7 @@
   --color-secondary-btn-text-hover: var(--secondary-btn-text-hover);
   --color-ink: var(--ink);
   --color-ink-muted: var(--ink-muted);
+  --color-icon-muted: var(--icon-muted);
   --color-placeholder: var(--placeholder);
   --color-pill: var(--pill);
   --color-pill-foreground: var(--pill-foreground);
@@ -134,6 +135,7 @@
   --brand-foreground: #ffffff;
   --ink: #163b31;
   --ink-muted: #596963;
+  --icon-muted: #84968e;
   --placeholder: #596963;
   --pill: #d7f5ea;
   --pill-foreground: #1f8064;
