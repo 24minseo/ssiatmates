@@ -10,13 +10,22 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as MyProgramsRouteImport } from './routes/my-programs'
 import { Route as MyhomeRouteImport } from './routes/myhome'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
+import { Route as ProgramsRouteImport } from './routes/programs'
 import { Route as SignupRouteImport } from './routes/signup'
+import { Route as CalendarIndexRouteImport } from './routes/calendar/index'
+import { Route as CalendarGrowthJournalRouteImport } from './routes/calendar/growth-journal'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MyProgramsRoute = MyProgramsRouteImport.update({
+  id: '/my-programs',
+  path: '/my-programs',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MyhomeRoute = MyhomeRouteImport.update({
@@ -29,43 +38,99 @@ const OnboardingRoute = OnboardingRouteImport.update({
   path: '/onboarding',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProgramsRoute = ProgramsRouteImport.update({
+  id: '/programs',
+  path: '/programs',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
   path: '/signup',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CalendarIndexRoute = CalendarIndexRouteImport.update({
+  id: '/calendar/',
+  path: '/calendar/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CalendarGrowthJournalRoute = CalendarGrowthJournalRouteImport.update({
+  id: '/calendar/growth-journal',
+  path: '/calendar/growth-journal',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/calendar/': typeof CalendarIndexRoute
+  '/calendar/growth-journal': typeof CalendarGrowthJournalRoute
+  '/my-programs': typeof MyProgramsRoute
   '/myhome': typeof MyhomeRoute
   '/onboarding': typeof OnboardingRoute
+  '/programs': typeof ProgramsRoute
   '/signup': typeof SignupRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/calendar/': typeof CalendarIndexRoute
+  '/calendar/growth-journal': typeof CalendarGrowthJournalRoute
+  '/my-programs': typeof MyProgramsRoute
   '/myhome': typeof MyhomeRoute
   '/onboarding': typeof OnboardingRoute
+  '/programs': typeof ProgramsRoute
   '/signup': typeof SignupRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/calendar/': typeof CalendarIndexRoute
+  '/calendar/growth-journal': typeof CalendarGrowthJournalRoute
+  '/my-programs': typeof MyProgramsRoute
   '/myhome': typeof MyhomeRoute
   '/onboarding': typeof OnboardingRoute
+  '/programs': typeof ProgramsRoute
   '/signup': typeof SignupRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/myhome' | '/onboarding' | '/signup'
+  fullPaths:
+    | '/'
+    | '/calendar/'
+    | '/calendar/growth-journal'
+    | '/my-programs'
+    | '/myhome'
+    | '/onboarding'
+    | '/programs'
+    | '/signup'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/myhome' | '/onboarding' | '/signup'
-  id: '__root__' | '/' | '/myhome' | '/onboarding' | '/signup'
+  to:
+    | '/'
+    | '/calendar/'
+    | '/calendar/growth-journal'
+    | '/my-programs'
+    | '/myhome'
+    | '/onboarding'
+    | '/programs'
+    | '/signup'
+  id:
+    | '__root__'
+    | '/'
+    | '/calendar/'
+    | '/calendar/growth-journal'
+    | '/my-programs'
+    | '/myhome'
+    | '/onboarding'
+    | '/programs'
+    | '/signup'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CalendarIndexRoute: typeof CalendarIndexRoute
+  CalendarGrowthJournalRoute: typeof CalendarGrowthJournalRoute
+  MyProgramsRoute: typeof MyProgramsRoute
   MyhomeRoute: typeof MyhomeRoute
   OnboardingRoute: typeof OnboardingRoute
+  ProgramsRoute: typeof ProgramsRoute
   SignupRoute: typeof SignupRoute
 }
 
@@ -76,6 +141,27 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/calendar/': {
+      id: '/calendar/'
+      path: '/calendar/'
+      fullPath: '/calendar/'
+      preLoaderRoute: typeof CalendarIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/calendar/growth-journal': {
+      id: '/calendar/growth-journal'
+      path: '/calendar/growth-journal'
+      fullPath: '/calendar/growth-journal'
+      preLoaderRoute: typeof CalendarGrowthJournalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/my-programs': {
+      id: '/my-programs'
+      path: '/my-programs'
+      fullPath: '/my-programs'
+      preLoaderRoute: typeof MyProgramsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/myhome': {
@@ -92,6 +178,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OnboardingRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/programs': {
+      id: '/programs'
+      path: '/programs'
+      fullPath: '/programs'
+      preLoaderRoute: typeof ProgramsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/signup': {
       id: '/signup'
       path: '/signup'
@@ -104,8 +197,12 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CalendarIndexRoute: CalendarIndexRoute,
+  CalendarGrowthJournalRoute: CalendarGrowthJournalRoute,
+  MyProgramsRoute: MyProgramsRoute,
   MyhomeRoute: MyhomeRoute,
   OnboardingRoute: OnboardingRoute,
+  ProgramsRoute: ProgramsRoute,
   SignupRoute: SignupRoute,
 }
 export const routeTree = rootRouteImport
