@@ -13,16 +13,23 @@ const summaryCards = [
     description: "신규 매칭 1건 · 내 지원사업 변동 1건",
     featured: true,
   },
-  { label: "맞춤 공고", value: 8, description: "지원할 공고를 선택해보세요." },
+  {
+    label: "맞춤 공고",
+    value: 8,
+    description: "지원할 공고를 선택해보세요.",
+    featured: false,
+  },
   {
     label: "추가 검토 필요",
     value: 1,
     description: "조건 확인이 필요한 공고가 있어요.",
+    featured: false,
   },
   {
     label: "내 지원사업",
     value: 3,
     description: "시작 전 0건 · 준비 중 2건 · 제출 완료 1건",
+    featured: false,
   },
 ] as const;
 
