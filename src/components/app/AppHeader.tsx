@@ -5,15 +5,15 @@ export function AppHeader() {
       className="flex h-[74px] w-full shrink-0 items-center justify-end bg-surface py-4 pl-8 pr-16"
       data-figma-node="903:284"
     >
-      <div className="flex h-9 items-center gap-5">
+      <div className="flex h-9 items-center gap-[14px]">
         <button
           type="button"
           aria-label="알림"
-          className="group relative flex size-6 shrink-0 items-center justify-center text-icon-muted transition-colors duration-150 ease-out hover:text-ink-muted focus-visible:text-ink-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand motion-reduce:transition-none"
+          className="group relative flex size-9 shrink-0 items-center justify-center text-icon-muted transition-colors duration-150 ease-out hover:text-ink-muted focus-visible:text-ink-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand motion-reduce:transition-none"
         >
           <span
             aria-hidden="true"
-            className="pointer-events-none absolute -inset-1.5 rounded-lg bg-item-hover opacity-0 transition-opacity duration-150 ease-out group-hover:opacity-100 group-focus-visible:opacity-100 motion-reduce:transition-none"
+            className="pointer-events-none absolute inset-0 rounded-lg bg-item-hover opacity-0 transition-opacity duration-150 ease-out group-hover:opacity-100 group-focus-visible:opacity-100 motion-reduce:transition-none"
           />
           <svg
             aria-hidden="true"
