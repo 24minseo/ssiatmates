@@ -41,7 +41,13 @@ const navigation = [
   },
 ] as const;
 
-function NavigationIcon({ src }: { src: string }) {
+function NavigationIcon({
+  src,
+  selected,
+}: {
+  src: string;
+  selected: boolean;
+}) {
   const maskStyle = {
     WebkitMaskImage: `url(${src})`,
     maskImage: `url(${src})`,
@@ -56,7 +62,7 @@ function NavigationIcon({ src }: { src: string }) {
   return (
     <span
       aria-hidden
-      className="size-6 shrink-0 bg-current"
+      className={`size-6 shrink-0 ${selected ? "bg-brand" : "bg-current"}`}
       style={maskStyle}
     />
   );
@@ -190,7 +196,7 @@ export function AppSidebar({ active }: AppSidebarProps) {
                         : "font-medium hover:bg-menu-hover hover:shadow-menu-hover"
                     }`}
                   >
-                    <NavigationIcon src={item.icon} />
+                    <NavigationIcon src={item.icon} selected={selected} />
                     <span
                       aria-hidden={!expanded}
                       className={`overflow-hidden whitespace-nowrap text-base transition-[max-width,opacity,transform] duration-200 ease-out motion-reduce:transition-none ${
