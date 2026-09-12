@@ -1,5 +1,4 @@
 import { Link } from "@tanstack/react-router";
-import { Pencil } from "lucide-react";
 import type { CSSProperties } from "react";
 
 import { useAppSidebar } from "./AppSidebarState";
@@ -124,8 +123,17 @@ export function AppSidebar({ active }: AppSidebarProps) {
                 <strong className="text-base font-bold text-ink">
                   구마구마
                 </strong>
-                <span className="flex size-[18px] items-center justify-center rounded-[3px] border border-field-border text-[#84968E] transition-colors duration-150 ease-out motion-reduce:transition-none hover:bg-[#F6F8F7] hover:text-[#596963]">
-                  <Pencil aria-hidden className="size-3" strokeWidth={1.8} />
+                <span className="group/edit relative size-[18px] shrink-0">
+                  <img
+                    src="/assets/sidebar/profile-edit-default.svg"
+                    alt=""
+                    className="absolute inset-0 size-[18px] transition-opacity duration-150 ease-out group-hover/edit:opacity-0 motion-reduce:transition-none"
+                  />
+                  <img
+                    src="/assets/sidebar/profile-edit-hover.svg"
+                    alt=""
+                    className="absolute inset-0 size-[18px] opacity-0 transition-opacity duration-150 ease-out group-hover/edit:opacity-100 motion-reduce:transition-none"
+                  />
                 </span>
               </span>
               <span className="mt-0.5 truncate text-[13px] font-medium text-ink-muted">
