@@ -71,7 +71,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/calendar/': typeof CalendarIndexRoute
+  '/calendar': typeof CalendarIndexRoute
   '/calendar/growth-journal': typeof CalendarGrowthJournalRoute
   '/my-programs': typeof MyProgramsRoute
   '/myhome': typeof MyhomeRoute
@@ -104,7 +104,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/calendar/'
+    | '/calendar'
     | '/calendar/growth-journal'
     | '/my-programs'
     | '/myhome'
@@ -145,7 +145,7 @@ declare module '@tanstack/react-router' {
     }
     '/calendar/': {
       id: '/calendar/'
-      path: '/calendar/'
+      path: '/calendar'
       fullPath: '/calendar/'
       preLoaderRoute: typeof CalendarIndexRouteImport
       parentRoute: typeof rootRouteImport
