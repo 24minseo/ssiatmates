@@ -15,8 +15,8 @@ export function AppShell({ active, children }: AppShellProps) {
         <AppSidebar active={active} />
         <div className="flex w-[1432px] shrink-0 flex-col overflow-hidden rounded-l-[20px] bg-surface">
           <AppHeader />
-          <main className="min-h-0 flex-1 overflow-y-auto px-[104px] py-10">
-            <div className="mx-auto w-full min-w-[1208px] max-w-[1208px]">
+          <main className="flex min-h-0 flex-1 flex-row items-start overflow-y-auto p-0">
+            <div className="mx-auto w-full min-w-[1208px] max-w-[1208px] px-[104px] py-10">
               {children}
             </div>
           </main>
