@@ -180,12 +180,14 @@ export function AppSidebar({ active }: AppSidebarProps) {
                     aria-current={item.key === active ? "page" : undefined}
                     aria-label={expanded ? undefined : item.label}
                     title={expanded ? undefined : item.label}
-                    className={`flex h-[46px] items-center overflow-hidden rounded-lg text-[#84968E] transition-[gap,padding,background-color,color] duration-200 ease-out motion-reduce:transition-none hover:bg-item-hover hover:text-[#596963] ${
-                      expanded ? "gap-[10px] px-[13px]" : "gap-0 px-3"
+                    className={`flex h-[46px] items-center overflow-hidden rounded-lg text-icon-muted transition-[gap,padding,background-color,color,box-shadow] duration-200 ease-out motion-reduce:transition-none ${
+                      expanded
+                        ? "gap-[10px] pl-[13px] pr-[19px]"
+                        : "gap-0 px-3"
                     } ${
                       selected
                         ? "bg-item-hover-selected font-bold text-brand hover:bg-item-hover-selected hover:text-brand"
-                        : "font-medium"
+                        : "font-medium hover:bg-menu-hover hover:shadow-menu-hover"
                     }`}
                   >
                     <NavigationIcon src={item.icon} />
