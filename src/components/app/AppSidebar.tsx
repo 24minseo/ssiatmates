@@ -63,7 +63,7 @@ function NavigationIcon({ src }: { src: string }) {
 
 export function AppSidebar({ active }: AppSidebarProps) {
   const [expanded, setExpanded] = useState(false);
-  const calendarActive = active === "calendar" || active === "growth-journal";
+  const calendarActive = active === "calendar" || active === "growth-journal";\n  const growthJournalVisible = expanded && calendarActive;
 
   return (
     <aside
@@ -165,13 +165,19 @@ export function AppSidebar({ active }: AppSidebarProps) {
                     )}
                   </Link>
 
-                  {item.key === "calendar" && expanded && calendarActive && (
+                  {item.key === "calendar" && (
                     <Link
                       to="/calendar/growth-journal"
                       aria-current={
                         active === "growth-journal" ? "page" : undefined
                       }
-                      className="relative flex h-[46px] items-start pl-12 pt-[5px]"
+                      aria-hidden={!growthJournalVisible}
+                      tabIndex={growthJournalVisible ? undefined : -1}
+                      className={`relative flex items-start overflow-hidden pl-12 pt-[5px] transition-[height,opacity,transform] duration-200 ease-out motion-reduce:transition-none ${
+                        growthJournalVisible
+                          ? "h-[46px] translate-x-0 opacity-100"
+                          : "pointer-events-none h-0 -translate-x-1 opacity-0"
+                      }`}
                     >
                       <span
                         aria-hidden
