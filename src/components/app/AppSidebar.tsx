@@ -192,7 +192,7 @@ export function AppSidebar({ active }: AppSidebarProps) {
                         : "gap-0 px-3"
                     } ${
                       selected
-                        ? "bg-pill font-bold text-pill-foreground hover:bg-pill hover:text-pill-foreground"
+                        ? "bg-item-hover-selected font-bold text-brand hover:bg-item-hover-selected hover:text-brand"
                         : "font-medium hover:bg-menu-hover hover:shadow-menu-hover"
                     }`}
                   >
@@ -230,7 +230,7 @@ export function AppSidebar({ active }: AppSidebarProps) {
                       <span
                         className={`ml-[5px] flex h-7 w-[154px] items-center rounded-[7px] px-[10px] text-sm ${
                           active === "growth-journal"
-                            ? "bg-pill font-semibold text-pill-foreground"
+                            ? "bg-item-hover-selected font-semibold text-brand"
                             : "font-medium text-[#73807A] hover:bg-item-hover"
                         }`}
                       >
