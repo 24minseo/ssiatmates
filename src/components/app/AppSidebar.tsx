@@ -97,14 +97,31 @@ export function AppSidebar({ active }: AppSidebarProps) {
           aria-label={expanded ? "사이드바 접기" : "사이드바 펼치기"}
           aria-expanded={expanded}
           onClick={toggleSidebar}
-          className={`absolute top-5 flex size-8 items-center justify-center rounded-lg bg-[#F6F8F7] text-[#BDBDBD] transition-[right,background-color,color,border-color] duration-200 ease-out motion-reduce:transition-none hover:bg-[#EEF2F0] ${
-            expanded ? "right-[14px]" : "-right-[15px] border-2 border-white"
+          className={`group/toggle absolute top-5 flex size-8 items-center justify-center transition-[right] duration-200 ease-out focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand motion-reduce:transition-none ${
+            expanded ? "right-[14px]" : "-right-[15px]"
           }`}
         >
           <img
-            src="/assets/sidebar/sidebar-toggle.svg"
+            src={
+              expanded
+                ? "/assets/sidebar/sidebar-toggle-collapse.svg"
+                : "/assets/sidebar/sidebar-toggle-expand.svg"
+            }
             alt=""
-            className={`h-4 w-5 transition-transform duration-200 ease-out motion-reduce:transition-none ${expanded ? "" : "rotate-180"}`}
+            className={`absolute transition-opacity duration-150 ease-out group-hover/toggle:opacity-0 motion-reduce:transition-none ${
+              expanded ? "size-8" : "size-[30px]"
+            }`}
+          />
+          <img
+            src={
+              expanded
+                ? "/assets/sidebar/sidebar-toggle-collapse-hover.svg"
+                : "/assets/sidebar/sidebar-toggle-expand-hover.svg"
+            }
+            alt=""
+            className={`absolute opacity-0 transition-opacity duration-150 ease-out group-hover/toggle:opacity-100 motion-reduce:transition-none ${
+              expanded ? "size-8" : "size-[30px]"
+            }`}
           />
         </button>
 
