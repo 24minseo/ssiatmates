@@ -27,7 +27,7 @@
 - 내 지원사업: `/my-programs`
 - 전체 캘린더: `/calendar`
   - 성장일지: `/calendar/growth-journal`
-- 성장일지는 전체 캘린더가 아니라 내 지원사업과 연결되는 정보이지만, 현재 사이드바에서는 전체 캘린더 아래의 하위 메뉴로 표현한다. IA가 변경되면 Figma와 코드를 함께 갱신한다.
+- 성장일지는 현재 사이드바에서 전체 캘린더 아래의 하위 메뉴로 표현한다. IA가 변경되면 Figma와 코드를 함께 갱신한다.
 
 ## Korean terminology
 
@@ -44,7 +44,6 @@
 - 새 색상은 컴포넌트에 hex로 직접 추가하지 말고 `src/styles.css`의 의미 기반 토큰을 사용하거나 토큰을 먼저 추가한다.
 - 주요 토큰: `brand`, `ink`, `ink-muted`, `placeholder`, `surface`, `field-border`, `item-hover`, `item-hover-selected`.
 - 사용자 입력값은 진한 본문색을 쓰고, placeholder와 보조 문구에는 보조색을 쓴다.
-- 필수 표시 `*`는 현재 primary/brand 색을 사용한다.
 - 사이드바는 데스크톱 전용이며 접힘 80px, 펼침 240px이다.
 - 사이드바 메뉴 아이콘 슬롯은 24×24px이다. 수정 아이콘은 바깥 프레임 18×18px, 내부 glyph 12×12px이다.
 - 일반 hover 색 전환은 150ms ease-out, 사이드바 너비·위치 전환은 200ms ease-out을 기본으로 하고 `prefers-reduced-motion`을 지원한다.
