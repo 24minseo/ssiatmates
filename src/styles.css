@@ -87,6 +87,7 @@
   --color-submenu-text: var(--submenu-text);
   --color-placeholder: var(--placeholder);
   --color-guide-text: var(--guide-text);
+  --color-control-inactive: var(--control-inactive);
   --color-pill: var(--pill);
   --color-pill-foreground: var(--pill-foreground);
   --color-page: var(--page);
@@ -146,6 +147,7 @@
   --submenu-text: #73807a;
   --placeholder: #596963;
   --guide-text: #b4c1bd;
+  --control-inactive: #9a9d9b;
   --pill: #d7f5ea;
   --pill-foreground: #1f8064;
   --page: rgba(158, 169, 174, 0.5);
