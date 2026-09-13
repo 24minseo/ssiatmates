@@ -76,7 +76,7 @@ function PasswordRequirement({
         met ? "text-brand" : "text-icon-muted"
       }`}
     >
-      <Check aria-hidden className="size-4 shrink-0" strokeWidth={1.2} />
+      <Check aria-hidden className="size-[18px] shrink-0" strokeWidth={2} />
       <span>{children}</span>
     </li>
   );
@@ -211,7 +211,7 @@ function SignupPage() {
 
         <p className="mt-3 text-center text-[13px] font-normal text-ink-muted">
           이미 계정이 있으신가요?{" "}
-          <Link to="/" viewTransition className="font-semibold text-brand underline decoration-1 underline-offset-[3px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
+          <Link to="/" viewTransition className="font-semibold text-brand underline decoration-1 underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
             로그인
           </Link>
         </p>
