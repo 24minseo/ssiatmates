@@ -53,7 +53,7 @@ function OnboardingPage() {
           </h1>
 
           <p
-            className="mt-1 text-sm text-[#9A9D9B]"
+            className="mt-1 text-sm text-ink-muted"
           >
             {step === 1
               ? "맞춤 지원사업 추천을 위해 기본 정보를 입력해주세요."
