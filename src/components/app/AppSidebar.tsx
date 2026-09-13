@@ -160,7 +160,7 @@ function MenuItem({
           >
             <span
               aria-hidden
-              className="mt-[2px] h-6 w-px shrink-0 bg-field-border"
+              className="mt-[3px] h-[22px] w-[2px] shrink-0 rounded-full bg-field-border"
             />
             <span
               className={`ml-[5px] flex h-7 w-[154px] items-center rounded-[7px] px-[10px] text-sm ${
