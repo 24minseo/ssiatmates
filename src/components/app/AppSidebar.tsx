@@ -166,7 +166,7 @@ function MenuItem({
               className={`ml-[5px] flex h-7 w-[154px] items-center rounded-[7px] px-[10px] text-sm ${
                 childSelected
                   ? "bg-item-hover-selected font-semibold text-brand"
-                  : "font-normal text-submenu-text group-hover/submenu:bg-item-hover group-hover/submenu:shadow-menu-hover"
+                  : "font-normal text-submenu-text group-hover/submenu:bg-menu-hover group-hover/submenu:shadow-menu-hover"
               }`}
             >
               {child.label}
