@@ -1,7 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-import { AppShell } from "../components/app/AppShell";
-
 export const Route = createFileRoute("/myhome")({
   component: MyHomePage,
 });
@@ -35,7 +33,7 @@ const summaryCards = [
 
 function MyHomePage() {
   return (
-    <AppShell active="home">
+    <>
       <header>
         <h1 className="text-[28px] font-bold leading-tight text-ink">MY홈</h1>
         <p className="mt-px text-base font-medium text-ink-muted">
@@ -78,6 +76,6 @@ function MyHomePage() {
         <div className="rounded-[12px] bg-[#F6F8F7]" />
         <div className="rounded-[12px] bg-[#F6F8F7]" />
       </section>
-    </AppShell>
+    </>
   );
 }

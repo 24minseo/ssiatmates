@@ -4,12 +4,15 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
 
 import { AppSidebarProvider } from "../components/app/AppSidebarState";
+import { AppShell } from "../components/app/AppShell";
+import type { AppNavigationKey } from "../components/app/AppSidebar";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 
@@ -116,14 +119,31 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
+function getAppNavigationKey(pathname: string): AppNavigationKey | null {
+  if (pathname === "/myhome") return "home";
+  if (pathname === "/programs") return "programs";
+  if (pathname === "/my-programs") return "my-programs";
+  if (pathname === "/calendar/growth-journal") return "growth-journal";
+  if (pathname === "/calendar" || pathname === "/calendar/") return "calendar";
+  return null;
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  });
+  const activeNavigation = getAppNavigationKey(pathname);
+  const routeContent = <Outlet />;
 
   return (
     <QueryClientProvider client={queryClient}>
       <AppSidebarProvider>
-        {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-        <Outlet />
+        {activeNavigation ? (
+          <AppShell active={activeNavigation}>{routeContent}</AppShell>
+        ) : (
+          routeContent
+        )}
       </AppSidebarProvider>
     </QueryClientProvider>
   );
