@@ -250,15 +250,19 @@ export function AppSidebar({ active }: AppSidebarProps) {
           }`}
         >
           <strong
-            className={`absolute top-[13px] flex whitespace-nowrap text-left text-base font-semibold text-ink transition-[left,transform] duration-200 ease-out motion-reduce:transition-none ${
-              expanded
-                ? "left-[14px] translate-x-0"
-                : "left-1/2 -translate-x-1/2"
+            className={`absolute top-[13px] whitespace-nowrap text-left text-base font-semibold text-ink transition-[left] duration-200 ease-out motion-reduce:transition-none ${
+              expanded ? "left-[14px]" : "left-1/2"
             }`}
           >
-            <span className="shrink-0">{projectInitial}</span>
             <span
-              className={`overflow-hidden transition-[max-width,opacity] duration-200 ease-out motion-reduce:transition-none ${
+              className={`inline-block transition-transform duration-200 ease-out motion-reduce:transition-none ${
+                expanded ? "translate-x-0" : "-translate-x-1/2"
+              }`}
+            >
+              {projectInitial}
+            </span>
+            <span
+              className={`absolute left-full top-0 overflow-hidden transition-[max-width,opacity] duration-200 ease-out motion-reduce:transition-none ${
                 expanded ? "max-w-[136px] opacity-100" : "max-w-0 opacity-0"
               }`}
             >
