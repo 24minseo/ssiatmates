@@ -193,7 +193,7 @@ export function AppSidebar({ active }: AppSidebarProps) {
             src="/assets/sidebar/ssiat-logo.svg"
             alt="SSIAT"
             aria-hidden={!expanded}
-            className={`absolute left-[15px] top-1.5 h-5 w-[104px] transition-opacity duration-150 ease-out motion-reduce:transition-none ${
+            className={`absolute left-[15px] top-1.5 h-5 w-[104px] ${
               expanded ? "opacity-100" : "opacity-0"
             }`}
           />
@@ -201,7 +201,7 @@ export function AppSidebar({ active }: AppSidebarProps) {
             src="/assets/sidebar/ssiat-symbol.svg"
             alt="SSIAT"
             aria-hidden={expanded}
-            className={`absolute left-2 top-[3px] h-[26px] w-8 object-contain transition-opacity duration-150 ease-out motion-reduce:transition-none ${
+            className={`absolute left-2 top-[3px] h-[26px] w-8 object-contain ${
               expanded ? "opacity-0" : "opacity-100"
             }`}
           />
