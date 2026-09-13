@@ -39,6 +39,7 @@ interface AuthFieldProps {
   autoComplete?: string | undefined;
   error?: string | undefined;
   onBlur?: (() => void) | undefined;
+  required?: boolean;
 }
 
 export function AuthField({
@@ -51,16 +52,25 @@ export function AuthField({
   autoComplete,
   error,
   onBlur,
+  required = false,
 }: AuthFieldProps) {
   return (
     <label htmlFor={id} className="flex flex-col gap-2">
-      <span className="text-sm font-semibold leading-5 text-ink">{label}</span>
+      <span className="text-sm font-semibold leading-5 text-ink">
+        {label}
+        {required ? (
+          <span aria-hidden className="text-brand">
+            {" "}*
+          </span>
+        ) : null}
+      </span>
       <Input
         id={id}
         type={type}
         value={value}
         placeholder={placeholder}
         autoComplete={autoComplete}
+        required={required}
         onChange={(event) => onChange(event.target.value)}
         onBlur={onBlur}
         aria-invalid={!!error}
