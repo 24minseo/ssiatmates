@@ -285,11 +285,11 @@ function CalendarPage() {
                     }
                   }}
                   className={cn(
-                    "group relative h-full min-w-0 cursor-pointer overflow-hidden p-2 text-ink hover:bg-item-hover",
+                    "group relative h-full min-w-0 cursor-pointer overflow-hidden bg-surface p-2 text-ink hover:bg-item-hover",
                     index % 7 !== 6 && "border-r border-field-border",
                     index < days.length - 7 && "border-b border-field-border",
                     isSelected &&
-                      "bg-item-hover-selected outline outline-1 -outline-offset-1 outline-brand hover:bg-item-hover-selected",
+                      "border border-field-border hover:bg-surface",
                   )}
                 >
                   <div className="flex h-6 items-start justify-between gap-2">
@@ -298,7 +298,7 @@ function CalendarPage() {
                         "flex size-6 shrink-0 items-center justify-center rounded-[6px] text-sm font-medium leading-4",
                         !day.isCurrentMonth && "text-content-disabled",
                         day.isCurrentMonth && !isToday && !isSelected && "text-ink",
-                        (isToday || isSelected) && "bg-brand text-brand-foreground",
+                        isToday && "bg-brand text-brand-foreground",
                       )}
                     >
                       {day.date.getDate()}
