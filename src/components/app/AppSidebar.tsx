@@ -180,7 +180,7 @@ function MenuItem({
 
 export function AppSidebar({ active }: AppSidebarProps) {
   const { expanded, toggleSidebar } = useAppSidebar();
-  const projectName = "지역농산물간편식연구소";
+  const projectName = "지역농산물간편식연구개발협동조합";
   const [projectInitial = "", ...projectNameRest] = Array.from(projectName);
 
   return (
