@@ -247,17 +247,24 @@ export function AppSidebar({ active }: AppSidebarProps) {
             expanded ? "h-[65px] w-[208px]" : "size-12"
           }`}
         >
+          <strong
+            className={`absolute left-[14px] top-[13px] overflow-hidden whitespace-nowrap text-base font-semibold text-ink transition-[width,transform] duration-200 ease-out motion-reduce:transition-none ${
+              expanded
+                ? "w-[150px] translate-x-0"
+                : "w-[14px] translate-x-[3px]"
+            }`}
+          >
+            구마구마
+          </strong>
+
           <span
             aria-hidden={!expanded}
             className={`absolute inset-0 flex flex-col items-start gap-[2px] px-[14px] py-[13px] text-left transition-opacity duration-200 ease-out motion-reduce:transition-none ${
               expanded ? "opacity-100" : "pointer-events-none opacity-0"
             }`}
           >
-            <span className="flex w-full items-center justify-between">
-              <strong className="text-base font-semibold text-ink">
-                구마구마
-              </strong>
-              <span className="group/edit relative size-[18px] shrink-0">
+            <span className="relative h-6 w-full shrink-0">
+              <span className="group/edit absolute right-0 top-[3px] size-[18px]">
                 <img
                   src="/assets/sidebar/profile-edit-default.svg"
                   alt=""
@@ -273,17 +280,6 @@ export function AppSidebar({ active }: AppSidebarProps) {
             <span className="mt-0.5 truncate text-[13px] font-normal text-ink-muted">
               못난이 농산물 간편식 서비스
             </span>
-          </span>
-
-          <span
-            aria-hidden={expanded}
-            className={`absolute left-[14px] top-[13px] text-base font-semibold text-black transition-[opacity,transform] duration-200 ease-out motion-reduce:transition-none ${
-              expanded
-                ? "pointer-events-none translate-x-0 translate-y-0 opacity-0"
-                : "translate-x-[3px] translate-y-0 opacity-100"
-            }`}
-          >
-            구
           </span>
         </button>
 
