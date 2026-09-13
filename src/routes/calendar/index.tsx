@@ -277,11 +277,11 @@ function CalendarPage() {
                   tabIndex={0}
                   aria-selected={isSelected}
                   aria-label={`${formatKoreanDate(day.key)}${isToday ? ", 오늘" : ""}`}
-                  onClick={() => setSelectedDate(day.key)}
+                  onClick={() => openAddDialog(day.key)}
                   onKeyDown={(event) => {
                     if (event.key === "Enter" || event.key === " ") {
                       event.preventDefault();
-                      setSelectedDate(day.key);
+                      openAddDialog(day.key);
                     }
                   }}
                   className={cn(
