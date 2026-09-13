@@ -277,7 +277,7 @@ export function AppSidebar({ active }: AppSidebarProps) {
 
           <span
             aria-hidden={expanded}
-            className={`absolute inset-0 flex items-center justify-center text-base font-semibold text-black transition-opacity duration-150 ease-out motion-reduce:transition-none ${
+            className={`absolute left-[14px] top-[13px] text-base font-semibold text-black transition-opacity duration-150 ease-out motion-reduce:transition-none ${
               expanded ? "pointer-events-none opacity-0" : "opacity-100 delay-75"
             }`}
           >
