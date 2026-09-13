@@ -249,8 +249,8 @@ export function AppSidebar({ active }: AppSidebarProps) {
         >
           <span
             aria-hidden={!expanded}
-            className={`absolute inset-0 flex flex-col items-start gap-[2px] px-[14px] py-[13px] text-left transition-opacity duration-150 ease-out motion-reduce:transition-none ${
-              expanded ? "opacity-100 delay-75" : "pointer-events-none opacity-0"
+            className={`absolute inset-0 flex flex-col items-start gap-[2px] px-[14px] py-[13px] text-left transition-opacity duration-200 ease-out motion-reduce:transition-none ${
+              expanded ? "opacity-100" : "pointer-events-none opacity-0"
             }`}
           >
             <span className="flex w-full items-center justify-between">
@@ -277,8 +277,10 @@ export function AppSidebar({ active }: AppSidebarProps) {
 
           <span
             aria-hidden={expanded}
-            className={`absolute left-[14px] top-[13px] text-base font-semibold text-black transition-opacity duration-150 ease-out motion-reduce:transition-none ${
-              expanded ? "pointer-events-none opacity-0" : "opacity-100 delay-75"
+            className={`absolute left-[14px] top-[13px] text-base font-semibold text-black transition-[opacity,transform] duration-200 ease-out motion-reduce:transition-none ${
+              expanded
+                ? "pointer-events-none translate-x-0 translate-y-0 opacity-0"
+                : "translate-x-[2px] -translate-y-px opacity-100"
             }`}
           >
             구
