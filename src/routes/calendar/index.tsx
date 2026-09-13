@@ -300,7 +300,7 @@ function CalendarPage() {
                     >
                       {day.date.getDate()}
                     </span>
-                    {day.isCurrentMonth && !isSelected ? (
+                    {day.isCurrentMonth ? (
                       <Link
                         to="/calendar/growth-journal"
                         onClick={(event) => event.stopPropagation()}
