@@ -117,8 +117,8 @@ function MenuItem({
         aria-current={isCurrent ? "page" : undefined}
         aria-label={expanded ? undefined : item.label}
         title={expanded ? undefined : item.label}
-        className={`flex h-[46px] items-center overflow-hidden rounded-lg transition-[gap,padding,background-color,color,box-shadow] duration-200 ease-out motion-reduce:transition-none ${
-          expanded ? "gap-[10px] pl-[13px] pr-[19px]" : "gap-0 px-3"
+        className={`flex h-[46px] items-center gap-[10px] overflow-hidden rounded-lg pl-3 transition-[padding,background-color,color,box-shadow] duration-200 ease-out motion-reduce:transition-none ${
+          expanded ? "pr-[19px]" : "pr-3"
         } ${
           isCurrent
             ? "bg-item-hover-selected font-semibold text-brand"
@@ -130,12 +130,10 @@ function MenuItem({
         <NavigationIcon src={item.icon} selected={activeBranch} />
         <span
           aria-hidden={!expanded}
-          className={`overflow-hidden whitespace-nowrap text-base transition-[max-width,opacity,transform,color] duration-200 ease-out motion-reduce:transition-none ${
+          className={`overflow-hidden whitespace-nowrap text-base transition-[max-width,opacity,color] duration-100 ease-out motion-reduce:transition-none ${
             activeBranch ? "text-brand" : "text-icon-muted"
           } ${
-            expanded
-              ? "max-w-[160px] translate-x-0 opacity-100"
-              : "max-w-0 -translate-x-1 opacity-0"
+            expanded ? "max-w-[160px] opacity-100" : "max-w-0 opacity-0"
           }`}
         >
           {item.label}
@@ -163,7 +161,7 @@ function MenuItem({
               className="mt-[3px] h-[22px] w-[2px] shrink-0 rounded-full bg-field-border"
             />
             <span
-              className={`ml-[5px] flex h-7 w-[154px] items-center rounded-[7px] px-[10px] text-sm ${
+              className={`ml-[5px] flex h-7 w-[154px] shrink-0 items-center overflow-hidden whitespace-nowrap rounded-[7px] px-[10px] text-sm ${
                 childSelected
                   ? "bg-item-hover-selected font-semibold text-brand"
                   : "font-normal text-submenu-text group-hover/submenu:bg-menu-hover group-hover/submenu:shadow-menu-hover"
