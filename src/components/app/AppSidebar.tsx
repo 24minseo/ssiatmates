@@ -280,7 +280,7 @@ export function AppSidebar({ active }: AppSidebarProps) {
             className={`absolute left-[14px] top-[13px] text-base font-semibold text-black transition-[opacity,transform] duration-200 ease-out motion-reduce:transition-none ${
               expanded
                 ? "pointer-events-none translate-x-0 translate-y-0 opacity-0"
-                : "translate-x-[3px] -translate-y-px opacity-100"
+                : "translate-x-[3px] translate-y-0 opacity-100"
             }`}
           >
             구
