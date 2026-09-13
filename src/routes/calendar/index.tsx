@@ -366,7 +366,7 @@ function CalendarPage() {
 
       <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
         <DialogContent
-          overlayClassName="bg-item-hover"
+          overlayClassName="bg-[#9EA9AE]/50"
           className="rounded-[12px] border-field-border bg-surface text-ink sm:max-w-[460px]"
         >
           <DialogHeader>
