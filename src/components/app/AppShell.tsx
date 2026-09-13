@@ -17,7 +17,7 @@ export function AppShell({ active, children }: AppShellProps) {
           <AppHeader />
           <main className="min-h-0 flex-1 overflow-auto">
             <div className="min-h-full min-w-[1264px]">
-              <div className="mx-auto w-[1208px] py-10">{children}</div>
+              <div className="mx-auto w-[1208px] pb-10 pt-[3px]">{children}</div>
             </div>
           </main>
         </div>
