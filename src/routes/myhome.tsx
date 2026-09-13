@@ -38,7 +38,7 @@ function MyHomePage() {
     <AppShell active="home">
       <header>
         <h1 className="text-[28px] font-bold leading-tight text-ink">MY홈</h1>
-        <p className="mt-2 text-base font-medium text-ink-muted">
+        <p className="mt-px text-base font-medium text-ink-muted">
           한눈에 보는 지원사업 브리핑
         </p>
       </header>
