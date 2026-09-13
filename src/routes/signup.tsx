@@ -76,7 +76,7 @@ function PasswordRequirement({
         met ? "text-brand" : "text-icon-muted"
       }`}
     >
-      <Check aria-hidden className="size-4 shrink-0" strokeWidth={2.5} />
+      <Check aria-hidden className="size-4 shrink-0" strokeWidth={1.2} />
       <span>{children}</span>
     </li>
   );
@@ -143,21 +143,23 @@ function SignupPage() {
             onBlur={() => setEmailTouched(true)}
             error={emailError}
             autoComplete="email"
+          required
           />
           <div>
             <AuthField
               id="signup-password"
               type="password"
               label="비밀번호"
-              placeholder="비밀번호를 입력하세요"
+              placeholder="영문·숫자 포함 8~16자"
               value={password}
               onChange={setPassword}
               autoComplete="new-password"
+            required
             />
             <ul
               id="signup-password-requirements"
               aria-label="비밀번호 조건"
-              className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1"
+              className="mt-[3px] flex flex-wrap items-center gap-x-4 gap-y-1"
             >
               <PasswordRequirement met={hasLetter}>영문 알파벳</PasswordRequirement>
               <PasswordRequirement met={hasNumber}>숫자</PasswordRequirement>
@@ -171,6 +173,7 @@ function SignupPage() {
             value={name}
             onChange={setName}
             autoComplete="name"
+          required
           />
         </div>
 
