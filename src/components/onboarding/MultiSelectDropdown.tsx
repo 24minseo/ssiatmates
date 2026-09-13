@@ -76,7 +76,7 @@ export function MultiSelectDropdown({
           )}
         >
           {value.length === 0 ? (
-            <span className="text-placeholder">{placeholder}</span>
+            <span className="text-guide-text">{placeholder}</span>
           ) : (
             <span className="flex flex-wrap gap-1.5">
               {value.map((item) => (
