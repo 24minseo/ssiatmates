@@ -14,7 +14,28 @@ type AppSidebarProps = {
   active: AppNavigationKey;
 };
 
-const navigation = [
+type AppRoute =
+  | "/myhome"
+  | "/programs"
+  | "/my-programs"
+  | "/calendar"
+  | "/calendar/growth-journal";
+
+type NavigationChild = {
+  key: AppNavigationKey;
+  label: string;
+  to: AppRoute;
+};
+
+type NavigationItem = {
+  key: Exclude<AppNavigationKey, "growth-journal">;
+  label: string;
+  to: AppRoute;
+  icon: string;
+  children?: NavigationChild[];
+};
+
+const navigation: NavigationItem[] = [
   {
     key: "home",
     label: "MY홈",
@@ -38,8 +59,15 @@ const navigation = [
     label: "전체 캘린더",
     to: "/calendar",
     icon: "/assets/sidebar/calendar.svg",
+    children: [
+      {
+        key: "growth-journal",
+        label: "성장일지",
+        to: "/calendar/growth-journal",
+      },
+    ],
   },
-] as const;
+];
 
 function NavigationIcon({
   src,
@@ -68,10 +96,90 @@ function NavigationIcon({
   );
 }
 
+function MenuItem({
+  item,
+  active,
+  expanded,
+}: {
+  item: NavigationItem;
+  active: AppNavigationKey;
+  expanded: boolean;
+}) {
+  const isCurrent = item.key === active;
+  const hasActiveChild = item.children?.some((child) => child.key === active) ?? false;
+  const activeBranch = isCurrent || hasActiveChild;
+  const childrenVisible = expanded && activeBranch;
+
+  return (
+    <li>
+      <Link
+        to={item.to}
+        aria-current={isCurrent ? "page" : undefined}
+        aria-label={expanded ? undefined : item.label}
+        title={expanded ? undefined : item.label}
+        className={`flex h-[46px] items-center overflow-hidden rounded-lg transition-[gap,padding,background-color,color,box-shadow] duration-200 ease-out motion-reduce:transition-none ${
+          expanded ? "gap-[10px] pl-[13px] pr-[19px]" : "gap-0 px-3"
+        } ${
+          isCurrent
+            ? "bg-item-hover-selected font-semibold text-brand"
+            : hasActiveChild
+              ? "font-semibold text-brand"
+              : "font-normal text-icon-muted hover:bg-menu-hover hover:shadow-menu-hover"
+        }`}
+      >
+        <NavigationIcon src={item.icon} selected={activeBranch} />
+        <span
+          aria-hidden={!expanded}
+          className={`overflow-hidden whitespace-nowrap text-base transition-[max-width,opacity,transform,color] duration-200 ease-out motion-reduce:transition-none ${
+            activeBranch ? "text-brand" : "text-icon-muted"
+          } ${
+            expanded
+              ? "max-w-[160px] translate-x-0 opacity-100"
+              : "max-w-0 -translate-x-1 opacity-0"
+          }`}
+        >
+          {item.label}
+        </span>
+      </Link>
+
+      {item.children?.map((child) => {
+        const childSelected = child.key === active;
+
+        return (
+          <Link
+            key={child.key}
+            to={child.to}
+            aria-current={childSelected ? "page" : undefined}
+            aria-hidden={!childrenVisible}
+            tabIndex={childrenVisible ? undefined : -1}
+            className={`relative flex items-start overflow-hidden pl-12 pt-[5px] transition-[height,opacity,transform] duration-200 ease-out motion-reduce:transition-none ${
+              childrenVisible
+                ? "h-[46px] translate-x-0 opacity-100"
+                : "pointer-events-none h-0 -translate-x-1 opacity-0"
+            }`}
+          >
+            <span
+              aria-hidden
+              className="mt-[2px] h-6 w-px shrink-0 bg-field-border"
+            />
+            <span
+              className={`ml-[5px] flex h-7 w-[154px] items-center rounded-[7px] px-[10px] text-sm ${
+                childSelected
+                  ? "bg-item-hover-selected font-semibold text-brand"
+                  : "font-normal text-submenu-text hover:bg-item-hover"
+              }`}
+            >
+              {child.label}
+            </span>
+          </Link>
+        );
+      })}
+    </li>
+  );
+}
+
 export function AppSidebar({ active }: AppSidebarProps) {
   const { expanded, toggleSidebar } = useAppSidebar();
-  const calendarActive = active === "calendar" || active === "growth-journal";
-  const growthJournalVisible = expanded && calendarActive;
 
   return (
     <aside
@@ -79,23 +187,24 @@ export function AppSidebar({ active }: AppSidebarProps) {
         expanded ? "w-[240px]" : "w-20"
       }`}
     >
-      <div className="relative flex h-full flex-col px-4 pt-5">
-        <div
-          className={`flex h-8 items-center ${expanded ? "px-[15px]" : "justify-center"}`}
-        >
-          {expanded ? (
-            <img
-              src="/assets/sidebar/ssiat-logo.svg"
-              alt="SSIAT"
-              className="h-5 w-[104px]"
-            />
-          ) : (
-            <img
-              src="/assets/sidebar/ssiat-symbol.svg"
-              alt="SSIAT"
-              className="h-[26px] w-8 object-contain"
-            />
-          )}
+      <div className="relative h-full">
+        <div className="absolute left-4 top-5 h-8 w-[135px] overflow-hidden">
+          <img
+            src="/assets/sidebar/ssiat-logo.svg"
+            alt="SSIAT"
+            aria-hidden={!expanded}
+            className={`absolute left-[15px] top-1.5 h-5 w-[104px] transition-opacity duration-150 ease-out motion-reduce:transition-none ${
+              expanded ? "opacity-100" : "opacity-0"
+            }`}
+          />
+          <img
+            src="/assets/sidebar/ssiat-symbol.svg"
+            alt="SSIAT"
+            aria-hidden={expanded}
+            className={`absolute left-2 top-[3px] h-[26px] w-8 object-contain transition-opacity duration-150 ease-out motion-reduce:transition-none ${
+              expanded ? "opacity-0" : "opacity-100"
+            }`}
+          />
         </div>
 
         <button
@@ -134,113 +243,63 @@ export function AppSidebar({ active }: AppSidebarProps) {
         <button
           type="button"
           aria-label="현재 프로젝트 정보 수정"
-          className={`bg-[#FEFEFE] shadow-[1px_1px_0_1px_rgba(185,201,194,0.25)] ${
-            expanded
-              ? "absolute left-4 top-[79px] flex h-[65px] w-[208px] flex-col items-start gap-[2px] rounded-[10px] px-[14px] py-[13px] text-left"
-              : "mt-[27px] flex size-12 items-center justify-center self-center rounded-[10px]"
+          className={`absolute left-4 top-[79px] overflow-hidden rounded-[10px] bg-[#FEFEFE] shadow-[1px_1px_0_1px_rgba(185,201,194,0.25)] transition-[width,height] duration-200 ease-out motion-reduce:transition-none ${
+            expanded ? "h-[65px] w-[208px]" : "size-12"
           }`}
         >
-          {expanded ? (
-            <>
-              <span className="flex w-full items-center justify-between">
-                <strong className="text-base font-bold text-ink">
-                  구마구마
-                </strong>
-                <span className="group/edit relative size-[18px] shrink-0">
-                  <img
-                    src="/assets/sidebar/profile-edit-default.svg"
-                    alt=""
-                    className="absolute inset-0 size-[18px] transition-opacity duration-150 ease-out group-hover/edit:opacity-0 motion-reduce:transition-none"
-                  />
-                  <img
-                    src="/assets/sidebar/profile-edit-hover.svg"
-                    alt=""
-                    className="absolute inset-0 size-[18px] opacity-0 transition-opacity duration-150 ease-out group-hover/edit:opacity-100 motion-reduce:transition-none"
-                  />
-                </span>
+          <span
+            aria-hidden={!expanded}
+            className={`absolute inset-0 flex flex-col items-start gap-[2px] px-[14px] py-[13px] text-left transition-opacity duration-150 ease-out motion-reduce:transition-none ${
+              expanded ? "opacity-100 delay-75" : "pointer-events-none opacity-0"
+            }`}
+          >
+            <span className="flex w-full items-center justify-between">
+              <strong className="text-base font-semibold text-ink">
+                구마구마
+              </strong>
+              <span className="group/edit relative size-[18px] shrink-0">
+                <img
+                  src="/assets/sidebar/profile-edit-default.svg"
+                  alt=""
+                  className="absolute inset-0 size-[18px] transition-opacity duration-150 ease-out group-hover/edit:opacity-0 motion-reduce:transition-none"
+                />
+                <img
+                  src="/assets/sidebar/profile-edit-hover.svg"
+                  alt=""
+                  className="absolute inset-0 size-[18px] opacity-0 transition-opacity duration-150 ease-out group-hover/edit:opacity-100 motion-reduce:transition-none"
+                />
               </span>
-              <span className="mt-0.5 truncate text-[13px] font-medium text-ink-muted">
-                못난이 농산물 간편식 서비스
-              </span>
-            </>
-          ) : (
-            <span className="text-base font-bold text-black">구</span>
-          )}
+            </span>
+            <span className="mt-0.5 truncate text-[13px] font-normal text-ink-muted">
+              못난이 농산물 간편식 서비스
+            </span>
+          </span>
+
+          <span
+            aria-hidden={expanded}
+            className={`absolute inset-0 flex items-center justify-center text-base font-semibold text-black transition-opacity duration-150 ease-out motion-reduce:transition-none ${
+              expanded ? "pointer-events-none opacity-0" : "opacity-100 delay-75"
+            }`}
+          >
+            구
+          </span>
         </button>
 
         <nav
           aria-label="주요 메뉴"
-          className={`mt-8 transition-[width] duration-200 ease-out motion-reduce:transition-none ${
+          className={`absolute left-4 top-[178px] transition-[width] duration-200 ease-out motion-reduce:transition-none ${
             expanded ? "w-[208px]" : "w-12"
           }`}
         >
           <ul>
-            {navigation.map((item) => {
-              const selected =
-                item.key === "calendar" ? calendarActive : item.key === active;
-
-              return (
-                <li key={item.key}>
-                  <Link
-                    to={item.to}
-                    aria-current={item.key === active ? "page" : undefined}
-                    aria-label={expanded ? undefined : item.label}
-                    title={expanded ? undefined : item.label}
-                    className={`flex h-[46px] items-center overflow-hidden rounded-lg text-icon-muted transition-[gap,padding,background-color,color,box-shadow] duration-200 ease-out motion-reduce:transition-none ${
-                      expanded
-                        ? "gap-[10px] pl-[13px] pr-[19px]"
-                        : "gap-0 px-3"
-                    } ${
-                      selected
-                        ? "bg-item-hover-selected font-bold text-brand hover:bg-item-hover-selected hover:text-brand"
-                        : "font-medium hover:bg-menu-hover hover:shadow-menu-hover"
-                    }`}
-                  >
-                    <NavigationIcon src={item.icon} selected={selected} />
-                    <span
-                      aria-hidden={!expanded}
-                      className={`overflow-hidden whitespace-nowrap text-base transition-[max-width,opacity,transform] duration-200 ease-out motion-reduce:transition-none ${
-                        expanded
-                          ? "max-w-[160px] translate-x-0 opacity-100"
-                          : "max-w-0 -translate-x-1 opacity-0"
-                      }`}
-                    >
-                      {item.label}
-                    </span>
-                  </Link>
-
-                  {item.key === "calendar" && (
-                    <Link
-                      to="/calendar/growth-journal"
-                      aria-current={
-                        active === "growth-journal" ? "page" : undefined
-                      }
-                      aria-hidden={!growthJournalVisible}
-                      tabIndex={growthJournalVisible ? undefined : -1}
-                      className={`relative flex items-start overflow-hidden pl-12 pt-[5px] transition-[height,opacity,transform] duration-200 ease-out motion-reduce:transition-none ${
-                        growthJournalVisible
-                          ? "h-[46px] translate-x-0 opacity-100"
-                          : "pointer-events-none h-0 -translate-x-1 opacity-0"
-                      }`}
-                    >
-                      <span
-                        aria-hidden
-                        className="mt-[2px] h-6 w-px shrink-0 bg-field-border"
-                      />
-                      <span
-                        className={`ml-[5px] flex h-7 w-[154px] items-center rounded-[7px] px-[10px] text-sm ${
-                          active === "growth-journal"
-                            ? "bg-item-hover-selected font-semibold text-brand"
-                            : "font-medium text-[#73807A] hover:bg-item-hover"
-                        }`}
-                      >
-                        성장일지
-                      </span>
-                    </Link>
-                  )}
-                </li>
-              );
-            })}
+            {navigation.map((item) => (
+              <MenuItem
+                key={item.key}
+                item={item}
+                active={active}
+                expanded={expanded}
+              />
+            ))}
           </ul>
         </nav>
       </div>
