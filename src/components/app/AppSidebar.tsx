@@ -1,5 +1,11 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { useRef, useState, type CSSProperties, type MouseEvent } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type MouseEvent,
+} from "react";
 
 import { useAppSidebar } from "./AppSidebarState";
 
@@ -112,7 +118,18 @@ function MenuItem({
   const isCurrent = item.key === active;
   const hasActiveChild = item.children?.some((child) => child.key === active) ?? false;
   const activeBranch = isCurrent || hasActiveChild;
-  const childrenVisible = expanded && activeBranch && !submenuClosing;
+  const [childrenCanEnter, setChildrenCanEnter] = useState(false);
+
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => {
+      setChildrenCanEnter(true);
+    });
+
+    return () => cancelAnimationFrame(frame);
+  }, []);
+
+  const childrenVisible =
+    expanded && activeBranch && !submenuClosing && childrenCanEnter;
 
   return (
     <li>
@@ -155,7 +172,7 @@ function MenuItem({
             aria-current={childSelected ? "page" : undefined}
             aria-hidden={!childrenVisible}
             tabIndex={childrenVisible ? undefined : -1}
-            className={`group/submenu relative flex items-start overflow-hidden pl-12 pt-[2px] transition-[height,opacity] duration-200 ease-out motion-reduce:transition-none ${
+            className={`group/submenu relative flex items-start overflow-hidden pl-12 pt-[2px] transition-[height,opacity] duration-100 ease-out motion-reduce:transition-none ${
               childrenVisible
                 ? "h-[46px] opacity-100"
                 : "pointer-events-none h-0 opacity-0"
@@ -220,7 +237,7 @@ export function AppSidebar({ active }: AppSidebarProps) {
     setSubmenuClosing(true);
     submenuExitTimer.current = setTimeout(() => {
       void navigate({ to });
-    }, 200);
+    }, 100);
   };
 
   return (
