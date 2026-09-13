@@ -219,25 +219,35 @@ export function AppSidebar({ active }: AppSidebarProps) {
           }`}
         >
           <img
-            src={
-              expanded
-                ? "/assets/sidebar/sidebar-toggle-collapse.svg"
-                : "/assets/sidebar/sidebar-toggle-expand.svg"
-            }
+            src="/assets/sidebar/sidebar-toggle-collapse.svg"
             alt=""
-            className={`absolute transition-opacity duration-150 ease-out group-hover/toggle:opacity-0 motion-reduce:transition-none ${
-              expanded ? "size-8" : "size-[30px]"
+            className={`absolute size-8 transition-opacity duration-75 ease-out motion-reduce:transition-none ${
+              expanded
+                ? "opacity-100 group-hover/toggle:opacity-0"
+                : "opacity-0"
             }`}
           />
           <img
-            src={
-              expanded
-                ? "/assets/sidebar/sidebar-toggle-collapse-hover.svg"
-                : "/assets/sidebar/sidebar-toggle-expand-hover.svg"
-            }
+            src="/assets/sidebar/sidebar-toggle-collapse-hover.svg"
             alt=""
-            className={`absolute opacity-0 transition-opacity duration-150 ease-out group-hover/toggle:opacity-100 motion-reduce:transition-none ${
-              expanded ? "size-8" : "size-[30px]"
+            className={`absolute size-8 opacity-0 transition-opacity duration-75 ease-out motion-reduce:transition-none ${
+              expanded ? "group-hover/toggle:opacity-100" : ""
+            }`}
+          />
+          <img
+            src="/assets/sidebar/sidebar-toggle-expand.svg"
+            alt=""
+            className={`absolute size-[30px] transition-opacity duration-75 ease-out motion-reduce:transition-none ${
+              expanded
+                ? "opacity-0"
+                : "opacity-100 group-hover/toggle:opacity-0"
+            }`}
+          />
+          <img
+            src="/assets/sidebar/sidebar-toggle-expand-hover.svg"
+            alt=""
+            className={`absolute size-[30px] opacity-0 transition-opacity duration-75 ease-out motion-reduce:transition-none ${
+              expanded ? "" : "group-hover/toggle:opacity-100"
             }`}
           />
         </button>
