@@ -1,5 +1,5 @@
-import { Link } from "@tanstack/react-router";
-import type { CSSProperties } from "react";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { useRef, useState, type CSSProperties, type MouseEvent } from "react";
 
 import { useAppSidebar } from "./AppSidebarState";
 
@@ -100,15 +100,19 @@ function MenuItem({
   item,
   active,
   expanded,
+  submenuClosing,
+  onNavigate,
 }: {
   item: NavigationItem;
   active: AppNavigationKey;
   expanded: boolean;
+  submenuClosing: boolean;
+  onNavigate: (event: MouseEvent<HTMLAnchorElement>, to: AppRoute) => void;
 }) {
   const isCurrent = item.key === active;
   const hasActiveChild = item.children?.some((child) => child.key === active) ?? false;
   const activeBranch = isCurrent || hasActiveChild;
-  const childrenVisible = expanded && activeBranch;
+  const childrenVisible = expanded && activeBranch && !submenuClosing;
 
   return (
     <li>
@@ -117,6 +121,7 @@ function MenuItem({
         aria-current={isCurrent ? "page" : undefined}
         aria-label={expanded ? undefined : item.label}
         title={expanded ? undefined : item.label}
+        onClick={(event) => onNavigate(event, item.to)}
         className={`flex h-[46px] items-center gap-[10px] overflow-hidden rounded-lg pl-3 transition-[padding,background-color,color,box-shadow] duration-200 ease-out motion-reduce:transition-none ${
           expanded ? "pr-[19px]" : "pr-3"
         } ${
@@ -150,7 +155,7 @@ function MenuItem({
             aria-current={childSelected ? "page" : undefined}
             aria-hidden={!childrenVisible}
             tabIndex={childrenVisible ? undefined : -1}
-            className={`group/submenu relative flex items-start overflow-hidden pl-12 pt-[2px] transition-[height,opacity] duration-[240ms] ease-in-out motion-reduce:transition-none ${
+            className={`group/submenu relative flex items-start overflow-hidden pl-12 pt-[2px] transition-[height,opacity] duration-[180ms] ease-in-out motion-reduce:transition-none ${
               childrenVisible
                 ? "h-[46px] opacity-100"
                 : "pointer-events-none h-0 opacity-0"
@@ -178,8 +183,45 @@ function MenuItem({
 
 export function AppSidebar({ active }: AppSidebarProps) {
   const { expanded, toggleSidebar } = useAppSidebar();
+  const navigate = useNavigate();
+  const [submenuClosing, setSubmenuClosing] = useState(false);
+  const submenuExitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const projectName = "지역농산물간편식연구개발협동조합";
   const [projectInitial = "", ...projectNameRest] = Array.from(projectName);
+
+  const handleNavigate = (
+    event: MouseEvent<HTMLAnchorElement>,
+    to: AppRoute,
+  ) => {
+    const calendarBranchActive =
+      active === "calendar" || active === "growth-journal";
+    const staysInCalendarBranch =
+      to === "/calendar" || to === "/calendar/growth-journal";
+
+    if (
+      !expanded ||
+      !calendarBranchActive ||
+      staysInCalendarBranch ||
+      event.button !== 0 ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+
+    if (submenuExitTimer.current) {
+      return;
+    }
+
+    setSubmenuClosing(true);
+    submenuExitTimer.current = setTimeout(() => {
+      void navigate({ to });
+    }, 180);
+  };
 
   return (
     <aside
@@ -319,6 +361,8 @@ export function AppSidebar({ active }: AppSidebarProps) {
                 item={item}
                 active={active}
                 expanded={expanded}
+                submenuClosing={submenuClosing && item.key === "calendar"}
+                onNavigate={handleNavigate}
               />
             ))}
           </ul>
