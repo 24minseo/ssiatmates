@@ -52,8 +52,6 @@ type CalendarDay = {
 };
 
 const DAYS_OF_WEEK = ["일", "월", "화", "수", "목", "금", "토"] as const;
-const INITIAL_YEAR = 2026;
-const INITIAL_MONTH = 7;
 
 function toDateKey(date: Date) {
   const year = date.getFullYear();
@@ -88,9 +86,10 @@ function buildCalendarDays(year: number, month: number): CalendarDay[] {
 }
 
 function CalendarPage() {
-  const [visibleMonth, setVisibleMonth] = useState(
-    () => new Date(INITIAL_YEAR, INITIAL_MONTH, 1),
-  );
+  const [visibleMonth, setVisibleMonth] = useState(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), 1);
+  });
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [view, setView] = useState<CalendarView>("month");
   const [events, setEvents] = useState<CalendarEvent[]>([]);
