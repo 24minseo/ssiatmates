@@ -152,7 +152,7 @@ function MenuItem({
             aria-current={childSelected ? "page" : undefined}
             aria-hidden={!childrenVisible}
             tabIndex={childrenVisible ? undefined : -1}
-            className={`relative flex items-start overflow-hidden pl-12 pt-[5px] transition-[height,opacity,transform] duration-200 ease-out motion-reduce:transition-none ${
+            className={`group/submenu relative flex items-start overflow-hidden pl-12 pt-[5px] transition-[height,opacity,transform] duration-200 ease-out motion-reduce:transition-none ${
               childrenVisible
                 ? "h-[46px] translate-x-0 opacity-100"
                 : "pointer-events-none h-0 -translate-x-1 opacity-0"
@@ -166,7 +166,7 @@ function MenuItem({
               className={`ml-[5px] flex h-7 w-[154px] items-center rounded-[7px] px-[10px] text-sm ${
                 childSelected
                   ? "bg-item-hover-selected font-semibold text-brand"
-                  : "font-normal text-submenu-text hover:bg-item-hover"
+                  : "font-normal text-submenu-text group-hover/submenu:bg-item-hover group-hover/submenu:shadow-menu-hover"
               }`}
             >
               {child.label}
