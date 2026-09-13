@@ -189,6 +189,7 @@ function MenuItem({
 export function AppSidebar({ active }: AppSidebarProps) {
   const { expanded, toggleSidebar } = useAppSidebar();
   const projectName = "지역농산물간편식연구개발협동조합";
+  const profileCardStatus = "기본 매칭 프로필";
   const [projectInitial = "", ...projectNameRest] = Array.from(projectName);
 
   return (
@@ -297,21 +298,21 @@ export function AppSidebar({ active }: AppSidebarProps) {
             }`}
           >
             <span className="relative h-6 w-full shrink-0">
-              <span className="group/edit absolute right-0 top-[3px] size-[18px]">
+              <span className="group/edit absolute right-0 top-[2px] size-5">
                 <img
                   src="/assets/sidebar/profile-edit-default.svg"
                   alt=""
-                  className="absolute inset-0 size-[18px] transition-opacity duration-150 ease-out group-hover/edit:opacity-0 motion-reduce:transition-none"
+                  className="absolute inset-0 size-5 transition-opacity duration-150 ease-out group-hover/edit:opacity-0 motion-reduce:transition-none"
                 />
                 <img
                   src="/assets/sidebar/profile-edit-hover.svg"
                   alt=""
-                  className="absolute inset-0 size-[18px] opacity-0 transition-opacity duration-150 ease-out group-hover/edit:opacity-100 motion-reduce:transition-none"
+                  className="absolute inset-0 size-5 opacity-0 transition-opacity duration-150 ease-out group-hover/edit:opacity-100 motion-reduce:transition-none"
                 />
               </span>
             </span>
-            <span className="mt-0.5 truncate text-[13px] font-normal text-ink-muted">
-              못난이 농산물 간편식 서비스
+            <span className="mt-0.5 truncate text-xs font-normal text-ink-muted">
+              {profileCardStatus}
             </span>
           </span>
         </button>
