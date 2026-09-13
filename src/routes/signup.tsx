@@ -143,7 +143,7 @@ function SignupPage() {
             onBlur={() => setEmailTouched(true)}
             error={emailError}
             autoComplete="email"
-          required
+            required
           />
           <div>
             <AuthField
@@ -154,7 +154,7 @@ function SignupPage() {
               value={password}
               onChange={setPassword}
               autoComplete="new-password"
-            required
+              required
             />
             <ul
               id="signup-password-requirements"
@@ -173,7 +173,7 @@ function SignupPage() {
             value={name}
             onChange={setName}
             autoComplete="name"
-          required
+            required
           />
         </div>
 
