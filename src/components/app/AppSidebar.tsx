@@ -293,7 +293,7 @@ export function AppSidebar({ active }: AppSidebarProps) {
 
           <span
             aria-hidden={!expanded}
-            className={`absolute inset-0 flex flex-col items-start gap-[2px] px-[14px] py-[13px] text-left transition-opacity duration-200 ease-out motion-reduce:transition-none ${
+            className={`absolute inset-0 flex flex-col items-start gap-0 px-[14px] py-[13px] text-left transition-opacity duration-200 ease-out motion-reduce:transition-none ${
               expanded ? "opacity-100" : "pointer-events-none opacity-0"
             }`}
           >
@@ -311,7 +311,7 @@ export function AppSidebar({ active }: AppSidebarProps) {
                 />
               </span>
             </span>
-            <span className="mt-0.5 shrink-0 whitespace-nowrap text-xs font-normal leading-[18px] text-ink-muted">
+            <span className="shrink-0 whitespace-nowrap text-xs font-normal leading-[18px] text-ink-muted">
               {profileCardStatus}
             </span>
           </span>
