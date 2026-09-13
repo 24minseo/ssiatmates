@@ -67,7 +67,7 @@ function LoginPage() {
             id="login-password"
             type="password"
             label="비밀번호"
-            placeholder="비밀번호를 입력하세요"
+            placeholder="영문·숫자 포함 8~16자"
             value={password}
             onChange={setPassword}
             autoComplete="current-password"
