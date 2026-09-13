@@ -269,7 +269,7 @@ export function AppSidebar({ active }: AppSidebarProps) {
           }`}
         >
           <strong
-            className={`absolute top-[13px] whitespace-nowrap text-left text-base font-semibold text-ink transition-[left] duration-200 ease-out motion-reduce:transition-none ${
+            className={`absolute top-[13px] whitespace-nowrap text-left text-[15px] font-semibold text-ink transition-[left] duration-200 ease-out motion-reduce:transition-none ${
               expanded ? "left-[14px]" : "left-[24px]"
             }`}
           >
