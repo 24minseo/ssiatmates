@@ -201,23 +201,45 @@ function CalendarPage() {
           <div
             role="group"
             aria-label="캘린더 보기 방식"
-            className="flex h-[42px] w-28 items-center justify-center gap-1 rounded-[12px] bg-item-hover px-1"
+            className="relative h-[42px] w-28 rounded-[12px] bg-item-hover"
           >
-            {(["month", "notice"] as const).map((option) => (
-              <Button
-                key={option}
-                type="button"
-                variant="ghost"
-                onClick={() => setView(option)}
-                aria-pressed={view === option}
-                className={cn(
-                  "h-8 w-11 rounded-[8px] px-0 text-[13px] font-medium text-ink-muted shadow-none hover:text-ink",
-                  view === option && "bg-surface text-ink shadow-dropdown hover:bg-surface",
-                )}
-              >
-                {option === "month" ? "월별" : "공고별"}
-              </Button>
-            ))}
+            <span
+              aria-hidden="true"
+              className={cn(
+                "absolute top-1/2 h-8 -translate-y-1/2 rounded-[8px] bg-surface shadow-[0_2px_6px_0_rgba(85,113,78,0.1)] transition-[left,width] duration-150 ease-out motion-reduce:transition-none",
+                view === "month"
+                  ? "left-[5px] w-11"
+                  : "left-[52px] w-14",
+              )}
+            />
+            <div className="absolute left-[5px] top-1/2 flex h-8 w-[102px] -translate-y-1/2 items-center justify-between">
+              {(["month", "notice"] as const).map((option) => {
+                const selected = view === option;
+                const monthOption = option === "month";
+
+                return (
+                  <Button
+                    key={option}
+                    type="button"
+                    variant="ghost"
+                    onClick={() => setView(option)}
+                    aria-pressed={selected}
+                    className={cn(
+                      "relative shrink-0 px-[10px] py-[6px] text-[13px] font-medium leading-[normal] transition-colors duration-150 motion-reduce:transition-none",
+                      selected
+                        ? monthOption
+                          ? "h-8 w-11 rounded-[12px] text-ink"
+                          : "h-8 w-14 rounded-[6px] text-ink"
+                        : monthOption
+                          ? "h-7 w-11 rounded-[6px] text-[#9a9d9b]"
+                          : "h-7 w-14 rounded-[6px] text-[#9a9d9b]",
+                    )}
+                  >
+                    {monthOption ? "월별" : "공고별"}
+                  </Button>
+                );
+              })}
+            </div>
           </div>
           <Button
             type="button"
