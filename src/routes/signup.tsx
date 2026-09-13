@@ -73,7 +73,7 @@ function PasswordRequirement({
   return (
     <li
       className={`flex items-center gap-1 text-[12px] font-normal ${
-        met ? "text-brand" : "text-icon-muted"
+        met ? "text-brand" : "text-guide-text"
       }`}
     >
       <Check aria-hidden className="size-[18px] shrink-0" strokeWidth={2} />
@@ -144,6 +144,7 @@ function SignupPage() {
             error={emailError}
             autoComplete="email"
             required
+            placeholderClassName="placeholder:text-guide-text"
           />
           <div>
             <AuthField
@@ -155,6 +156,7 @@ function SignupPage() {
               onChange={setPassword}
               autoComplete="new-password"
               required
+              placeholderClassName="placeholder:text-guide-text"
             />
             <ul
               id="signup-password-requirements"
@@ -174,6 +176,7 @@ function SignupPage() {
             onChange={setName}
             autoComplete="name"
             required
+            placeholderClassName="placeholder:text-guide-text"
           />
         </div>
 
