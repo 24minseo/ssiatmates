@@ -152,7 +152,7 @@ function MenuItem({
             aria-current={childSelected ? "page" : undefined}
             aria-hidden={!childrenVisible}
             tabIndex={childrenVisible ? undefined : -1}
-            className={`group/submenu relative flex items-start overflow-hidden pl-12 pt-[2px] transition-[height,opacity,transform] duration-200 ease-out motion-reduce:transition-none ${
+            className={`group/submenu relative flex items-start overflow-hidden pl-12 pt-[2px] transition-[height,opacity,transform] duration-[240ms] ease-in-out motion-reduce:transition-none ${
               childrenVisible
                 ? "h-[46px] translate-x-0 opacity-100"
                 : "pointer-events-none h-0 -translate-x-1 opacity-0"
