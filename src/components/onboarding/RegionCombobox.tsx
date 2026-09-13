@@ -71,7 +71,12 @@ export function RegionCombobox({
             "disabled:cursor-not-allowed disabled:bg-field-border/25",
           )}
         >
-          <span className={cn("truncate", !value && "text-placeholder", disabled && "text-[#A8B4B0]")}>
+          <span
+            className={cn(
+              "truncate",
+              !value ? "text-guide-text" : disabled && "text-[#A8B4B0]",
+            )}
+          >
             {value ?? placeholder}
           </span>
           <ChevronDown
@@ -91,7 +96,10 @@ export function RegionCombobox({
         avoidCollisions={false}
       >
         <Command value={activeValue} onValueChange={setActiveValue} className="rounded-[12px] [&_[cmdk-input-wrapper]]:px-4 [&_[cmdk-input-wrapper]_svg]:size-5 [&_[cmdk-input-wrapper]_svg]:-translate-x-0.5">
-          <CommandInput placeholder="지역 검색" className="h-11 text-[15px]" />
+          <CommandInput
+            placeholder="지역 검색"
+            className="h-11 text-[15px] placeholder:text-guide-text"
+          />
           <CommandList className="max-h-[220px]">
             <CommandEmpty>검색 결과가 없습니다.</CommandEmpty>
             <CommandGroup>
