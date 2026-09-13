@@ -252,7 +252,7 @@ function CalendarPage() {
       </div>
 
       {view === "month" ? (
-        <div className="mt-4 overflow-hidden rounded-[12px] border border-field-border bg-surface">
+        <div className="mt-4 flex h-[675px] flex-col overflow-hidden rounded-[12px] border border-field-border bg-surface">
           <div className="grid h-10 grid-cols-7 border-b border-field-border" role="row">
             {DAYS_OF_WEEK.map((day) => (
               <div
@@ -264,7 +264,7 @@ function CalendarPage() {
               </div>
             ))}
           </div>
-          <div className="grid grid-cols-7" role="grid" aria-label={`${year}년 ${month + 1}월`}>
+          <div className="grid min-h-0 flex-1 grid-cols-7 auto-rows-fr" role="grid" aria-label={`${year}년 ${month + 1}월`}>
             {days.map((day, index) => {
               const isSelected = selectedDate === day.key;
               const isToday = todayKey === day.key;
@@ -285,7 +285,7 @@ function CalendarPage() {
                     }
                   }}
                   className={cn(
-                    "group relative h-[116px] min-w-0 cursor-pointer overflow-hidden p-2 text-ink hover:bg-item-hover",
+                    "group relative h-full min-w-0 cursor-pointer overflow-hidden p-2 text-ink hover:bg-item-hover",
                     index % 7 !== 6 && "border-r border-field-border",
                     index < days.length - 7 && "border-b border-field-border",
                     isSelected &&
