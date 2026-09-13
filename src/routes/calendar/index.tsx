@@ -259,7 +259,7 @@ function CalendarPage() {
                 role="columnheader"
                 className="flex items-center px-2 text-xs font-semibold text-ink-muted"
               >
-                {day}
+                <span className="flex size-6 items-center justify-center">{day}</span>
               </div>
             ))}
           </div>
