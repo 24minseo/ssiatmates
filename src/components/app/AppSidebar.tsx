@@ -261,9 +261,9 @@ export function AppSidebar({ active }: AppSidebarProps) {
             >
               <span>{projectInitial}</span>
               <span
-                className={`absolute left-full top-0 overflow-hidden ${
+                className={`absolute left-full top-0 block overflow-hidden whitespace-nowrap text-ellipsis ${
                   expanded
-                    ? "max-w-[136px] opacity-100 transition-[max-width,opacity] duration-200 ease-out motion-reduce:transition-none"
+                    ? "max-w-[calc(154px-100%)] opacity-100 transition-[max-width,opacity] duration-200 ease-out motion-reduce:transition-none"
                     : "max-w-0 opacity-0 transition-none"
                 }`}
               >
