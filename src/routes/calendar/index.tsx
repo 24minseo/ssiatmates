@@ -225,14 +225,14 @@ function CalendarPage() {
                     onClick={() => setView(option)}
                     aria-pressed={selected}
                     className={cn(
-                      "relative shrink-0 px-[10px] py-[6px] text-[13px] font-medium leading-[normal] transition-colors duration-150 motion-reduce:transition-none",
+                      "relative shrink-0 px-[10px] py-[6px] text-[13px] font-medium leading-[normal] transition-colors duration-150 motion-reduce:transition-none hover:bg-transparent",
                       selected
                         ? monthOption
-                          ? "h-8 w-11 rounded-[12px] text-ink"
-                          : "h-8 w-14 rounded-[6px] text-ink"
+                          ? "h-8 w-11 rounded-[12px] text-ink hover:text-ink"
+                          : "h-8 w-14 rounded-[6px] text-ink hover:text-ink"
                         : monthOption
-                          ? "h-7 w-11 rounded-[6px] text-control-inactive"
-                          : "h-7 w-14 rounded-[6px] text-control-inactive",
+                          ? "h-7 w-11 rounded-[6px] text-control-inactive hover:text-control-inactive"
+                          : "h-7 w-14 rounded-[6px] text-control-inactive hover:text-control-inactive",
                     )}
                   >
                     {monthOption ? "월별" : "공고별"}
