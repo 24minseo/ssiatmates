@@ -40,6 +40,7 @@ interface AuthFieldProps {
   error?: string | undefined;
   onBlur?: (() => void) | undefined;
   required?: boolean;
+  placeholderClassName?: string;
 }
 
 export function AuthField({
@@ -53,6 +54,7 @@ export function AuthField({
   error,
   onBlur,
   required = false,
+  placeholderClassName,
 }: AuthFieldProps) {
   return (
     <label htmlFor={id} className="flex flex-col gap-2">
@@ -80,6 +82,7 @@ export function AuthField({
           error
             ? "border-destructive focus-visible:border-destructive focus-visible:ring-destructive/20"
             : "border-field-border focus-visible:border-brand focus-visible:ring-focus-soft",
+          placeholderClassName,
         )}
       />
       {error ? (
