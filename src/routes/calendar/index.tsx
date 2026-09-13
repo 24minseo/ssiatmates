@@ -286,7 +286,6 @@ function CalendarPage() {
                   }}
                   className={cn(
                     "group relative h-full min-w-0 cursor-pointer overflow-hidden bg-surface p-2 text-ink hover:bg-item-hover",
-                    index % 7 !== 6 && "border-r border-field-border",
                     index < days.length - 7 && "border-b border-field-border",
                     isSelected &&
                       "border border-field-border hover:bg-surface",
