@@ -155,7 +155,7 @@ function MenuItem({
             aria-current={childSelected ? "page" : undefined}
             aria-hidden={!childrenVisible}
             tabIndex={childrenVisible ? undefined : -1}
-            className={`group/submenu relative flex items-start overflow-hidden pl-12 pt-[2px] transition-[height,opacity] duration-[260ms] ease-[cubic-bezier(0.4,0,0.2,1)] motion-reduce:transition-none ${
+            className={`group/submenu relative flex items-start overflow-hidden pl-12 pt-[2px] transition-[height,opacity] duration-200 ease-out motion-reduce:transition-none ${
               childrenVisible
                 ? "h-[46px] opacity-100"
                 : "pointer-events-none h-0 opacity-0"
@@ -220,7 +220,7 @@ export function AppSidebar({ active }: AppSidebarProps) {
     setSubmenuClosing(true);
     submenuExitTimer.current = setTimeout(() => {
       void navigate({ to });
-    }, 260);
+    }, 200);
   };
 
   return (
