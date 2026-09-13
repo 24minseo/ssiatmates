@@ -311,7 +311,7 @@ export function AppSidebar({ active }: AppSidebarProps) {
                 />
               </span>
             </span>
-            <span className="mt-0.5 truncate text-xs font-normal text-ink-muted">
+            <span className="mt-0.5 shrink-0 whitespace-nowrap text-xs font-normal leading-[18px] text-ink-muted">
               {profileCardStatus}
             </span>
           </span>
