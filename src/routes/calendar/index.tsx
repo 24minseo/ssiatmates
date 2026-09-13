@@ -231,8 +231,8 @@ function CalendarPage() {
                           ? "h-8 w-11 rounded-[12px] text-ink"
                           : "h-8 w-14 rounded-[6px] text-ink"
                         : monthOption
-                          ? "h-7 w-11 rounded-[6px] text-[#9a9d9b]"
-                          : "h-7 w-14 rounded-[6px] text-[#9a9d9b]",
+                          ? "h-7 w-11 rounded-[6px] text-control-inactive"
+                          : "h-7 w-14 rounded-[6px] text-control-inactive",
                     )}
                   >
                     {monthOption ? "월별" : "공고별"}
