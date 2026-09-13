@@ -365,7 +365,10 @@ function CalendarPage() {
       )}
 
       <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-        <DialogContent className="rounded-[12px] border-field-border bg-surface text-ink sm:max-w-[460px]">
+        <DialogContent
+          overlayClassName="bg-item-hover"
+          className="rounded-[12px] border-field-border bg-surface text-ink sm:max-w-[460px]"
+        >
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-ink">할 일 추가</DialogTitle>
             <DialogDescription className="text-sm text-ink-muted">
