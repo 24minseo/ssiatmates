@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { Check } from "lucide-react";
 import { AuthDivider, AuthField, AuthLayout, GoogleButton } from "@/components/auth/AuthLayout";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -62,6 +63,25 @@ function AgreementRow({
   );
 }
 
+function PasswordRequirement({
+  met,
+  children,
+}: {
+  met: boolean;
+  children: string;
+}) {
+  return (
+    <li
+      className={`flex items-center gap-1 text-[12px] font-normal ${
+        met ? "text-brand" : "text-icon-muted"
+      }`}
+    >
+      <Check aria-hidden className="size-4 shrink-0" strokeWidth={2.5} />
+      <span>{children}</span>
+    </li>
+  );
+}
+
 function SignupPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
@@ -77,12 +97,13 @@ function SignupPage() {
       ? "올바른 이메일 형식으로 입력해주세요."
       : undefined;
 
+  const hasLetter = /[A-Za-z]/.test(password);
+  const hasNumber = /\d/.test(password);
+  const hasValidLength = password.length >= 8 && password.length <= 16;
+  const passwordValid = hasLetter && hasNumber && hasValidLength;
   const allAgreed = terms && privacy;
   const canSubmit =
-    emailValid &&
-    password.length >= 8 &&
-    name.trim().length > 0 &&
-    allAgreed;
+    emailValid && passwordValid && name.trim().length > 0 && allAgreed;
 
   const setAll = (checked: boolean) => {
     setTerms(checked);
@@ -123,15 +144,26 @@ function SignupPage() {
             error={emailError}
             autoComplete="email"
           />
-          <AuthField
-            id="signup-password"
-            type="password"
-            label="비밀번호"
-            placeholder="비밀번호를 입력하세요 (8자 이상)"
-            value={password}
-            onChange={setPassword}
-            autoComplete="new-password"
-          />
+          <div>
+            <AuthField
+              id="signup-password"
+              type="password"
+              label="비밀번호"
+              placeholder="비밀번호를 입력하세요"
+              value={password}
+              onChange={setPassword}
+              autoComplete="new-password"
+            />
+            <ul
+              id="signup-password-requirements"
+              aria-label="비밀번호 조건"
+              className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1"
+            >
+              <PasswordRequirement met={hasLetter}>영문 알파벳</PasswordRequirement>
+              <PasswordRequirement met={hasNumber}>숫자</PasswordRequirement>
+              <PasswordRequirement met={hasValidLength}>8~16자리</PasswordRequirement>
+            </ul>
+          </div>
           <AuthField
             id="signup-name"
             label="이름"
