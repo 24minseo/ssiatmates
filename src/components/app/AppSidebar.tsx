@@ -255,20 +255,20 @@ export function AppSidebar({ active }: AppSidebarProps) {
             }`}
           >
             <span
-              className={`inline-block transition-transform duration-200 ease-out motion-reduce:transition-none ${
+              className={`relative inline-block transition-transform duration-200 ease-out motion-reduce:transition-none ${
                 expanded ? "translate-x-0" : "-translate-x-1/2"
               }`}
             >
-              {projectInitial}
-            </span>
-            <span
-              className={`absolute left-full top-0 overflow-hidden ${
-                expanded
-                  ? "max-w-[136px] opacity-100 transition-[max-width,opacity] duration-200 ease-out motion-reduce:transition-none"
-                  : "max-w-0 opacity-0 transition-none"
-              }`}
-            >
-              {projectNameRest.join("")}
+              <span>{projectInitial}</span>
+              <span
+                className={`absolute left-full top-0 overflow-hidden ${
+                  expanded
+                    ? "max-w-[136px] opacity-100 transition-[max-width,opacity] duration-200 ease-out motion-reduce:transition-none"
+                    : "max-w-0 opacity-0 transition-none"
+                }`}
+              >
+                {projectNameRest.join("")}
+              </span>
             </span>
           </strong>
 
