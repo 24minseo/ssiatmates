@@ -180,6 +180,8 @@ function MenuItem({
 
 export function AppSidebar({ active }: AppSidebarProps) {
   const { expanded, toggleSidebar } = useAppSidebar();
+  const projectName = "구마구마";
+  const [projectInitial = "", ...projectNameRest] = Array.from(projectName);
 
   return (
     <aside
@@ -248,13 +250,20 @@ export function AppSidebar({ active }: AppSidebarProps) {
           }`}
         >
           <strong
-            className={`absolute left-[14px] top-[13px] overflow-hidden whitespace-nowrap text-base font-semibold text-ink transition-[width,transform] duration-200 ease-out motion-reduce:transition-none ${
+            className={`absolute top-[13px] flex whitespace-nowrap text-left text-base font-semibold text-ink transition-[left,transform] duration-200 ease-out motion-reduce:transition-none ${
               expanded
-                ? "w-[150px] translate-x-0"
-                : "w-[14px] translate-x-[3px]"
+                ? "left-[14px] translate-x-0"
+                : "left-1/2 -translate-x-1/2"
             }`}
           >
-            구마구마
+            <span className="shrink-0">{projectInitial}</span>
+            <span
+              className={`overflow-hidden transition-[max-width,opacity] duration-200 ease-out motion-reduce:transition-none ${
+                expanded ? "max-w-[136px] opacity-100" : "max-w-0 opacity-0"
+              }`}
+            >
+              {projectNameRest.join("")}
+            </span>
           </strong>
 
           <span
