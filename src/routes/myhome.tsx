@@ -38,14 +38,14 @@ function MyHomePage() {
     <AppShell active="home">
       <header>
         <h1 className="text-[28px] font-bold leading-tight text-ink">MY홈</h1>
-        <p className="mt-2 text-sm font-medium text-ink-muted">
+        <p className="mt-2 text-base font-medium text-ink-muted">
           한눈에 보는 지원사업 브리핑
         </p>
       </header>
 
       <section
         aria-label="지원사업 요약"
-        className="mt-14 grid gap-4 lg:grid-cols-4"
+        className="mt-14 grid grid-cols-4 gap-4"
       >
         {summaryCards.map((card) => (
           <article
@@ -74,7 +74,7 @@ function MyHomePage() {
         ))}
       </section>
 
-      <section className="mt-12 grid min-h-[430px] gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(220px,1fr)]">
+      <section className="mt-12 grid min-h-[430px] grid-cols-[minmax(0,3fr)_minmax(220px,1fr)] gap-4">
         <div className="rounded-[12px] bg-[#F6F8F7]" />
         <div className="rounded-[12px] bg-[#F6F8F7]" />
       </section>
