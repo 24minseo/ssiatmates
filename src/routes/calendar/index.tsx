@@ -592,10 +592,10 @@ function CalendarPage() {
                   <span
                     aria-hidden="true"
                     className={cn(
-                      "absolute top-0.5 h-7 rounded-[6px] bg-surface shadow-[0_1px_3px_0_rgba(85,113,78,0.1)] transition-[left,width] duration-150 ease-out motion-reduce:transition-none",
+                      "absolute top-1 h-6 rounded-[6px] bg-surface shadow-[0_1px_3px_0_rgba(85,113,78,0.1)] transition-[left,width] duration-150 ease-out motion-reduce:transition-none",
                       contentMode === "memo"
-                        ? "left-0.5 w-11"
-                        : "left-[46px] w-[76px]",
+                        ? "left-1 w-10"
+                        : "left-[48px] w-[72px]",
                     )}
                   />
                   <div className="relative z-10 flex items-center">
