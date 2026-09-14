@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   Bell,
   CalendarDays,
+  Check,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -47,12 +48,21 @@ export const Route = createFileRoute("/calendar/")({
 });
 
 type CalendarView = "month" | "notice";
+type ContentMode = "memo" | "checklist";
+
+type ChecklistItem = {
+  id: number;
+  text: string;
+  completed: boolean;
+};
 
 type CalendarEvent = {
   id: number;
   title: string;
   date: string;
   description: string;
+  contentMode?: ContentMode;
+  checklistItems?: ChecklistItem[];
   startTime?: string;
   reminder?: boolean;
 };
@@ -64,6 +74,8 @@ type CalendarDay = {
 };
 
 const DAYS_OF_WEEK = ["일", "월", "화", "수", "목", "금", "토"] as const;
+const CHECKLIST_MAX_ITEMS = 10;
+const CHECKLIST_ITEM_MAX_LENGTH = 80;
 
 function toDateKey(date: Date) {
   const year = date.getFullYear();
@@ -112,6 +124,9 @@ function CalendarPage() {
   const [eventTitle, setEventTitle] = useState("");
   const [eventDate, setEventDate] = useState("");
   const [eventDescription, setEventDescription] = useState("");
+  const [contentMode, setContentMode] = useState<ContentMode>("memo");
+  const [checklistItems, setChecklistItems] = useState<ChecklistItem[]>([]);
+  const [focusedChecklistId, setFocusedChecklistId] = useState<number | null>(null);
   const [eventStartTime, setEventStartTime] = useState("");
   const [hasReminder, setHasReminder] = useState(false);
 
@@ -144,6 +159,9 @@ function CalendarPage() {
     setEditingEventId(null);
     setEventTitle("");
     setEventDescription("");
+    setContentMode("memo");
+    setChecklistItems([]);
+    setFocusedChecklistId(null);
     setEventStartTime("");
     setHasReminder(false);
     setEventDate(dateKey ?? selectedDate ?? todayKey);
@@ -156,6 +174,14 @@ function CalendarPage() {
     setEventTitle(selectedEvent.title);
     setEventDate(selectedEvent.date);
     setEventDescription(selectedEvent.description);
+    setContentMode(
+      selectedEvent.contentMode ??
+        (selectedEvent.checklistItems?.length ? "checklist" : "memo"),
+    );
+    setChecklistItems(
+      (selectedEvent.checklistItems ?? []).map((item) => ({ ...item })),
+    );
+    setFocusedChecklistId(null);
     setEventStartTime(selectedEvent.startTime ?? "");
     setHasReminder(selectedEvent.reminder ?? false);
     setSelectedEvent(null);
@@ -168,6 +194,39 @@ function CalendarPage() {
     setSelectedEvent(null);
   };
 
+  const addChecklistItem = () => {
+    setChecklistItems((current) => {
+      if (current.length >= CHECKLIST_MAX_ITEMS) return current;
+      return [
+        ...current,
+        {
+          id: Date.now(),
+          text: "",
+          completed: false,
+        },
+      ];
+    });
+  };
+
+  const updateChecklistItem = (id: number, text: string) => {
+    setChecklistItems((current) =>
+      current.map((item) => (item.id === id ? { ...item, text } : item)),
+    );
+  };
+
+  const toggleChecklistItem = (id: number) => {
+    setChecklistItems((current) =>
+      current.map((item) =>
+        item.id === id ? { ...item, completed: !item.completed } : item,
+      ),
+    );
+  };
+
+  const removeChecklistItem = (id: number) => {
+    setChecklistItems((current) => current.filter((item) => item.id !== id));
+    setFocusedChecklistId((current) => (current === id ? null : current));
+  };
+
   const saveEvent = () => {
     const title = eventTitle.trim();
     if (!title || !eventDate) return;
@@ -177,6 +236,14 @@ function CalendarPage() {
       title,
       date: eventDate,
       description: eventDescription.trim(),
+      contentMode,
+      checklistItems: checklistItems
+        .slice(0, CHECKLIST_MAX_ITEMS)
+        .map((item) => ({
+          ...item,
+          text: item.text.trim().slice(0, CHECKLIST_ITEM_MAX_LENGTH),
+        }))
+        .filter((item) => item.text.length > 0),
       ...(eventStartTime ? { startTime: eventStartTime } : {}),
       reminder: hasReminder,
     };
@@ -512,24 +579,136 @@ function CalendarPage() {
               </div>
             </fieldset>
 
-            <div className="mt-[18px] grid gap-2">
-              <Label htmlFor="todo-description" className="text-sm font-semibold text-ink">상세 내용</Label>
-              <div className="relative">
-                <Textarea
-                  id="todo-description"
-                  value={eventDescription}
-                  onChange={(event) => setEventDescription(event.target.value)}
-                  maxLength={500}
-                  placeholder="메모할 내용이 있으면 적어주세요."
-                  className="h-[164px] resize-none rounded-[12px] border-field-border px-3.5 py-3 pb-9 text-[15px] text-ink shadow-none placeholder:text-icon-muted focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft"
-                />
-                <span
-                  aria-live="polite"
-                  className="pointer-events-none absolute bottom-3.5 right-3.5 text-[12px] text-icon-muted"
+            <div className="mt-[18px]">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="todo-description" className="text-sm font-semibold text-ink">
+                  상세 내용
+                </Label>
+                <div
+                  role="group"
+                  aria-label="상세 내용 형식"
+                  className="flex h-8 items-center rounded-[8px] bg-item-hover p-0.5"
                 >
-                  <span className={eventDescription.length > 0 ? "text-ink" : "text-icon-muted"}>{eventDescription.length}</span>/500
-                </span>
+                  {(["memo", "checklist"] as const).map((mode) => {
+                    const selected = contentMode === mode;
+                    return (
+                      <Button
+                        key={mode}
+                        type="button"
+                        variant="ghost"
+                        aria-pressed={selected}
+                        onClick={() => setContentMode(mode)}
+                        className={cn(
+                          "h-7 rounded-[6px] px-2.5 text-[12px] font-normal text-ink-muted shadow-none hover:bg-transparent hover:text-ink",
+                          selected && "bg-surface font-semibold text-ink shadow-[0_1px_3px_0_rgba(85,113,78,0.1)]",
+                        )}
+                      >
+                        {mode === "memo" ? "메모" : "체크리스트"}
+                      </Button>
+                    );
+                  })}
+                </div>
               </div>
+
+              {contentMode === "memo" ? (
+                <div className="relative mt-2">
+                  <Textarea
+                    id="todo-description"
+                    value={eventDescription}
+                    onChange={(event) => setEventDescription(event.target.value)}
+                    maxLength={500}
+                    placeholder="메모할 내용이 있으면 적어주세요."
+                    className="h-[164px] resize-none rounded-[12px] border-field-border px-3.5 py-3 pb-9 text-[15px] text-ink shadow-none placeholder:text-icon-muted focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft"
+                  />
+                  <span
+                    aria-live="polite"
+                    className="pointer-events-none absolute bottom-3.5 right-3.5 text-[12px] text-icon-muted"
+                  >
+                    <span className={eventDescription.length > 0 ? "text-ink" : "text-icon-muted"}>{eventDescription.length}</span>/500
+                  </span>
+                </div>
+              ) : (
+                <div className="mt-2 rounded-[12px] border border-field-border bg-surface p-3">
+                  <div className="flex flex-col gap-2">
+                    {checklistItems.map((item, index) => {
+                      const showCounter =
+                        focusedChecklistId === item.id ||
+                        item.text.length >= CHECKLIST_ITEM_MAX_LENGTH - 10;
+
+                      return (
+                        <div key={item.id} className="flex items-center gap-2">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            aria-label={item.completed ? `항목 ${index + 1} 완료 취소` : `항목 ${index + 1} 완료`}
+                            aria-pressed={item.completed}
+                            onClick={() => toggleChecklistItem(item.id)}
+                            className={cn(
+                              "size-5 shrink-0 rounded-[5px] border p-0 shadow-none focus-visible:ring-[3.2px] focus-visible:ring-focus-soft",
+                              item.completed
+                                ? "border-brand bg-brand text-brand-foreground hover:bg-brand"
+                                : "border-field-border bg-surface text-transparent hover:border-brand hover:bg-surface",
+                            )}
+                          >
+                            {item.completed ? <Check aria-hidden="true" className="size-3.5" /> : null}
+                          </Button>
+                          <div className="relative min-w-0 flex-1">
+                            <Input
+                              value={item.text}
+                              maxLength={CHECKLIST_ITEM_MAX_LENGTH}
+                              onFocus={() => setFocusedChecklistId(item.id)}
+                              onBlur={() => setFocusedChecklistId(null)}
+                              onChange={(event) => updateChecklistItem(item.id, event.target.value)}
+                              placeholder={`항목 ${index + 1}`}
+                              className="h-10 rounded-[10px] border-field-border px-3 pr-14 text-[15px] text-ink shadow-none placeholder:text-icon-muted focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft"
+                            />
+                            {showCounter ? (
+                              <span
+                                aria-live="polite"
+                                className={cn(
+                                  "pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[12px]",
+                                  item.text.length >= CHECKLIST_ITEM_MAX_LENGTH
+                                    ? "text-brand"
+                                    : "text-icon-muted",
+                                )}
+                              >
+                                {item.text.length}/{CHECKLIST_ITEM_MAX_LENGTH}
+                              </span>
+                            ) : null}
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            aria-label={`항목 ${index + 1} 삭제`}
+                            onClick={() => removeChecklistItem(item.id)}
+                            className="size-8 shrink-0 rounded-[8px] text-icon-muted shadow-none hover:bg-item-hover hover:text-ink"
+                          >
+                            <Trash2 aria-hidden="true" className="size-4" />
+                          </Button>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {checklistItems.length < CHECKLIST_MAX_ITEMS ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      onClick={addChecklistItem}
+                      className="mt-2 h-9 rounded-[8px] px-2 text-[13px] font-normal text-brand shadow-none hover:bg-item-hover hover:text-brand"
+                    >
+                      <Plus aria-hidden="true" className="size-4" />
+                      항목 추가
+                    </Button>
+                  ) : (
+                    <p className="mt-2 px-2 text-[12px] text-icon-muted">
+                      최대 {CHECKLIST_MAX_ITEMS}개까지 추가할 수 있어요.
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
@@ -617,9 +796,47 @@ function CalendarPage() {
               {selectedEvent ? formatKoreanDate(selectedEvent.date) : ""}
             </DialogDescription>
           </DialogHeader>
-          <p className="min-h-16 whitespace-pre-wrap text-sm leading-6 text-ink-muted">
-            {selectedEvent?.description || "등록된 상세 내용이 없습니다."}
-          </p>
+          <div className="min-h-16 space-y-3">
+            {selectedEvent?.description ? (
+              <p className="whitespace-pre-wrap text-sm leading-6 text-ink-muted">
+                {selectedEvent.description}
+              </p>
+            ) : null}
+            {selectedEvent?.checklistItems?.length ? (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="font-semibold text-ink">체크리스트</span>
+                  <span className="text-ink-muted">
+                    {selectedEvent.checklistItems.filter((item) => item.completed).length}/
+                    {selectedEvent.checklistItems.length}
+                  </span>
+                </div>
+                <div className="space-y-1.5">
+                  {selectedEvent.checklistItems.map((item) => (
+                    <div key={item.id} className="flex items-center gap-2 text-sm">
+                      <span
+                        aria-hidden="true"
+                        className={cn(
+                          "flex size-5 shrink-0 items-center justify-center rounded-[5px] border",
+                          item.completed
+                            ? "border-brand bg-brand text-brand-foreground"
+                            : "border-field-border bg-surface",
+                        )}
+                      >
+                        {item.completed ? <Check className="size-3.5" /> : null}
+                      </span>
+                      <span className={cn("min-w-0 flex-1", item.completed && "text-ink-muted line-through")}>
+                        {item.text}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+            {!selectedEvent?.description && !selectedEvent?.checklistItems?.length ? (
+              <p className="text-sm leading-6 text-ink-muted">등록된 상세 내용이 없습니다.</p>
+            ) : null}
+          </div>
         </DialogContent>
       </Dialog>
     </section>
