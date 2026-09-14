@@ -581,7 +581,7 @@ function CalendarPage() {
 
             <div className="mt-[18px]">
               <div className="flex items-end justify-between">
-                <Label htmlFor="todo-description" className="text-sm font-semibold text-ink">
+                <Label htmlFor="todo-description" className="relative -top-0.5 text-sm font-semibold text-ink">
                   상세 내용
                 </Label>
                 <div
