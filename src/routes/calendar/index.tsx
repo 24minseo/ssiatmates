@@ -722,7 +722,7 @@ function CalendarPage() {
                             setDragOverChecklistId(null);
                           }}
                           className={cn(
-                            "group/checklist-row relative grid grid-cols-[32px_20px_minmax(0,1fr)_32px] items-start gap-2 rounded-[8px] px-2 py-1.5 transition-[opacity,transform,box-shadow] duration-150 ease-out",
+                            "group/checklist-row relative grid grid-cols-[20px_minmax(0,1fr)_32px] items-start gap-2 rounded-[8px] px-2 py-1.5 transition-[opacity,transform,box-shadow] duration-150 ease-out",
                             draggingChecklistId === item.id &&
                               "scale-[1.01] opacity-90 shadow-[0_6px_14px_rgba(22,59,49,0.12)]",
                           )}
@@ -753,7 +753,7 @@ function CalendarPage() {
                               setDraggingChecklistId(null);
                               setDragOverChecklistId(null);
                             }}
-                            className="pointer-events-none mt-0.5 size-8 shrink-0 cursor-grab rounded-[8px] text-icon-muted opacity-0 shadow-none transition-opacity active:cursor-grabbing group-hover/checklist-row:pointer-events-auto group-hover/checklist-row:opacity-100 focus-visible:pointer-events-auto focus-visible:opacity-100 hover:bg-item-hover hover:text-[#62756E]"
+                            className="pointer-events-none absolute -left-6 top-1/2 z-10 size-8 -translate-y-1/2 cursor-grab rounded-[8px] text-icon-muted opacity-0 shadow-none transition-opacity active:cursor-grabbing group-hover/checklist-row:pointer-events-auto group-hover/checklist-row:opacity-100 focus-visible:pointer-events-auto focus-visible:opacity-100 hover:bg-item-hover hover:text-[#62756E]"
                           >
                             <GripVertical aria-hidden="true" className="size-4" />
                           </Button>
