@@ -209,6 +209,7 @@ function CalendarPage() {
   const [draggingChecklistId, setDraggingChecklistId] = useState<number | null>(null);
   const [dragOverChecklistId, setDragOverChecklistId] = useState<number | null>(null);
   const [dragOverPosition, setDragOverPosition] = useState<ChecklistDropPosition>("before");
+  const [checklistHandleTop, setChecklistHandleTop] = useState<number | null>(null);
   const [eventStartTime, setEventStartTime] = useState("");
   const [hasReminder, setHasReminder] = useState(false);
 
@@ -768,15 +769,24 @@ function CalendarPage() {
                 </div>
               ) : (
                 <div className="mt-1 rounded-[12px] bg-surface py-2.5 pl-0 pr-2.5">
-                  <div className="group/checklist-list relative flex flex-col gap-0">
+                  <div className="group/checklist-list relative flex flex-col gap-0" onMouseLeave={() => setChecklistHandleTop(null)}>
                     <span aria-hidden="true" className="pointer-events-none absolute bottom-3 left-0.5 top-2.5 z-0 w-0.5 rounded-full bg-field-border/70" />
+                    <span
+                      aria-hidden="true"
+                      className="pointer-events-none absolute left-0.5 z-10 h-[18px] w-0.5 rounded-full bg-icon-muted transition-[top,opacity,width] duration-150 ease-out group-hover/checklist-list:w-[3px]"
+                      style={{ top: checklistHandleTop ?? 0, opacity: checklistHandleTop === null ? 0 : 1 }}
+                    />
                     {checklistItems.map((item, index) => {
                       return (
                         <div
                           key={item.id}
                           data-checklist-row
+                          onMouseEnter={(event) => {
+                            setChecklistHandleTop(event.currentTarget.offsetTop + 10);
+                          }}
                           onDragOver={(event) => {
                             event.preventDefault();
+                            setChecklistHandleTop(event.currentTarget.offsetTop + 10);
                             event.dataTransfer.dropEffect = "move";
                             const bounds = event.currentTarget.getBoundingClientRect();
                             const position: ChecklistDropPosition =
@@ -843,9 +853,7 @@ function CalendarPage() {
                               setDragOverChecklistId(null);
                             }}
                             className="pointer-events-none relative z-10 col-start-1 mt-0 h-8 w-6 shrink-0 cursor-grab rounded-[8px] text-icon-muted opacity-0 shadow-none transition-opacity active:cursor-grabbing group-hover/checklist-row:pointer-events-auto group-hover/checklist-row:opacity-100 focus-visible:pointer-events-auto focus-visible:opacity-100"
-                          >
-                            <span aria-hidden="true" className="pointer-events-none absolute left-0.5 top-1.5 h-[18px] w-0.5 rounded-full bg-icon-muted transition-[width] duration-150 ease-out group-hover/checklist-row:w-[3px]" />
-                          </Button>
+                          />
                           <Checkbox
                             checked={item.completed}
                             aria-label={item.completed ? `항목 ${index + 1} 완료 취소` : `항목 ${index + 1} 완료`}
