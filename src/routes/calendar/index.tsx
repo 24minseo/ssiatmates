@@ -595,10 +595,10 @@ function CalendarPage() {
                       "absolute top-1 h-6 rounded-[6px] bg-surface shadow-[0_1px_3px_0_rgba(85,113,78,0.1)] transition-[left,width] duration-150 ease-out motion-reduce:transition-none",
                       contentMode === "memo"
                         ? "left-1.5 w-8"
-                        : "left-[46px] w-[68px]",
+                        : "left-[48px] w-[66px]",
                     )}
                   />
-                  <div className="relative z-10 flex items-center">
+                  <div className="relative z-10 flex w-[116px] items-center justify-between">
                     {(["memo", "checklist"] as const).map((mode) => {
                       const selected = contentMode === mode;
                       return (
@@ -610,7 +610,7 @@ function CalendarPage() {
                           onClick={() => setContentMode(mode)}
                           className={cn(
                             "h-7 rounded-[6px] px-2.5 text-[12px] font-normal text-ink-muted shadow-none",
-                            mode === "memo" ? "w-10" : "w-[76px]",
+                            mode === "memo" ? "w-10" : "w-[74px]",
                             selected
                               ? "font-semibold text-ink hover:bg-transparent hover:text-ink"
                               : "bg-transparent hover:bg-transparent hover:text-ink",
