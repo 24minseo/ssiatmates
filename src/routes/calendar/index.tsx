@@ -77,6 +77,11 @@ const DAYS_OF_WEEK = ["일", "월", "화", "수", "목", "금", "토"] as const;
 const CHECKLIST_MAX_ITEMS = 10;
 const CHECKLIST_ITEM_MAX_LENGTH = 80;
 
+function resizeChecklistTextarea(element: HTMLTextAreaElement) {
+  element.style.height = "40px";
+  element.style.height = `${Math.min(element.scrollHeight, 64)}px`;
+}
+
 function toDateKey(date: Date) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -194,18 +199,39 @@ function CalendarPage() {
     setSelectedEvent(null);
   };
 
+  const createChecklistItem = (): ChecklistItem => ({
+    id: Date.now(),
+    text: "",
+    completed: false,
+  });
+
+  const handleContentModeChange = (mode: ContentMode) => {
+    setContentMode(mode);
+    if (mode === "checklist" && checklistItems.length === 0) {
+      const firstItem = createChecklistItem();
+      setChecklistItems([firstItem]);
+      setFocusedChecklistId(firstItem.id);
+    }
+  };
+
   const addChecklistItem = () => {
+    if (checklistItems.length >= CHECKLIST_MAX_ITEMS) return;
+    const nextItem = createChecklistItem();
+    setChecklistItems((current) => [...current, nextItem]);
+    setFocusedChecklistId(nextItem.id);
+  };
+
+  const addChecklistItemAfter = (itemId: number) => {
+    if (checklistItems.length >= CHECKLIST_MAX_ITEMS) return;
+    const nextItem = createChecklistItem();
     setChecklistItems((current) => {
-      if (current.length >= CHECKLIST_MAX_ITEMS) return current;
-      return [
-        ...current,
-        {
-          id: Date.now(),
-          text: "",
-          completed: false,
-        },
-      ];
+      const itemIndex = current.findIndex((item) => item.id === itemId);
+      if (itemIndex === -1) return current;
+      const next = [...current];
+      next.splice(itemIndex + 1, 0, nextItem);
+      return next;
     });
+    setFocusedChecklistId(nextItem.id);
   };
 
   const updateChecklistItem = (id: number, text: string) => {
@@ -607,7 +633,7 @@ function CalendarPage() {
                           type="button"
                           variant="ghost"
                           aria-pressed={selected}
-                          onClick={() => setContentMode(mode)}
+                          onClick={() => handleContentModeChange(mode)}
                           className={cn(
                             "h-7 rounded-[6px] px-2.5 text-[12px] font-normal text-ink-muted shadow-none",
                             mode === "memo" ? "w-10" : "w-[74px]",
@@ -650,7 +676,7 @@ function CalendarPage() {
                         item.text.length >= CHECKLIST_ITEM_MAX_LENGTH - 10;
 
                       return (
-                        <div key={item.id} className="flex items-center gap-2">
+                        <div key={item.id} className="group/checklist-row flex items-start gap-2">
                           <Button
                             type="button"
                             variant="ghost"
@@ -659,7 +685,7 @@ function CalendarPage() {
                             aria-pressed={item.completed}
                             onClick={() => toggleChecklistItem(item.id)}
                             className={cn(
-                              "size-5 shrink-0 rounded-[5px] border p-0 shadow-none focus-visible:ring-[3.2px] focus-visible:ring-focus-soft",
+                              "mt-2 size-5 shrink-0 rounded-[5px] border p-0 shadow-none focus-visible:ring-[3.2px] focus-visible:ring-focus-soft",
                               item.completed
                                 ? "border-brand bg-brand text-brand-foreground hover:bg-brand"
                                 : "border-field-border bg-surface text-transparent hover:border-brand hover:bg-surface",
@@ -668,20 +694,31 @@ function CalendarPage() {
                             {item.completed ? <Check aria-hidden="true" className="size-3.5" /> : null}
                           </Button>
                           <div className="relative min-w-0 flex-1">
-                            <Input
+                            <Textarea
                               value={item.text}
+                              rows={1}
                               maxLength={CHECKLIST_ITEM_MAX_LENGTH}
-                              onFocus={() => setFocusedChecklistId(item.id)}
+                              autoFocus={focusedChecklistId === item.id}
+                              onFocus={(event) => {
+                                setFocusedChecklistId(item.id);
+                                resizeChecklistTextarea(event.currentTarget);
+                              }}
                               onBlur={() => setFocusedChecklistId(null)}
+                              onInput={(event) => resizeChecklistTextarea(event.currentTarget)}
+                              onKeyDown={(event) => {
+                                if (event.key !== "Enter") return;
+                                event.preventDefault();
+                                addChecklistItemAfter(item.id);
+                              }}
                               onChange={(event) => updateChecklistItem(item.id, event.target.value)}
                               placeholder={`항목 ${index + 1}`}
-                              className="h-10 rounded-[10px] border-field-border px-3 pr-14 text-[15px] md:text-[15px] text-ink shadow-none placeholder:text-icon-muted focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft"
+                              className="h-10 min-h-10 max-h-16 resize-none overflow-y-auto rounded-[10px] border-field-border px-3 py-2 pb-6 pr-14 text-[15px] md:text-[15px] leading-5 text-ink shadow-none placeholder:text-icon-muted focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft"
                             />
                             {showCounter ? (
                               <span
                                 aria-live="polite"
                                 className={cn(
-                                  "pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[12px]",
+                                  "pointer-events-none absolute bottom-2 right-3 text-[12px]",
                                   item.text.length >= CHECKLIST_ITEM_MAX_LENGTH
                                     ? "text-brand"
                                     : "text-icon-muted",
@@ -697,7 +734,7 @@ function CalendarPage() {
                             size="icon"
                             aria-label={`항목 ${index + 1} 삭제`}
                             onClick={() => removeChecklistItem(item.id)}
-                            className="size-8 shrink-0 rounded-[8px] text-icon-muted shadow-none hover:bg-item-hover hover:text-ink"
+                            className="pointer-events-none mt-1 size-8 shrink-0 rounded-[8px] text-icon-muted opacity-0 shadow-none transition-opacity group-hover/checklist-row:pointer-events-auto group-hover/checklist-row:opacity-100 group-focus-within/checklist-row:pointer-events-auto group-focus-within/checklist-row:opacity-100 focus-visible:pointer-events-auto focus-visible:opacity-100 hover:bg-item-hover hover:text-ink"
                           >
                             <Trash2 aria-hidden="true" className="size-4" />
                           </Button>
