@@ -587,7 +587,7 @@ function CalendarPage() {
                 <div
                   role="group"
                   aria-label="상세 내용 형식"
-                  className="relative flex h-8 w-[124px] items-center rounded-[8px] bg-item-hover p-0.5"
+                  className="relative -top-px flex h-8 w-[124px] items-center rounded-[8px] bg-item-hover p-0.5"
                 >
                   <span
                     aria-hidden="true"
