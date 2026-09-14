@@ -85,18 +85,18 @@ function resizeChecklistTextarea(element: HTMLTextAreaElement) {
   element.style.height = `${Math.min(element.scrollHeight, 64)}px`;
 }
 
-function createChecklistDragPreview(item: ChecklistItem, index: number, rowWidth: number) {
+function createChecklistDragPreview(item: ChecklistItem, index: number, rowWidth: number, rowHeight: number) {
   const preview = document.createElement("div");
   preview.style.position = "absolute";
   preview.style.left = "-10000px";
   preview.style.top = "-10000px";
   preview.style.display = "flex";
   preview.style.width = `${Math.max(Math.round(rowWidth), 280)}px`;
-  preview.style.height = "40px";
+  preview.style.height = `${Math.max(Math.round(rowHeight), 40)}px`;
   preview.style.boxSizing = "border-box";
   preview.style.alignItems = "center";
   preview.style.gap = "8px";
-  preview.style.padding = "8px 12px";
+  preview.style.padding = "6px 8px";
   preview.style.borderRadius = "8px";
   preview.style.background = "#FFFFFF";
   preview.style.boxShadow = "0 6px 14px rgba(22, 59, 49, 0.12)";
@@ -775,7 +775,7 @@ function CalendarPage() {
                           className={cn(
                             "group/checklist-row relative grid grid-cols-[32px_20px_minmax(0,1fr)_32px] items-start gap-2 rounded-[8px] px-2 py-1.5 transition-[opacity,transform,box-shadow] duration-150 ease-out",
                             draggingChecklistId === item.id &&
-                              "scale-[1.01] opacity-90 shadow-[0_6px_14px_rgba(22,59,49,0.12)]",
+                              "opacity-40",
                           )}
                         >
                           {draggingChecklistId !== null &&
@@ -798,8 +798,13 @@ function CalendarPage() {
                               event.dataTransfer.effectAllowed = "move";
                               event.dataTransfer.setData("text/plain", String(item.id));
                               const row = event.currentTarget.closest<HTMLElement>("[data-checklist-row]");
-                              const rowWidth = row?.getBoundingClientRect().width ?? 280;
-                              const preview = createChecklistDragPreview(item, index, rowWidth);
+                              const rowBounds = row?.getBoundingClientRect();
+                              const preview = createChecklistDragPreview(
+                                item,
+                                index,
+                                rowBounds?.width ?? 280,
+                                rowBounds?.height ?? 40,
+                              );
                               document.body.appendChild(preview);
                               event.dataTransfer.setDragImage(preview, 16, 8);
                               window.setTimeout(() => preview.remove(), 0);
