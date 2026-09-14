@@ -531,7 +531,7 @@ function CalendarPage() {
               className="h-9 rounded-[18px] border-field-border bg-surface px-4 text-[14px] font-normal text-guide-text shadow-none hover:bg-item-hover hover:text-ink focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft"
             >
               지원사업 선택
-              <ChevronDown aria-hidden="true" className="size-4" />
+              <ChevronDown aria-hidden="true" className="size-4 text-ink-muted" />
             </Button>
 
             <div className="mt-[18px] grid gap-1.5">
