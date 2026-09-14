@@ -612,7 +612,12 @@ function CalendarPage() {
             <fieldset className="mt-[18px]">
               <legend className="text-sm font-semibold text-ink">알림</legend>
               <div className="mt-2 flex h-9 items-center gap-1.5">
-                <span className="flex h-9 items-center gap-1.5 rounded-[18px] bg-item-hover px-4 text-[14px] font-normal text-icon-muted">
+                <span
+                  className={cn(
+                    "flex h-9 items-center gap-1.5 rounded-[18px] bg-item-hover px-4 text-[14px] font-normal",
+                    hasReminder ? "text-icon-muted" : "text-control-inactive",
+                  )}
+                >
                   {hasReminder ? <Bell aria-hidden="true" className="size-3.5" /> : null}
                   {hasReminder ? "10분 전" : "알림 없음"}
                 </span>
