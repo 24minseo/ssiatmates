@@ -759,7 +759,7 @@ function CalendarPage() {
                 </div>
               ) : (
                 <div className="mt-1 rounded-[12px] bg-surface py-2.5 pl-0 pr-2.5">
-                  <div className="flex flex-col">
+                  <div className="flex flex-col gap-1">
                     {checklistItems.map((item, index) => {
                       return (
                         <div
