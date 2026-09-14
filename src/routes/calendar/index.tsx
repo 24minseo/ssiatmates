@@ -523,7 +523,7 @@ function CalendarPage() {
             </div>
 
             <div className="mt-[18px] grid grid-cols-2 gap-4">
-              <div className="grid gap-2">
+              <div className="grid gap-1">
                 <Label htmlFor="todo-date" className="text-sm font-semibold text-ink">날짜</Label>
                 <div className="relative">
                   <Input
