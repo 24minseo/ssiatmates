@@ -759,7 +759,8 @@ function CalendarPage() {
                 </div>
               ) : (
                 <div className="mt-1 rounded-[12px] bg-surface py-2.5 pl-0 pr-2.5">
-                  <div className="flex flex-col gap-1">
+                  <div className="relative flex flex-col gap-1">
+                    <span aria-hidden="true" className="pointer-events-none absolute bottom-1 left-0.5 top-1 w-0.5 rounded-full bg-field-border" />
                     {checklistItems.map((item, index) => {
                       return (
                         <div
@@ -834,7 +835,7 @@ function CalendarPage() {
                             }}
                             className="pointer-events-none relative col-start-1 mt-0 size-8 shrink-0 cursor-grab rounded-[8px] text-icon-muted opacity-0 shadow-none transition-opacity active:cursor-grabbing group-hover/checklist-row:pointer-events-auto group-hover/checklist-row:opacity-100 focus-visible:pointer-events-auto focus-visible:opacity-100 hover:bg-transparent hover:text-[#62756E]"
                           >
-                            <GripVertical aria-hidden="true" className="size-4 -translate-x-2" />
+                            <GripVertical aria-hidden="true" className="size-4 -translate-x-1" />
                           </Button>
                           <Checkbox
                             checked={item.completed}
