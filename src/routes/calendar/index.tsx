@@ -722,7 +722,7 @@ function CalendarPage() {
                             setDragOverChecklistId(null);
                           }}
                           className={cn(
-                            "group/checklist-row relative flex items-start gap-2 rounded-[8px] px-2 py-1.5 transition-[background-color,opacity,transform,box-shadow] duration-150 ease-out hover:bg-item-hover",
+                            "group/checklist-row relative grid grid-cols-[32px_20px_minmax(0,1fr)_32px] items-start gap-2 rounded-[8px] px-2 py-1.5 transition-[background-color,opacity,transform,box-shadow] duration-150 ease-out hover:bg-item-hover",
                             draggingChecklistId === item.id &&
                               "scale-[1.01] opacity-90 shadow-[0_6px_14px_rgba(22,59,49,0.12)]",
                           )}
@@ -737,6 +737,26 @@ function CalendarPage() {
                             />
                           ) : null}
 
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            draggable
+                            aria-label={`항목 ${index + 1} 순서 이동`}
+                            onDragStart={(event) => {
+                              event.dataTransfer.effectAllowed = "move";
+                              event.dataTransfer.setData("text/plain", String(item.id));
+                              setDraggingChecklistId(item.id);
+                              setDragOverChecklistId(null);
+                            }}
+                            onDragEnd={() => {
+                              setDraggingChecklistId(null);
+                              setDragOverChecklistId(null);
+                            }}
+                            className="pointer-events-none mt-0.5 size-8 shrink-0 cursor-grab rounded-[8px] text-icon-muted opacity-0 shadow-none transition-opacity active:cursor-grabbing group-hover/checklist-row:pointer-events-auto group-hover/checklist-row:opacity-100 focus-visible:pointer-events-auto focus-visible:opacity-100 hover:bg-item-hover hover:text-ink"
+                          >
+                            <GripVertical aria-hidden="true" className="size-4" />
+                          </Button>
                           <Button
                             type="button"
                             variant="ghost"
@@ -796,26 +816,6 @@ function CalendarPage() {
                               className="pointer-events-none absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-brand"
                             />
                           ) : null}
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            draggable
-                            aria-label={`항목 ${index + 1} 순서 이동`}
-                            onDragStart={(event) => {
-                              event.dataTransfer.effectAllowed = "move";
-                              event.dataTransfer.setData("text/plain", String(item.id));
-                              setDraggingChecklistId(item.id);
-                              setDragOverChecklistId(null);
-                            }}
-                            onDragEnd={() => {
-                              setDraggingChecklistId(null);
-                              setDragOverChecklistId(null);
-                            }}
-                            className="pointer-events-none mt-0.5 size-8 shrink-0 cursor-grab rounded-[8px] text-icon-muted opacity-0 shadow-none transition-opacity active:cursor-grabbing group-hover/checklist-row:pointer-events-auto group-hover/checklist-row:opacity-100 focus-visible:pointer-events-auto focus-visible:opacity-100 hover:bg-item-hover hover:text-ink"
-                          >
-                            <GripVertical aria-hidden="true" className="size-4" />
-                          </Button>
                         </div>
                       );
                     })}
