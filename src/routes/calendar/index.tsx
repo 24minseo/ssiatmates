@@ -753,7 +753,7 @@ function CalendarPage() {
                               setDraggingChecklistId(null);
                               setDragOverChecklistId(null);
                             }}
-                            className="pointer-events-none mt-0.5 size-8 shrink-0 cursor-grab rounded-[8px] text-icon-muted opacity-0 shadow-none transition-opacity active:cursor-grabbing group-hover/checklist-row:pointer-events-auto group-hover/checklist-row:opacity-100 focus-visible:pointer-events-auto focus-visible:opacity-100 hover:bg-item-hover hover:text-ink"
+                            className="pointer-events-none mt-0.5 size-8 shrink-0 cursor-grab rounded-[8px] text-icon-muted opacity-0 shadow-none transition-opacity active:cursor-grabbing group-hover/checklist-row:pointer-events-auto group-hover/checklist-row:opacity-100 focus-visible:pointer-events-auto focus-visible:opacity-100 hover:bg-item-hover hover:text-[#62756E]"
                           >
                             <GripVertical aria-hidden="true" className="size-4" />
                           </Button>
@@ -803,7 +803,7 @@ function CalendarPage() {
                             size="icon"
                             aria-label={`항목 ${index + 1} 삭제`}
                             onClick={() => removeChecklistItem(item.id)}
-                            className="pointer-events-none mt-0.5 size-8 shrink-0 rounded-[8px] text-icon-muted opacity-0 shadow-none transition-opacity group-hover/checklist-row:pointer-events-auto group-hover/checklist-row:opacity-100 focus-visible:pointer-events-auto focus-visible:opacity-100 hover:bg-item-hover hover:text-ink"
+                            className="pointer-events-none mt-0.5 size-8 shrink-0 rounded-[8px] text-icon-muted opacity-0 shadow-none transition-opacity group-hover/checklist-row:pointer-events-auto group-hover/checklist-row:opacity-100 focus-visible:pointer-events-auto focus-visible:opacity-100 hover:bg-item-hover hover:text-[#62756E]"
                           >
                             <Trash2 aria-hidden="true" className="size-4" />
                           </Button>
