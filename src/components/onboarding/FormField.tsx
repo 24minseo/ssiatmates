@@ -41,7 +41,7 @@ export function FormField({
   children: ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col gap-1.5">
       <div className="flex min-h-6 items-center justify-between gap-3">
         <FieldLabel htmlFor={htmlFor} required={required}>
           {label}
