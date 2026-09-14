@@ -97,7 +97,7 @@ function createChecklistDragPreview(item: ChecklistItem, index: number, rowWidth
   preview.style.alignItems = "center";
   preview.style.gap = "8px";
   preview.style.padding = "6px 8px";
-  preview.style.borderRadius = "8px";
+  preview.style.borderRadius = "12px";
   preview.style.background = "#FFFFFF";
   preview.style.boxShadow = "0 4px 12px rgba(132, 150, 142, 0.06)";
   preview.style.opacity = "0.8";
