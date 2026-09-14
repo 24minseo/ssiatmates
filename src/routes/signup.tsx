@@ -161,7 +161,7 @@ function SignupPage() {
             <ul
               id="signup-password-requirements"
               aria-label="비밀번호 조건"
-              className="mt-[3px] flex flex-wrap items-center gap-x-4 gap-y-1"
+              className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1"
             >
               <PasswordRequirement met={hasLetter}>영문 알파벳</PasswordRequirement>
               <PasswordRequirement met={hasNumber}>숫자</PasswordRequirement>
