@@ -790,7 +790,7 @@ function CalendarPage() {
                             setDragOverChecklistId(null);
                           }}
                           className={cn(
-                            "group/checklist-row relative grid grid-cols-[20px_minmax(0,1fr)_32px] items-start gap-2 rounded-[8px] py-1.5 pl-0 pr-2 transition-[opacity,transform,box-shadow] duration-150 ease-out",
+                            "group/checklist-row relative grid grid-cols-[32px_20px_minmax(0,1fr)_32px] items-start gap-2 rounded-[8px] py-1.5 pl-0 pr-2 transition-[opacity,transform,box-shadow] duration-150 ease-out",
                             draggingChecklistId === item.id &&
                               "opacity-40",
                           )}
@@ -832,7 +832,7 @@ function CalendarPage() {
                               setDraggingChecklistId(null);
                               setDragOverChecklistId(null);
                             }}
-                            className="pointer-events-none absolute -left-7 top-0 z-10 size-8 shrink-0 cursor-grab rounded-[8px] text-icon-muted opacity-0 shadow-none transition-opacity active:cursor-grabbing group-hover/checklist-row:pointer-events-auto group-hover/checklist-row:opacity-100 focus-visible:pointer-events-auto focus-visible:opacity-100 hover:bg-transparent hover:text-[#62756E]"
+                            className="pointer-events-none relative col-start-1 mt-0 size-8 shrink-0 cursor-grab rounded-[8px] text-icon-muted opacity-0 shadow-none transition-opacity active:cursor-grabbing group-hover/checklist-row:pointer-events-auto group-hover/checklist-row:opacity-100 focus-visible:pointer-events-auto focus-visible:opacity-100 hover:bg-transparent hover:text-[#62756E]"
                           >
                             <GripVertical aria-hidden="true" className="size-4" />
                           </Button>
@@ -872,7 +872,7 @@ function CalendarPage() {
                             size="icon"
                             aria-label={`항목 ${index + 1} 삭제`}
                             onClick={() => removeChecklistItem(item.id)}
-                            className="pointer-events-none col-start-3 mt-0 size-8 shrink-0 rounded-[8px] text-icon-muted opacity-0 shadow-none transition-opacity group-hover/checklist-row:pointer-events-auto group-hover/checklist-row:opacity-100 focus-visible:pointer-events-auto focus-visible:opacity-100 hover:bg-item-hover hover:text-[#62756E]"
+                            className="pointer-events-none col-start-4 mt-0 size-8 shrink-0 rounded-[8px] text-icon-muted opacity-0 shadow-none transition-opacity group-hover/checklist-row:pointer-events-auto group-hover/checklist-row:opacity-100 focus-visible:pointer-events-auto focus-visible:opacity-100 hover:bg-item-hover hover:text-[#62756E]"
                           >
                             <span
                               aria-hidden="true"
@@ -904,7 +904,7 @@ function CalendarPage() {
                       type="button"
                       variant="ghost"
                       onClick={addChecklistItem}
-                      className="mt-1 ml-7 h-8 rounded-[8px] px-2 text-[13px] font-normal text-brand shadow-none hover:bg-transparent hover:text-brand hover:underline"
+                      className="mt-1 ml-[68px] h-8 rounded-[8px] px-2 text-[13px] font-normal text-brand shadow-none hover:bg-transparent hover:text-brand hover:underline"
                     >
                       <Plus aria-hidden="true" className="size-4" />
                       항목 추가
