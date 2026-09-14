@@ -443,7 +443,7 @@ function CalendarPage() {
 
             <div className="mt-[18px] grid gap-2">
               <Label htmlFor="todo-title" className="text-sm font-semibold text-ink">
-                제목<span className="relative -top-px ml-1 text-brand">*</span>
+                제목<span className="relative -top-px ml-0.5 text-brand">*</span>
               </Label>
               <Input
                 id="todo-title"
