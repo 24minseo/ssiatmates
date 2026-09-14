@@ -477,8 +477,17 @@ function CalendarPage() {
                     type="time"
                     value={eventStartTime}
                     onChange={(event) => setEventStartTime(event.target.value)}
-                    className="h-12 rounded-[12px] border-field-border px-3.5 pr-10 text-[15px] text-ink shadow-none focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0"
+                    placeholder="시작 시간 선택"
+                    className={cn(
+                      "h-12 rounded-[12px] border-field-border px-3.5 pr-10 text-[15px] text-ink shadow-none focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0",
+                      !eventStartTime && "text-transparent placeholder:text-transparent caret-[#1F8064]",
+                    )}
                   />
+                  {!eventStartTime ? (
+                    <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[15px] text-icon-muted">
+                      시작 시간 선택
+                    </span>
+                  ) : null}
                   <Clock3 aria-hidden="true" className="pointer-events-none absolute right-3.5 top-1/2 size-[18px] -translate-y-1/2 text-guide-text" />
                 </div>
               </div>
