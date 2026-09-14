@@ -85,6 +85,50 @@ function resizeChecklistTextarea(element: HTMLTextAreaElement) {
   element.style.height = `${Math.min(element.scrollHeight, 64)}px`;
 }
 
+function createChecklistDragPreview(item: ChecklistItem, index: number) {
+  const preview = document.createElement("div");
+  preview.style.position = "absolute";
+  preview.style.left = "-10000px";
+  preview.style.top = "-10000px";
+  preview.style.display = "flex";
+  preview.style.width = "280px";
+  preview.style.height = "40px";
+  preview.style.alignItems = "center";
+  preview.style.gap = "8px";
+  preview.style.padding = "8px 12px";
+  preview.style.border = "1px solid #D8E1DD";
+  preview.style.borderRadius = "8px";
+  preview.style.background = "#FFFFFF";
+  preview.style.boxShadow = "0 6px 14px rgba(22, 59, 49, 0.12)";
+  preview.style.fontFamily = "inherit";
+  preview.style.fontSize = "15px";
+  preview.style.lineHeight = "20px";
+  preview.style.color = "#163B31";
+
+  const checkbox = document.createElement("span");
+  checkbox.style.display = "inline-flex";
+  checkbox.style.width = "20px";
+  checkbox.style.height = "20px";
+  checkbox.style.flexShrink = "0";
+  checkbox.style.alignItems = "center";
+  checkbox.style.justifyContent = "center";
+  checkbox.style.border = item.completed ? "1px solid #1F8064" : "1px solid #D8E1DD";
+  checkbox.style.borderRadius = "5px";
+  checkbox.style.background = item.completed ? "#1F8064" : "#FFFFFF";
+  checkbox.style.color = "#FFFFFF";
+  checkbox.textContent = item.completed ? "✓" : "";
+
+  const label = document.createElement("span");
+  label.style.minWidth = "0";
+  label.style.overflow = "hidden";
+  label.style.textOverflow = "ellipsis";
+  label.style.whiteSpace = "nowrap";
+  label.textContent = item.text || `항목 ${index + 1}`;
+
+  preview.append(checkbox, label);
+  return preview;
+}
+
 function toDateKey(date: Date) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -702,6 +746,7 @@ function CalendarPage() {
                       return (
                         <div
                           key={item.id}
+                          data-checklist-row
                           onDragOver={(event) => {
                             event.preventDefault();
                             event.dataTransfer.dropEffect = "move";
@@ -729,7 +774,7 @@ function CalendarPage() {
                           className={cn(
                             "group/checklist-row relative grid grid-cols-[32px_20px_minmax(0,1fr)_32px] items-start gap-2 rounded-[8px] px-2 py-1.5 transition-[opacity,transform,box-shadow] duration-150 ease-out",
                             draggingChecklistId === item.id &&
-                              "scale-[1.01] opacity-90 shadow-[0_6px_14px_rgba(22,59,49,0.12)]",
+                              "opacity-40",
                           )}
                         >
                           {draggingChecklistId !== null &&
@@ -751,6 +796,10 @@ function CalendarPage() {
                             onDragStart={(event) => {
                               event.dataTransfer.effectAllowed = "move";
                               event.dataTransfer.setData("text/plain", String(item.id));
+                              const preview = createChecklistDragPreview(item, index);
+                              document.body.appendChild(preview);
+                              event.dataTransfer.setDragImage(preview, 16, 8);
+                              window.setTimeout(() => preview.remove(), 0);
                               setDraggingChecklistId(item.id);
                               setDragOverChecklistId(null);
                             }}
