@@ -271,8 +271,8 @@ function CalendarPage() {
                       "relative shrink-0 px-[10px] py-[6px] text-[13px] font-normal leading-[normal] transition-colors duration-150 motion-reduce:transition-none hover:bg-transparent",
                       selected
                         ? monthOption
-                          ? "h-8 w-11 rounded-[12px] text-ink hover:text-ink"
-                          : "h-8 w-14 rounded-[6px] text-ink hover:text-ink"
+                          ? "h-8 w-11 rounded-[12px] font-semibold text-ink hover:text-ink"
+                          : "h-8 w-14 rounded-[6px] font-semibold text-ink hover:text-ink"
                         : monthOption
                           ? "h-7 w-11 rounded-[6px] text-control-inactive hover:text-control-inactive"
                           : "h-7 w-14 rounded-[6px] text-control-inactive hover:text-control-inactive",
@@ -287,7 +287,7 @@ function CalendarPage() {
           <Button
             type="button"
             onClick={() => openAddDialog()}
-            className="h-[42px] w-28 rounded-[12px] bg-brand px-0 text-[15px] font-normal text-brand-foreground shadow-none hover:bg-brand/88 active:bg-brand-pressed"
+            className="h-[42px] w-28 rounded-[12px] bg-brand px-0 text-[15px] font-semibold text-brand-foreground shadow-none hover:bg-brand/88 active:bg-brand-pressed"
           >
             할 일 추가
           </Button>
