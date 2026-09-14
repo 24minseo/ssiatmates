@@ -668,15 +668,11 @@ function CalendarPage() {
                   </span>
                 </div>
               ) : (
-                <div className="mt-1 rounded-[12px] bg-item-hover/50 p-2.5">
-                  <div className="flex flex-col divide-y divide-field-border/60">
+                <div className="mt-1 rounded-[12px] bg-surface p-2.5">
+                  <div className="flex flex-col">
                     {checklistItems.map((item, index) => {
-                      const showCounter =
-                        focusedChecklistId === item.id ||
-                        item.text.length >= CHECKLIST_ITEM_MAX_LENGTH - 10;
-
                       return (
-                        <div key={item.id} className="group/checklist-row flex items-start gap-2 rounded-[8px] px-2 py-1.5 transition-colors hover:bg-item-hover focus-within:bg-item-hover">
+                        <div key={item.id} className="group/checklist-row flex items-start gap-2 px-2 py-1.5">
                           <Button
                             type="button"
                             variant="ghost"
@@ -706,30 +702,16 @@ function CalendarPage() {
                               onBlur={() => setFocusedChecklistId(null)}
                               onInput={(event) => resizeChecklistTextarea(event.currentTarget)}
                               onKeyDown={(event) => {
-                                if (event.key !== "Enter") return;
+                                if (event.key !== "Enter" || event.nativeEvent.isComposing) return;
                                 event.preventDefault();
                                 addChecklistItemAfter(item.id);
                               }}
                               onChange={(event) => updateChecklistItem(item.id, event.target.value)}
                               placeholder={`항목 ${index + 1}`}
                               className={cn(
-                                "h-10 !min-h-10 max-h-16 resize-none overflow-y-auto rounded-[8px] border border-transparent bg-transparent px-2 py-2 pr-14 text-[15px] md:text-[15px] leading-5 text-ink shadow-none placeholder:text-icon-muted focus-visible:border-transparent focus-visible:border-b-brand focus-visible:bg-transparent focus-visible:ring-0 focus-visible:ring-focus-soft",
-                                showCounter ? "pb-6" : "pb-2",
+                                "h-10 !min-h-10 max-h-16 resize-none overflow-y-auto rounded-none border border-transparent bg-transparent px-2 py-2 text-[15px] md:text-[15px] leading-5 text-ink shadow-none placeholder:text-icon-muted focus-visible:border-transparent focus-visible:border-b-brand focus-visible:bg-transparent focus-visible:ring-0 focus-visible:ring-focus-soft",
                               )}
                             />
-                            {showCounter ? (
-                              <span
-                                aria-live="polite"
-                                className={cn(
-                                  "pointer-events-none absolute bottom-2 right-3 text-[12px]",
-                                  item.text.length >= CHECKLIST_ITEM_MAX_LENGTH
-                                    ? "text-brand"
-                                    : "text-icon-muted",
-                                )}
-                              >
-                                {item.text.length}/{CHECKLIST_ITEM_MAX_LENGTH}
-                              </span>
-                            ) : null}
                           </div>
                           <Button
                             type="button"
@@ -737,7 +719,7 @@ function CalendarPage() {
                             size="icon"
                             aria-label={`항목 ${index + 1} 삭제`}
                             onClick={() => removeChecklistItem(item.id)}
-                            className="pointer-events-none mt-0.5 size-8 shrink-0 rounded-[8px] text-icon-muted opacity-0 shadow-none transition-opacity group-hover/checklist-row:pointer-events-auto group-hover/checklist-row:opacity-100 group-focus-within/checklist-row:pointer-events-auto group-focus-within/checklist-row:opacity-100 focus-visible:pointer-events-auto focus-visible:opacity-100 hover:bg-item-hover hover:text-ink"
+                            className="pointer-events-none mt-0.5 size-8 shrink-0 rounded-[8px] text-icon-muted opacity-0 shadow-none transition-opacity group-hover/checklist-row:pointer-events-auto group-hover/checklist-row:opacity-100 focus-visible:pointer-events-auto focus-visible:opacity-100 hover:bg-item-hover hover:text-ink"
                           >
                             <Trash2 aria-hidden="true" className="size-4" />
                           </Button>
