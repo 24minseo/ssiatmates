@@ -883,7 +883,16 @@ function CalendarPage() {
                             onClick={() => removeChecklistItem(item.id)}
                             className="pointer-events-none col-start-4 mt-0.5 size-8 shrink-0 rounded-[8px] text-icon-muted opacity-0 shadow-none transition-opacity group-hover/checklist-row:pointer-events-auto group-hover/checklist-row:opacity-100 focus-visible:pointer-events-auto focus-visible:opacity-100 hover:bg-item-hover hover:text-[#62756E]"
                           >
-                            <Trash2 aria-hidden="true" className="size-4" />
+                            <span
+                              aria-hidden="true"
+                              className="size-4 bg-current"
+                              style={{
+                                maskImage: "url('/assets/sidebar/delete.svg')",
+                                maskPosition: "center",
+                                maskRepeat: "no-repeat",
+                                maskSize: "contain",
+                              }}
+                            />
                           </Button>
                           {draggingChecklistId !== null &&
                           dragOverChecklistId === item.id &&
