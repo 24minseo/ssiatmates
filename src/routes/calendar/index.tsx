@@ -790,7 +790,7 @@ function CalendarPage() {
                             setDragOverChecklistId(null);
                           }}
                           className={cn(
-                            "group/checklist-row relative grid grid-cols-[32px_20px_minmax(0,1fr)_32px] items-start gap-2 rounded-[8px] py-1.5 pl-0 pr-2 transition-[opacity,transform,box-shadow] duration-150 ease-out",
+                            "group/checklist-row relative grid grid-cols-[24px_20px_minmax(0,1fr)_32px] items-start gap-2 rounded-[8px] py-1.5 pl-0 pr-2 transition-[opacity,transform,box-shadow] duration-150 ease-out",
                             draggingChecklistId === item.id &&
                               "opacity-40",
                           )}
@@ -904,7 +904,7 @@ function CalendarPage() {
                       type="button"
                       variant="ghost"
                       onClick={addChecklistItem}
-                      className="mt-1 ml-[68px] h-8 rounded-[8px] px-2 text-[13px] font-normal text-brand shadow-none hover:bg-transparent hover:text-brand hover:underline"
+                      className="mt-1 ml-[60px] h-8 rounded-[8px] px-2 text-[13px] font-normal text-brand shadow-none hover:bg-transparent hover:text-brand hover:underline"
                     >
                       <Plus aria-hidden="true" className="size-4" />
                       항목 추가
