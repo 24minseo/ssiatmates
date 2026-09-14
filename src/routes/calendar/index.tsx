@@ -676,7 +676,7 @@ function CalendarPage() {
                         item.text.length >= CHECKLIST_ITEM_MAX_LENGTH - 10;
 
                       return (
-                        <div key={item.id} className="group/checklist-row flex items-start gap-2 rounded-[8px] px-2 py-1.5 transition-colors hover:bg-item-hover focus-within:bg-surface">
+                        <div key={item.id} className="group/checklist-row flex items-start gap-2 rounded-[8px] px-2 py-1.5 transition-colors hover:bg-item-hover focus-within:bg-item-hover">
                           <Button
                             type="button"
                             variant="ghost"
@@ -713,7 +713,7 @@ function CalendarPage() {
                               onChange={(event) => updateChecklistItem(item.id, event.target.value)}
                               placeholder={`항목 ${index + 1}`}
                               className={cn(
-                                "h-10 !min-h-10 max-h-16 resize-none overflow-y-auto rounded-[8px] border border-transparent bg-transparent px-2 py-2 pr-14 text-[15px] md:text-[15px] leading-5 text-ink shadow-none placeholder:text-icon-muted focus-visible:border-brand focus-visible:bg-surface focus-visible:ring-[3.2px] focus-visible:ring-focus-soft",
+                                "h-10 !min-h-10 max-h-16 resize-none overflow-y-auto rounded-[8px] border border-transparent bg-transparent px-2 py-2 pr-14 text-[15px] md:text-[15px] leading-5 text-ink shadow-none placeholder:text-icon-muted focus-visible:border-transparent focus-visible:border-b-brand focus-visible:bg-transparent focus-visible:ring-0 focus-visible:ring-focus-soft",
                                 showCounter ? "pb-6" : "pb-2",
                               )}
                             />
