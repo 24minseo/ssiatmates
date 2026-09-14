@@ -94,14 +94,21 @@ export function AuthField({
 
 interface GoogleButtonProps {
   label: string;
+  onClick?: (() => void) | undefined;
 }
 
-export function GoogleButton({ label }: GoogleButtonProps) {
+export function GoogleButton({ label, onClick }: GoogleButtonProps) {
   return (
     <button
       type="button"
-      aria-disabled="true"
-      onClick={(event) => event.preventDefault()}
+      aria-disabled={onClick ? undefined : true}
+      onClick={(event) => {
+        if (onClick) {
+          onClick();
+          return;
+        }
+        event.preventDefault();
+      }}
       className="google-auth-button flex h-12 w-full cursor-pointer items-center justify-center gap-[10px] rounded-[10px] border border-[#D8E1DD] bg-white text-[14px] font-medium font-['Roboto'] leading-5 text-ink shadow-[0_0.6px_0.3px_#D6DBD5,0_4px_16px_rgba(238,238,238,0.5)] transition-[box-shadow,transform,background-color] duration-150 hover:shadow-[0_0.6px_0.3px_#D6DBD5,0_4px_16px_rgba(238,238,238,0.5),0_4px_10px_rgba(202,202,202,0.22)] active:translate-y-px active:scale-[0.99] active:shadow-[0_0.6px_0.3px_#D6DBD5]"
     >
       <svg
