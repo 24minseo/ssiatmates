@@ -643,8 +643,8 @@ function CalendarPage() {
                     className={cn(
                       "absolute top-1 h-6 rounded-[6px] bg-surface shadow-[0_1px_3px_0_rgba(85,113,78,0.1)] transition-[left,width] duration-150 ease-out motion-reduce:transition-none",
                       contentMode === "memo"
-                        ? "left-0.5 w-10"
-                        : "left-[44px] w-[74px]",
+                        ? "left-1 w-9"
+                        : "left-[46px] w-[70px]",
                     )}
                   />
                   <div className="relative z-10 flex w-[116px] items-center justify-between">
