@@ -333,7 +333,7 @@ function CalendarPage() {
                             event.stopPropagation();
                             setSelectedDayEvents({ date: day.key, events: dayEvents });
                           }}
-                          className="h-6 w-full truncate rounded-[6px] px-2 text-left text-xs font-medium text-ink-muted hover:bg-item-hover"
+                          className="h-6 w-full truncate rounded-[6px] px-2 text-left text-xs font-medium text-ink-muted hover:bg-item-hover hover:underline"
                         >
                           {dayEvents.length - 2}개 더보기
                         </button>
