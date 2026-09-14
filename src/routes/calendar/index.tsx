@@ -252,7 +252,7 @@ function CalendarPage() {
                 "absolute top-1/2 h-8 -translate-y-1/2 rounded-[8px] bg-surface shadow-[0_2px_6px_0_rgba(85,113,78,0.1)] transition-[left,width] duration-150 ease-out motion-reduce:transition-none",
                 view === "month"
                   ? "left-[5px] w-11"
-                  : "left-[52px] w-14",
+                  : "left-[51px] w-14",
               )}
             />
             <div className="absolute left-[5px] top-1/2 flex h-8 w-[102px] -translate-y-1/2 items-center justify-between">
