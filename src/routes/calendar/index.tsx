@@ -502,7 +502,7 @@ function CalendarPage() {
             <Button
               type="button"
               variant="outline"
-              className="h-9 rounded-[18px] border-field-border bg-surface px-4 text-[13px] font-normal text-ink-muted shadow-none hover:bg-item-hover hover:text-ink"
+              className="h-9 rounded-[18px] border-field-border bg-surface px-4 text-[14px] font-normal text-ink-muted shadow-none hover:bg-item-hover hover:text-ink"
             >
               지원사업 선택
               <ChevronDown aria-hidden="true" className="size-4" />
@@ -563,7 +563,7 @@ function CalendarPage() {
             <fieldset className="mt-[18px]">
               <legend className="text-sm font-semibold text-ink">알림</legend>
               <div className="mt-2 flex h-9 items-center gap-1.5">
-                <span className="flex h-9 items-center gap-1.5 rounded-[18px] bg-item-hover px-4 text-[13px] font-normal text-icon-muted">
+                <span className="flex h-9 items-center gap-1.5 rounded-[18px] bg-item-hover px-4 text-[14px] font-normal text-icon-muted">
                   {hasReminder ? <Bell aria-hidden="true" className="size-3.5" /> : null}
                   {hasReminder ? "10분 전" : "알림 없음"}
                 </span>
@@ -571,7 +571,7 @@ function CalendarPage() {
                   type="button"
                   variant="ghost"
                   onClick={() => setHasReminder((current) => !current)}
-                  className="h-9 rounded-[8px] px-2 text-[13px] font-normal text-ink-muted hover:bg-item-hover hover:text-ink"
+                  className="h-9 rounded-[8px] px-2 text-[14px] font-normal text-ink-muted hover:bg-item-hover hover:text-ink"
                 >
                   <Plus aria-hidden="true" className="size-4" />
                   {hasReminder ? "알림 제거" : "알림 추가"}
@@ -731,7 +731,7 @@ function CalendarPage() {
               type="button"
               variant="secondary"
               onClick={() => setIsAddOpen(false)}
-              className="h-12 w-[89px] rounded-[12px] bg-secondary-btn text-[15px] font-semibold text-secondary-btn-text shadow-none hover:bg-secondary-btn-hover hover:text-secondary-btn-text-hover"
+              className="h-12 w-[89px] rounded-[12px] bg-secondary-btn text-[16px] font-semibold text-secondary-btn-text shadow-none hover:bg-secondary-btn-hover hover:text-secondary-btn-text-hover"
             >
               취소
             </Button>
@@ -739,7 +739,7 @@ function CalendarPage() {
               type="button"
               disabled={!eventTitle.trim() || !eventDate}
               onClick={saveEvent}
-              className="h-12 w-[119px] rounded-[12px] bg-brand text-[15px] font-semibold text-brand-foreground shadow-none hover:bg-brand/88 active:bg-brand-pressed disabled:bg-brand-disabled disabled:opacity-100"
+              className="h-12 w-[119px] rounded-[12px] bg-brand text-[16px] font-semibold text-brand-foreground shadow-none hover:bg-brand/88 active:bg-brand-pressed disabled:bg-brand-disabled disabled:opacity-100"
             >
               저장하기
             </Button>
