@@ -177,7 +177,7 @@ function CalendarPage() {
       title,
       date: eventDate,
       description: eventDescription.trim(),
-      startTime: eventStartTime || undefined,
+      ...(eventStartTime ? { startTime: eventStartTime } : {}),
       reminder: hasReminder,
     };
     setEvents((current) => {
@@ -188,6 +188,7 @@ function CalendarPage() {
     });
     setVisibleMonth(() => {
       const [eventYear, eventMonth] = eventDate.split("-").map(Number);
+      if (eventYear === undefined || eventMonth === undefined) return visibleMonth;
       return new Date(eventYear, eventMonth - 1, 1);
     });
     setSelectedDate(eventDate);
