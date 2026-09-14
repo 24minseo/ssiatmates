@@ -42,7 +42,11 @@ function LoginPage() {
           if (canSubmit) void navigate({ to: "/myhome" });
         }}
       >
-        <GoogleButton label="Google 계정으로 로그인" />
+        {/* TODO: 임시 연결 — 실제 Google OAuth 연동 후 콜백 라우트로 교체 */}
+        <GoogleButton
+          label="Google 계정으로 로그인"
+          onClick={() => void navigate({ to: "/myhome" })}
+        />
 
         <div className="mt-3">
           <AuthDivider />
