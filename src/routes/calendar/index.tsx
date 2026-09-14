@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ChevronLeft, ChevronRight, PencilLine } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -303,9 +303,10 @@ function CalendarPage() {
                       <Link
                         to="/calendar/growth-journal"
                         onClick={(event) => event.stopPropagation()}
-                        className="invisible flex h-6 items-center gap-1 rounded-[6px] bg-field-border/70 px-1.5 text-[13px] font-medium text-ink-muted group-hover:visible hover:bg-field-border hover:text-brand"
+                        className="group/journal invisible flex h-6 items-center gap-1 rounded-[6px] bg-field-border/70 px-1.5 text-[13px] font-medium text-ink-muted group-hover:visible hover:bg-field-border hover:text-brand"
                       >
-                        <PencilLine aria-hidden="true" className="h-[18px] w-3.5" strokeWidth={1.4} />
+                        <img src="/assets/sidebar/journal-edit-default.svg" alt="" aria-hidden="true" className="h-[18px] w-3.5 object-contain group-hover/journal:hidden" />
+                        <img src="/assets/sidebar/journal-edit-hover.svg" alt="" aria-hidden="true" className="hidden h-[18px] w-3.5 object-contain group-hover/journal:block" />
                         일지 쓰기
                       </Link>
                     ) : null}
