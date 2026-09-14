@@ -66,6 +66,7 @@ function LoginPage() {
             onBlur={() => setEmailTouched(true)}
             error={emailError}
             autoComplete="email"
+            placeholderClassName="placeholder:text-guide-text"
           />
           <AuthField
             id="login-password"
@@ -75,6 +76,7 @@ function LoginPage() {
             value={password}
             onChange={setPassword}
             autoComplete="current-password"
+            placeholderClassName="placeholder:text-guide-text"
           />
         </div>
 
