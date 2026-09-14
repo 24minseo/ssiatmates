@@ -450,7 +450,7 @@ function CalendarPage() {
                 value={eventTitle}
                 onChange={(event) => setEventTitle(event.target.value)}
                 placeholder="할 일 제목을 입력하세요"
-                className="h-12 rounded-[12px] border-field-border px-3.5 text-[15px] text-ink shadow-none placeholder:text-icon-muted focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft"
+                className="h-12 rounded-[12px] border-field-border px-3.5 text-[15px] text-ink shadow-none placeholder:text-icon-muted focus-visible:border-brand focus-visible:ring-inset focus-visible:ring-[3.2px] focus-visible:ring-focus-soft"
                 autoFocus
               />
             </div>
@@ -464,7 +464,7 @@ function CalendarPage() {
                     type="date"
                     value={eventDate}
                     onChange={(event) => setEventDate(event.target.value)}
-                    className="h-12 rounded-[12px] border-field-border px-3.5 pr-10 text-[15px] text-ink shadow-none focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0"
+                    className="h-12 rounded-[12px] border-field-border px-3.5 pr-10 text-[15px] text-ink shadow-none focus-visible:border-brand focus-visible:ring-inset focus-visible:ring-[3.2px] focus-visible:ring-focus-soft [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0"
                   />
                   <CalendarDays aria-hidden="true" className="pointer-events-none absolute right-3.5 top-1/2 size-[18px] -translate-y-1/2 text-guide-text" />
                 </div>
@@ -477,7 +477,7 @@ function CalendarPage() {
                     type="time"
                     value={eventStartTime}
                     onChange={(event) => setEventStartTime(event.target.value)}
-                    className="h-12 rounded-[12px] border-field-border px-3.5 pr-10 text-[15px] text-ink shadow-none focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0"
+                    className="h-12 rounded-[12px] border-field-border px-3.5 pr-10 text-[15px] text-ink shadow-none focus-visible:border-brand focus-visible:ring-inset focus-visible:ring-[3.2px] focus-visible:ring-focus-soft [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0"
                   />
                   <Clock3 aria-hidden="true" className="pointer-events-none absolute right-3.5 top-1/2 size-[18px] -translate-y-1/2 text-guide-text" />
                 </div>
@@ -510,7 +510,7 @@ function CalendarPage() {
                 value={eventDescription}
                 onChange={(event) => setEventDescription(event.target.value)}
                 placeholder="설명 추가"
-                className="h-[164px] resize-none rounded-[12px] border-field-border px-3.5 py-3 text-[15px] text-ink shadow-none placeholder:text-icon-muted focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft"
+                className="h-[164px] resize-none rounded-[12px] border-field-border px-3.5 py-3 text-[15px] text-ink shadow-none placeholder:text-icon-muted focus-visible:border-brand focus-visible:ring-inset focus-visible:ring-[3.2px] focus-visible:ring-focus-soft"
               />
             </div>
           </div>
