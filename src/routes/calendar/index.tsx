@@ -712,7 +712,10 @@ function CalendarPage() {
                               }}
                               onChange={(event) => updateChecklistItem(item.id, event.target.value)}
                               placeholder={`항목 ${index + 1}`}
-                              className="h-10 min-h-10 max-h-16 resize-none overflow-y-auto rounded-[10px] border-field-border px-3 py-2 pb-6 pr-14 text-[15px] md:text-[15px] leading-5 text-ink shadow-none placeholder:text-icon-muted focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft"
+                              className={cn(
+                                "h-10 !min-h-10 max-h-16 resize-none overflow-y-auto rounded-[10px] border-field-border px-3 py-2 pr-14 text-[15px] md:text-[15px] leading-5 text-ink shadow-none placeholder:text-icon-muted focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft",
+                                showCounter ? "pb-6" : "pb-2",
+                              )}
                             />
                             {showCounter ? (
                               <span
