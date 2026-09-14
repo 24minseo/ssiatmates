@@ -508,7 +508,7 @@ function CalendarPage() {
               <ChevronDown aria-hidden="true" className="size-4" />
             </Button>
 
-            <div className="mt-[18px] grid gap-1">
+            <div className="mt-[18px] grid gap-1.5">
               <Label htmlFor="todo-title" className="text-sm font-semibold text-ink">
                 제목<span className="relative -top-px ml-0.5 text-brand">*</span>
               </Label>
