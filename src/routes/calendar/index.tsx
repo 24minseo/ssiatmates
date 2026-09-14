@@ -536,7 +536,7 @@ function CalendarPage() {
                   <CalendarDays aria-hidden="true" className="pointer-events-none absolute right-3.5 top-1/2 size-[18px] -translate-y-1/2 text-guide-text" />
                 </div>
               </div>
-              <div className="grid gap-2">
+              <div className="grid gap-1">
                 <Label htmlFor="todo-time" className="text-sm font-semibold text-ink">시작 시간</Label>
                 <div className="relative">
                   <Input
