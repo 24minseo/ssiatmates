@@ -658,7 +658,7 @@ function CalendarPage() {
                           aria-pressed={selected}
                           onClick={() => handleContentModeChange(mode)}
                           className={cn(
-                            "h-7 rounded-[6px] px-2.5 text-[12px] font-normal text-ink-muted shadow-none",
+                            "h-7 rounded-[6px] px-2.5 text-[12px] font-normal text-control-inactive shadow-none",
                             mode === "memo" ? "w-10" : "w-[74px]",
                             selected
                               ? "font-semibold text-ink hover:bg-transparent hover:text-ink"
