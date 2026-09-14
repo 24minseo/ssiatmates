@@ -7,6 +7,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock3,
+  GripVertical,
   Pencil,
   Plus,
   Trash2,
@@ -132,6 +133,7 @@ function CalendarPage() {
   const [contentMode, setContentMode] = useState<ContentMode>("memo");
   const [checklistItems, setChecklistItems] = useState<ChecklistItem[]>([]);
   const [focusedChecklistId, setFocusedChecklistId] = useState<number | null>(null);
+  const [draggingChecklistId, setDraggingChecklistId] = useState<number | null>(null);
   const [eventStartTime, setEventStartTime] = useState("");
   const [hasReminder, setHasReminder] = useState(false);
 
@@ -251,6 +253,20 @@ function CalendarPage() {
   const removeChecklistItem = (id: number) => {
     setChecklistItems((current) => current.filter((item) => item.id !== id));
     setFocusedChecklistId((current) => (current === id ? null : current));
+  };
+
+  const reorderChecklistItem = (sourceId: number, targetId: number) => {
+    if (sourceId === targetId) return;
+    setChecklistItems((current) => {
+      const sourceIndex = current.findIndex((item) => item.id === sourceId);
+      const targetIndex = current.findIndex((item) => item.id === targetId);
+      if (sourceIndex === -1 || targetIndex === -1) return current;
+      const next = [...current];
+      const [movedItem] = next.splice(sourceIndex, 1);
+      if (!movedItem) return current;
+      next.splice(targetIndex, 0, movedItem);
+      return next;
+    });
   };
 
   const saveEvent = () => {
@@ -672,7 +688,24 @@ function CalendarPage() {
                   <div className="flex flex-col">
                     {checklistItems.map((item, index) => {
                       return (
-                        <div key={item.id} className="group/checklist-row flex items-start gap-2 px-2 py-1.5">
+                        <div
+                          key={item.id}
+                          onDragOver={(event) => {
+                            event.preventDefault();
+                            event.dataTransfer.dropEffect = "move";
+                          }}
+                          onDrop={(event) => {
+                            event.preventDefault();
+                            const sourceId = Number(event.dataTransfer.getData("text/plain"));
+                            if (Number.isNaN(sourceId)) return;
+                            reorderChecklistItem(sourceId, item.id);
+                            setDraggingChecklistId(null);
+                          }}
+                          className={cn(
+                            "group/checklist-row flex items-start gap-2 rounded-[8px] px-2 py-1.5 transition-colors hover:bg-item-hover",
+                            draggingChecklistId === item.id && "opacity-50",
+                          )}
+                        >
                           <Button
                             type="button"
                             variant="ghost"
@@ -722,6 +755,22 @@ function CalendarPage() {
                             className="pointer-events-none mt-0.5 size-8 shrink-0 rounded-[8px] text-icon-muted opacity-0 shadow-none transition-opacity group-hover/checklist-row:pointer-events-auto group-hover/checklist-row:opacity-100 focus-visible:pointer-events-auto focus-visible:opacity-100 hover:bg-item-hover hover:text-ink"
                           >
                             <Trash2 aria-hidden="true" className="size-4" />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            draggable
+                            aria-label={`항목 ${index + 1} 순서 이동`}
+                            onDragStart={(event) => {
+                              event.dataTransfer.effectAllowed = "move";
+                              event.dataTransfer.setData("text/plain", String(item.id));
+                              setDraggingChecklistId(item.id);
+                            }}
+                            onDragEnd={() => setDraggingChecklistId(null)}
+                            className="pointer-events-none mt-0.5 size-8 shrink-0 cursor-grab rounded-[8px] text-icon-muted opacity-0 shadow-none transition-opacity active:cursor-grabbing group-hover/checklist-row:pointer-events-auto group-hover/checklist-row:opacity-100 focus-visible:pointer-events-auto focus-visible:opacity-100 hover:bg-item-hover hover:text-ink"
+                          >
+                            <GripVertical aria-hidden="true" className="size-4" />
                           </Button>
                         </div>
                       );
