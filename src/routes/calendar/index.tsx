@@ -316,7 +316,7 @@ function CalendarPage() {
             <span
               aria-hidden="true"
               className={cn(
-                "absolute top-1/2 h-8 -translate-y-1/2 rounded-[8px] bg-surface shadow-[0_2px_6px_0_rgba(85,113,78,0.1)] transition-[left,width] duration-150 ease-out motion-reduce:transition-none",
+                "absolute top-1/2 h-8 -translate-y-1/2 rounded-[8px] bg-surface shadow-[0_2px_6px_0_rgba(85,113,78,0.12)] transition-[left,width] duration-150 ease-out motion-reduce:transition-none",
                 view === "month"
                   ? "left-[5px] w-11"
                   : "left-[51px] w-14",
