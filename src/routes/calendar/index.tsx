@@ -615,7 +615,7 @@ function CalendarPage() {
                 <span
                   className={cn(
                     "flex h-9 items-center gap-1.5 rounded-[18px] bg-item-hover px-4 text-[14px] font-normal",
-                    hasReminder ? "text-icon-muted" : "text-control-inactive",
+                    hasReminder ? "text-icon-muted" : "text-ink-muted",
                   )}
                 >
                   {hasReminder ? <Bell aria-hidden="true" className="size-3.5" /> : null}
