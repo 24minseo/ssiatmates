@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Pencil, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -95,6 +95,7 @@ function CalendarPage() {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+  const [editingEventId, setEditingEventId] = useState<number | null>(null);
   const [selectedDayEvents, setSelectedDayEvents] = useState<{ date: string; events: CalendarEvent[] } | null>(null);
   const [eventTitle, setEventTitle] = useState("");
   const [eventDate, setEventDate] = useState("");
@@ -126,30 +127,51 @@ function CalendarPage() {
   };
 
   const openAddDialog = (dateKey?: string) => {
+    setEditingEventId(null);
     setEventTitle("");
     setEventDescription("");
     setEventDate(dateKey ?? selectedDate ?? todayKey);
     setIsAddOpen(true);
   };
 
+  const editSelectedEvent = () => {
+    if (!selectedEvent) return;
+    setEditingEventId(selectedEvent.id);
+    setEventTitle(selectedEvent.title);
+    setEventDate(selectedEvent.date);
+    setEventDescription(selectedEvent.description);
+    setSelectedEvent(null);
+    setIsAddOpen(true);
+  };
+
+  const deleteSelectedEvent = () => {
+    if (!selectedEvent) return;
+    setEvents((current) => current.filter((calendarEvent) => calendarEvent.id !== selectedEvent.id));
+    setSelectedEvent(null);
+  };
+
   const saveEvent = () => {
     const title = eventTitle.trim();
     if (!title || !eventDate) return;
 
-    setEvents((current) => [
-      ...current,
-      {
-        id: Date.now(),
-        title,
-        date: eventDate,
-        description: eventDescription.trim(),
-      },
-    ]);
+    const nextEvent: CalendarEvent = {
+      id: editingEventId ?? Date.now(),
+      title,
+      date: eventDate,
+      description: eventDescription.trim(),
+    };
+    setEvents((current) => {
+      if (editingEventId === null) return [...current, nextEvent];
+      return current.map((calendarEvent) =>
+        calendarEvent.id === editingEventId ? nextEvent : calendarEvent,
+      );
+    });
     setVisibleMonth(() => {
       const [eventYear, eventMonth] = eventDate.split("-").map(Number);
       return new Date(eventYear, eventMonth - 1, 1);
     });
     setSelectedDate(eventDate);
+    setEditingEventId(null);
     setIsAddOpen(false);
   };
 
@@ -379,7 +401,7 @@ function CalendarPage() {
           className="rounded-[12px] border-0 bg-surface text-ink shadow-[0_12px_16px_0_rgba(9,31,23,0.12)] sm:max-w-[460px]"
         >
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-ink">할 일 추가</DialogTitle>
+            <DialogTitle className="text-xl font-bold text-ink">{editingEventId === null ? "할 일 추가" : "할 일 수정"}</DialogTitle>
             <DialogDescription className="text-sm text-ink-muted">
               캘린더에 표시할 할 일을 입력해주세요.
             </DialogDescription>
@@ -471,8 +493,30 @@ function CalendarPage() {
 
       <Dialog open={selectedEvent !== null} onOpenChange={(open) => !open && setSelectedEvent(null)}>
         <DialogContent className="rounded-[12px] border-0 bg-surface text-ink shadow-[0_12px_16px_0_rgba(9,31,23,0.12)] sm:max-w-[460px]">
+          <div className="absolute right-16 top-4 flex items-center gap-1">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label="일정 수정"
+              onClick={editSelectedEvent}
+              className="size-9 rounded-[8px] text-ink-muted hover:bg-item-hover hover:text-ink"
+            >
+              <Pencil aria-hidden="true" className="size-5" />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label="일정 삭제"
+              onClick={deleteSelectedEvent}
+              className="size-9 rounded-[8px] text-ink-muted hover:bg-item-hover hover:text-ink"
+            >
+              <Trash2 aria-hidden="true" className="size-5" />
+            </Button>
+          </div>
           <DialogHeader>
-            <DialogTitle className="pr-8 text-xl font-bold text-ink">
+            <DialogTitle className="pr-24 text-xl font-bold text-ink">
               {selectedEvent?.title}
             </DialogTitle>
             <DialogDescription className="text-sm font-semibold text-brand">
@@ -482,15 +526,6 @@ function CalendarPage() {
           <p className="min-h-16 whitespace-pre-wrap text-sm leading-6 text-ink-muted">
             {selectedEvent?.description || "등록된 상세 내용이 없습니다."}
           </p>
-          <DialogFooter>
-            <Button
-              type="button"
-              onClick={() => setSelectedEvent(null)}
-              className="h-[42px] rounded-[12px] bg-brand px-6 font-semibold text-brand-foreground hover:bg-brand/88 active:bg-brand-pressed"
-            >
-              확인
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
     </section>
