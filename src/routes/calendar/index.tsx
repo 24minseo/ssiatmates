@@ -775,7 +775,7 @@ function CalendarPage() {
                           className={cn(
                             "group/checklist-row relative grid grid-cols-[32px_20px_minmax(0,1fr)_32px] items-start gap-2 rounded-[8px] px-2 py-1.5 transition-[opacity,transform,box-shadow] duration-150 ease-out",
                             draggingChecklistId === item.id &&
-                              "opacity-40",
+                              "scale-[1.01] opacity-90 shadow-[0_6px_14px_rgba(22,59,49,0.12)]",
                           )}
                         >
                           {draggingChecklistId !== null &&
