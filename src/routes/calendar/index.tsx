@@ -636,7 +636,7 @@ function CalendarPage() {
                 <div
                   role="group"
                   aria-label="상세 내용 형식"
-                  className="relative -top-px flex h-8 w-[120px] items-center rounded-[8px] bg-item-hover p-0.5"
+                  className="relative -top-px flex h-8 w-[116px] items-center rounded-[8px] bg-item-hover p-0.5"
                 >
                   <span
                     aria-hidden="true"
@@ -644,10 +644,10 @@ function CalendarPage() {
                       "absolute top-1 h-6 rounded-[6px] bg-surface shadow-[0_1px_3px_0_rgba(85,113,78,0.1)] transition-[left,width] duration-150 ease-out motion-reduce:transition-none",
                       contentMode === "memo"
                         ? "left-1 w-9"
-                        : "left-[46px] w-[70px]",
+                        : "left-[42px] w-[70px]",
                     )}
                   />
-                  <div className="relative z-10 flex w-[116px] items-center justify-between">
+                  <div className="relative z-10 flex w-[114px] items-center justify-start">
                     {(["memo", "checklist"] as const).map((mode) => {
                       const selected = contentMode === mode;
                       return (
@@ -659,7 +659,7 @@ function CalendarPage() {
                           onClick={() => handleContentModeChange(mode)}
                           className={cn(
                             "h-7 rounded-[6px] px-2.5 text-[12px] font-normal text-control-inactive shadow-none",
-                            mode === "memo" ? "w-10" : "w-[74px]",
+                            mode === "memo" ? "w-10" : "w-[70px] px-2",
                             selected
                               ? "font-semibold text-ink hover:bg-transparent hover:text-ink"
                               : "bg-transparent hover:bg-transparent hover:text-control-inactive",
