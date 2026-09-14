@@ -268,7 +268,7 @@ function CalendarPage() {
                     onClick={() => setView(option)}
                     aria-pressed={selected}
                     className={cn(
-                      "relative shrink-0 px-[10px] py-[6px] text-[13px] font-medium leading-[normal] transition-colors duration-150 motion-reduce:transition-none hover:bg-transparent",
+                      "relative shrink-0 px-[10px] py-[6px] text-[13px] font-normal leading-[normal] transition-colors duration-150 motion-reduce:transition-none hover:bg-transparent",
                       selected
                         ? monthOption
                           ? "h-8 w-11 rounded-[12px] text-ink hover:text-ink"
@@ -335,7 +335,7 @@ function CalendarPage() {
                   <div className="flex h-6 items-start justify-between gap-2">
                     <span
                       className={cn(
-                        "flex size-6 shrink-0 items-center justify-center rounded-[6px] text-sm font-medium leading-4",
+                        "flex size-6 shrink-0 items-center justify-center rounded-[6px] text-sm font-normal leading-4",
                         !day.isCurrentMonth && "text-content-disabled",
                         day.isCurrentMonth && !isToday && !isSelected && "text-ink",
                         isToday && "bg-brand text-brand-foreground",
@@ -346,7 +346,7 @@ function CalendarPage() {
                     <Link
                       to="/calendar/growth-journal"
                       onClick={(event) => event.stopPropagation()}
-                      className="group/journal invisible flex h-6 items-center gap-1 rounded-[6px] bg-field-border/70 px-1.5 text-[13px] font-medium text-ink-muted group-hover:visible hover:bg-field-border hover:text-brand"
+                      className="group/journal invisible flex h-6 items-center gap-1 rounded-[6px] bg-field-border/70 px-1.5 text-[13px] font-normal text-ink-muted group-hover:visible hover:bg-field-border hover:text-brand"
                     >
                       <img src="/assets/sidebar/journal-edit-default.svg" alt="" aria-hidden="true" className="h-[18px] w-3.5 object-contain group-hover/journal:hidden" />
                       <img src="/assets/sidebar/journal-edit-hover.svg" alt="" aria-hidden="true" className="hidden h-[18px] w-3.5 object-contain group-hover/journal:block" />
@@ -364,7 +364,7 @@ function CalendarPage() {
                             event.stopPropagation();
                             setSelectedEvent(calendarEvent);
                           }}
-                          className="h-6 w-full truncate rounded-[6px] bg-menu-hover px-2 text-left text-xs font-medium text-ink hover:bg-item-hover-selected"
+                          className="h-6 w-full truncate rounded-[6px] bg-menu-hover px-2 text-left text-xs font-normal text-ink hover:bg-item-hover-selected"
                         >
                           {calendarEvent.title}
                         </button>
@@ -376,7 +376,7 @@ function CalendarPage() {
                             event.stopPropagation();
                             setSelectedDayEvents({ date: day.key, events: dayEvents });
                           }}
-                          className="h-6 w-full truncate rounded-[6px] px-2 text-left text-xs font-medium text-ink-muted hover:bg-item-hover hover:underline"
+                          className="h-6 w-full truncate rounded-[6px] px-2 text-left text-xs font-normal text-ink-muted hover:bg-item-hover hover:underline"
                         >
                           {dayEvents.length - 2}개 더보기
                         </button>
@@ -435,7 +435,7 @@ function CalendarPage() {
             <Button
               type="button"
               variant="outline"
-              className="h-9 rounded-[18px] border-field-border bg-surface px-4 text-[13px] font-medium text-ink-muted shadow-none hover:bg-item-hover hover:text-ink"
+              className="h-9 rounded-[18px] border-field-border bg-surface px-4 text-[13px] font-normal text-ink-muted shadow-none hover:bg-item-hover hover:text-ink"
             >
               지원사업 선택
               <ChevronDown aria-hidden="true" className="size-4" />
@@ -496,7 +496,7 @@ function CalendarPage() {
             <fieldset className="mt-[18px]">
               <legend className="text-sm font-semibold text-ink">알림</legend>
               <div className="mt-2 flex h-9 items-center gap-1.5">
-                <span className="flex h-9 items-center gap-1.5 rounded-[18px] bg-item-hover px-4 text-[13px] font-medium text-icon-muted">
+                <span className="flex h-9 items-center gap-1.5 rounded-[18px] bg-item-hover px-4 text-[13px] font-normal text-icon-muted">
                   {hasReminder ? <Bell aria-hidden="true" className="size-3.5" /> : null}
                   {hasReminder ? "10분 전" : "알림 없음"}
                 </span>
@@ -504,7 +504,7 @@ function CalendarPage() {
                   type="button"
                   variant="ghost"
                   onClick={() => setHasReminder((current) => !current)}
-                  className="h-9 rounded-[8px] px-2 text-[13px] font-medium text-ink-muted hover:bg-item-hover hover:text-ink"
+                  className="h-9 rounded-[8px] px-2 text-[13px] font-normal text-ink-muted hover:bg-item-hover hover:text-ink"
                 >
                   <Plus aria-hidden="true" className="size-4" />
                   {hasReminder ? "알림 제거" : "알림 추가"}
@@ -576,7 +576,7 @@ function CalendarPage() {
                   setSelectedDayEvents(null);
                   setSelectedEvent(calendarEvent);
                 }}
-                className="h-10 w-full truncate rounded-[8px] bg-menu-hover px-3 text-left text-sm font-medium text-ink hover:bg-item-hover-selected"
+                className="h-10 w-full truncate rounded-[8px] bg-menu-hover px-3 text-left text-sm font-normal text-ink hover:bg-item-hover-selected"
               >
                 {calendarEvent.title}
               </button>
