@@ -790,7 +790,7 @@ function CalendarPage() {
                             setDragOverChecklistId(null);
                           }}
                           className={cn(
-                            "group/checklist-row relative grid grid-cols-[24px_20px_minmax(0,1fr)_32px] items-start gap-2 rounded-[8px] py-1.5 pl-0 pr-2 transition-[opacity,transform,box-shadow] duration-150 ease-out",
+                            "group/checklist-row relative grid grid-cols-[24px_20px_minmax(0,1fr)_32px] items-start gap-2 rounded-[8px] py-1 pl-0 pr-2 transition-[opacity,transform,box-shadow] duration-150 ease-out",
                             draggingChecklistId === item.id &&
                               "opacity-40",
                           )}
