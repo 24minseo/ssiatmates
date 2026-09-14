@@ -96,7 +96,7 @@ function createChecklistDragPreview(item: ChecklistItem, index: number, rowWidth
   preview.style.boxSizing = "border-box";
   preview.style.alignItems = "center";
   preview.style.gap = "8px";
-  preview.style.padding = "6px 8px";
+  preview.style.padding = "6px 8px 6px 12px";
   preview.style.borderRadius = "12px";
   preview.style.background = "#FFFFFF";
   preview.style.boxShadow = "0 4px 12px rgba(132, 150, 142, 0.06)";
@@ -881,7 +881,7 @@ function CalendarPage() {
                             size="icon"
                             aria-label={`항목 ${index + 1} 삭제`}
                             onClick={() => removeChecklistItem(item.id)}
-                            className="pointer-events-none col-start-4 mt-0.5 size-8 shrink-0 rounded-[8px] text-icon-muted opacity-0 shadow-none transition-opacity group-hover/checklist-row:pointer-events-auto group-hover/checklist-row:opacity-100 focus-visible:pointer-events-auto focus-visible:opacity-100 hover:bg-transparent hover:text-[#62756E]"
+                            className="pointer-events-none col-start-4 mt-0.5 size-8 shrink-0 rounded-[8px] text-icon-muted opacity-0 shadow-none transition-opacity group-hover/checklist-row:pointer-events-auto group-hover/checklist-row:opacity-100 focus-visible:pointer-events-auto focus-visible:opacity-100 hover:bg-item-hover hover:text-[#62756E]"
                           >
                             <Trash2 aria-hidden="true" className="size-4" />
                           </Button>
