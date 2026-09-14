@@ -293,11 +293,15 @@ export function AppSidebar({ active }: AppSidebarProps) {
 
           <span
             aria-hidden={!expanded}
-            className={`absolute inset-0 flex flex-col items-start gap-0 px-[14px] py-[13px] text-left transition-opacity duration-200 ease-out motion-reduce:transition-none ${
-              expanded ? "opacity-100" : "pointer-events-none opacity-0"
+            className={`absolute inset-0 flex flex-col items-start gap-0 px-[14px] py-[13px] text-left ${
+              expanded ? "" : "pointer-events-none"
             }`}
           >
-            <span className="relative h-6 w-full shrink-0">
+            <span
+              className={`relative h-6 w-full shrink-0 transition-opacity duration-200 ease-out motion-reduce:transition-none ${
+                expanded ? "opacity-100" : "opacity-0"
+              }`}
+            >
               <span className="group/edit absolute right-0 top-[2px] size-5">
                 <img
                   src="/assets/sidebar/profile-edit-default.svg"
@@ -311,7 +315,13 @@ export function AppSidebar({ active }: AppSidebarProps) {
                 />
               </span>
             </span>
-            <span className="shrink-0 whitespace-nowrap text-xs font-normal leading-[18px] text-ink-muted">
+            <span
+              className={`shrink-0 whitespace-nowrap text-xs font-normal leading-[18px] text-ink-muted ${
+                expanded
+                  ? "opacity-100 transition-opacity duration-200 ease-out motion-reduce:transition-none"
+                  : "opacity-0 transition-none"
+              }`}
+            >
               {profileCardStatus}
             </span>
           </span>
