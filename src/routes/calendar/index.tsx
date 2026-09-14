@@ -139,6 +139,7 @@ function CalendarPage() {
   const [dragOverChecklistId, setDragOverChecklistId] = useState<number | null>(null);
   const [dragOverPosition, setDragOverPosition] = useState<ChecklistDropPosition>("before");
   const [checklistHandleTop, setChecklistHandleTop] = useState<number | null>(null);
+  const [checklistHandleMotionEnabled, setChecklistHandleMotionEnabled] = useState(false);
   const [checklistGhostTop, setChecklistGhostTop] = useState<number | null>(null);
   const [eventStartTime, setEventStartTime] = useState("");
   const [hasReminder, setHasReminder] = useState(false);
@@ -316,6 +317,16 @@ function CalendarPage() {
   };
 
 
+  const moveChecklistHandle = (top: number) => {
+    setChecklistHandleTop((current) => {
+      if (current === null) {
+        setChecklistHandleMotionEnabled(false);
+        window.requestAnimationFrame(() => setChecklistHandleMotionEnabled(true));
+      }
+      return top;
+    });
+  };
+
   const startChecklistPointerDrag = (
     item: ChecklistItem,
     event: ReactPointerEvent<HTMLButtonElement>,
@@ -356,7 +367,7 @@ function CalendarPage() {
       targetPosition = clientY < bounds.top + bounds.height / 2 ? "before" : "after";
       setDragOverChecklistId(targetId);
       setDragOverPosition(targetPosition);
-      setChecklistHandleTop(targetRow.offsetTop + 10);
+      moveChecklistHandle(targetRow.getBoundingClientRect().top - list.getBoundingClientRect().top + 10);
     };
 
     const finishDrag = () => {
@@ -372,6 +383,7 @@ function CalendarPage() {
       setChecklistGhostTop(null);
       setDragOverChecklistId(null);
       setChecklistHandleTop(null);
+      setChecklistHandleMotionEnabled(false);
     };
 
     const handlePointerMove = (moveEvent: globalThis.PointerEvent) => {
@@ -381,7 +393,7 @@ function CalendarPage() {
 
     setDraggingChecklistId(item.id);
     setChecklistGhostTop(Math.max(0, row.offsetTop));
-    setChecklistHandleTop(row.offsetTop + 10);
+    moveChecklistHandle(row.getBoundingClientRect().top - list.getBoundingClientRect().top + 10);
     setDragOverChecklistId(item.id);
     setDragOverPosition("before");
     updateDragPosition(event.clientY);
@@ -782,7 +794,7 @@ function CalendarPage() {
                       aria-hidden="true"
                       className={cn(
                         "pointer-events-none absolute left-0.5 z-10 h-[18px] w-0.5 rounded-full bg-icon-muted duration-150 ease-out group-hover/checklist-list:w-[3px]",
-                        draggingChecklistId !== null
+                        checklistHandleMotionEnabled
                           ? "transition-[top,opacity,width]"
                           : "transition-[opacity,width]",
                       )}
@@ -791,7 +803,7 @@ function CalendarPage() {
                     {draggingChecklistItem && checklistGhostTop !== null ? (
                       <div
                         aria-hidden="true"
-                        className="pointer-events-none absolute left-6 right-2 z-20 flex h-10 items-start gap-2 pt-2.5 opacity-80"
+                        className="pointer-events-none absolute left-6 right-2 z-20 flex h-10 items-start gap-2.5 pt-2.5 opacity-80"
                         style={{ top: checklistGhostTop }}
                       >
                         <span
@@ -821,7 +833,11 @@ function CalendarPage() {
                           data-checklist-row
                           data-checklist-id={item.id}
                           onMouseEnter={(event) => {
-                            setChecklistHandleTop(event.currentTarget.offsetTop + 10);
+                            moveChecklistHandle(
+                              event.currentTarget.getBoundingClientRect().top -
+                                event.currentTarget.parentElement!.getBoundingClientRect().top +
+                                10,
+                            );
                           }}
                           onDragOver={(event) => {
                             event.preventDefault();
