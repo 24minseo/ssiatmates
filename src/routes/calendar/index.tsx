@@ -299,17 +299,15 @@ function CalendarPage() {
                     >
                       {day.date.getDate()}
                     </span>
-                    {day.isCurrentMonth ? (
-                      <Link
-                        to="/calendar/growth-journal"
-                        onClick={(event) => event.stopPropagation()}
-                        className="group/journal invisible flex h-6 items-center gap-1 rounded-[6px] bg-field-border/70 px-1.5 text-[13px] font-medium text-ink-muted group-hover:visible hover:bg-field-border hover:text-brand"
-                      >
-                        <img src="/assets/sidebar/journal-edit-default.svg" alt="" aria-hidden="true" className="h-[18px] w-3.5 object-contain group-hover/journal:hidden" />
-                        <img src="/assets/sidebar/journal-edit-hover.svg" alt="" aria-hidden="true" className="hidden h-[18px] w-3.5 object-contain group-hover/journal:block" />
-                        일지 쓰기
-                      </Link>
-                    ) : null}
+                    <Link
+                      to="/calendar/growth-journal"
+                      onClick={(event) => event.stopPropagation()}
+                      className="group/journal invisible flex h-6 items-center gap-1 rounded-[6px] bg-field-border/70 px-1.5 text-[13px] font-medium text-ink-muted group-hover:visible hover:bg-field-border hover:text-brand"
+                    >
+                      <img src="/assets/sidebar/journal-edit-default.svg" alt="" aria-hidden="true" className="h-[18px] w-3.5 object-contain group-hover/journal:hidden" />
+                      <img src="/assets/sidebar/journal-edit-hover.svg" alt="" aria-hidden="true" className="hidden h-[18px] w-3.5 object-contain group-hover/journal:block" />
+                      일지 쓰기
+                    </Link>
                   </div>
 
                   {dayEvents.length > 0 ? (
