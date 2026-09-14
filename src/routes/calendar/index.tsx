@@ -760,7 +760,7 @@ function CalendarPage() {
               ) : (
                 <div className="mt-1 rounded-[12px] bg-surface py-2.5 pl-0 pr-2.5">
                   <div className="relative flex flex-col gap-1">
-                    <span aria-hidden="true" className="pointer-events-none absolute bottom-1 left-0.5 top-1 w-0.5 rounded-full bg-field-border" />
+                    <span aria-hidden="true" className="pointer-events-none absolute bottom-3 left-0.5 top-2.5 w-0.5 rounded-full bg-field-border" />
                     {checklistItems.map((item, index) => {
                       return (
                         <div
