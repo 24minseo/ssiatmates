@@ -527,7 +527,7 @@ function CalendarPage() {
                   aria-live="polite"
                   className="pointer-events-none absolute bottom-3.5 right-3.5 text-[12px] text-icon-muted"
                 >
-                  {eventDescription.length}/500
+                  <span className="text-ink">{eventDescription.length}</span>/500
                 </span>
               </div>
             </div>
