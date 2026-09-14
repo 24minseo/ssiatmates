@@ -82,7 +82,7 @@ const CHECKLIST_MAX_ITEMS = 10;
 const CHECKLIST_ITEM_MAX_LENGTH = 80;
 
 function resizeChecklistTextarea(element: HTMLTextAreaElement) {
-  element.style.height = "40px";
+  element.style.height = "32px";
   element.style.height = `${Math.min(element.scrollHeight, 64)}px`;
 }
 
@@ -862,7 +862,7 @@ function CalendarPage() {
                               onChange={(event) => updateChecklistItem(item.id, event.target.value)}
                               placeholder={`항목 ${index + 1}`}
                               className={cn(
-                                "h-10 !min-h-10 max-h-16 resize-none overflow-y-auto rounded-none border border-transparent bg-transparent px-0 py-2 text-[15px] md:text-[15px] leading-5 text-ink shadow-none placeholder:text-guide-text focus-visible:border-transparent focus-visible:border-b-brand focus-visible:bg-transparent focus-visible:ring-0 focus-visible:ring-focus-soft",
+                                "h-8 !min-h-8 max-h-16 resize-none overflow-y-auto rounded-none border border-transparent bg-transparent px-0 py-1 text-[15px] md:text-[15px] leading-5 text-ink shadow-none placeholder:text-guide-text focus-visible:border-transparent focus-visible:border-b-brand focus-visible:bg-transparent focus-visible:ring-0 focus-visible:ring-focus-soft",
                               )}
                             />
                           </div>
