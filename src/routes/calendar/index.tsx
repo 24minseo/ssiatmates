@@ -335,7 +335,7 @@ function CalendarPage() {
                     onClick={() => setView(option)}
                     aria-pressed={selected}
                     className={cn(
-                      "relative shrink-0 px-[10px] py-[6px] text-[13px] font-normal leading-[normal] transition-colors duration-150 motion-reduce:transition-none hover:bg-transparent",
+                      "relative flex shrink-0 items-center justify-center px-[10px] py-[6px] text-[14px] font-normal leading-none transition-colors duration-150 motion-reduce:transition-none hover:bg-transparent",
                       selected
                         ? monthOption
                           ? "h-8 w-11 rounded-[12px] font-semibold text-ink hover:text-ink"
