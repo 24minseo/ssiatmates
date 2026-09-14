@@ -118,7 +118,21 @@ function createChecklistDragPreview(item: ChecklistItem, index: number, rowWidth
   checkbox.style.background = item.completed ? "#1F8064" : "#FFFFFF";
   checkbox.style.color = "#FFFFFF";
   checkbox.style.opacity = "0.8";
-  checkbox.textContent = item.completed ? "✓" : "";
+  if (item.completed) {
+    const checkIcon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    checkIcon.setAttribute("viewBox", "0 0 24 24");
+    checkIcon.setAttribute("width", "14");
+    checkIcon.setAttribute("height", "14");
+    checkIcon.setAttribute("fill", "none");
+    checkIcon.setAttribute("stroke", "currentColor");
+    checkIcon.setAttribute("stroke-width", "2");
+    checkIcon.setAttribute("stroke-linecap", "round");
+    checkIcon.setAttribute("stroke-linejoin", "round");
+    const checkPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    checkPath.setAttribute("d", "M20 6 9 17l-5-5");
+    checkIcon.append(checkPath);
+    checkbox.append(checkIcon);
+  }
 
   const label = document.createElement("span");
   label.style.minWidth = "0";
