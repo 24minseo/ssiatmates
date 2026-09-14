@@ -376,7 +376,7 @@ function CalendarPage() {
       <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
         <DialogContent
           overlayClassName="bg-[#9EA9AE]/50"
-          className="rounded-[12px] border-0 bg-surface text-ink sm:max-w-[460px]"
+          className="rounded-[12px] border-0 bg-surface text-ink shadow-[0_12px_16px_0_rgba(9,31,23,0.12)] sm:max-w-[460px]"
         >
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-ink">할 일 추가</DialogTitle>
@@ -442,7 +442,7 @@ function CalendarPage() {
         open={selectedDayEvents !== null}
         onOpenChange={(open) => !open && setSelectedDayEvents(null)}
       >
-        <DialogContent className="rounded-[12px] border-0 bg-surface text-ink sm:max-w-[460px]">
+        <DialogContent className="rounded-[12px] border-0 bg-surface text-ink shadow-[0_12px_16px_0_rgba(9,31,23,0.12)] sm:max-w-[460px]">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-ink">
               {selectedDayEvents ? formatKoreanDate(selectedDayEvents.date) : ""}
@@ -470,7 +470,7 @@ function CalendarPage() {
       </Dialog>
 
       <Dialog open={selectedEvent !== null} onOpenChange={(open) => !open && setSelectedEvent(null)}>
-        <DialogContent className="rounded-[12px] border-0 bg-surface text-ink sm:max-w-[460px]">
+        <DialogContent className="rounded-[12px] border-0 bg-surface text-ink shadow-[0_12px_16px_0_rgba(9,31,23,0.12)] sm:max-w-[460px]">
           <DialogHeader>
             <DialogTitle className="pr-8 text-xl font-bold text-ink">
               {selectedEvent?.title}
