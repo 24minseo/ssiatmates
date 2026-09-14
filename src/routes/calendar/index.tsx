@@ -95,6 +95,7 @@ function CalendarPage() {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+  const [selectedDayEvents, setSelectedDayEvents] = useState<{ date: string; events: CalendarEvent[] } | null>(null);
   const [eventTitle, setEventTitle] = useState("");
   const [eventDate, setEventDate] = useState("");
   const [eventDescription, setEventDescription] = useState("");
@@ -312,7 +313,7 @@ function CalendarPage() {
 
                   {dayEvents.length > 0 ? (
                     <div className="mt-1.5 flex min-w-0 flex-col gap-1">
-                      {dayEvents.slice(0, 3).map((calendarEvent) => (
+                      {dayEvents.slice(0, 2).map((calendarEvent) => (
                         <button
                           key={calendarEvent.id}
                           type="button"
@@ -325,8 +326,17 @@ function CalendarPage() {
                           {calendarEvent.title}
                         </button>
                       ))}
-                      {dayEvents.length > 3 ? (
-                        <span className="px-2 text-xs text-ink-muted">+{dayEvents.length - 3}개</span>
+                      {dayEvents.length > 2 ? (
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setSelectedDayEvents({ date: day.key, events: dayEvents });
+                          }}
+                          className="h-6 w-full truncate rounded-[6px] px-2 text-left text-xs font-medium text-ink-muted hover:bg-item-hover"
+                        >
+                          {dayEvents.length - 2}개 더보기
+                        </button>
                       ) : null}
                     </div>
                   ) : null}
@@ -425,6 +435,37 @@ function CalendarPage() {
               저장
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={selectedDayEvents !== null}
+        onOpenChange={(open) => !open && setSelectedDayEvents(null)}
+      >
+        <DialogContent className="rounded-[12px] border-field-border bg-surface text-ink sm:max-w-[460px]">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-ink">
+              {selectedDayEvents ? formatKoreanDate(selectedDayEvents.date) : ""}
+            </DialogTitle>
+            <DialogDescription className="text-sm text-ink-muted">
+              등록된 일정
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex max-h-[360px] flex-col gap-2 overflow-y-auto">
+            {selectedDayEvents?.events.map((calendarEvent) => (
+              <button
+                key={calendarEvent.id}
+                type="button"
+                onClick={() => {
+                  setSelectedDayEvents(null);
+                  setSelectedEvent(calendarEvent);
+                }}
+                className="h-10 w-full truncate rounded-[8px] bg-menu-hover px-3 text-left text-sm font-medium text-ink hover:bg-item-hover-selected"
+              >
+                {calendarEvent.title}
+              </button>
+            ))}
+          </div>
         </DialogContent>
       </Dialog>
 
