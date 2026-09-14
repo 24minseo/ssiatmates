@@ -15,6 +15,7 @@ import {
 import { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -835,22 +836,12 @@ function CalendarPage() {
                           >
                             <GripVertical aria-hidden="true" className="size-4" />
                           </Button>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
+                          <Checkbox
+                            checked={item.completed}
                             aria-label={item.completed ? `항목 ${index + 1} 완료 취소` : `항목 ${index + 1} 완료`}
-                            aria-pressed={item.completed}
-                            onClick={() => toggleChecklistItem(item.id)}
-                            className={cn(
-                              "mt-1.5 size-5 shrink-0 rounded-[5px] border p-0 shadow-none focus-visible:ring-[3.2px] focus-visible:ring-focus-soft",
-                              item.completed
-                                ? "border-brand bg-brand text-brand-foreground hover:bg-brand"
-                                : "border-field-border bg-surface text-transparent hover:border-brand hover:bg-surface",
-                            )}
-                          >
-                            {item.completed ? <Check aria-hidden="true" className="size-3.5" /> : null}
-                          </Button>
+                            onCheckedChange={() => toggleChecklistItem(item.id)}
+                            className="mt-1.5 size-[18px] shrink-0 rounded-[5px] border-field-border [&_svg]:size-3 data-[state=checked]:border-brand data-[state=checked]:bg-brand data-[state=checked]:text-brand-foreground"
+                          />
                           <div className="relative min-w-0 flex-1">
                             <Textarea
                               value={item.text}
