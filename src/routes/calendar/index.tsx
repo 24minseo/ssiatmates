@@ -599,8 +599,10 @@ function CalendarPage() {
                         aria-pressed={selected}
                         onClick={() => setContentMode(mode)}
                         className={cn(
-                          "h-7 rounded-[6px] px-2.5 text-[12px] font-normal text-ink-muted shadow-none hover:bg-transparent hover:text-ink",
-                          selected && "bg-surface font-semibold text-ink shadow-[0_1px_3px_0_rgba(85,113,78,0.1)]",
+                          "h-7 rounded-[6px] px-2.5 text-[12px] font-normal text-ink-muted shadow-none",
+                          selected
+                            ? "bg-surface font-semibold text-ink shadow-[0_1px_3px_0_rgba(85,113,78,0.1)] hover:bg-surface hover:text-ink"
+                            : "bg-transparent hover:bg-transparent hover:text-ink",
                         )}
                       >
                         {mode === "memo" ? "메모" : "체크리스트"}
