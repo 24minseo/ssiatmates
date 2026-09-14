@@ -57,7 +57,7 @@ export function AuthField({
   placeholderClassName,
 }: AuthFieldProps) {
   return (
-    <label htmlFor={id} className="flex flex-col gap-1">
+    <label htmlFor={id} className="flex flex-col gap-1.5">
       <span className="text-sm font-semibold leading-5 text-ink">
         {label}
         {required ? (
