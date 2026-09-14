@@ -318,7 +318,6 @@ function CalendarPage() {
 
   const startChecklistPointerDrag = (
     item: ChecklistItem,
-    index: number,
     event: ReactPointerEvent<HTMLButtonElement>,
   ) => {
     if (event.button !== 0) return;
@@ -870,7 +869,7 @@ function CalendarPage() {
                             variant="ghost"
                             size="icon"
                             aria-label={`항목 ${index + 1} 순서 이동`}
-                            onPointerDown={(event) => startChecklistPointerDrag(item, index, event)}
+                            onPointerDown={(event) => startChecklistPointerDrag(item, event)}
                             className="pointer-events-none relative z-10 col-start-1 mt-0 h-8 w-6 shrink-0 cursor-grab rounded-[8px] text-icon-muted opacity-0 shadow-none transition-opacity active:cursor-grabbing group-hover/checklist-row:pointer-events-auto group-hover/checklist-row:opacity-100 focus-visible:pointer-events-auto focus-visible:opacity-100 hover:bg-transparent hover:text-icon-muted"
                           />
                           <Checkbox
