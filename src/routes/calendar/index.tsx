@@ -757,11 +757,11 @@ function CalendarPage() {
               ) : (
                 <div className="mt-1 rounded-[12px] bg-surface py-2.5 pl-0 pr-2.5">
                   <div className="group/checklist-list relative flex flex-col gap-0" onMouseLeave={() => setChecklistHandleTop(null)}>
-                    <span aria-hidden="true" className="pointer-events-none absolute bottom-3 left-0.5 top-2.5 z-0 w-0.5 rounded-full bg-field-border/70" />
+                    <span aria-hidden="true" className="pointer-events-none absolute bottom-3 left-2.5 top-2.5 z-0 w-0.5 rounded-full bg-field-border/70" />
                     <span
                       aria-hidden="true"
                       className={cn(
-                        "pointer-events-none absolute left-0.5 z-10 h-[18px] w-0.5 rounded-full bg-icon-muted duration-150 ease-out group-hover/checklist-list:w-[3px]",
+                        "pointer-events-none absolute left-2.5 z-10 h-[18px] w-0.5 rounded-full bg-icon-muted duration-150 ease-out group-hover/checklist-list:w-[3px]",
                         draggingChecklistId !== null
                           ? "transition-[top,opacity,width]"
                           : "transition-[opacity,width]",
