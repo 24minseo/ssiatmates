@@ -420,7 +420,7 @@ function CalendarPage() {
         <DialogContent
           overlayClassName="bg-page"
           closeClassName="right-8 top-8 flex size-6 items-center justify-center rounded-none text-ink opacity-100 hover:opacity-100 focus:ring-0 focus:ring-offset-0 [&_svg]:size-5"
-          className="flex h-[min(936px,calc(100vh-40px))] max-h-[936px] w-[592px] max-w-[calc(100vw-40px)] flex-col gap-0 overflow-hidden rounded-[20px] border-0 bg-surface p-8 text-ink shadow-surface-card"
+          className="flex h-[min(936px,calc(100vh-40px))] max-h-[936px] w-[592px] max-w-[calc(100vw-40px)] flex-col gap-0 rounded-[20px] border-0 bg-surface p-8 text-ink shadow-surface-card"
         >
           <DialogHeader className="h-10 shrink-0 justify-center space-y-0 text-left">
             <DialogTitle className="pr-10 text-[24px] font-bold leading-10 text-ink">
@@ -431,7 +431,7 @@ function CalendarPage() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="min-h-0 flex-1 overflow-y-auto pt-[19px]">
+          <div className="min-h-0 flex-1 -mx-1 overflow-y-auto px-1 pt-[19px]">
             <Button
               type="button"
               variant="outline"
@@ -450,7 +450,7 @@ function CalendarPage() {
                 value={eventTitle}
                 onChange={(event) => setEventTitle(event.target.value)}
                 placeholder="할 일 제목을 입력하세요"
-                className="h-12 rounded-[12px] border-field-border px-3.5 text-[15px] text-ink shadow-none placeholder:text-icon-muted focus-visible:border-brand focus-visible:ring-inset focus-visible:ring-[3.2px] focus-visible:ring-focus-soft"
+                className="h-12 rounded-[12px] border-field-border px-3.5 text-[15px] text-ink shadow-none placeholder:text-icon-muted focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft"
                 autoFocus
               />
             </div>
@@ -464,7 +464,7 @@ function CalendarPage() {
                     type="date"
                     value={eventDate}
                     onChange={(event) => setEventDate(event.target.value)}
-                    className="h-12 rounded-[12px] border-field-border px-3.5 pr-10 text-[15px] text-ink shadow-none focus-visible:border-brand focus-visible:ring-inset focus-visible:ring-[3.2px] focus-visible:ring-focus-soft [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0"
+                    className="h-12 rounded-[12px] border-field-border px-3.5 pr-10 text-[15px] text-ink shadow-none focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0"
                   />
                   <CalendarDays aria-hidden="true" className="pointer-events-none absolute right-3.5 top-1/2 size-[18px] -translate-y-1/2 text-guide-text" />
                 </div>
@@ -477,7 +477,7 @@ function CalendarPage() {
                     type="time"
                     value={eventStartTime}
                     onChange={(event) => setEventStartTime(event.target.value)}
-                    className="h-12 rounded-[12px] border-field-border px-3.5 pr-10 text-[15px] text-ink shadow-none focus-visible:border-brand focus-visible:ring-inset focus-visible:ring-[3.2px] focus-visible:ring-focus-soft [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0"
+                    className="h-12 rounded-[12px] border-field-border px-3.5 pr-10 text-[15px] text-ink shadow-none focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0"
                   />
                   <Clock3 aria-hidden="true" className="pointer-events-none absolute right-3.5 top-1/2 size-[18px] -translate-y-1/2 text-guide-text" />
                 </div>
@@ -510,7 +510,7 @@ function CalendarPage() {
                 value={eventDescription}
                 onChange={(event) => setEventDescription(event.target.value)}
                 placeholder="설명 추가"
-                className="h-[164px] resize-none rounded-[12px] border-field-border px-3.5 py-3 text-[15px] text-ink shadow-none placeholder:text-icon-muted focus-visible:border-brand focus-visible:ring-inset focus-visible:ring-[3.2px] focus-visible:ring-focus-soft"
+                className="h-[164px] resize-none rounded-[12px] border-field-border px-3.5 py-3 text-[15px] text-ink shadow-none placeholder:text-icon-muted focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft"
               />
             </div>
           </div>
