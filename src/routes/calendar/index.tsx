@@ -100,7 +100,6 @@ function createChecklistDragPreview(item: ChecklistItem, index: number, rowWidth
   preview.style.borderRadius = "12px";
   preview.style.background = "#FFFFFF";
   preview.style.boxShadow = "0 4px 12px rgba(132, 150, 142, 0.06)";
-  preview.style.opacity = "0.8";
   preview.style.transform = "scale(1.01)";
   preview.style.fontFamily = "inherit";
   preview.style.fontSize = "15px";
@@ -118,6 +117,7 @@ function createChecklistDragPreview(item: ChecklistItem, index: number, rowWidth
   checkbox.style.borderRadius = "5px";
   checkbox.style.background = item.completed ? "#1F8064" : "#FFFFFF";
   checkbox.style.color = "#FFFFFF";
+  checkbox.style.opacity = "0.8";
   checkbox.textContent = item.completed ? "✓" : "";
 
   const label = document.createElement("span");
@@ -125,6 +125,7 @@ function createChecklistDragPreview(item: ChecklistItem, index: number, rowWidth
   label.style.overflow = "hidden";
   label.style.textOverflow = "ellipsis";
   label.style.whiteSpace = "nowrap";
+  label.style.opacity = "0.8";
   label.textContent = item.text || `항목 ${index + 1}`;
 
   preview.append(checkbox, label);
