@@ -543,7 +543,7 @@ function CalendarPage() {
                 value={eventTitle}
                 onChange={(event) => setEventTitle(event.target.value)}
                 placeholder="할 일 제목을 입력하세요"
-                className="h-12 rounded-[12px] border-field-border px-3.5 text-[15px] md:text-[15px] text-ink shadow-none placeholder:text-icon-muted focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft"
+                className="h-12 rounded-[12px] border-field-border px-3.5 text-[15px] md:text-[15px] text-ink shadow-none placeholder:text-guide-text focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft"
                 autoFocus
               />
             </div>
@@ -577,7 +577,7 @@ function CalendarPage() {
                     )}
                   />
                   {!eventStartTime ? (
-                    <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[15px] text-icon-muted">
+                    <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[15px] text-guide-text">
                       시작 시간 선택
                     </span>
                   ) : null}
@@ -658,7 +658,7 @@ function CalendarPage() {
                     onChange={(event) => setEventDescription(event.target.value)}
                     maxLength={500}
                     placeholder="메모할 내용이 있으면 적어주세요."
-                    className="h-[164px] resize-none rounded-[12px] border-field-border px-3.5 py-3 pb-3 text-[15px] md:text-[15px] text-ink shadow-none placeholder:text-icon-muted focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft"
+                    className="h-[164px] resize-none rounded-[12px] border-field-border px-3.5 py-3 pb-3 text-[15px] md:text-[15px] text-ink shadow-none placeholder:text-guide-text focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft"
                   />
                   <span
                     aria-live="polite"
@@ -709,7 +709,7 @@ function CalendarPage() {
                               onChange={(event) => updateChecklistItem(item.id, event.target.value)}
                               placeholder={`항목 ${index + 1}`}
                               className={cn(
-                                "h-10 !min-h-10 max-h-16 resize-none overflow-y-auto rounded-none border border-transparent bg-transparent px-2 py-2 text-[15px] md:text-[15px] leading-5 text-ink shadow-none placeholder:text-icon-muted focus-visible:border-transparent focus-visible:border-b-brand focus-visible:bg-transparent focus-visible:ring-0 focus-visible:ring-focus-soft",
+                                "h-10 !min-h-10 max-h-16 resize-none overflow-y-auto rounded-none border border-transparent bg-transparent px-2 py-2 text-[15px] md:text-[15px] leading-5 text-ink shadow-none placeholder:text-guide-text focus-visible:border-transparent focus-visible:border-b-brand focus-visible:bg-transparent focus-visible:ring-0 focus-visible:ring-focus-soft",
                               )}
                             />
                           </div>
