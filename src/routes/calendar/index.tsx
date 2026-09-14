@@ -587,28 +587,40 @@ function CalendarPage() {
                 <div
                   role="group"
                   aria-label="상세 내용 형식"
-                  className="flex h-8 items-center rounded-[8px] bg-item-hover p-0.5"
+                  className="relative flex h-8 w-[124px] items-center rounded-[8px] bg-item-hover p-0.5"
                 >
-                  {(["memo", "checklist"] as const).map((mode) => {
-                    const selected = contentMode === mode;
-                    return (
-                      <Button
-                        key={mode}
-                        type="button"
-                        variant="ghost"
-                        aria-pressed={selected}
-                        onClick={() => setContentMode(mode)}
-                        className={cn(
-                          "h-7 rounded-[6px] px-2.5 text-[12px] font-normal text-ink-muted shadow-none",
-                          selected
-                            ? "bg-surface font-semibold text-ink shadow-[0_1px_3px_0_rgba(85,113,78,0.1)] hover:bg-surface hover:text-ink"
-                            : "bg-transparent hover:bg-transparent hover:text-ink",
-                        )}
-                      >
-                        {mode === "memo" ? "메모" : "체크리스트"}
-                      </Button>
-                    );
-                  })}
+                  <span
+                    aria-hidden="true"
+                    className={cn(
+                      "absolute top-0.5 h-7 rounded-[6px] bg-surface shadow-[0_1px_3px_0_rgba(85,113,78,0.1)] transition-[left,width] duration-150 ease-out motion-reduce:transition-none",
+                      contentMode === "memo"
+                        ? "left-0.5 w-11"
+                        : "left-[46px] w-[76px]",
+                    )}
+                  />
+                  <div className="relative z-10 flex items-center">
+                    {(["memo", "checklist"] as const).map((mode) => {
+                      const selected = contentMode === mode;
+                      return (
+                        <Button
+                          key={mode}
+                          type="button"
+                          variant="ghost"
+                          aria-pressed={selected}
+                          onClick={() => setContentMode(mode)}
+                          className={cn(
+                            "h-7 rounded-[6px] px-2.5 text-[12px] font-normal text-ink-muted shadow-none",
+                            mode === "memo" ? "w-11" : "w-[76px]",
+                            selected
+                              ? "font-semibold text-ink hover:bg-transparent hover:text-ink"
+                              : "bg-transparent hover:bg-transparent hover:text-ink",
+                          )}
+                        >
+                          {mode === "memo" ? "메모" : "체크리스트"}
+                        </Button>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
 
