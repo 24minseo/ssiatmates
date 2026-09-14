@@ -629,7 +629,7 @@ function CalendarPage() {
             </fieldset>
 
             <div className="mt-[18px]">
-              <div className="flex items-end justify-between">
+              <div className="flex items-end gap-3">
                 <Label htmlFor="todo-description" className="relative -top-0.5 text-sm font-semibold text-ink">
                   상세 내용
                 </Label>
