@@ -632,14 +632,16 @@ function CalendarPage() {
                     onChange={(event) => setEventDescription(event.target.value)}
                     maxLength={500}
                     placeholder="메모할 내용이 있으면 적어주세요."
-                    className="h-[164px] resize-none rounded-[12px] border-field-border px-3.5 py-3 pb-9 text-[15px] text-ink shadow-none placeholder:text-icon-muted focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft"
+                    className="h-[164px] resize-none rounded-[12px] border-field-border px-3.5 py-3 pb-12 text-[15px] text-ink shadow-none placeholder:text-icon-muted focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft"
                   />
-                  <span
-                    aria-live="polite"
-                    className="pointer-events-none absolute bottom-3.5 right-3.5 text-[12px] text-icon-muted"
-                  >
-                    <span className={eventDescription.length > 0 ? "text-ink" : "text-icon-muted"}>{eventDescription.length}</span>/500
-                  </span>
+                  <div className="pointer-events-none absolute inset-x-2 bottom-2 flex h-7 items-end justify-end rounded-b-[8px] bg-surface pb-1">
+                    <span
+                      aria-live="polite"
+                      className="rounded-[4px] bg-surface px-1.5 py-0.5 text-[12px] leading-4 text-icon-muted"
+                    >
+                      <span className={eventDescription.length > 0 ? "text-ink" : "text-icon-muted"}>{eventDescription.length}</span>/500
+                    </span>
+                  </div>
                 </div>
               ) : (
                 <div className="mt-1 rounded-[12px] border border-field-border bg-surface p-3">
