@@ -625,7 +625,7 @@ function CalendarPage() {
               </div>
 
               {contentMode === "memo" ? (
-                <div className="relative mt-2">
+                <div className="relative mt-1">
                   <Textarea
                     id="todo-description"
                     value={eventDescription}
@@ -642,7 +642,7 @@ function CalendarPage() {
                   </span>
                 </div>
               ) : (
-                <div className="mt-2 rounded-[12px] border border-field-border bg-surface p-3">
+                <div className="mt-1 rounded-[12px] border border-field-border bg-surface p-3">
                   <div className="flex flex-col gap-2">
                     {checklistItems.map((item, index) => {
                       const showCounter =
