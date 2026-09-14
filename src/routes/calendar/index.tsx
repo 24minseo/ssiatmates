@@ -106,6 +106,16 @@ function createChecklistDragPreview(item: ChecklistItem, index: number, rowWidth
   preview.style.lineHeight = "20px";
   preview.style.color = "#163B31";
 
+  const handle = document.createElement("span");
+  handle.style.position = "absolute";
+  handle.style.left = "2px";
+  handle.style.top = "50%";
+  handle.style.width = "2px";
+  handle.style.height = "18px";
+  handle.style.borderRadius = "999px";
+  handle.style.background = "#84968E";
+  handle.style.transform = "translateY(-50%)";
+
   const checkbox = document.createElement("span");
   checkbox.style.display = "inline-flex";
   checkbox.style.width = "20px";
@@ -142,7 +152,7 @@ function createChecklistDragPreview(item: ChecklistItem, index: number, rowWidth
   label.style.opacity = "0.8";
   label.textContent = item.text || `항목 ${index + 1}`;
 
-  preview.append(checkbox, label);
+  preview.append(handle, checkbox, label);
   return preview;
 }
 
@@ -834,7 +844,7 @@ function CalendarPage() {
                             }}
                             className="pointer-events-none relative z-10 col-start-1 mt-0 h-8 w-6 shrink-0 cursor-grab rounded-[8px] text-icon-muted opacity-0 shadow-none transition-opacity active:cursor-grabbing group-hover/checklist-row:pointer-events-auto group-hover/checklist-row:opacity-100 focus-visible:pointer-events-auto focus-visible:opacity-100"
                           >
-                            <span aria-hidden="true" className="pointer-events-none absolute -top-1 left-0.5 h-10 w-0.5 rounded-full bg-icon-muted" />
+                            <span aria-hidden="true" className="pointer-events-none absolute left-0.5 top-1.5 h-[18px] w-0.5 rounded-full bg-icon-muted transition-[width] duration-150 ease-out group-hover/checklist-row:w-[3px]" />
                           </Button>
                           <Checkbox
                             checked={item.completed}
