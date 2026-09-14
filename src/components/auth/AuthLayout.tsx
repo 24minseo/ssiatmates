@@ -61,7 +61,7 @@ export function AuthField({
       <span className="text-sm font-semibold leading-5 text-ink">
         {label}
         {required ? (
-          <span aria-hidden className="ml-0.5 text-brand">*</span>
+          <span aria-hidden className="relative -top-px ml-0.5 text-brand">*</span>
         ) : null}
       </span>
       <Input
