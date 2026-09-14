@@ -73,7 +73,7 @@ function PasswordRequirement({
   return (
     <li
       className={`flex items-center gap-1 text-[12px] font-normal ${
-        met ? "text-brand" : "text-guide-text"
+        met ? "text-brand" : "text-[#84968E]"
       }`}
     >
       <Check aria-hidden className="size-[18px] shrink-0" strokeWidth={2} />
