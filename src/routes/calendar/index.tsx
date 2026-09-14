@@ -834,7 +834,7 @@ function CalendarPage() {
                             }}
                             className="pointer-events-none relative col-start-1 mt-0 size-8 shrink-0 cursor-grab rounded-[8px] text-icon-muted opacity-0 shadow-none transition-opacity active:cursor-grabbing group-hover/checklist-row:pointer-events-auto group-hover/checklist-row:opacity-100 focus-visible:pointer-events-auto focus-visible:opacity-100 hover:bg-transparent hover:text-[#62756E]"
                           >
-                            <GripVertical aria-hidden="true" className="size-4" />
+                            <GripVertical aria-hidden="true" className="size-4 -translate-x-2" />
                           </Button>
                           <Checkbox
                             checked={item.completed}
