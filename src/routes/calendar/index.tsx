@@ -864,7 +864,7 @@ function CalendarPage() {
                               placeholder={`항목 ${index + 1}`}
                               className={cn(
                                 "h-8 !min-h-8 max-h-16 resize-none overflow-y-auto rounded-none border border-transparent bg-transparent px-0 py-1 text-[15px] md:text-[15px] leading-5 text-ink shadow-none placeholder:text-guide-text focus-visible:border-transparent focus-visible:bg-transparent focus-visible:ring-0 focus-visible:ring-focus-soft",
-                                item.completed && "text-ink-muted line-through",
+                                item.completed && "text-icon-muted line-through",
                               )}
                             />
                           </div>
@@ -1034,7 +1034,7 @@ function CalendarPage() {
                       >
                         {item.completed ? <Check className="size-3.5" /> : null}
                       </span>
-                      <span className={cn("min-w-0 flex-1", item.completed && "text-ink-muted line-through")}>
+                      <span className={cn("min-w-0 flex-1", item.completed && "text-icon-muted line-through")}>
                         {item.text}
                       </span>
                     </div>
