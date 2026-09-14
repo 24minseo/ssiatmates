@@ -798,7 +798,7 @@ function CalendarPage() {
                               onChange={(event) => updateChecklistItem(item.id, event.target.value)}
                               placeholder={`항목 ${index + 1}`}
                               className={cn(
-                                "h-10 !min-h-10 max-h-16 resize-none overflow-y-auto rounded-none border border-transparent bg-transparent px-2 py-2 text-[15px] md:text-[15px] leading-5 text-ink shadow-none placeholder:text-guide-text focus-visible:border-transparent focus-visible:border-b-brand focus-visible:bg-transparent focus-visible:ring-0 focus-visible:ring-focus-soft",
+                                "h-10 !min-h-10 max-h-16 resize-none overflow-y-auto rounded-none border border-transparent bg-transparent px-0 py-2 text-[15px] md:text-[15px] leading-5 text-ink shadow-none placeholder:text-guide-text focus-visible:border-transparent focus-visible:border-b-brand focus-visible:bg-transparent focus-visible:ring-0 focus-visible:ring-focus-soft",
                               )}
                             />
                           </div>
@@ -831,7 +831,7 @@ function CalendarPage() {
                       type="button"
                       variant="ghost"
                       onClick={addChecklistItem}
-                      className="mt-1 h-8 rounded-[8px] px-2 text-[13px] font-normal text-brand shadow-none hover:bg-transparent hover:text-brand hover:underline"
+                      className="mt-1 ml-[52px] h-8 rounded-[8px] px-2 text-[13px] font-normal text-brand shadow-none hover:bg-transparent hover:text-brand hover:underline"
                     >
                       <Plus aria-hidden="true" className="size-4" />
                       항목 추가
