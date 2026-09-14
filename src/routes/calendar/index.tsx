@@ -85,14 +85,15 @@ function resizeChecklistTextarea(element: HTMLTextAreaElement) {
   element.style.height = `${Math.min(element.scrollHeight, 64)}px`;
 }
 
-function createChecklistDragPreview(item: ChecklistItem, index: number) {
+function createChecklistDragPreview(item: ChecklistItem, index: number, rowWidth: number) {
   const preview = document.createElement("div");
   preview.style.position = "absolute";
   preview.style.left = "-10000px";
   preview.style.top = "-10000px";
   preview.style.display = "flex";
-  preview.style.width = "280px";
+  preview.style.width = `${Math.max(Math.round(rowWidth), 280)}px`;
   preview.style.height = "40px";
+  preview.style.boxSizing = "border-box";
   preview.style.alignItems = "center";
   preview.style.gap = "8px";
   preview.style.padding = "8px 12px";
@@ -797,7 +798,9 @@ function CalendarPage() {
                             onDragStart={(event) => {
                               event.dataTransfer.effectAllowed = "move";
                               event.dataTransfer.setData("text/plain", String(item.id));
-                              const preview = createChecklistDragPreview(item, index);
+                              const row = event.currentTarget.closest<HTMLElement>("[data-checklist-row]");
+                              const rowWidth = row?.getBoundingClientRect().width ?? 280;
+                              const preview = createChecklistDragPreview(item, index, rowWidth);
                               document.body.appendChild(preview);
                               event.dataTransfer.setDragImage(preview, 16, 8);
                               window.setTimeout(() => preview.remove(), 0);
