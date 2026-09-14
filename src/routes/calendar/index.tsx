@@ -287,7 +287,7 @@ function CalendarPage() {
           <Button
             type="button"
             onClick={() => openAddDialog()}
-            className="h-[42px] w-28 rounded-[12px] bg-brand px-0 text-[15px] font-medium text-brand-foreground shadow-none hover:bg-brand/88 active:bg-brand-pressed"
+            className="h-[42px] w-28 rounded-[12px] bg-brand px-0 text-[15px] font-normal text-brand-foreground shadow-none hover:bg-brand/88 active:bg-brand-pressed"
           >
             할 일 추가
           </Button>
