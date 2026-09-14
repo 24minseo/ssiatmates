@@ -1,5 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ChevronLeft, ChevronRight, Pencil, Trash2 } from "lucide-react";
+import {
+  Bell,
+  CalendarDays,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Clock3,
+  Pencil,
+  Plus,
+  Trash2,
+} from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -43,6 +53,8 @@ type CalendarEvent = {
   title: string;
   date: string;
   description: string;
+  startTime?: string;
+  reminder?: boolean;
 };
 
 type CalendarDay = {
@@ -100,6 +112,8 @@ function CalendarPage() {
   const [eventTitle, setEventTitle] = useState("");
   const [eventDate, setEventDate] = useState("");
   const [eventDescription, setEventDescription] = useState("");
+  const [eventStartTime, setEventStartTime] = useState("");
+  const [hasReminder, setHasReminder] = useState(false);
 
   const today = useMemo(() => new Date(), []);
   const todayKey = toDateKey(today);
@@ -130,6 +144,8 @@ function CalendarPage() {
     setEditingEventId(null);
     setEventTitle("");
     setEventDescription("");
+    setEventStartTime("");
+    setHasReminder(false);
     setEventDate(dateKey ?? selectedDate ?? todayKey);
     setIsAddOpen(true);
   };
@@ -140,6 +156,8 @@ function CalendarPage() {
     setEventTitle(selectedEvent.title);
     setEventDate(selectedEvent.date);
     setEventDescription(selectedEvent.description);
+    setEventStartTime(selectedEvent.startTime ?? "");
+    setHasReminder(selectedEvent.reminder ?? false);
     setSelectedEvent(null);
     setIsAddOpen(true);
   };
@@ -159,6 +177,8 @@ function CalendarPage() {
       title,
       date: eventDate,
       description: eventDescription.trim(),
+      startTime: eventStartTime || undefined,
+      reminder: hasReminder,
     };
     setEvents((current) => {
       if (editingEventId === null) return [...current, nextEvent];
@@ -397,54 +417,109 @@ function CalendarPage() {
 
       <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
         <DialogContent
-          overlayClassName="bg-[#9EA9AE]/50"
-          className="rounded-[12px] border-0 bg-surface text-ink shadow-[0_12px_16px_0_rgba(9,31,23,0.12)] sm:max-w-[460px]"
+          overlayClassName="bg-page"
+          closeClassName="right-8 top-8 flex size-6 items-center justify-center rounded-none text-ink opacity-100 hover:opacity-100 focus:ring-0 focus:ring-offset-0 [&_svg]:size-5"
+          className="flex h-[min(936px,calc(100vh-40px))] max-h-[936px] w-[592px] max-w-[calc(100vw-40px)] flex-col gap-0 overflow-hidden rounded-[20px] border-0 bg-surface p-8 text-ink shadow-surface-card"
         >
-          <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-ink">{editingEventId === null ? "할 일 추가" : "할 일 수정"}</DialogTitle>
-            <DialogDescription className="text-sm text-ink-muted">
+          <DialogHeader className="h-10 shrink-0 justify-center space-y-0 text-left">
+            <DialogTitle className="pr-10 text-[24px] font-bold leading-10 text-ink">
+              {editingEventId === null ? "할 일 추가" : "할 일 수정"}
+            </DialogTitle>
+            <DialogDescription className="sr-only">
               캘린더에 표시할 할 일을 입력해주세요.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-5 py-2">
-            <div className="grid gap-2">
-              <Label htmlFor="todo-title" className="font-semibold text-ink">제목</Label>
+
+          <div className="min-h-0 flex-1 overflow-y-auto pt-[19px]">
+            <Button
+              type="button"
+              variant="outline"
+              className="h-9 rounded-[18px] border-field-border bg-surface px-4 text-[13px] font-medium text-ink-muted shadow-none hover:bg-item-hover hover:text-ink"
+            >
+              지원사업 선택
+              <ChevronDown aria-hidden="true" className="size-4" />
+            </Button>
+
+            <div className="mt-[18px] grid gap-2">
+              <Label htmlFor="todo-title" className="text-sm font-semibold text-ink">
+                제목<span className="text-brand">*</span>
+              </Label>
               <Input
                 id="todo-title"
                 value={eventTitle}
                 onChange={(event) => setEventTitle(event.target.value)}
-                placeholder="할 일 제목"
-                className="h-[42px] rounded-[12px] border-field-border text-ink placeholder:text-placeholder"
+                placeholder="할 일 제목을 입력하세요"
+                className="h-12 rounded-[12px] border-field-border px-3.5 text-[15px] text-ink shadow-none placeholder:text-icon-muted focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft"
                 autoFocus
               />
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="todo-date" className="font-semibold text-ink">날짜</Label>
-              <Input
-                id="todo-date"
-                type="date"
-                value={eventDate}
-                onChange={(event) => setEventDate(event.target.value)}
-                className="h-[42px] rounded-[12px] border-field-border text-ink"
-              />
+
+            <div className="mt-[18px] grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="todo-date" className="text-sm font-semibold text-ink">날짜</Label>
+                <div className="relative">
+                  <Input
+                    id="todo-date"
+                    type="date"
+                    value={eventDate}
+                    onChange={(event) => setEventDate(event.target.value)}
+                    className="h-12 rounded-[12px] border-field-border px-3.5 pr-10 text-[15px] text-ink shadow-none focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0"
+                  />
+                  <CalendarDays aria-hidden="true" className="pointer-events-none absolute right-3.5 top-1/2 size-[18px] -translate-y-1/2 text-guide-text" />
+                </div>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="todo-time" className="text-sm font-semibold text-ink">시작 시간</Label>
+                <div className="relative">
+                  <Input
+                    id="todo-time"
+                    type="time"
+                    value={eventStartTime}
+                    onChange={(event) => setEventStartTime(event.target.value)}
+                    className="h-12 rounded-[12px] border-field-border px-3.5 pr-10 text-[15px] text-ink shadow-none focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0"
+                  />
+                  <Clock3 aria-hidden="true" className="pointer-events-none absolute right-3.5 top-1/2 size-[18px] -translate-y-1/2 text-guide-text" />
+                </div>
+              </div>
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="todo-description" className="font-semibold text-ink">내용</Label>
+
+            <fieldset className="mt-[18px]">
+              <legend className="text-sm font-semibold text-ink">알림</legend>
+              <div className="mt-2 flex h-9 items-center gap-1.5">
+                <span className="flex h-9 items-center gap-1.5 rounded-[18px] bg-item-hover px-4 text-[13px] font-medium text-icon-muted">
+                  {hasReminder ? <Bell aria-hidden="true" className="size-3.5" /> : null}
+                  {hasReminder ? "10분 전" : "알림 없음"}
+                </span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => setHasReminder((current) => !current)}
+                  className="h-9 rounded-[8px] px-2 text-[13px] font-medium text-ink-muted hover:bg-item-hover hover:text-ink"
+                >
+                  <Plus aria-hidden="true" className="size-4" />
+                  {hasReminder ? "알림 제거" : "알림 추가"}
+                </Button>
+              </div>
+            </fieldset>
+
+            <div className="mt-[18px] grid gap-2">
+              <Label htmlFor="todo-description" className="text-sm font-semibold text-ink">상세 내용</Label>
               <Textarea
                 id="todo-description"
                 value={eventDescription}
                 onChange={(event) => setEventDescription(event.target.value)}
-                placeholder="상세 내용을 입력해주세요."
-                className="min-h-24 resize-none rounded-[12px] border-field-border text-ink placeholder:text-placeholder"
+                placeholder="설명 추가"
+                className="h-[164px] resize-none rounded-[12px] border-field-border px-3.5 py-3 text-[15px] text-ink shadow-none placeholder:text-icon-muted focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft"
               />
             </div>
           </div>
-          <DialogFooter className="flex-row gap-2 sm:space-x-0">
+
+          <DialogFooter className="mt-6 h-12 shrink-0 flex-row justify-end gap-2 sm:space-x-0">
             <Button
               type="button"
               variant="secondary"
               onClick={() => setIsAddOpen(false)}
-              className="h-[42px] flex-1 rounded-[12px] bg-secondary-btn text-secondary-btn-text hover:bg-secondary-btn-hover hover:text-secondary-btn-text-hover"
+              className="h-12 w-[89px] rounded-[12px] bg-secondary-btn text-[15px] font-semibold text-secondary-btn-text shadow-none hover:bg-secondary-btn-hover hover:text-secondary-btn-text-hover"
             >
               취소
             </Button>
@@ -452,9 +527,9 @@ function CalendarPage() {
               type="button"
               disabled={!eventTitle.trim() || !eventDate}
               onClick={saveEvent}
-              className="h-[42px] flex-1 rounded-[12px] bg-brand text-[15px] font-semibold text-brand-foreground hover:bg-brand/88 active:bg-brand-pressed disabled:bg-brand-disabled disabled:opacity-100"
+              className="h-12 w-[119px] rounded-[12px] bg-brand text-[15px] font-semibold text-brand-foreground shadow-none hover:bg-brand/88 active:bg-brand-pressed disabled:bg-brand-disabled disabled:opacity-100"
             >
-              저장
+              저장하기
             </Button>
           </DialogFooter>
         </DialogContent>
