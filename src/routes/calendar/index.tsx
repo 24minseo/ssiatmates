@@ -625,7 +625,7 @@ function CalendarPage() {
               </div>
 
               {contentMode === "memo" ? (
-                <div className="relative mt-1">
+                <div className="relative mt-1.5">
                   <Textarea
                     id="todo-description"
                     value={eventDescription}
