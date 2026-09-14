@@ -662,7 +662,7 @@ function CalendarPage() {
                             mode === "memo" ? "w-10" : "w-[74px]",
                             selected
                               ? "font-semibold text-ink hover:bg-transparent hover:text-ink"
-                              : "bg-transparent hover:bg-transparent hover:text-ink",
+                              : "bg-transparent hover:bg-transparent",
                           )}
                         >
                           {mode === "memo" ? "메모" : "체크리스트"}
