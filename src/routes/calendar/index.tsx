@@ -57,6 +57,8 @@ type ChecklistItem = {
   completed: boolean;
 };
 
+type ChecklistDropPosition = "before" | "after";
+
 type CalendarEvent = {
   id: number;
   title: string;
@@ -134,6 +136,8 @@ function CalendarPage() {
   const [checklistItems, setChecklistItems] = useState<ChecklistItem[]>([]);
   const [focusedChecklistId, setFocusedChecklistId] = useState<number | null>(null);
   const [draggingChecklistId, setDraggingChecklistId] = useState<number | null>(null);
+  const [dragOverChecklistId, setDragOverChecklistId] = useState<number | null>(null);
+  const [dragOverPosition, setDragOverPosition] = useState<ChecklistDropPosition>("before");
   const [eventStartTime, setEventStartTime] = useState("");
   const [hasReminder, setHasReminder] = useState(false);
 
@@ -255,16 +259,19 @@ function CalendarPage() {
     setFocusedChecklistId((current) => (current === id ? null : current));
   };
 
-  const reorderChecklistItem = (sourceId: number, targetId: number) => {
+  const reorderChecklistItem = (
+    sourceId: number,
+    targetId: number,
+    position: ChecklistDropPosition,
+  ) => {
     if (sourceId === targetId) return;
     setChecklistItems((current) => {
-      const sourceIndex = current.findIndex((item) => item.id === sourceId);
-      const targetIndex = current.findIndex((item) => item.id === targetId);
-      if (sourceIndex === -1 || targetIndex === -1) return current;
-      const next = [...current];
-      const [movedItem] = next.splice(sourceIndex, 1);
+      const movedItem = current.find((item) => item.id === sourceId);
       if (!movedItem) return current;
-      next.splice(targetIndex, 0, movedItem);
+      const next = current.filter((item) => item.id !== sourceId);
+      const targetIndex = next.findIndex((item) => item.id === targetId);
+      if (targetIndex === -1) return current;
+      next.splice(position === "after" ? targetIndex + 1 : targetIndex, 0, movedItem);
       return next;
     });
   };
@@ -693,19 +700,43 @@ function CalendarPage() {
                           onDragOver={(event) => {
                             event.preventDefault();
                             event.dataTransfer.dropEffect = "move";
+                            const bounds = event.currentTarget.getBoundingClientRect();
+                            const position: ChecklistDropPosition =
+                              event.clientY < bounds.top + bounds.height / 2 ? "before" : "after";
+                            setDragOverChecklistId(item.id);
+                            setDragOverPosition(position);
+                          }}
+                          onDragLeave={(event) => {
+                            if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+                              setDragOverChecklistId(null);
+                            }
                           }}
                           onDrop={(event) => {
                             event.preventDefault();
                             const sourceId = Number(event.dataTransfer.getData("text/plain"));
                             if (Number.isNaN(sourceId)) return;
-                            reorderChecklistItem(sourceId, item.id);
+                            const position =
+                              dragOverChecklistId === item.id ? dragOverPosition : "before";
+                            reorderChecklistItem(sourceId, item.id, position);
                             setDraggingChecklistId(null);
+                            setDragOverChecklistId(null);
                           }}
                           className={cn(
-                            "group/checklist-row flex items-start gap-2 rounded-[8px] px-2 py-1.5 transition-colors hover:bg-item-hover",
-                            draggingChecklistId === item.id && "opacity-50",
+                            "group/checklist-row relative flex items-start gap-2 rounded-[8px] px-2 py-1.5 transition-[background-color,opacity,transform,box-shadow] duration-150 ease-out hover:bg-item-hover",
+                            draggingChecklistId === item.id &&
+                              "scale-[1.01] opacity-90 shadow-[0_6px_14px_rgba(22,59,49,0.12)]",
                           )}
                         >
+                          {draggingChecklistId !== null &&
+                          dragOverChecklistId === item.id &&
+                          draggingChecklistId !== item.id &&
+                          dragOverPosition === "before" ? (
+                            <span
+                              aria-hidden="true"
+                              className="pointer-events-none absolute inset-x-2 -top-px h-0.5 rounded-full bg-brand"
+                            />
+                          ) : null}
+
                           <Button
                             type="button"
                             variant="ghost"
@@ -756,6 +787,15 @@ function CalendarPage() {
                           >
                             <Trash2 aria-hidden="true" className="size-4" />
                           </Button>
+                          {draggingChecklistId !== null &&
+                          dragOverChecklistId === item.id &&
+                          draggingChecklistId !== item.id &&
+                          dragOverPosition === "after" ? (
+                            <span
+                              aria-hidden="true"
+                              className="pointer-events-none absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-brand"
+                            />
+                          ) : null}
                           <Button
                             type="button"
                             variant="ghost"
@@ -766,8 +806,12 @@ function CalendarPage() {
                               event.dataTransfer.effectAllowed = "move";
                               event.dataTransfer.setData("text/plain", String(item.id));
                               setDraggingChecklistId(item.id);
+                              setDragOverChecklistId(null);
                             }}
-                            onDragEnd={() => setDraggingChecklistId(null)}
+                            onDragEnd={() => {
+                              setDraggingChecklistId(null);
+                              setDragOverChecklistId(null);
+                            }}
                             className="pointer-events-none mt-0.5 size-8 shrink-0 cursor-grab rounded-[8px] text-icon-muted opacity-0 shadow-none transition-opacity active:cursor-grabbing group-hover/checklist-row:pointer-events-auto group-hover/checklist-row:opacity-100 focus-visible:pointer-events-auto focus-visible:opacity-100 hover:bg-item-hover hover:text-ink"
                           >
                             <GripVertical aria-hidden="true" className="size-4" />
