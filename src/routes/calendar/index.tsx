@@ -96,25 +96,12 @@ function createChecklistDragPreview(item: ChecklistItem, index: number, rowWidth
   preview.style.boxSizing = "border-box";
   preview.style.alignItems = "center";
   preview.style.gap = "8px";
-  preview.style.padding = "6px 8px 6px 12px";
-  preview.style.borderRadius = "12px";
-  preview.style.background = "#FFFFFF";
-  preview.style.boxShadow = "0 4px 12px rgba(132, 150, 142, 0.06)";
-  preview.style.transform = "scale(1.01)";
+  preview.style.padding = "0 8px 0 0";
+  preview.style.background = "transparent";
   preview.style.fontFamily = "inherit";
   preview.style.fontSize = "15px";
   preview.style.lineHeight = "20px";
   preview.style.color = "#163B31";
-
-  const handle = document.createElement("span");
-  handle.style.position = "absolute";
-  handle.style.left = "2px";
-  handle.style.top = "50%";
-  handle.style.width = "2px";
-  handle.style.height = "18px";
-  handle.style.borderRadius = "999px";
-  handle.style.background = "#84968E";
-  handle.style.transform = "translateY(-50%)";
 
   const checkbox = document.createElement("span");
   checkbox.style.display = "inline-flex";
@@ -152,7 +139,7 @@ function createChecklistDragPreview(item: ChecklistItem, index: number, rowWidth
   label.style.opacity = "0.8";
   label.textContent = item.text || `항목 ${index + 1}`;
 
-  preview.append(handle, checkbox, label);
+  preview.append(checkbox, label);
   return preview;
 }
 
@@ -773,7 +760,12 @@ function CalendarPage() {
                     <span aria-hidden="true" className="pointer-events-none absolute bottom-3 left-0.5 top-2.5 z-0 w-0.5 rounded-full bg-field-border/70" />
                     <span
                       aria-hidden="true"
-                      className="pointer-events-none absolute left-0.5 z-10 h-[18px] w-0.5 rounded-full bg-icon-muted transition-[top,opacity,width] duration-150 ease-out group-hover/checklist-list:w-[3px]"
+                      className={cn(
+                        "pointer-events-none absolute left-0.5 z-10 h-[18px] w-0.5 rounded-full bg-icon-muted duration-150 ease-out group-hover/checklist-list:w-[3px]",
+                        draggingChecklistId !== null
+                          ? "transition-[top,opacity,width]"
+                          : "transition-[opacity,width]",
+                      )}
                       style={{ top: checklistHandleTop ?? 0, opacity: checklistHandleTop === null ? 0 : 1 }}
                     />
                     {checklistItems.map((item, index) => {
