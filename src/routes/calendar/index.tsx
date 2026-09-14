@@ -632,9 +632,9 @@ function CalendarPage() {
                     onChange={(event) => setEventDescription(event.target.value)}
                     maxLength={500}
                     placeholder="메모할 내용이 있으면 적어주세요."
-                    className="h-[164px] resize-none rounded-[12px] border-field-border px-3.5 py-3 pb-8 text-[15px] text-ink shadow-none placeholder:text-icon-muted focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft"
+                    className="h-[164px] resize-none rounded-[12px] border-field-border px-3.5 py-3 pb-11 text-[15px] text-ink shadow-none placeholder:text-icon-muted focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft"
                   />
-                  <div className="pointer-events-none absolute inset-x-px bottom-px h-5 rounded-b-[10px] bg-surface">
+                  <div className="pointer-events-none absolute inset-x-px bottom-px h-8 rounded-b-[10px] bg-gradient-to-b from-transparent via-surface/80 to-surface">
                     <span
                       aria-live="polite"
                       className="absolute bottom-1 right-2 inline-flex rounded-[4px] bg-surface px-1.5 py-0 text-[12px] leading-4 text-icon-muted"
