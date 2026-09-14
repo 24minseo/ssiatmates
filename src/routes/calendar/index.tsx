@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ChevronLeft, ChevronRight, PencilLine } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -52,6 +52,7 @@ type CalendarDay = {
 };
 
 const DAYS_OF_WEEK = ["일", "월", "화", "수", "목", "금", "토"] as const;
+const journalEditIcon = "https://www.figma.com/api/mcp/asset/db126e9b-8f01-4218-b69b-e2d25562f5e0.svg";
 
 function toDateKey(date: Date) {
   const year = date.getFullYear();
@@ -305,7 +306,7 @@ function CalendarPage() {
                         onClick={(event) => event.stopPropagation()}
                         className="invisible flex h-6 items-center gap-1 rounded-[6px] bg-field-border/70 px-1.5 text-[13px] font-medium text-ink-muted group-hover:visible"
                       >
-                        <PencilLine aria-hidden="true" className="h-[18px] w-3.5" />
+                        <img src={journalEditIcon} alt="" aria-hidden="true" className="h-[18px] w-3.5 object-contain" />
                         일지 쓰기
                       </Link>
                     ) : null}
