@@ -634,14 +634,12 @@ function CalendarPage() {
                     placeholder="메모할 내용이 있으면 적어주세요."
                     className="h-[164px] resize-none rounded-[12px] border-field-border px-3.5 py-3 pb-3 text-[15px] text-ink shadow-none placeholder:text-icon-muted focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft"
                   />
-                  <div className="pointer-events-none absolute inset-x-px bottom-px h-5 rounded-b-[12px] bg-surface">
-                    <span
-                      aria-live="polite"
-                      className="absolute bottom-1/2 right-2 inline-flex -translate-y-1/2 rounded-[4px] bg-surface px-2 py-0.5 text-[12px] leading-3 text-icon-muted"
-                    >
-                      <span className={eventDescription.length > 0 ? "text-ink" : "text-icon-muted"}>{eventDescription.length}</span>/500
-                    </span>
-                  </div>
+                  <span
+                    aria-live="polite"
+                    className="pointer-events-none absolute bottom-2 right-2 inline-flex rounded-[4px] bg-surface px-2 py-0.5 text-[12px] leading-3 text-icon-muted"
+                  >
+                    <span className={eventDescription.length > 0 ? "text-ink" : "text-icon-muted"}>{eventDescription.length}</span>/500
+                  </span>
                 </div>
               ) : (
                 <div className="mt-1 rounded-[12px] border border-field-border bg-surface p-3">
