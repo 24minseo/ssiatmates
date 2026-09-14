@@ -11,7 +11,7 @@ import {
   Plus,
   Trash2,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type PointerEvent as ReactPointerEvent } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -85,64 +85,6 @@ function resizeChecklistTextarea(element: HTMLTextAreaElement) {
   element.style.height = `${Math.min(element.scrollHeight, 64)}px`;
 }
 
-function createChecklistDragPreview(item: ChecklistItem, index: number, rowWidth: number, rowHeight: number) {
-  const preview = document.createElement("div");
-  preview.style.position = "absolute";
-  preview.style.left = "-10000px";
-  preview.style.top = "-10000px";
-  preview.style.display = "flex";
-  preview.style.width = `${Math.max(Math.round(rowWidth), 280)}px`;
-  preview.style.height = `${Math.max(Math.round(rowHeight), 40)}px`;
-  preview.style.boxSizing = "border-box";
-  preview.style.alignItems = "center";
-  preview.style.gap = "8px";
-  preview.style.padding = "0 8px 0 0";
-  preview.style.background = "transparent";
-  preview.style.fontFamily = "inherit";
-  preview.style.fontSize = "15px";
-  preview.style.lineHeight = "20px";
-  preview.style.color = "#163B31";
-
-  const checkbox = document.createElement("span");
-  checkbox.style.display = "inline-flex";
-  checkbox.style.width = "20px";
-  checkbox.style.height = "20px";
-  checkbox.style.flexShrink = "0";
-  checkbox.style.alignItems = "center";
-  checkbox.style.justifyContent = "center";
-  checkbox.style.border = item.completed ? "1px solid #1F8064" : "1px solid #D8E1DD";
-  checkbox.style.borderRadius = "5px";
-  checkbox.style.background = item.completed ? "#1F8064" : "#FFFFFF";
-  checkbox.style.color = "#FFFFFF";
-  checkbox.style.opacity = "0.8";
-  if (item.completed) {
-    const checkIcon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    checkIcon.setAttribute("viewBox", "0 0 24 24");
-    checkIcon.setAttribute("width", "14");
-    checkIcon.setAttribute("height", "14");
-    checkIcon.setAttribute("fill", "none");
-    checkIcon.setAttribute("stroke", "currentColor");
-    checkIcon.setAttribute("stroke-width", "2");
-    checkIcon.setAttribute("stroke-linecap", "round");
-    checkIcon.setAttribute("stroke-linejoin", "round");
-    const checkPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
-    checkPath.setAttribute("d", "M20 6 9 17l-5-5");
-    checkIcon.append(checkPath);
-    checkbox.append(checkIcon);
-  }
-
-  const label = document.createElement("span");
-  label.style.minWidth = "0";
-  label.style.overflow = "hidden";
-  label.style.textOverflow = "ellipsis";
-  label.style.whiteSpace = "nowrap";
-  label.style.opacity = "0.8";
-  label.textContent = item.text || `항목 ${index + 1}`;
-
-  preview.append(checkbox, label);
-  return preview;
-}
-
 function toDateKey(date: Date) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -197,6 +139,7 @@ function CalendarPage() {
   const [dragOverChecklistId, setDragOverChecklistId] = useState<number | null>(null);
   const [dragOverPosition, setDragOverPosition] = useState<ChecklistDropPosition>("before");
   const [checklistHandleTop, setChecklistHandleTop] = useState<number | null>(null);
+  const [checklistGhostTop, setChecklistGhostTop] = useState<number | null>(null);
   const [eventStartTime, setEventStartTime] = useState("");
   const [hasReminder, setHasReminder] = useState(false);
 
@@ -215,6 +158,7 @@ function CalendarPage() {
     () => [...events].sort((a, b) => a.date.localeCompare(b.date)),
     [events],
   );
+  const draggingChecklistItem = checklistItems.find((item) => item.id === draggingChecklistId) ?? null;
 
   const moveMonth = (offset: number) => {
     setVisibleMonth((current) => new Date(current.getFullYear(), current.getMonth() + offset, 1));
@@ -369,6 +313,83 @@ function CalendarPage() {
     setSelectedDate(eventDate);
     setEditingEventId(null);
     setIsAddOpen(false);
+  };
+
+
+  const startChecklistPointerDrag = (
+    item: ChecklistItem,
+    index: number,
+    event: ReactPointerEvent<HTMLButtonElement>,
+  ) => {
+    if (event.button !== 0) return;
+    event.preventDefault();
+
+    const row = event.currentTarget.closest<HTMLElement>("[data-checklist-row]");
+    const list = row?.parentElement;
+    if (!row || !list) return;
+
+    const rowRect = row.getBoundingClientRect();
+    let targetId: number | null = item.id;
+    let targetPosition: ChecklistDropPosition = "before";
+
+    const updateDragPosition = (clientY: number) => {
+      const listRect = list.getBoundingClientRect();
+      const maxTop = Math.max(0, list.scrollHeight - rowRect.height);
+      const nextTop = Math.max(
+        0,
+        Math.min(maxTop, clientY - listRect.top - (event.clientY - rowRect.top)),
+      );
+      setChecklistGhostTop(nextTop);
+
+      const rows = Array.from(list.querySelectorAll<HTMLElement>("[data-checklist-row]"));
+      const targetRow = rows.find((candidate) => {
+        const bounds = candidate.getBoundingClientRect();
+        return clientY >= bounds.top && clientY <= bounds.bottom;
+      });
+
+      if (!targetRow) {
+        setDragOverChecklistId(null);
+        return;
+      }
+
+      targetId = Number(targetRow.dataset.checklistId);
+      const bounds = targetRow.getBoundingClientRect();
+      targetPosition = clientY < bounds.top + bounds.height / 2 ? "before" : "after";
+      setDragOverChecklistId(targetId);
+      setDragOverPosition(targetPosition);
+      setChecklistHandleTop(targetRow.offsetTop + 10);
+    };
+
+    const finishDrag = () => {
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", finishDrag);
+      window.removeEventListener("pointercancel", finishDrag);
+
+      if (targetId !== null && targetId !== item.id) {
+        reorderChecklistItem(item.id, targetId, targetPosition);
+      }
+
+      setDraggingChecklistId(null);
+      setChecklistGhostTop(null);
+      setDragOverChecklistId(null);
+      setChecklistHandleTop(null);
+    };
+
+    const handlePointerMove = (moveEvent: globalThis.PointerEvent) => {
+      moveEvent.preventDefault();
+      updateDragPosition(moveEvent.clientY);
+    };
+
+    setDraggingChecklistId(item.id);
+    setChecklistGhostTop(Math.max(0, row.offsetTop));
+    setChecklistHandleTop(row.offsetTop + 10);
+    setDragOverChecklistId(item.id);
+    setDragOverPosition("before");
+    updateDragPosition(event.clientY);
+
+    window.addEventListener("pointermove", handlePointerMove, { passive: false });
+    window.addEventListener("pointerup", finishDrag, { once: true });
+    window.addEventListener("pointercancel", finishDrag, { once: true });
   };
 
   return (
@@ -768,11 +789,38 @@ function CalendarPage() {
                       )}
                       style={{ top: checklistHandleTop ?? 0, opacity: checklistHandleTop === null ? 0 : 1 }}
                     />
+                    {draggingChecklistItem && checklistGhostTop !== null ? (
+                      <div
+                        aria-hidden="true"
+                        className="pointer-events-none absolute left-6 right-2 z-20 flex h-10 items-start gap-2 pt-2.5 opacity-80"
+                        style={{ top: checklistGhostTop }}
+                      >
+                        <span
+                          className={cn(
+                            "flex size-[18px] shrink-0 items-center justify-center rounded-[5px] border",
+                            draggingChecklistItem.completed
+                              ? "border-brand bg-brand text-brand-foreground"
+                              : "border-field-border bg-surface",
+                          )}
+                        >
+                          {draggingChecklistItem.completed ? <Check className="size-3" /> : null}
+                        </span>
+                        <span
+                          className={cn(
+                            "min-w-0 flex-1 truncate text-[15px] leading-5 text-ink",
+                            draggingChecklistItem.completed && "text-icon-muted line-through",
+                          )}
+                        >
+                          {draggingChecklistItem.text || `항목 ${checklistItems.findIndex((item) => item.id === draggingChecklistItem.id) + 1}`}
+                        </span>
+                      </div>
+                    ) : null}
                     {checklistItems.map((item, index) => {
                       return (
                         <div
                           key={item.id}
                           data-checklist-row
+                          data-checklist-id={item.id}
                           onMouseEnter={(event) => {
                             setChecklistHandleTop(event.currentTarget.offsetTop + 10);
                           }}
@@ -821,29 +869,8 @@ function CalendarPage() {
                             type="button"
                             variant="ghost"
                             size="icon"
-                            draggable
                             aria-label={`항목 ${index + 1} 순서 이동`}
-                            onDragStart={(event) => {
-                              event.dataTransfer.effectAllowed = "move";
-                              event.dataTransfer.setData("text/plain", String(item.id));
-                              const row = event.currentTarget.closest<HTMLElement>("[data-checklist-row]");
-                              const rowBounds = row?.getBoundingClientRect();
-                              const preview = createChecklistDragPreview(
-                                item,
-                                index,
-                                rowBounds?.width ?? 280,
-                                rowBounds?.height ?? 40,
-                              );
-                              document.body.appendChild(preview);
-                              event.dataTransfer.setDragImage(preview, 16, 8);
-                              window.setTimeout(() => preview.remove(), 0);
-                              setDraggingChecklistId(item.id);
-                              setDragOverChecklistId(null);
-                            }}
-                            onDragEnd={() => {
-                              setDraggingChecklistId(null);
-                              setDragOverChecklistId(null);
-                            }}
+                            onPointerDown={(event) => startChecklistPointerDrag(item, index, event)}
                             className="pointer-events-none relative z-10 col-start-1 mt-0 h-8 w-6 shrink-0 cursor-grab rounded-[8px] text-icon-muted opacity-0 shadow-none transition-opacity active:cursor-grabbing group-hover/checklist-row:pointer-events-auto group-hover/checklist-row:opacity-100 focus-visible:pointer-events-auto focus-visible:opacity-100 hover:bg-transparent hover:text-icon-muted"
                           />
                           <Checkbox
