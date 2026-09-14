@@ -19,7 +19,7 @@ export function FieldLabel({
       className={cn("text-sm font-semibold text-ink", className)}
     >
       {children}
-      {required ? <span className="ml-0.5 text-brand">*</span> : null}
+      {required ? <span className="relative -top-px ml-0.5 text-brand">*</span> : null}
     </label>
   );
 }
