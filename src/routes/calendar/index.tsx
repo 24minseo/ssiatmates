@@ -759,8 +759,8 @@ function CalendarPage() {
                 </div>
               ) : (
                 <div className="mt-1 rounded-[12px] bg-surface py-2.5 pl-0 pr-2.5">
-                  <div className="relative flex flex-col gap-0">
-                    <span aria-hidden="true" className="pointer-events-none absolute bottom-3 left-0.5 top-2.5 z-0 w-0.5 rounded-full bg-field-border" />
+                  <div className="group/checklist-list relative flex flex-col gap-0">
+                    <span aria-hidden="true" className="pointer-events-none absolute bottom-3 left-0.5 top-2.5 z-0 w-0.5 rounded-full bg-field-border transition-opacity duration-150 ease-out group-hover/checklist-list:opacity-0" />
                     {checklistItems.map((item, index) => {
                       return (
                         <div
@@ -833,7 +833,7 @@ function CalendarPage() {
                               setDraggingChecklistId(null);
                               setDragOverChecklistId(null);
                             }}
-                            className="pointer-events-none relative z-10 col-start-1 mt-0 size-8 shrink-0 cursor-grab rounded-[8px] bg-surface text-icon-muted opacity-0 shadow-none transition-opacity active:cursor-grabbing group-hover/checklist-row:pointer-events-auto group-hover/checklist-row:opacity-100 focus-visible:pointer-events-auto focus-visible:opacity-100 hover:bg-surface hover:text-[#62756E]"
+                            className="pointer-events-none relative z-10 col-start-1 mt-0 size-8 shrink-0 cursor-grab rounded-[8px] bg-surface text-icon-muted opacity-0 shadow-none transition-opacity active:cursor-grabbing group-hover/checklist-list:pointer-events-auto group-hover/checklist-list:opacity-100 focus-visible:pointer-events-auto focus-visible:opacity-100 hover:bg-surface hover:text-[#62756E]"
                           >
                             <GripVertical aria-hidden="true" className="size-4 -translate-x-1" />
                           </Button>
