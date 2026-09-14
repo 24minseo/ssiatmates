@@ -514,13 +514,22 @@ function CalendarPage() {
 
             <div className="mt-[18px] grid gap-2">
               <Label htmlFor="todo-description" className="text-sm font-semibold text-ink">상세 내용</Label>
-              <Textarea
-                id="todo-description"
-                value={eventDescription}
-                onChange={(event) => setEventDescription(event.target.value)}
-                placeholder="설명 추가"
-                className="h-[164px] resize-none rounded-[12px] border-field-border px-3.5 py-3 text-[15px] text-ink shadow-none placeholder:text-icon-muted focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft"
-              />
+              <div className="relative">
+                <Textarea
+                  id="todo-description"
+                  value={eventDescription}
+                  onChange={(event) => setEventDescription(event.target.value)}
+                  maxLength={500}
+                  placeholder="설명 추가"
+                  className="h-[164px] resize-none rounded-[12px] border-field-border px-3.5 py-3 pb-9 text-[15px] text-ink shadow-none placeholder:text-icon-muted focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft"
+                />
+                <span
+                  aria-live="polite"
+                  className="pointer-events-none absolute bottom-3.5 right-3.5 text-[12px] text-icon-muted"
+                >
+                  {eventDescription.length}/500
+                </span>
+              </div>
             </div>
           </div>
 
