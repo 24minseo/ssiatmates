@@ -113,9 +113,9 @@ export function RegionCombobox({
                     setOpen(false);
                   }}
                   className={cn(
-                    "min-h-10 scroll-mt-1 rounded-[8px] text-ink data-[selected=true]:bg-item-hover data-[selected=true]:text-ink",
+                    "min-h-10 scroll-mt-1 rounded-[8px] text-ink data-[selected=true]:bg-[#F1F3F2] data-[selected=true]:text-ink",
                     value === region.label &&
-                      "font-bold text-brand data-[selected=true]:bg-[#F2F7F4] data-[selected=true]:text-brand",
+                      "font-bold text-brand data-[selected=true]:bg-[#F1F3F2] data-[selected=true]:text-brand",
                   )}
                 >
                   <span className="flex-1 pl-1">{region.label}</span>
