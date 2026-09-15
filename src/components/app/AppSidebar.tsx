@@ -133,7 +133,9 @@ function MenuItem({
           isCurrent
             ? "bg-item-hover-selected font-semibold text-brand"
             : hasActiveChild
-              ? "font-semibold text-brand"
+              ? expanded
+                ? "font-semibold text-brand"
+                : "bg-item-hover-selected font-semibold text-brand"
               : "font-normal text-icon-muted hover:bg-menu-hover hover:shadow-menu-hover"
         }`}
       >
