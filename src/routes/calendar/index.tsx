@@ -1143,7 +1143,7 @@ function CalendarPage() {
                   </span>
                 </div>
               ) : (
-                <div className="mt-1 rounded-[12px] bg-surface py-2.5 pl-0 pr-2.5">
+                <div className="mt-1 -translate-y-[2px] rounded-[12px] bg-surface py-2.5 pl-0 pr-2.5">
                   <div className="group/checklist-list relative flex flex-col gap-0" onMouseLeave={() => setChecklistHandleVisible(false)}>
                     <span aria-hidden="true" className="pointer-events-none absolute bottom-3 left-0.5 top-2.5 z-0 w-0.5 rounded-full bg-field-border/70" />
                     <span
