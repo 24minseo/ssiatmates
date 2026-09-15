@@ -288,7 +288,7 @@ export function TimeWheelPicker({
           <button
             type="button"
             onClick={() => setOpen(false)}
-            className="text-[13px] font-semibold text-brand hover:underline"
+            className="px-2 text-[13px] font-semibold text-brand hover:underline"
           >
             완료
           </button>
