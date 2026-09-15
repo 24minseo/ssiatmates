@@ -1036,18 +1036,25 @@ function CalendarPage() {
                               className="h-full min-w-0 flex-1 rounded-none border-0 px-3 text-[14px] text-ink shadow-none placeholder:text-guide-text focus-visible:border-0 focus-visible:ring-0"
                             />
                             <span aria-hidden="true" className="h-full w-px shrink-0 bg-field-border" />
-                            <select
-                              value={customReminderUnit}
-                              onChange={(event) => setCustomReminderUnit(event.target.value as ReminderUnit)}
-                              aria-label="알림 시간 단위"
-                              className="h-full w-[72px] shrink-0 appearance-none bg-surface px-2 text-center text-[14px] text-ink outline-none"
+                            <button
+                              type="button"
+                              disabled={availableReminderUnits.length <= 1}
+                              aria-label={`알림 시간 단위: ${customReminderUnit}. 클릭하여 변경`}
+                              onClick={() => {
+                                if (availableReminderUnits.length <= 1) return;
+                                const currentIndex = availableReminderUnits.findIndex(
+                                  (unit) => unit.label === customReminderUnit,
+                                );
+                                const nextIndex =
+                                  currentIndex === -1
+                                    ? 0
+                                    : (currentIndex + 1) % availableReminderUnits.length;
+                                setCustomReminderUnit(availableReminderUnits[nextIndex].label);
+                              }}
+                              className="h-full w-[72px] shrink-0 border-0 bg-surface px-2 text-center text-[14px] text-ink outline-none disabled:cursor-default"
                             >
-                              {availableReminderUnits.map((unit) => (
-                                <option key={unit.label} value={unit.label}>
-                                  {unit.label}
-                                </option>
-                              ))}
-                            </select>
+                              {customReminderUnit}
+                            </button>
                             <span className="flex h-full w-9 shrink-0 items-center justify-center bg-item-hover text-[14px] text-icon-muted">
                               전
                             </span>
