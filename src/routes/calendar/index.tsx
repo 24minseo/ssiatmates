@@ -856,7 +856,7 @@ function CalendarPage() {
                         type="button"
                         aria-label={`${reminder} 알림 삭제`}
                         onClick={() => removeReminder(reminder)}
-                        className="flex size-5 items-center justify-center rounded-full text-pill-foreground transition-colors duration-150 ease-out hover:bg-surface hover:text-pill-foreground motion-reduce:transition-none"
+                        className="flex size-5 items-center justify-center rounded-full text-pill-foreground transition-colors duration-150 ease-out hover:bg-pill-foreground hover:text-pill motion-reduce:transition-none"
                       >
                         <X aria-hidden="true" className="size-3.5" />
                       </button>
@@ -914,7 +914,7 @@ function CalendarPage() {
                                 "flex h-8 items-center rounded-[16px] px-3 text-[13px] font-normal transition-colors duration-150 ease-out motion-reduce:transition-none",
                                 added
                                   ? "cursor-default bg-pill font-semibold text-pill-foreground"
-                                  : "bg-item-hover text-ink-muted hover:bg-item-hover-selected hover:text-brand",
+                                  : "bg-item-hover text-ink-muted hover:bg-[#EFF8F5] hover:text-brand",
                               )}
                             >
                               {option.label}
