@@ -393,7 +393,7 @@ function CalendarPage() {
         return;
       }
 
-      targetId = Number(targetRow.dataset.checklistId);
+      targetId = Number(targetRow.dataset["checklistId"]);
       const bounds = targetRow.getBoundingClientRect();
       targetPosition = clientY < bounds.top + bounds.height / 2 ? "before" : "after";
       setDragOverChecklistId(targetId);
