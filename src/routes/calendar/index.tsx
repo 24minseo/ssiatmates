@@ -228,6 +228,9 @@ type DateRangePickerProps = {
   mode: DateSelectionMode;
   startDate: string;
   endDate: string;
+  initialMode: DateSelectionMode;
+  initialStartDate: string;
+  initialEndDate: string;
   onModeChange: (mode: DateSelectionMode) => void;
   onChange: (startDate: string, endDate?: string) => void;
 };
@@ -236,6 +239,9 @@ function DateRangePicker({
   mode,
   startDate,
   endDate,
+  initialMode,
+  initialStartDate,
+  initialEndDate,
   onModeChange,
   onChange,
 }: DateRangePickerProps) {
@@ -462,9 +468,10 @@ function DateRangePicker({
           <button
             type="button"
             onClick={() => {
-              setDraftStart(startDate);
-              setDraftEnd(endDate);
-              onChange(startDate, endDate || undefined);
+              setDraftStart(initialStartDate);
+              setDraftEnd(initialEndDate);
+              onModeChange(initialMode);
+              onChange(initialStartDate, initialEndDate || undefined);
               closePicker();
             }}
             className="h-8 px-1 text-[13px] text-ink-muted hover:text-ink"
@@ -511,6 +518,15 @@ function CalendarPage() {
   const [eventDate, setEventDate] = useState("");
   const [eventEndDate, setEventEndDate] = useState("");
   const [dateSelectionMode, setDateSelectionMode] = useState<DateSelectionMode>("single");
+  const [initialDateSelection, setInitialDateSelection] = useState<{
+    mode: DateSelectionMode;
+    startDate: string;
+    endDate: string;
+  }>({
+    mode: "single",
+    startDate: "",
+    endDate: "",
+  });
   const [calendarDragStart, setCalendarDragStart] = useState<string | null>(null);
   const [calendarDragEnd, setCalendarDragEnd] = useState<string | null>(null);
   const [hoveredPeriodEventId, setHoveredPeriodEventId] = useState<number | null>(null);
@@ -668,15 +684,17 @@ function CalendarPage() {
     const wasMoved = calendarDragMovedRef.current;
     if (wasMoved) {
       const [startDate, endDate] = [calendarDragStart, dayKey].sort();
-      openAddDialog(startDate);
-      setEventEndDate(endDate === startDate ? "" : endDate);
-      setDateSelectionMode(endDate === startDate ? "single" : "range");
+      openAddDialog(startDate, endDate === startDate ? "" : endDate);
     }
     setCalendarDragStart(null);
     setCalendarDragEnd(null);
   };
 
-  const openAddDialog = (dateKey?: string) => {
+  const openAddDialog = (dateKey?: string, endDate = "") => {
+    const initialStartDate = dateKey ?? todayKey;
+    const initialEndDate = endDate === initialStartDate ? "" : endDate;
+    const initialMode: DateSelectionMode = initialEndDate ? "range" : "single";
+
     setEditingEventId(null);
     setEventTitle("");
     setEventDescription("");
@@ -690,9 +708,14 @@ function CalendarPage() {
     setCustomReminderAmount("");
     setCustomReminderUnit("일");
     setReminderError("");
-    setEventDate(dateKey ?? selectedDate ?? todayKey);
-    setEventEndDate("");
-    setDateSelectionMode("single");
+    setEventDate(initialStartDate);
+    setEventEndDate(initialEndDate);
+    setDateSelectionMode(initialMode);
+    setInitialDateSelection({
+      mode: initialMode,
+      startDate: initialStartDate,
+      endDate: initialEndDate,
+    });
     setIsAddOpen(true);
   };
 
@@ -703,6 +726,11 @@ function CalendarPage() {
     setEventDate(selectedEvent.date);
     setEventEndDate(selectedEvent.endDate ?? "");
     setDateSelectionMode(selectedEvent.endDate ? "range" : "single");
+    setInitialDateSelection({
+      mode: selectedEvent.endDate ? "range" : "single",
+      startDate: selectedEvent.date,
+      endDate: selectedEvent.endDate ?? "",
+    });
     setEventDescription(selectedEvent.description);
     setContentMode(
       selectedEvent.contentMode ??
@@ -1449,6 +1477,9 @@ function CalendarPage() {
                   mode={dateSelectionMode}
                   startDate={eventDate}
                   endDate={eventEndDate}
+                  initialMode={initialDateSelection.mode}
+                  initialStartDate={initialDateSelection.startDate}
+                  initialEndDate={initialDateSelection.endDate}
                   onModeChange={(nextMode) => {
                     setDateSelectionMode(nextMode);
                     if (nextMode === "single") setEventEndDate("");
