@@ -348,34 +348,42 @@ function DateRangePicker({
           <ChevronDown aria-hidden="true" className="size-5 text-ink-muted" />
         </button>
       </PopoverTrigger>
-      <PopoverContent align="start" sideOffset={8} className="w-[320px] rounded-[12px] border-0 bg-surface p-3 shadow-dropdown">
-        <div className="flex items-center">
-          <div className="flex rounded-[8px] bg-item-hover p-0.5">
-            {(["single", "range"] as const).map((option) => (
-              <button
-                key={option}
-                type="button"
-                onClick={() => {
-                  onModeChange(option);
-                  if (option === "single") {
-                    setDraftEnd("");
-                    onChange(draftStart || startDate, undefined);
-                  }
-                }}
-                className={cn(
-                  "h-8 rounded-[6px] px-3 text-[13px] transition-colors",
-                  mode === option
-                    ? "bg-surface font-semibold text-ink shadow-sm"
-                    : "text-ink-muted hover:text-ink",
-                )}
-              >
-                {option === "single" ? "단일" : "기간"}
-              </button>
-            ))}
-          </div>
+      <PopoverContent
+        align="start"
+        sideOffset={8}
+        className="w-[400px] max-w-[calc(100vw-24px)] rounded-[20px] border-0 bg-surface p-[18px] shadow-dropdown"
+      >
+        <div
+          role="tablist"
+          aria-label="일정 기간 유형"
+          className="grid grid-cols-2 border-b border-field-border"
+        >
+          {(["single", "range"] as const).map((option) => (
+            <button
+              key={option}
+              type="button"
+              role="tab"
+              aria-selected={mode === option}
+              onClick={() => {
+                onModeChange(option);
+                if (option === "single") {
+                  setDraftEnd("");
+                  onChange(draftStart || startDate, undefined);
+                }
+              }}
+              className={cn(
+                "relative h-11 text-[15px] font-medium transition-colors after:absolute after:inset-x-0 after:-bottom-px after:h-0.5 after:rounded-full after:bg-brand after:content-['']",
+                mode === option
+                  ? "font-semibold text-brand after:opacity-100"
+                  : "text-ink-muted after:opacity-0 hover:text-ink",
+              )}
+            >
+              {option === "single" ? "하루 일정" : "기간 일정"}
+            </button>
+          ))}
         </div>
-        <div className="mt-3 flex items-center justify-between px-1">
-          <span className="text-[15px] font-semibold text-ink">
+        <div className="mt-4 flex items-center justify-between px-1">
+          <span className="text-[16px] font-semibold text-ink">
             {visibleMonth.getFullYear()}년 {visibleMonth.getMonth() + 1}월
           </span>
           <div className="flex items-center gap-1">
@@ -385,7 +393,7 @@ function DateRangePicker({
               size="icon"
               aria-label="이전 달"
               onClick={() => setVisibleMonth((current) => new Date(current.getFullYear(), current.getMonth() - 1, 1))}
-              className="size-8 rounded-[6px] text-ink-muted hover:bg-item-hover hover:text-ink"
+              className="size-8 rounded-[8px] text-ink-muted hover:bg-item-hover hover:text-ink"
             >
               <ChevronLeft aria-hidden="true" className="size-4" />
             </Button>
@@ -395,21 +403,22 @@ function DateRangePicker({
               size="icon"
               aria-label="다음 달"
               onClick={() => setVisibleMonth((current) => new Date(current.getFullYear(), current.getMonth() + 1, 1))}
-              className="size-8 rounded-[6px] text-ink-muted hover:bg-item-hover hover:text-ink"
+              className="size-8 rounded-[8px] text-ink-muted hover:bg-item-hover hover:text-ink"
             >
               <ChevronRight aria-hidden="true" className="size-4" />
             </Button>
           </div>
         </div>
-        <div className="mt-3 grid grid-cols-7 text-center text-[12px] font-semibold text-ink-muted">
+        <div className="mt-3 grid grid-cols-7 text-center text-[14px] font-medium text-ink">
           {["일", "월", "화", "수", "목", "금", "토"].map((day) => (
-            <span key={day} className="flex h-7 items-center justify-center">{day}</span>
+            <span key={day} className="flex h-11 items-center justify-center">{day}</span>
           ))}
         </div>
         <div className="grid grid-cols-7 gap-y-1">
           {days.map((day) => {
             const selectedStart = rangeStart === day.key;
             const selectedEnd = rangeEnd === day.key;
+            const isEndpoint = selectedStart || selectedEnd;
             const inRange =
               mode === "range" &&
               rangeStart &&
@@ -425,11 +434,14 @@ function DateRangePicker({
                 onPointerUp={() => handleDayPointerUp(day.key)}
                 onClick={() => handleDayClick(day.key)}
                 className={cn(
-                  "mx-0.5 flex h-9 items-center justify-center rounded-[7px] text-[14px] transition-colors",
-                  !day.isCurrentMonth && "text-content-disabled",
-                  day.isCurrentMonth && !inRange && "text-ink hover:bg-item-hover",
-                  inRange && "bg-pill text-pill-foreground",
-                  (selectedStart || selectedEnd) && "bg-brand font-semibold text-brand-foreground",
+                  "mx-1 flex h-11 items-center justify-center rounded-[12px] text-[16px] font-normal transition-colors",
+                  !day.isCurrentMonth && !isEndpoint && "text-content-disabled",
+                  day.isCurrentMonth && !inRange && !isEndpoint && "text-ink-muted hover:bg-item-hover",
+                  inRange && !isEndpoint && "bg-pill text-pill-foreground",
+                  isEndpoint &&
+                    (mode === "single"
+                      ? "bg-pill font-semibold text-brand"
+                      : "bg-brand font-semibold text-brand-foreground"),
                 )}
               >
                 {day.date.getDate()}
@@ -437,7 +449,7 @@ function DateRangePicker({
             );
           })}
         </div>
-        <div className="mt-3 flex items-center justify-between border-t border-field-border pt-2">
+        <div className="mt-4 flex items-center justify-between border-t border-field-border px-1 pt-3">
           <button
             type="button"
             onClick={() => {
@@ -446,7 +458,7 @@ function DateRangePicker({
               onChange(startDate, endDate || undefined);
               closePicker();
             }}
-            className="text-[13px] text-ink-muted hover:text-ink"
+            className="h-8 px-1 text-[14px] text-ink-muted hover:text-ink"
           >
             초기화
           </button>
@@ -463,7 +475,7 @@ function DateRangePicker({
                 setDraftEnd("");
               }
             }}
-            className="text-[13px] font-semibold text-brand hover:underline"
+            className="h-8 px-1 text-[14px] font-semibold text-brand hover:underline"
           >
             오늘
           </button>
