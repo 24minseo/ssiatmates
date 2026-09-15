@@ -20,6 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -856,6 +857,21 @@ function CalendarPage() {
 
             <fieldset className="mt-[18px]">
               <legend className="text-sm font-semibold text-ink">알림</legend>
+              <Popover
+                open={reminderPickerOpen}
+                onOpenChange={(open) => {
+                  if (!open) {
+                    closeReminderPicker();
+                    return;
+                  }
+                  setReminderPickerMode("quick");
+                  setCustomReminderAmount("");
+                  setCustomReminderUnit(eventStartTime ? "분" : "일");
+                  setReminderError("");
+                  setReminderPickerOpen(true);
+                }}
+              >
+                <PopoverAnchor asChild>
               <div className="relative mt-2 flex min-h-9 flex-wrap items-center gap-1.5">
                 {reminders.length === 0 ? (
                   <span className="flex h-9 items-center rounded-[18px] bg-item-hover px-4 text-[14px] font-normal text-ink-muted">
@@ -891,38 +907,22 @@ function CalendarPage() {
                     type="button"
                     variant="ghost"
                     aria-expanded={reminderPickerOpen}
-                    onClick={() => {
-                      if (reminderPickerOpen) {
-                        closeReminderPicker();
-                      } else {
-                        setReminderPickerMode("quick");
-                        setCustomReminderAmount("");
-                        setCustomReminderUnit(eventStartTime ? "분" : "일");
-                        setReminderError("");
-                        setReminderPickerOpen(true);
-                      }
-                    }}
                     className="h-9 rounded-[8px] px-2 text-[14px] font-normal text-ink-muted hover:bg-item-hover hover:text-ink"
                   >
                     <Plus aria-hidden="true" className="size-4" />
                     알림 추가
                   </Button>
                 ) : null}
-                {reminderPickerOpen && reminders.length < REMINDER_MAX_ITEMS ? (
-                  <>
-                    <button
-                      type="button"
-                      aria-label="알림 선택 닫기"
-                      tabIndex={-1}
-                      onClick={closeReminderPicker}
-                      className="fixed inset-0 z-10 cursor-default"
-                    />
-                    <div
-                      role="group"
-                      aria-label="알림 시간 선택"
-                      className="absolute left-0 top-full z-20 mt-2 w-[320px] rounded-[12px] border-0 bg-surface p-4 shadow-dropdown"
-                    >
-                      {reminderPickerMode === "quick" ? (
+                </div>
+                </PopoverAnchor>
+                <PopoverContent
+                  role="group"
+                  aria-label="알림 시간 선택"
+                  align="start"
+                  side="bottom"
+                  sideOffset={8}
+                  className="w-[320px] rounded-[12px] border-0 bg-surface p-4 shadow-dropdown"
+                >                      {reminderPickerMode === "quick" ? (
                         <>
                           <div className="mb-2 flex items-baseline gap-2">
                             <p className="text-[16px] font-semibold text-ink">알림 추가</p>
@@ -1067,10 +1067,9 @@ function CalendarPage() {
                           </div>
                         </>
                       )}
-                    </div>                  </>
-                ) : null}
-              </div>
-            </fieldset>
+
+                </PopoverContent>
+              </Popover>
 
             <div className="mt-[18px]">
               <div className="flex items-end justify-between">
