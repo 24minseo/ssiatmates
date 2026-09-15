@@ -7,7 +7,6 @@ import {
   Pencil,
   Plus,
   Trash2,
-  X,
 } from "lucide-react";
 import { useMemo, useState, type PointerEvent as ReactPointerEvent } from "react";
 
@@ -856,9 +855,14 @@ function CalendarPage() {
                         type="button"
                         aria-label={`${reminder} 알림 삭제`}
                         onClick={() => removeReminder(reminder)}
-                        className="flex size-5 items-center justify-center rounded-full text-pill-foreground transition-colors duration-150 ease-out hover:bg-pill-foreground hover:text-pill motion-reduce:transition-none"
+                        className="flex size-5 items-center justify-center rounded-full text-pill-foreground transition-colors duration-150 ease-out hover:bg-transparent motion-reduce:transition-none"
                       >
-                        <X aria-hidden="true" className="size-3.5" />
+                        <img
+                          src="/assets/badge/close-20.svg"
+                          alt=""
+                          aria-hidden="true"
+                          className="size-4"
+                        />
                       </button>
                     </span>
                   ))
