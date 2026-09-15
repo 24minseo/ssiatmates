@@ -891,43 +891,45 @@ function CalendarPage() {
                       </div>
                       <div className="mt-3 border-t border-field-border/70 pt-3">
                         <p className="mb-2 text-[14px] font-semibold text-ink">직접 입력</p>
-                        <div className="flex h-10 items-center overflow-hidden rounded-[8px] border border-field-border bg-surface transition-colors focus-within:border-brand">
-                          <Input
-                            value={customReminderAmount}
-                            onChange={(event) =>
-                              setCustomReminderAmount(event.target.value.replace(/\D/g, "").slice(0, 4))
-                            }
-                            onKeyDown={(event) => {
-                              if (event.key === "Enter") {
-                                event.preventDefault();
-                                addCustomReminder();
+                        <div className="flex items-center gap-2">
+                          <div className="flex h-10 w-fit items-center overflow-hidden rounded-[8px] border border-field-border bg-surface transition-colors focus-within:border-brand">
+                            <Input
+                              value={customReminderAmount}
+                              onChange={(event) =>
+                                setCustomReminderAmount(event.target.value.replace(/\D/g, "").slice(0, 4))
                               }
-                            }}
-                            inputMode="numeric"
-                            pattern="[0-9]*"
-                            placeholder="30"
-                            aria-label="알림 전 숫자"
-                            className="h-full !w-16 !flex-none rounded-none border-0 px-2 text-center text-[13px] md:text-[13px] text-ink shadow-none placeholder:text-guide-text focus-visible:border-0 focus-visible:ring-0"
-                          />
-                          <select
-                            value={customReminderUnit}
-                            onChange={(event) => setCustomReminderUnit(event.target.value as ReminderUnit)}
-                            aria-label="알림 시간 단위"
-                            className="h-full !w-[68px] !flex-none appearance-none border-l border-field-border bg-surface px-2 text-center text-[13px] text-ink outline-none"
-                          >
-                            {REMINDER_UNITS.map((unit) => (
-                              <option key={unit.label} value={unit.label}>
-                                {unit.label}
-                              </option>
-                            ))}
-                          </select>
-                          <span className="flex w-8 shrink-0 items-center justify-center text-[13px] text-ink-muted">전</span>
+                              onKeyDown={(event) => {
+                                if (event.key === "Enter") {
+                                  event.preventDefault();
+                                  addCustomReminder();
+                                }
+                              }}
+                              inputMode="numeric"
+                              pattern="[0-9]*"
+                              placeholder="30"
+                              aria-label="알림 전 숫자"
+                              className="h-full !w-14 !flex-none rounded-none border-0 px-2 text-center text-[13px] md:text-[13px] text-ink shadow-none placeholder:text-guide-text focus-visible:border-0 focus-visible:ring-0"
+                            />
+                            <select
+                              value={customReminderUnit}
+                              onChange={(event) => setCustomReminderUnit(event.target.value as ReminderUnit)}
+                              aria-label="알림 시간 단위"
+                              className="h-full !w-[60px] !flex-none appearance-none border-l border-field-border bg-surface px-2 text-center text-[13px] text-ink outline-none"
+                            >
+                              {REMINDER_UNITS.map((unit) => (
+                                <option key={unit.label} value={unit.label}>
+                                  {unit.label}
+                                </option>
+                              ))}
+                            </select>
+                            <span className="flex w-7 shrink-0 items-center justify-center text-[13px] text-ink-muted">전</span>
+                          </div>
                           <Button
                             type="button"
                             variant="ghost"
                             onClick={addCustomReminder}
                             disabled={!customReminderAmount}
-                            className="ml-auto h-full !w-[58px] !flex-none rounded-none border-l border-field-border px-2 text-[13px] font-semibold text-brand hover:bg-item-hover-selected hover:text-brand disabled:text-guide-text disabled:opacity-100"
+                            className="h-10 min-w-[52px] rounded-[8px] px-2 text-[13px] font-semibold text-brand hover:bg-item-hover-selected hover:text-brand disabled:text-guide-text disabled:opacity-100"
                           >
                             추가
                           </Button>
