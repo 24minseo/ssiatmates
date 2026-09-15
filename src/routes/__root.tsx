@@ -15,6 +15,7 @@ import { AppShell } from "../components/app/AppShell";
 import type { AppNavigationKey } from "../components/app/AppSidebar";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 function NotFoundComponent() {
   return (
@@ -138,13 +139,15 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AppSidebarProvider>
+      <TooltipProvider>
+        <AppSidebarProvider>
         {activeNavigation ? (
           <AppShell active={activeNavigation}>{routeContent}</AppShell>
         ) : (
           routeContent
         )}
-      </AppSidebarProvider>
+        </AppSidebarProvider>
+      </TooltipProvider>
     </QueryClientProvider>
   );
 }
