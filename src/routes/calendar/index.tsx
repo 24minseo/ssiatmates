@@ -331,13 +331,6 @@ function CalendarPage() {
     }
   };
 
-  const addChecklistItem = () => {
-    if (checklistItems.length >= CHECKLIST_MAX_ITEMS) return;
-    const nextItem = createChecklistItem();
-    setChecklistItems((current) => [...current, nextItem]);
-    setFocusedChecklistId(nextItem.id);
-  };
-
   const addChecklistItemAfter = (itemId: number) => {
     if (checklistItems.length >= CHECKLIST_MAX_ITEMS) return;
     const nextItem = createChecklistItem();
@@ -366,7 +359,15 @@ function CalendarPage() {
   };
 
   const removeChecklistItem = (id: number) => {
-    setChecklistItems((current) => current.filter((item) => item.id !== id));
+    const nextItems = checklistItems.filter((item) => item.id !== id);
+    if (nextItems.length === 0) {
+      const emptyItem = createChecklistItem();
+      setChecklistItems([emptyItem]);
+      setFocusedChecklistId(emptyItem.id);
+      return;
+    }
+
+    setChecklistItems(nextItems);
     setFocusedChecklistId((current) => (current === id ? null : current));
   };
 
@@ -1227,6 +1228,7 @@ function CalendarPage() {
                               onInput={(event) => resizeChecklistTextarea(event.currentTarget)}
                               onKeyDown={(event) => {
                                 if (event.key !== "Enter" || event.nativeEvent.isComposing) return;
+                                if (item.text.trim().length === 0 && index === checklistItems.length - 1) return;
                                 event.preventDefault();
                                 addChecklistItemAfter(item.id);
                               }}
@@ -1271,21 +1273,7 @@ function CalendarPage() {
                     })}
                   </div>
 
-                  {checklistItems.length < CHECKLIST_MAX_ITEMS ? (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      onClick={addChecklistItem}
-                      className="mt-1 ml-[16px] grid h-9 w-fit grid-cols-[20px_auto] items-center gap-2 rounded-[8px] px-2 text-[14px] font-normal text-ink-muted shadow-none hover:bg-item-hover hover:text-ink"
-                    >
-                      <Plus aria-hidden="true" className="col-start-1 size-4 justify-self-center" />
-                      <span className="col-start-2">항목 추가</span>
-                    </Button>
-                  ) : (
-                    <p className="mt-2 px-2 text-[12px] text-icon-muted">
-                      최대 {CHECKLIST_MAX_ITEMS}개까지 추가할 수 있어요.
-                    </p>
-                  )}
+
                 </div>
               )}
             </div>
