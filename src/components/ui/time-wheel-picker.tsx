@@ -89,9 +89,16 @@ function TimeWheel({
 
   useEffect(() => {
     if (!open) return;
-    const frame = window.requestAnimationFrame(() => scrollToValue(value, "auto"));
+    const index = options.indexOf(value);
+    if (index < 0) return;
+    const frame = window.requestAnimationFrame(() => {
+      listRef.current?.scrollTo({
+        top: index * WHEEL_ITEM_HEIGHT,
+        behavior: "auto",
+      });
+    });
     return () => window.cancelAnimationFrame(frame);
-  }, [open, value]);
+  }, [open, options, value]);
 
   useEffect(
     () => () => {
@@ -105,6 +112,7 @@ function TimeWheel({
   const selectIndex = (index: number) => {
     const boundedIndex = Math.min(options.length - 1, Math.max(0, index));
     const nextValue = options[boundedIndex];
+    if (!nextValue) return;
     if (nextValue !== value) onChange(nextValue);
     scrollToValue(nextValue);
   };
@@ -119,7 +127,7 @@ function TimeWheel({
         Math.max(0, Math.round((listRef.current?.scrollTop ?? 0) / WHEEL_ITEM_HEIGHT)),
       );
       const nextValue = options[nextIndex];
-      if (nextValue !== value) onChange(nextValue);
+      if (nextValue && nextValue !== value) onChange(nextValue);
     });
   };
 
