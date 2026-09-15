@@ -11,6 +11,7 @@ import {
 import { useMemo, useState, type PointerEvent as ReactPointerEvent } from "react";
 
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -1247,16 +1248,12 @@ function CalendarPage() {
                             onPointerDown={(event) => startChecklistPointerDrag(item, event)}
                             className="pointer-events-none relative z-10 col-start-1 mt-0 h-8 w-6 shrink-0 cursor-grab rounded-[8px] text-icon-muted opacity-0 shadow-none transition-opacity active:cursor-grabbing group-hover/checklist-row:pointer-events-auto group-hover/checklist-row:opacity-100 focus-visible:pointer-events-auto focus-visible:opacity-100 hover:bg-transparent hover:text-icon-muted"
                           />
-                          <button
-                            type="button"
-                            role="checkbox"
-                            aria-checked={item.completed}
+                          <Checkbox
+                            checked={item.completed}
                             aria-label={item.completed ? `항목 ${index + 1} 완료 취소` : `항목 ${index + 1} 완료`}
-                            onClick={() => toggleChecklistItem(item.id)}
-                            className="mt-1.5 flex size-[18px] shrink-0 items-center justify-center rounded-[4px] border-0 bg-transparent p-0 text-brand focus-visible:outline-none focus-visible:ring-[3.2px] focus-visible:ring-focus-soft"
-                          >
-                            {item.completed ? <Check aria-hidden="true" className="size-[18px] stroke-[2.25]" /> : null}
-                          </button>
+                            onCheckedChange={() => toggleChecklistItem(item.id)}
+                            className="mt-1.5 size-[18px] shrink-0 rounded-[5px] border-field-border [&_svg]:size-3 data-[state=checked]:border-brand data-[state=checked]:bg-brand data-[state=checked]:text-brand-foreground"
+                          />
                           <div className="relative min-w-0 flex-1">
                             <LayeredTextarea
                               value={item.text}
