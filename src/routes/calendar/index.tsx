@@ -1049,7 +1049,7 @@ function CalendarPage() {
                                 </option>
                               ))}
                             </select>
-                            <span className="flex h-full w-9 shrink-0 items-center justify-center border-l border-field-border text-[14px] text-ink-muted">
+                            <span className="flex h-full w-9 shrink-0 items-center justify-center bg-item-hover text-[14px] text-icon-muted">
                               전
                             </span>
                             </div>
