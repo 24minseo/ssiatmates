@@ -77,6 +77,10 @@ function TimeWheel({
 }: TimeWheelProps) {
   const listRef = useRef<HTMLDivElement>(null);
   const frameRef = useRef<number | null>(null);
+  const latestOptionsRef = useRef(options);
+  const latestValueRef = useRef(value);
+  latestOptionsRef.current = options;
+  latestValueRef.current = value;
 
   const scrollToValue = (nextValue: string, behavior: ScrollBehavior = "smooth") => {
     const index = options.indexOf(nextValue);
@@ -89,7 +93,7 @@ function TimeWheel({
 
   useEffect(() => {
     if (!open) return;
-    const index = options.indexOf(value);
+    const index = latestOptionsRef.current.indexOf(latestValueRef.current);
     if (index < 0) return;
     const frame = window.requestAnimationFrame(() => {
       listRef.current?.scrollTo({
@@ -98,7 +102,7 @@ function TimeWheel({
       });
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [open, options, value]);
+  }, [open]);
 
   useEffect(
     () => () => {
