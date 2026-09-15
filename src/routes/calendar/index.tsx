@@ -564,20 +564,14 @@ function CalendarPage() {
       const weekPeriodCount = calendarPeriodSegments.filter(
         (segment) => segment.weekIndex === weekIndex,
       ).length;
-      const hasSingleDayEvent = days
-        .slice(weekIndex * 7, weekIndex * 7 + 7)
-        .some((day) =>
-          (eventsByDate[day.key] ?? []).some(
-            (event) => !event.endDate || event.endDate === event.date,
-          ),
-        );
 
-      return weekPeriodCount >= CALENDAR_VISIBLE_EVENT_ROWS &&
-        (weekPeriodCount > CALENDAR_VISIBLE_EVENT_ROWS || hasSingleDayEvent)
+      // Reserve the overflow row as soon as the maximum period lanes are reached,
+      // so adding another event does not move already-rendered bars downward.
+      return weekPeriodCount >= CALENDAR_VISIBLE_EVENT_ROWS
         ? CALENDAR_VISIBLE_EVENT_ROWS - 1
         : CALENDAR_VISIBLE_EVENT_ROWS;
     });
-  }, [calendarPeriodSegments, days, eventsByDate]);
+  }, [calendarPeriodSegments, days]);
   const visibleCalendarPeriodSegments = useMemo(
     () =>
       calendarPeriodSegments.filter(
