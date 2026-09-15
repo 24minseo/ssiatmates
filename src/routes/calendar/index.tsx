@@ -1289,6 +1289,7 @@ function CalendarPage() {
                               String(segment.startColumn + 1) +
                               " / span " +
                               String(segment.span),
+                            gridRow: "1",
                             marginTop: String(38 + segment.lane * 24) + "px",
                             height: "22px",
                           }}
@@ -1312,6 +1313,7 @@ function CalendarPage() {
                               String(segment.startColumn + 1) +
                               " / span " +
                               String(segment.span),
+                            gridRow: "1",
                             marginTop: "38px",
                             height: "22px",
                           }}
