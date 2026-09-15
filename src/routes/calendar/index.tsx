@@ -931,7 +931,7 @@ function CalendarPage() {
                                     "flex h-8 items-center rounded-[16px] px-3 text-[13px] font-normal transition-colors duration-150 ease-out motion-reduce:transition-none",
                                     added
                                       ? "cursor-default bg-pill font-semibold text-pill-foreground"
-                                      : "bg-item-hover text-ink-muted hover:bg-[#EFF8F5] hover:text-brand",
+                                      : "bg-item-hover text-ink-muted hover:bg-[#F1F3F2] hover:text-ink-muted",
                                   )}
                                 >
                                   {option.label}
