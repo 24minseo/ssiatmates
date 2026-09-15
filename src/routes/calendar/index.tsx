@@ -790,6 +790,7 @@ function CalendarPage() {
                       aria-label="알림 시간 선택"
                       className="absolute left-0 top-full z-20 mt-2 w-[320px] rounded-[12px] border-0 bg-surface p-4 shadow-dropdown"
                     >
+                      <p className="mb-2 text-[12px] font-semibold text-ink-muted">빠른 알림</p>
                       <div className="flex flex-wrap gap-1.5">
                         {REMINDER_QUICK_OPTIONS.map((option) => {
                           const added = reminders.includes(option);
@@ -812,31 +813,34 @@ function CalendarPage() {
                           );
                         })}
                       </div>
-                      <div className="mt-3 flex h-10 items-center overflow-hidden rounded-[8px] border border-field-border bg-surface transition-colors focus-within:border-brand">
-                        <Input
-                          value={customReminder}
-                          onChange={(event) =>
-                            setCustomReminder(event.target.value.slice(0, REMINDER_CUSTOM_MAX_LENGTH))
-                          }
-                          onKeyDown={(event) => {
-                            if (event.key === "Enter") {
-                              event.preventDefault();
-                              addCustomReminder();
+                      <div className="mt-3 border-t border-field-border/70 pt-3">
+                        <p className="mb-2 text-[12px] font-semibold text-ink-muted">직접 입력</p>
+                        <div className="flex h-10 items-center overflow-hidden rounded-[8px] border border-field-border bg-surface transition-colors focus-within:border-brand">
+                          <Input
+                            value={customReminder}
+                            onChange={(event) =>
+                              setCustomReminder(event.target.value.slice(0, REMINDER_CUSTOM_MAX_LENGTH))
                             }
-                          }}
-                          placeholder="직접 입력 (예: 30분 전)"
-                          aria-label="알림 시간 직접 입력"
-                          className="h-full min-w-0 flex-1 rounded-none border-0 px-3 text-[13px] md:text-[13px] text-ink shadow-none placeholder:text-guide-text focus-visible:border-0 focus-visible:ring-0"
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          onClick={addCustomReminder}
-                          disabled={!customReminder.trim()}
-                          className="h-full shrink-0 rounded-none border-l border-field-border px-3 text-[13px] font-semibold text-brand hover:bg-item-hover-selected hover:text-brand disabled:opacity-40"
-                        >
-                          추가
-                        </Button>
+                            onKeyDown={(event) => {
+                              if (event.key === "Enter") {
+                                event.preventDefault();
+                                addCustomReminder();
+                              }
+                            }}
+                            placeholder="예: 30분 전"
+                            aria-label="알림 시간 직접 입력"
+                            className="h-full min-w-0 flex-1 rounded-none border-0 px-3 text-[13px] md:text-[13px] text-ink shadow-none placeholder:text-guide-text focus-visible:border-0 focus-visible:ring-0"
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            onClick={addCustomReminder}
+                            disabled={!customReminder.trim()}
+                            className="h-full shrink-0 rounded-none border-l border-field-border px-3 text-[13px] font-semibold text-brand hover:bg-item-hover-selected hover:text-brand disabled:opacity-40"
+                          >
+                            추가
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </>
