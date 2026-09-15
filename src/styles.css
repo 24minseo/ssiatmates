@@ -162,7 +162,7 @@
   --item-hover: rgb(246 248 247);
   --item-hover-selected: #eaf1ec;
   --dropdown-hover: #f6f8f7;
-  --dropdown-selected-hover: #f2f7f4;
+  --dropdown-selected-hover: rgb(234 241 236 / 0.5);
   --menu-hover: #f1f3f2;
   --menu-badge: #e2ede5;
   --secondary-btn: #f6f8f7;
