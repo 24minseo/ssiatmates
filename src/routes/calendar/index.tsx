@@ -411,41 +411,52 @@ function DateRangePicker({
         </div>
         <div className="mt-3 grid grid-cols-7 text-center text-[14px] font-medium text-ink">
           {["일", "월", "화", "수", "목", "금", "토"].map((day) => (
-            <span key={day} className="flex h-11 items-center justify-center">{day}</span>
+            <span key={day} className="flex h-[52px] items-center justify-center">{day}</span>
           ))}
         </div>
-        <div className="grid grid-cols-7 gap-y-1">
-          {days.map((day) => {
+        <div className="grid grid-cols-7">
+          {days.map((day, index) => {
             const selectedStart = rangeStart === day.key;
             const selectedEnd = rangeEnd === day.key;
             const isEndpoint = selectedStart || selectedEnd;
+            const hasRange = Boolean(mode === "range" && rangeStart && rangeEnd);
             const inRange =
-              mode === "range" &&
-              rangeStart &&
-              rangeEnd &&
+              hasRange &&
               day.key >= rangeStart &&
               day.key <= rangeEnd;
+            const startsRowSegment = inRange && (selectedStart || index % 7 === 0);
+            const endsRowSegment = inRange && (selectedEnd || index % 7 === 6);
+
             return (
-              <button
+              <div
                 key={day.key}
-                type="button"
-                onPointerDown={(event) => handleDayPointerDown(day.key, event)}
-                onPointerEnter={() => handleDayPointerEnter(day.key)}
-                onPointerUp={() => handleDayPointerUp(day.key)}
-                onClick={() => handleDayClick(day.key)}
                 className={cn(
-                  "mx-1 flex h-11 items-center justify-center rounded-[12px] text-[16px] font-normal transition-colors",
-                  !day.isCurrentMonth && !isEndpoint && "text-content-disabled",
-                  day.isCurrentMonth && !inRange && !isEndpoint && "text-ink-muted hover:bg-item-hover",
-                  inRange && !isEndpoint && "bg-pill text-pill-foreground",
-                  isEndpoint &&
-                    (mode === "single"
-                      ? "bg-pill font-semibold text-brand"
-                      : "bg-brand font-semibold text-brand-foreground"),
+                  "relative flex h-[52px] items-center justify-center",
+                  inRange && "bg-pill",
+                  startsRowSegment && "rounded-l-[14px]",
+                  endsRowSegment && "rounded-r-[14px]",
                 )}
               >
-                {day.date.getDate()}
-              </button>
+                <button
+                  type="button"
+                  onPointerDown={(event) => handleDayPointerDown(day.key, event)}
+                  onPointerEnter={() => handleDayPointerEnter(day.key)}
+                  onPointerUp={() => handleDayPointerUp(day.key)}
+                  onClick={() => handleDayClick(day.key)}
+                  className={cn(
+                    "relative z-10 flex size-11 items-center justify-center rounded-[12px] text-[16px] font-normal transition-colors",
+                    !day.isCurrentMonth && !isEndpoint && "text-content-disabled",
+                    day.isCurrentMonth && !inRange && !isEndpoint && "text-ink-muted hover:bg-item-hover",
+                    inRange && !isEndpoint && "text-ink-muted",
+                    isEndpoint &&
+                      (hasRange
+                        ? "bg-surface font-semibold text-brand shadow-[0_2px_6px_0_rgba(85,113,78,0.12)]"
+                        : "bg-pill font-semibold text-brand"),
+                  )}
+                >
+                  {day.date.getDate()}
+                </button>
+              </div>
             );
           })}
         </div>
