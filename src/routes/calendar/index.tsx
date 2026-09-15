@@ -1228,7 +1228,10 @@ function CalendarPage() {
                       gridRow: String(weekIndex + 1),
                     }}
                   >
-                    <div className="grid h-full grid-cols-7">
+                    <div
+                      className="grid h-full grid-cols-7 grid-rows-1 items-start"
+                      style={{ gridTemplateRows: "minmax(0, 1fr)" }}
+                    >
                       {weekSegments.map((segment) => (
                         <button
                           key={segment.event.id + "-" + segment.weekIndex}
