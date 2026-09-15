@@ -324,6 +324,14 @@ function CalendarPage() {
     setReminders((current) => current.filter((reminder) => reminder !== label));
   };
 
+  const closeReminderPicker = () => {
+    setReminderPickerOpen(false);
+    setReminderPickerMode("quick");
+    setCustomReminderAmount("");
+    setCustomReminderUnit(eventStartTime ? "분" : "일");
+    setReminderError("");
+  };
+
   const createChecklistItem = (): ChecklistItem => ({
     id: Date.now(),
     text: "",
@@ -753,7 +761,7 @@ function CalendarPage() {
         open={isAddOpen}
         onOpenChange={(open) => {
           setIsAddOpen(open);
-          if (!open) setReminderPickerMode("quick");
+          if (!open) closeReminderPicker();
         }}
       >
         <DialogContent
@@ -883,7 +891,17 @@ function CalendarPage() {
                     type="button"
                     variant="ghost"
                     aria-expanded={reminderPickerOpen}
-                    onClick={() => setReminderPickerOpen((current) => !current)}
+                    onClick={() => {
+                      if (reminderPickerOpen) {
+                        closeReminderPicker();
+                      } else {
+                        setReminderPickerMode("quick");
+                        setCustomReminderAmount("");
+                        setCustomReminderUnit(eventStartTime ? "분" : "일");
+                        setReminderError("");
+                        setReminderPickerOpen(true);
+                      }
+                    }}
                     className="h-9 rounded-[8px] px-2 text-[14px] font-normal text-ink-muted hover:bg-item-hover hover:text-ink"
                   >
                     <Plus aria-hidden="true" className="size-4" />
@@ -896,7 +914,7 @@ function CalendarPage() {
                       type="button"
                       aria-label="알림 선택 닫기"
                       tabIndex={-1}
-                      onClick={() => setReminderPickerOpen(false)}
+                      onClick={closeReminderPicker}
                       className="fixed inset-0 z-10 cursor-default"
                     />
                     <div
@@ -906,7 +924,10 @@ function CalendarPage() {
                     >
                       {reminderPickerMode === "quick" ? (
                         <>
-                          <p className="mb-2 text-[14px] font-semibold text-ink">빠른 알림</p>
+                          <div className="mb-2 flex items-baseline gap-2">
+                            <p className="text-[16px] font-semibold text-ink">알림 추가</p>
+                            <span className="text-[13px] font-normal text-ink-muted">빠른 알림</span>
+                          </div>
                           <div className="flex flex-wrap items-center gap-1.5">
                             {availableReminderQuickOptions.map((option) => {
                               const added = reminders.includes(option.label);
@@ -972,7 +993,8 @@ function CalendarPage() {
                             >
                               <ChevronLeft aria-hidden="true" className="size-4" />
                             </Button>
-                            <p className="text-[14px] font-semibold text-ink">직접 알림 설정</p>
+                            <p className="text-[16px] font-semibold text-ink">알림 추가</p>
+                            <span className="ml-2 text-[13px] font-normal text-ink-muted">직접 알림 설정</span>
                           </div>
                           <p className="mt-1 text-[12px] text-ink-muted">
                             마감일 기준으로 알림을 설정하세요.
