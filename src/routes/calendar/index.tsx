@@ -27,6 +27,14 @@ import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/calendar/")({
   head: () => ({
+    links: [
+      {
+        rel: "preload",
+        href: "/assets/badge/close-20.svg",
+        as: "image",
+        type: "image/svg+xml",
+      },
+    ],
     meta: [
       { title: "전체 캘린더 — SSIAT" },
       {
@@ -862,6 +870,8 @@ function CalendarPage() {
                           src="/assets/badge/close-20.svg"
                           alt=""
                           aria-hidden="true"
+                          loading="eager"
+                          decoding="sync"
                           className="size-4"
                         />
                       </button>
