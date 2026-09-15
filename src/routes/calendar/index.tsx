@@ -1,6 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
-  Bell,
   CalendarDays,
   Check,
   ChevronDown,
@@ -745,7 +744,6 @@ function CalendarPage() {
                       key={reminder}
                       className="flex h-9 items-center gap-1.5 rounded-[18px] bg-item-hover pl-4 pr-2 text-[14px] font-normal text-icon-muted"
                     >
-                      <Bell aria-hidden="true" className="size-3.5" />
                       {reminder}
                       <button
                         type="button"
