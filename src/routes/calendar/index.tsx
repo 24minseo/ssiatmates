@@ -388,30 +388,32 @@ function DateRangePicker({
             </button>
           ))}
         </div>
-        <div className="mt-3 grid grid-cols-[32px_1fr_32px] items-center px-1">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            aria-label="이전 달"
-            onClick={() => setVisibleMonth((current) => new Date(current.getFullYear(), current.getMonth() - 1, 1))}
-            className="size-8 rounded-[8px] text-ink-muted hover:bg-item-hover hover:text-ink"
-          >
-            <ChevronLeft aria-hidden="true" className="size-4" />
-          </Button>
-          <span className="text-center text-[15px] font-semibold text-ink">
+        <div className="mt-3 flex items-center justify-between px-1">
+          <span className="text-left text-[15px] font-semibold text-ink">
             {visibleMonth.getFullYear()}년 {visibleMonth.getMonth() + 1}월
           </span>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            aria-label="다음 달"
-            onClick={() => setVisibleMonth((current) => new Date(current.getFullYear(), current.getMonth() + 1, 1))}
-            className="size-8 rounded-[8px] text-ink-muted hover:bg-item-hover hover:text-ink"
-          >
-            <ChevronRight aria-hidden="true" className="size-4" />
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label="이전 달"
+              onClick={() => setVisibleMonth((current) => new Date(current.getFullYear(), current.getMonth() - 1, 1))}
+              className="size-8 rounded-[8px] text-ink-muted hover:bg-item-hover hover:text-ink"
+            >
+              <ChevronLeft aria-hidden="true" className="size-4" />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label="다음 달"
+              onClick={() => setVisibleMonth((current) => new Date(current.getFullYear(), current.getMonth() + 1, 1))}
+              className="size-8 rounded-[8px] text-ink-muted hover:bg-item-hover hover:text-ink"
+            >
+              <ChevronRight aria-hidden="true" className="size-4" />
+            </Button>
+          </div>
         </div>
         <div className="mt-2.5 grid grid-cols-7 text-center text-[13px] font-medium text-ink">
           {["일", "월", "화", "수", "목", "금", "토"].map((day) => (
