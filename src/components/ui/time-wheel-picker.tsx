@@ -218,6 +218,7 @@ export function TimeWheelPicker({
 
   return (
     <Popover
+      modal
       open={open}
       onOpenChange={(nextOpen) => {
         if (nextOpen) setDraft(getTimeParts(value));
