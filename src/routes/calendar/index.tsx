@@ -981,19 +981,34 @@ function CalendarPage() {
 
                   {dayEvents.length > 0 ? (
                     <div className="mt-1.5 flex min-w-0 flex-col gap-0.5">
-                      {dayEvents.slice(0, 2).map((calendarEvent) => (
-                        <button
-                          key={calendarEvent.id}
-                          type="button"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            setSelectedEvent(calendarEvent);
-                          }}
-                          className="h-[22px] w-full truncate rounded-[6px] bg-item-hover px-2 text-left text-xs font-normal text-ink hover:bg-surface"
-                        >
-                          {calendarEvent.title}
-                        </button>
-                      ))}
+                      {dayEvents.slice(0, 2).map((calendarEvent) => {
+                        const isPeriod = Boolean(calendarEvent.endDate && calendarEvent.endDate !== calendarEvent.date);
+                        const isPeriodStart = calendarEvent.date === day.key;
+                        const showPeriodTitle = !isPeriod || isPeriodStart || day.date.getDay() === 0;
+                        return (
+                          <button
+                            key={`${calendarEvent.id}-${day.key}`}
+                            type="button"
+                            aria-label={
+                              isPeriod
+                                ? `${calendarEvent.title}, ${formatKoreanDate(calendarEvent.date)}부터 ${formatKoreanDate(calendarEvent.endDate!)}까지`
+                                : calendarEvent.title
+                            }
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              setSelectedEvent(calendarEvent);
+                            }}
+                            className={cn(
+                              "h-[22px] w-full truncate rounded-[6px] px-2 text-left text-xs font-normal hover:bg-surface",
+                              isPeriod
+                                ? "bg-pill text-pill-foreground"
+                                : "bg-item-hover text-ink",
+                            )}
+                          >
+                            {showPeriodTitle ? calendarEvent.title : "\u00a0"}
+                          </button>
+                        );
+                      })}
                       {dayEvents.length > 2 ? (
                         <button
                           type="button"
