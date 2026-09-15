@@ -778,6 +778,13 @@ function CalendarPage() {
           closeClassName="right-8 top-8 flex size-6 items-center justify-center rounded-none text-ink opacity-100 hover:opacity-100 focus:ring-0 focus:ring-offset-0 [&_svg]:size-6"
           className="flex h-[min(936px,calc(100vh-40px))] max-h-[936px] w-[592px] max-w-[calc(100vw-40px)] flex-col gap-0 rounded-[20px] border-0 bg-surface p-8 text-ink shadow-surface-card"
         >
+          <form
+            className="contents"
+            onSubmit={(event) => {
+              event.preventDefault();
+              saveEvent();
+            }}
+          >
           <DialogHeader className="h-10 shrink-0 justify-center space-y-0 text-left">
             <DialogTitle className="pr-10 text-[24px] font-bold leading-10 text-ink">
               {editingEventId === null ? "할 일 추가" : "할 일 수정"}
@@ -1395,14 +1402,14 @@ function CalendarPage() {
               취소
             </Button>
             <Button
-              type="button"
+              type="submit"
               disabled={!eventTitle.trim() || !eventDate}
-              onClick={saveEvent}
               className="h-12 w-[119px] rounded-[12px] bg-brand text-[16px] font-semibold text-brand-foreground shadow-none hover:bg-brand/88 active:bg-brand-pressed disabled:bg-brand-disabled disabled:opacity-100"
             >
               저장하기
             </Button>
           </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
 
