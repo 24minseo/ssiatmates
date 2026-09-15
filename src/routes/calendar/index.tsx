@@ -766,7 +766,12 @@ function CalendarPage() {
                     onClick={() => setReminderPickerOpen((current) => !current)}
                     className="h-9 rounded-[8px] px-2 text-[14px] font-normal text-ink-muted hover:bg-item-hover hover:text-ink"
                   >
-                    <Plus aria-hidden="true" className="size-4" />
+                    <img
+                      src="/assets/header/notification.svg"
+                      alt=""
+                      aria-hidden="true"
+                      className="size-4 object-contain"
+                    />
                     알림 추가
                   </Button>
                 ) : null}
