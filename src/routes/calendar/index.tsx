@@ -234,25 +234,42 @@ function CalendarPage() {
     setSelectedEvent(null);
   };
 
-  const getReminderAnchor = () => {
-    if (!eventDate || !eventStartTime) return null;
-    const anchor = new Date(`${eventDate}T${eventStartTime}`);
-    return Number.isNaN(anchor.getTime()) ? null : anchor;
+  const getReminderAnchor = (unit?: ReminderUnit) => {
+    if (!eventDate) return null;
+    if (eventStartTime) {
+      const anchor = new Date(`${eventDate}T${eventStartTime}`);
+      return Number.isNaN(anchor.getTime()) ? null : anchor;
+    }
+    if (unit === "일") {
+      return new Date(`${eventDate}T09:00:00`);
+    }
+    return null;
   };
 
-  const getReminderError = (offsetMinutes: number) => {
-    const anchor = getReminderAnchor();
-    if (!anchor) return "알림을 설정하려면 시작 시간을 먼저 선택하세요.";
+  const getReminderError = (offsetMinutes: number, unit: ReminderUnit) => {
+    const anchor = getReminderAnchor(unit);
+    if (!anchor) {
+      return unit === "일"
+        ? "알림 기준 날짜를 먼저 선택하세요."
+        : "분·시간 단위 알림은 시작 시간을 먼저 선택하세요.";
+    }
     if (anchor.getTime() - offsetMinutes * 60_000 <= Date.now()) {
       return "계산된 알림 시간이 이미 지났어요. 더 짧은 시간을 선택하세요.";
     }
     return "";
   };
 
-  const addReminder = (label: string, offsetMinutes?: number) => {
+  const addReminder = (
+    label: string,
+    offsetMinutes?: number,
+    unit?: ReminderUnit,
+  ) => {
     const trimmed = label.trim();
     if (!trimmed) return;
-    const error = offsetMinutes === undefined ? "" : getReminderError(offsetMinutes);
+    const error =
+      offsetMinutes === undefined || unit === undefined
+        ? ""
+        : getReminderError(offsetMinutes, unit);
     if (error) {
       setReminderError(error);
       return;
@@ -271,12 +288,12 @@ function CalendarPage() {
       setReminderError("1 이상의 숫자를 입력하세요.");
       return;
     }
-    const error = getReminderError(amount * unit.minutes);
+    const error = getReminderError(amount * unit.minutes, unit.label);
     if (error) {
       setReminderError(error);
       return;
     }
-    addReminder(`${amount}${unit.label} 전`, amount * unit.minutes);
+    addReminder(`${amount}${unit.label} 전`, amount * unit.minutes, unit.label);
     setCustomReminderAmount("");
     setReminderError("");
   };
@@ -359,11 +376,6 @@ function CalendarPage() {
   const saveEvent = () => {
     const title = eventTitle.trim();
     if (!title || !eventDate) return;
-    if (reminders.length > 0 && !eventStartTime) {
-      setReminderError("알림을 저장하려면 시작 시간을 먼저 선택하세요.");
-      setReminderPickerOpen(true);
-      return;
-    }
 
     const nextEvent: CalendarEvent = {
       id: editingEventId ?? Date.now(),
@@ -854,7 +866,17 @@ function CalendarPage() {
                               type="button"
                               aria-pressed={added}
                               disabled={added}
-                              onClick={() => addReminder(option.label, option.minutes)}
+                              onClick={() =>
+                                addReminder(
+                                  option.label,
+                                  option.minutes,
+                                  option.minutes >= 1440
+                                    ? "일"
+                                    : option.minutes >= 60
+                                      ? "시간"
+                                      : "분",
+                                )
+                              }
                               className={cn(
                                 "flex h-8 items-center rounded-[16px] px-3 text-[13px] font-normal transition-colors duration-150 ease-out motion-reduce:transition-none",
                                 added
