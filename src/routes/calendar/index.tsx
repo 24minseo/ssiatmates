@@ -926,8 +926,9 @@ function CalendarPage() {
                 ) : null}
                 </div>
                 </PopoverAnchor>
-                <PopoverContent
-                  role="group"
+                {reminderPickerOpen && reminders.length < REMINDER_MAX_ITEMS ? (
+                  <PopoverContent
+                    role="group"
                   aria-label="알림 시간 선택"
                   align="start"
                   side="bottom"
@@ -1079,7 +1080,8 @@ function CalendarPage() {
                         </>
                       )}
 
-                </PopoverContent>
+                  </PopoverContent>
+                ) : null}
               </Popover>
 
             <div className="mt-[18px]">
