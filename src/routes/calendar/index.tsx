@@ -177,6 +177,12 @@ function CalendarPage() {
     [events],
   );
   const draggingChecklistItem = checklistItems.find((item) => item.id === draggingChecklistId) ?? null;
+  const availableReminderQuickOptions = eventStartTime
+    ? REMINDER_QUICK_OPTIONS
+    : REMINDER_QUICK_OPTIONS.filter((option) => option.minutes >= 1440);
+  const availableReminderUnits = eventStartTime
+    ? REMINDER_UNITS
+    : REMINDER_UNITS.filter((unit) => unit.label === "일");
 
   const moveMonth = (offset: number) => {
     setVisibleMonth((current) => new Date(current.getFullYear(), current.getMonth() + offset, 1));
@@ -376,6 +382,14 @@ function CalendarPage() {
   const saveEvent = () => {
     const title = eventTitle.trim();
     if (!title || !eventDate) return;
+    if (
+      !eventStartTime &&
+      reminders.some((reminder) => /(분|시간) 전$/.test(reminder))
+    ) {
+      setReminderError("시작 시간이 없는 알림은 먼저 삭제해주세요.");
+      setReminderPickerOpen(true);
+      return;
+    }
 
     const nextEvent: CalendarEvent = {
       id: editingEventId ?? Date.now(),
@@ -783,7 +797,11 @@ function CalendarPage() {
                     id="todo-time"
                     type="time"
                     value={eventStartTime}
-                    onChange={(event) => setEventStartTime(event.target.value)}
+                    onChange={(event) => {
+                      const nextTime = event.target.value;
+                      setEventStartTime(nextTime);
+                      if (!nextTime) setCustomReminderUnit("일");
+                    }}
                     placeholder="시작 시간 선택"
                     className={cn(
                       "h-12 rounded-[12px] border-field-border px-3.5 pr-10 text-[15px] md:text-[15px] text-ink shadow-none focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0",
@@ -858,7 +876,7 @@ function CalendarPage() {
                     >
                       <p className="mb-2 text-[14px] font-semibold text-ink">빠른 알림</p>
                       <div className="flex flex-wrap gap-1.5">
-                        {REMINDER_QUICK_OPTIONS.map((option) => {
+                        {availableReminderQuickOptions.map((option) => {
                           const added = reminders.includes(option.label);
                           return (
                             <button
@@ -916,7 +934,7 @@ function CalendarPage() {
                               aria-label="알림 시간 단위"
                               className="h-full !w-[60px] !flex-none appearance-none border-l border-field-border bg-surface px-2 text-center text-[13px] text-ink outline-none"
                             >
-                              {REMINDER_UNITS.map((unit) => (
+                              {availableReminderUnits.map((unit) => (
                                 <option key={unit.label} value={unit.label}>
                                   {unit.label}
                                 </option>
