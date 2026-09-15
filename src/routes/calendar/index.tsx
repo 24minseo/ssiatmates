@@ -162,7 +162,7 @@ function CalendarPage() {
   const [eventStartTime, setEventStartTime] = useState("");
   const [reminders, setReminders] = useState<string[]>([]);
   const [reminderPickerOpen, setReminderPickerOpen] = useState(false);
-  const [customReminderDialogOpen, setCustomReminderDialogOpen] = useState(false);
+  const [reminderPickerMode, setReminderPickerMode] = useState<"quick" | "custom">("quick");
   const [customReminderAmount, setCustomReminderAmount] = useState("");
   const [customReminderUnit, setCustomReminderUnit] = useState<ReminderUnit>("분");
   const [reminderError, setReminderError] = useState("");
@@ -209,7 +209,7 @@ function CalendarPage() {
     setEventStartTime("");
     setReminders([]);
     setReminderPickerOpen(false);
-    setCustomReminderDialogOpen(false);
+    setReminderPickerMode("quick");
     setCustomReminderAmount("");
     setCustomReminderUnit("일");
     setReminderError("");
@@ -234,7 +234,7 @@ function CalendarPage() {
     setEventStartTime(selectedEvent.startTime ?? "");
     setReminders(selectedEvent.reminders ?? []);
     setReminderPickerOpen(false);
-    setCustomReminderDialogOpen(false);
+    setReminderPickerMode("quick");
     setCustomReminderAmount("");
     setCustomReminderUnit(selectedEvent.startTime ? "분" : "일");
     setReminderError("");
@@ -310,7 +310,7 @@ function CalendarPage() {
     addReminder(`${amount}${unit.label} 전`, amount * unit.minutes, unit.label);
     setCustomReminderAmount("");
     setReminderError("");
-    setCustomReminderDialogOpen(false);
+    setReminderPickerMode("quick");
   };
 
   const removeReminder = (label: string) => {
@@ -745,7 +745,7 @@ function CalendarPage() {
         open={isAddOpen}
         onOpenChange={(open) => {
           setIsAddOpen(open);
-          if (!open) setCustomReminderDialogOpen(false);
+          if (!open) setReminderPickerMode("quick");
         }}
       >
         <DialogContent
@@ -889,56 +889,148 @@ function CalendarPage() {
                       aria-label="알림 시간 선택"
                       className="absolute left-0 top-full z-20 mt-2 w-[320px] rounded-[12px] border-0 bg-surface p-4 shadow-dropdown"
                     >
-                      <p className="mb-2 text-[14px] font-semibold text-ink">빠른 알림</p>
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        {availableReminderQuickOptions.map((option) => {
-                          const added = reminders.includes(option.label);
-                          return (
-                            <button
-                              key={option.label}
+                      {reminderPickerMode === "quick" ? (
+                        <>
+                          <p className="mb-2 text-[14px] font-semibold text-ink">빠른 알림</p>
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            {availableReminderQuickOptions.map((option) => {
+                              const added = reminders.includes(option.label);
+                              return (
+                                <button
+                                  key={option.label}
+                                  type="button"
+                                  aria-pressed={added}
+                                  disabled={added}
+                                  onClick={() =>
+                                    addReminder(
+                                      option.label,
+                                      option.minutes,
+                                      option.minutes >= 1440
+                                        ? "일"
+                                        : option.minutes >= 60
+                                          ? "시간"
+                                          : "분",
+                                    )
+                                  }
+                                  className={cn(
+                                    "flex h-8 items-center rounded-[16px] px-3 text-[13px] font-normal transition-colors duration-150 ease-out motion-reduce:transition-none",
+                                    added
+                                      ? "cursor-default bg-pill font-semibold text-pill-foreground"
+                                      : "bg-item-hover text-ink-muted hover:bg-[#EFF8F5] hover:text-brand",
+                                  )}
+                                >
+                                  {option.label}
+                                </button>
+                              );
+                            })}
+                            <Button
                               type="button"
-                              aria-pressed={added}
-                              disabled={added}
-                              onClick={() =>
-                                addReminder(
-                                  option.label,
-                                  option.minutes,
-                                  option.minutes >= 1440
-                                    ? "일"
-                                    : option.minutes >= 60
-                                      ? "시간"
-                                      : "분",
-                                )
-                              }
-                              className={cn(
-                                "flex h-8 items-center rounded-[16px] px-3 text-[13px] font-normal transition-colors duration-150 ease-out motion-reduce:transition-none",
-                                added
-                                  ? "cursor-default bg-pill font-semibold text-pill-foreground"
-                                  : "bg-item-hover text-ink-muted hover:bg-[#EFF8F5] hover:text-brand",
-                              )}
+                              variant="ghost"
+                              onClick={() => {
+                                setReminderError("");
+                                setReminderPickerMode("custom");
+                              }}
+                              className="h-8 rounded-[16px] border border-field-border bg-surface px-3 text-[13px] font-normal text-ink-muted hover:bg-[#EFF8F5] hover:text-brand"
                             >
-                              {option.label}
-                            </button>
-                          );
-                        })}
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          onClick={() => {
-                            setReminderError("");
-                            setCustomReminderDialogOpen(true);
-                          }}
-                          className="h-8 rounded-[16px] border border-field-border bg-surface px-3 text-[13px] font-normal text-ink-muted hover:bg-[#EFF8F5] hover:text-brand"
-                        >
-                          직접 입력
-                        </Button>
-                      </div>
-                      {reminderError ? (
-                        <p role="alert" className="mt-2 text-[12px] leading-4 text-[#B44A4A]">
-                          {reminderError}
-                        </p>
-                      ) : null}                    </div>
-                  </>
+                              직접 입력
+                            </Button>
+                          </div>
+                          {reminderError ? (
+                            <p role="alert" className="mt-2 text-[12px] leading-4 text-[#B44A4A]">
+                              {reminderError}
+                            </p>
+                          ) : null}
+                        </>
+                      ) : (
+                        <>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              aria-label="빠른 알림으로 돌아가기"
+                              onClick={() => {
+                                setReminderError("");
+                                setReminderPickerMode("quick");
+                              }}
+                              className="size-8 rounded-[8px] text-ink-muted hover:bg-item-hover hover:text-ink"
+                            >
+                              <ChevronLeft aria-hidden="true" className="size-4" />
+                            </Button>
+                            <p className="text-[14px] font-semibold text-ink">직접 알림 설정</p>
+                          </div>
+                          <p className="mt-1 text-[12px] text-ink-muted">
+                            마감일 기준으로 알림을 설정하세요.
+                          </p>
+                          <div className="mt-3 flex h-11 items-center overflow-hidden rounded-[8px] border border-field-border bg-surface transition-colors focus-within:border-brand">
+                            <Input
+                              value={customReminderAmount}
+                              onChange={(event) =>
+                                setCustomReminderAmount(event.target.value.replace(/\D/g, "").slice(0, 4))
+                              }
+                              onKeyDown={(event) => {
+                                if (event.key === "Enter") {
+                                  event.preventDefault();
+                                  addCustomReminder();
+                                }
+                              }}
+                              inputMode="numeric"
+                              pattern="[0-9]*"
+                              placeholder="숫자 입력"
+                              aria-label="알림 전 숫자"
+                              autoFocus
+                              className="h-full min-w-0 flex-1 rounded-none border-0 px-3 text-[14px] text-ink shadow-none placeholder:text-guide-text focus-visible:border-0 focus-visible:ring-0"
+                            />
+                            <select
+                              value={customReminderUnit}
+                              onChange={(event) => setCustomReminderUnit(event.target.value as ReminderUnit)}
+                              aria-label="알림 시간 단위"
+                              className="h-full w-[72px] shrink-0 appearance-none border-l border-field-border bg-surface px-2 text-center text-[14px] text-ink outline-none"
+                            >
+                              {availableReminderUnits.map((unit) => (
+                                <option key={unit.label} value={unit.label}>
+                                  {unit.label}
+                                </option>
+                              ))}
+                            </select>
+                            <span className="flex h-full w-9 shrink-0 items-center justify-center border-l border-field-border text-[14px] text-ink-muted">
+                              전
+                            </span>
+                          </div>
+                          {customReminderAmount ? (
+                            <p className="mt-2 text-[13px] text-ink-muted">
+                              {customReminderAmount}{customReminderUnit} 전
+                            </p>
+                          ) : null}
+                          {reminderError ? (
+                            <p role="alert" className="mt-2 text-[12px] leading-4 text-[#B44A4A]">
+                              {reminderError}
+                            </p>
+                          ) : null}
+                          <div className="mt-4 flex justify-end gap-2">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              onClick={() => {
+                                setReminderError("");
+                                setReminderPickerMode("quick");
+                              }}
+                              className="h-9 rounded-[8px] px-3 text-[13px] font-semibold text-ink-muted hover:bg-item-hover hover:text-ink"
+                            >
+                              취소
+                            </Button>
+                            <Button
+                              type="button"
+                              disabled={!customReminderAmount}
+                              onClick={addCustomReminder}
+                              className="h-9 rounded-[8px] bg-brand px-3 text-[13px] font-semibold text-brand-foreground shadow-none hover:bg-brand/88 disabled:bg-brand-disabled disabled:opacity-100"
+                            >
+                              추가
+                            </Button>
+                          </div>
+                        </>
+                      )}
+                    </div>                  </>
                 ) : null}
               </div>
             </fieldset>
@@ -1211,87 +1303,6 @@ function CalendarPage() {
               className="h-12 w-[119px] rounded-[12px] bg-brand text-[16px] font-semibold text-brand-foreground shadow-none hover:bg-brand/88 active:bg-brand-pressed disabled:bg-brand-disabled disabled:opacity-100"
             >
               저장하기
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog
-        open={customReminderDialogOpen}
-        onOpenChange={setCustomReminderDialogOpen}
-      >
-        <DialogContent className="w-[360px] max-w-[calc(100vw-40px)] rounded-[16px] border-0 bg-surface p-6 text-ink shadow-surface-card">
-          <DialogHeader>
-            <DialogTitle className="text-lg font-bold text-ink">직접 알림 설정</DialogTitle>
-            <DialogDescription className="mt-1 text-sm text-ink-muted">
-              마감일 기준으로 알림을 설정하세요.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="mt-5">
-            <div className="flex h-11 items-center overflow-hidden rounded-[8px] border border-field-border bg-surface transition-colors focus-within:border-brand">
-              <Input
-                value={customReminderAmount}
-                onChange={(event) =>
-                  setCustomReminderAmount(event.target.value.replace(/\D/g, "").slice(0, 4))
-                }
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") {
-                    event.preventDefault();
-                    addCustomReminder();
-                  }
-                }}
-                inputMode="numeric"
-                pattern="[0-9]*"
-                placeholder="숫자 입력"
-                aria-label="알림 전 숫자"
-                autoFocus
-                className="h-full min-w-0 flex-1 rounded-none border-0 px-3 text-[14px] text-ink shadow-none placeholder:text-guide-text focus-visible:border-0 focus-visible:ring-0"
-              />
-              <select
-                value={customReminderUnit}
-                onChange={(event) => setCustomReminderUnit(event.target.value as ReminderUnit)}
-                aria-label="알림 시간 단위"
-                className="h-full w-[72px] shrink-0 appearance-none border-l border-field-border bg-surface px-2 text-center text-[14px] text-ink outline-none"
-              >
-                {availableReminderUnits.map((unit) => (
-                  <option key={unit.label} value={unit.label}>
-                    {unit.label}
-                  </option>
-                ))}
-              </select>
-              <span className="flex h-full w-9 shrink-0 items-center justify-center border-l border-field-border text-[14px] text-ink-muted">
-                전
-              </span>
-            </div>
-            {customReminderAmount ? (
-              <p className="mt-2 text-[13px] text-ink-muted">
-                {customReminderAmount}{customReminderUnit} 전
-              </p>
-            ) : null}
-            {reminderError ? (
-              <p role="alert" className="mt-2 text-[12px] leading-4 text-[#B44A4A]">
-                {reminderError}
-              </p>
-            ) : null}
-          </div>
-
-          <DialogFooter className="mt-6 flex-row justify-end gap-2 sm:space-x-0">
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => setCustomReminderDialogOpen(false)}
-              className="h-10 rounded-[8px] bg-secondary-btn px-4 text-[13px] font-semibold text-secondary-btn-text shadow-none hover:bg-secondary-btn-hover hover:text-secondary-btn-text-hover"
-            >
-              취소
-            </Button>
-            <Button
-              type="button"
-              disabled={!customReminderAmount}
-              onClick={addCustomReminder}
-              className="h-10 rounded-[8px] bg-brand px-4 text-[13px] font-semibold text-brand-foreground shadow-none hover:bg-brand/88 disabled:bg-brand-disabled disabled:opacity-100"
-            >
-              추가
             </Button>
           </DialogFooter>
         </DialogContent>
