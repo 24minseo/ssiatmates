@@ -140,6 +140,7 @@ function CalendarPage() {
   const [dragOverPosition, setDragOverPosition] = useState<ChecklistDropPosition>("before");
   const [checklistHandleTop, setChecklistHandleTop] = useState<number | null>(null);
   const [checklistHandleMotionEnabled, setChecklistHandleMotionEnabled] = useState(false);
+  const [checklistHandleVisible, setChecklistHandleVisible] = useState(false);
   const [checklistGhostTop, setChecklistGhostTop] = useState<number | null>(null);
   const [eventStartTime, setEventStartTime] = useState("");
   const [hasReminder, setHasReminder] = useState(false);
@@ -325,6 +326,7 @@ function CalendarPage() {
       }
       return top;
     });
+    setChecklistHandleVisible(true);
   };
 
   const startChecklistPointerDrag = (
@@ -382,6 +384,7 @@ function CalendarPage() {
       setDraggingChecklistId(null);
       setChecklistGhostTop(null);
       setDragOverChecklistId(null);
+      setChecklistHandleVisible(false);
       setChecklistHandleTop(null);
       setChecklistHandleMotionEnabled(false);
     };
@@ -788,7 +791,7 @@ function CalendarPage() {
                 </div>
               ) : (
                 <div className="mt-1 rounded-[12px] bg-surface py-2.5 pl-0 pr-2.5">
-                  <div className="group/checklist-list relative flex flex-col gap-0" onMouseLeave={() => { setChecklistHandleTop(null); setChecklistHandleMotionEnabled(false); }}>
+                  <div className="group/checklist-list relative flex flex-col gap-0" onMouseLeave={() => setChecklistHandleVisible(false)}>
                     <span aria-hidden="true" className="pointer-events-none absolute bottom-3 left-0.5 top-2.5 z-0 w-0.5 rounded-full bg-field-border/70" />
                     <span
                       aria-hidden="true"
@@ -798,7 +801,7 @@ function CalendarPage() {
                           ? "transition-[top,opacity,width]"
                           : "transition-[opacity,width]",
                       )}
-                      style={{ top: checklistHandleTop ?? 0, opacity: checklistHandleTop === null ? 0 : 1 }}
+                      style={{ top: checklistHandleTop ?? 0, opacity: checklistHandleVisible ? 1 : 0 }}
                     />
                     {draggingChecklistItem && checklistGhostTop !== null ? (
                       <div
