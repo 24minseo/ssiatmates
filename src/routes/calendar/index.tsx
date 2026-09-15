@@ -1291,6 +1291,8 @@ function CalendarPage() {
                               String(segment.span),
                             gridRow: "1",
                             marginTop: String(38 + segment.lane * 24) + "px",
+                            marginLeft: segment.isStart ? "8px" : undefined,
+                            marginRight: segment.isEnd ? "8px" : undefined,
                             height: "22px",
                           }}
                         >
@@ -1315,6 +1317,8 @@ function CalendarPage() {
                               String(segment.span),
                             gridRow: "1",
                             marginTop: "38px",
+                            marginLeft: segment.isStart ? "8px" : undefined,
+                            marginRight: segment.isEnd ? "8px" : undefined,
                             height: "22px",
                           }}
                         >
