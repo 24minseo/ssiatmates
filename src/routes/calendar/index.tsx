@@ -1082,6 +1082,7 @@ function CalendarPage() {
                   </PopoverContent>
                 ) : null}
               </Popover>
+            </fieldset>
 
             <div className="mt-[18px]">
               <div className="flex items-end justify-between">
