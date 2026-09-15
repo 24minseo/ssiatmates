@@ -890,11 +890,14 @@ function CalendarPage() {
         calendarEvent.id === editingEventId ? nextEvent : calendarEvent,
       );
     });
-    setVisibleMonth(() => {
-      const [eventYear, eventMonth] = eventDate.split("-").map(Number);
-      if (eventYear === undefined || eventMonth === undefined) return visibleMonth;
-      return new Date(eventYear, eventMonth - 1, 1);
-    });
+    const [eventYear, eventMonth] = eventDate.split("-").map(Number);
+    if (
+      Number.isInteger(eventYear) &&
+      Number.isInteger(eventMonth) &&
+      (eventYear !== year || eventMonth - 1 !== month)
+    ) {
+      setVisibleMonth(new Date(eventYear, eventMonth - 1, 1));
+    }
     setSelectedDate(eventDate);
     setEditingEventId(null);
     setIsAddOpen(false);
