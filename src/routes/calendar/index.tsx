@@ -456,11 +456,20 @@ function DateRangePicker({
                     inRange && !isEndpoint && "text-ink-muted",
                     isEndpoint &&
                       (hasRange
-                        ? "bg-surface font-semibold text-brand shadow-[0_2px_6px_0_rgba(85,113,78,0.12)]"
+                        ? "font-semibold text-brand"
                         : "bg-pill font-semibold text-brand"),
                   )}
                 >
-                  {day.date.getDate()}
+                  <span
+                    className={cn(
+                      "flex items-center justify-center",
+                      isEndpoint &&
+                        hasRange &&
+                        "size-9 rounded-[8px] bg-surface shadow-[0_2px_6px_0_rgba(85,113,78,0.12)]",
+                    )}
+                  >
+                    {day.date.getDate()}
+                  </span>
                 </button>
               </div>
             );
