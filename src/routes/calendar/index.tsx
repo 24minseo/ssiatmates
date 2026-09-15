@@ -981,6 +981,8 @@ function CalendarPage() {
                 dragRangeEnd &&
                 day.key >= dragRangeStart &&
                 day.key <= dragRangeEnd;
+              const isCalendarDragStart = dragRangeStart === day.key;
+              const isCalendarDragEnd = dragRangeEnd === day.key;
 
               return (
                 <div
@@ -1006,8 +1008,7 @@ function CalendarPage() {
                     }
                   }}
                   className={cn(
-                    "group relative h-full min-w-0 cursor-pointer overflow-hidden bg-surface p-2 text-ink hover:bg-item-hover",
-                    isInCalendarDragRange && "bg-pill/60",
+                    "group relative h-full min-w-0 cursor-pointer overflow-hidden bg-surface p-2 text-ink",
                     index < days.length - 7 && "border-b border-field-border",
                   )}
                 >
@@ -1033,6 +1034,21 @@ function CalendarPage() {
                     </Link>
                   </div>
 
+                  {isInCalendarDragRange ? (
+                    <div
+                      aria-hidden="true"
+                      className={cn(
+                        "pointer-events-none absolute left-0 right-0 top-10 z-10 flex h-8 items-center bg-brand text-[14px] font-medium text-brand-foreground shadow-[0_4px_10px_0_rgba(22,59,49,0.18)]",
+                        isCalendarDragStart && "rounded-l-[8px]",
+                        isCalendarDragEnd && "rounded-r-[8px]",
+                      )}
+                    >
+                      <span className={cn("truncate px-2", !isCalendarDragStart && "opacity-0")}>
+                        (제목 없음)
+                      </span>
+                    </div>
+                  ) : null}
+
                   {dayEvents.length > 0 ? (
                     <div className="mt-1.5 flex min-w-0 flex-col gap-0.5">
                       {dayEvents.slice(0, 2).map((calendarEvent) => {
@@ -1053,7 +1069,7 @@ function CalendarPage() {
                               setSelectedEvent(calendarEvent);
                             }}
                             className={cn(
-                              "h-[22px] w-full truncate rounded-[6px] px-2 text-left text-xs font-normal hover:bg-surface",
+                              "h-[22px] w-full truncate rounded-[6px] px-2 text-left text-xs font-normal hover:bg-item-hover-selected",
                               isPeriod
                                 ? "bg-pill text-pill-foreground"
                                 : "bg-item-hover text-ink",
