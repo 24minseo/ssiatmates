@@ -714,7 +714,7 @@ function CalendarPage() {
                             event.stopPropagation();
                             setSelectedEvent(calendarEvent);
                           }}
-                          className="h-6 w-full truncate rounded-[6px] bg-item-hover px-2 text-left text-xs font-normal text-ink hover:bg-surface"
+                          className="h-[22px] w-full truncate rounded-[6px] bg-item-hover px-2 text-left text-xs font-normal text-ink hover:bg-surface"
                         >
                           {calendarEvent.title}
                         </button>
@@ -726,7 +726,7 @@ function CalendarPage() {
                             event.stopPropagation();
                             setSelectedDayEvents({ date: day.key, events: dayEvents });
                           }}
-                          className="h-6 w-full truncate rounded-[6px] px-2 text-left text-xs font-normal text-ink-muted hover:bg-item-hover hover:underline"
+                          className="h-[22px] w-full truncate rounded-[6px] px-2 text-left text-xs font-normal text-ink-muted hover:bg-item-hover hover:underline"
                         >
                           {dayEvents.length - 2}개 더보기
                         </button>
