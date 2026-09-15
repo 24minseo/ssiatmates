@@ -148,7 +148,7 @@
   --placeholder: #596963;
   --guide-text: #b4c1bd;
   --control-inactive: #9a9d9b;
-  --pill: #d7f5ea;
+  --pill: #E2F8F0;
   --pill-foreground: #1f8064;
   --page: rgba(158, 169, 174, 0.5);
   --surface: #ffffff;
@@ -156,7 +156,7 @@
   --content-disabled: #b4c1bd;
   --brand-pressed: #005d44;
   --brand-disabled: #a1ddc8;
-  --focus-soft: #d7f5ea;
+  --focus-soft: #E2F8F0;
   --item-hover: rgb(246 248 247);
   --item-hover-selected: #eaf1ec;
   --menu-hover: #f1f3f2;
