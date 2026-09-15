@@ -1011,8 +1011,8 @@ function CalendarPage() {
                             </Button>
                             <p className="text-[14px] font-semibold text-ink">직접 알림 설정</p>
                           </div>
-                          <div className="mt-3 flex h-11 items-center gap-2">
-                            <div className="flex min-w-0 flex-1 items-center overflow-hidden rounded-[8px] border border-field-border bg-surface transition-colors focus-within:border-brand">
+                          <div className="mt-3 flex h-11 items-center overflow-hidden rounded-[8px] border border-field-border bg-surface transition-colors focus-within:border-brand">
+                            <div className="flex min-w-0 flex-1 items-center">
                             <Input
                               value={customReminderAmount}
                               onChange={(event) =>
@@ -1057,7 +1057,7 @@ function CalendarPage() {
                               type="button"
                               disabled={!customReminderAmount}
                               onClick={addCustomReminder}
-                              className="h-11 w-[64px] shrink-0 rounded-[8px] bg-brand px-2 text-[14px] font-semibold text-brand-foreground shadow-none hover:bg-brand/88 disabled:bg-brand-disabled disabled:text-brand-foreground disabled:opacity-100"
+                              className="h-full w-[64px] shrink-0 rounded-none border-l border-field-border bg-brand px-2 text-[14px] font-semibold text-brand-foreground shadow-none hover:bg-brand/88 disabled:bg-brand-disabled disabled:text-brand-foreground disabled:opacity-100"
                             >
                               추가
                             </Button>
