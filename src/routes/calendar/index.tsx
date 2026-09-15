@@ -1133,7 +1133,7 @@ function CalendarPage() {
                     maxLength={500}
                     placeholder="메모할 내용이 있으면 적어주세요."
                     placeholderClassName="left-3.5 top-3 text-[15px] leading-5 text-guide-text"
-                    className="h-[164px] resize-none rounded-[12px] border-field-border px-3.5 py-3 pb-3 text-[15px] md:text-[15px] text-ink shadow-none focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft"
+                    className="h-[164px] resize-none rounded-[12px] border-field-border px-3.5 py-3 pb-3 text-[15px] leading-5 md:text-[15px] text-ink shadow-none focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft"
                   />
                   <span
                     aria-live="polite"
