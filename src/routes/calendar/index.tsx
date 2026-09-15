@@ -8,7 +8,7 @@ import {
   Plus,
   Trash2,
 } from "lucide-react";
-import { useMemo, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -20,7 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
+import { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -56,6 +56,7 @@ export const Route = createFileRoute("/calendar/")({
 });
 
 type CalendarView = "month" | "notice";
+type DateSelectionMode = "single" | "range";
 type ContentMode = "memo" | "checklist";
 
 type ChecklistItem = {
@@ -89,6 +90,7 @@ type CalendarEvent = {
   id: number;
   title: string;
   date: string;
+  endDate?: string;
   description: string;
   contentMode?: ContentMode;
   checklistItems?: ChecklistItem[];
@@ -123,6 +125,11 @@ function formatKoreanDate(dateKey: string) {
   return `${year}년 ${month}월 ${day}일`;
 }
 
+function formatDateLabel(dateKey: string) {
+  const [year, month, day] = dateKey.split("-").map(Number);
+  return `${year}.${String(month).padStart(2, "0")}.${String(day).padStart(2, "0")}`;
+}
+
 function buildCalendarDays(year: number, month: number): CalendarDay[] {
   const firstDay = new Date(year, month, 1);
   const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -143,6 +150,259 @@ function buildCalendarDays(year: number, month: number): CalendarDay[] {
   });
 }
 
+
+type DateRangePickerProps = {
+  mode: DateSelectionMode;
+  startDate: string;
+  endDate: string;
+  onModeChange: (mode: DateSelectionMode) => void;
+  onChange: (startDate: string, endDate?: string) => void;
+};
+
+function DateRangePicker({
+  mode,
+  startDate,
+  endDate,
+  onModeChange,
+  onChange,
+}: DateRangePickerProps) {
+  const [open, setOpen] = useState(false);
+  const [visibleMonth, setVisibleMonth] = useState(() => {
+    const base = startDate ? new Date(\`\${startDate}T00:00:00\`) : new Date();
+    return new Date(base.getFullYear(), base.getMonth(), 1);
+  });
+  const [draftStart, setDraftStart] = useState(startDate);
+  const [draftEnd, setDraftEnd] = useState(endDate);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragMovedRef = useRef(false);
+
+  const days = useMemo(
+    () => buildCalendarDays(visibleMonth.getFullYear(), visibleMonth.getMonth()),
+    [visibleMonth],
+  );
+
+  const syncDraft = () => {
+    setDraftStart(startDate);
+    setDraftEnd(endDate);
+    const base = startDate ? new Date(\`\${startDate}T00:00:00\`) : new Date();
+    setVisibleMonth(new Date(base.getFullYear(), base.getMonth(), 1));
+  };
+
+  const closePicker = () => {
+    setIsDragging(false);
+    setOpen(false);
+  };
+
+  const commitRange = (candidateEnd: string) => {
+    if (!draftStart) return;
+    const [start, end] = [draftStart, candidateEnd].sort();
+    setDraftStart(start);
+    setDraftEnd(end);
+    onChange(start, end === start ? undefined : end);
+    closePicker();
+  };
+
+  const handleDayPointerDown = (dayKey: string) => {
+    if (mode !== "range") return;
+    dragMovedRef.current = false;
+    if (!draftStart || draftEnd) {
+      setDraftStart(dayKey);
+      setDraftEnd("");
+    }
+    setIsDragging(true);
+  };
+
+  const handleDayPointerEnter = (dayKey: string) => {
+    if (mode !== "range" || !isDragging || !draftStart) return;
+    if (dayKey !== draftStart) dragMovedRef.current = true;
+    setDraftEnd(dayKey);
+  };
+
+  const handleDayPointerUp = (dayKey: string) => {
+    if (mode !== "range" || !isDragging) return;
+    setIsDragging(false);
+    if (dragMovedRef.current && draftStart) {
+      commitRange(dayKey);
+    }
+  };
+
+  const handleDayClick = (dayKey: string) => {
+    if (dragMovedRef.current) {
+      dragMovedRef.current = false;
+      return;
+    }
+    if (mode === "single") {
+      setDraftStart(dayKey);
+      setDraftEnd("");
+      onChange(dayKey);
+      closePicker();
+      return;
+    }
+    if (!draftStart || draftEnd) {
+      setDraftStart(dayKey);
+      setDraftEnd("");
+      return;
+    }
+    if (draftStart !== dayKey) commitRange(dayKey);
+  };
+
+  const displayValue =
+    mode === "range" && startDate && endDate
+      ? \`\${formatDateLabel(startDate)} ~ \${formatDateLabel(endDate)}\`
+      : startDate
+        ? formatDateLabel(startDate)
+        : "날짜 선택";
+
+  const rangeStart = draftStart && draftEnd ? [draftStart, draftEnd].sort()[0] : draftStart;
+  const rangeEnd = draftStart && draftEnd ? [draftStart, draftEnd].sort()[1] : draftEnd;
+
+  return (
+    <Popover
+      open={open}
+      onOpenChange={(nextOpen) => {
+        setOpen(nextOpen);
+        if (nextOpen) syncDraft();
+      }}
+    >
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className="flex h-12 w-full items-center justify-between rounded-[12px] border border-field-border bg-surface px-3.5 text-left text-[15px] text-ink shadow-none transition-colors hover:bg-item-hover focus-visible:border-brand focus-visible:outline-none focus-visible:ring-[3.2px] focus-visible:ring-focus-soft"
+          aria-label={mode === "range" ? "기간 날짜 선택" : "날짜 선택"}
+        >
+          <span className={startDate ? "text-ink" : "text-guide-text"}>{displayValue}</span>
+          <ChevronDown aria-hidden="true" className="size-5 text-ink-muted" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="start" sideOffset={8} className="w-[320px] rounded-[12px] border-field-border bg-surface p-3 shadow-dropdown">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex rounded-[8px] bg-item-hover p-0.5">
+            {(["single", "range"] as const).map((option) => (
+              <button
+                key={option}
+                type="button"
+                onClick={() => {
+                  onModeChange(option);
+                  if (option === "single") {
+                    setDraftEnd("");
+                    onChange(draftStart || startDate, undefined);
+                  }
+                }}
+                className={cn(
+                  "h-8 rounded-[6px] px-3 text-[13px] transition-colors",
+                  mode === option
+                    ? "bg-surface font-semibold text-ink shadow-sm"
+                    : "text-ink-muted hover:text-ink",
+                )}
+              >
+                {option === "single" ? "단일" : "기간"}
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-1">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label="이전 달"
+              onClick={() => setVisibleMonth((current) => new Date(current.getFullYear(), current.getMonth() - 1, 1))}
+              className="size-8 rounded-[6px] text-ink-muted hover:bg-item-hover hover:text-ink"
+            >
+              <ChevronLeft aria-hidden="true" className="size-4" />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label="다음 달"
+              onClick={() => setVisibleMonth((current) => new Date(current.getFullYear(), current.getMonth() + 1, 1))}
+              className="size-8 rounded-[6px] text-ink-muted hover:bg-item-hover hover:text-ink"
+            >
+              <ChevronRight aria-hidden="true" className="size-4" />
+            </Button>
+          </div>
+        </div>
+        <div className="mt-3 flex items-center justify-between px-1">
+          <span className="text-[15px] font-semibold text-ink">
+            {visibleMonth.getFullYear()}년 {visibleMonth.getMonth() + 1}월
+          </span>
+          <span className="text-[12px] text-ink-muted">
+            {mode === "range" ? "드래그해서 기간 선택" : "날짜 하나 선택"}
+          </span>
+        </div>
+        <div className="mt-3 grid grid-cols-7 text-center text-[12px] font-semibold text-ink-muted">
+          {["일", "월", "화", "수", "목", "금", "토"].map((day) => (
+            <span key={day} className="flex h-7 items-center justify-center">{day}</span>
+          ))}
+        </div>
+        <div className="grid grid-cols-7 gap-y-1">
+          {days.map((day) => {
+            const selectedStart = rangeStart === day.key;
+            const selectedEnd = rangeEnd === day.key;
+            const inRange =
+              mode === "range" &&
+              rangeStart &&
+              rangeEnd &&
+              day.key >= rangeStart &&
+              day.key <= rangeEnd;
+            return (
+              <button
+                key={day.key}
+                type="button"
+                onPointerDown={() => handleDayPointerDown(day.key)}
+                onPointerEnter={() => handleDayPointerEnter(day.key)}
+                onPointerUp={() => handleDayPointerUp(day.key)}
+                onClick={() => handleDayClick(day.key)}
+                className={cn(
+                  "mx-0.5 flex h-9 items-center justify-center rounded-[7px] text-[14px] transition-colors",
+                  !day.isCurrentMonth && "text-content-disabled",
+                  day.isCurrentMonth && !inRange && "text-ink hover:bg-item-hover",
+                  inRange && "bg-pill text-pill-foreground",
+                  (selectedStart || selectedEnd) && "bg-brand font-semibold text-brand-foreground",
+                )}
+              >
+                {day.date.getDate()}
+              </button>
+            );
+          })}
+        </div>
+        <div className="mt-3 flex items-center justify-between border-t border-field-border pt-2">
+          <button
+            type="button"
+            onClick={() => {
+              setDraftStart("");
+              setDraftEnd("");
+              onChange("");
+              closePicker();
+            }}
+            className="text-[13px] text-ink-muted hover:text-ink"
+          >
+            초기화
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              const current = toDateKey(new Date());
+              setVisibleMonth(new Date(new Date().getFullYear(), new Date().getMonth(), 1));
+              if (mode === "single") {
+                onChange(current);
+                closePicker();
+              } else {
+                setDraftStart(current);
+                setDraftEnd("");
+              }
+            }}
+            className="text-[13px] font-semibold text-brand hover:underline"
+          >
+            오늘
+          </button>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+
 function CalendarPage() {
   const [visibleMonth, setVisibleMonth] = useState(() => {
     const now = new Date();
@@ -157,6 +417,8 @@ function CalendarPage() {
   const [selectedDayEvents, setSelectedDayEvents] = useState<{ date: string; events: CalendarEvent[] } | null>(null);
   const [eventTitle, setEventTitle] = useState("");
   const [eventDate, setEventDate] = useState("");
+  const [eventEndDate, setEventEndDate] = useState("");
+  const [dateSelectionMode, setDateSelectionMode] = useState<DateSelectionMode>("single");
   const [eventDescription, setEventDescription] = useState("");
   const [contentMode, setContentMode] = useState<ContentMode>("memo");
   const [checklistItems, setChecklistItems] = useState<ChecklistItem[]>([]);
@@ -185,7 +447,15 @@ function CalendarPage() {
   const days = useMemo(() => buildCalendarDays(year, month), [year, month]);
   const eventsByDate = useMemo(() => {
     return events.reduce<Record<string, CalendarEvent[]>>((grouped, event) => {
-      grouped[event.date] = [...(grouped[event.date] ?? []), event];
+      const start = event.date;
+      const end = event.endDate ?? event.date;
+      const cursor = new Date(`${start}T00:00:00`);
+      const last = new Date(`${end}T00:00:00`);
+      while (cursor <= last) {
+        const key = toDateKey(cursor);
+        grouped[key] = [...(grouped[key] ?? []), event];
+        cursor.setDate(cursor.getDate() + 1);
+      }
       return grouped;
     }, {});
   }, [events]);
@@ -225,6 +495,8 @@ function CalendarPage() {
     setCustomReminderUnit("일");
     setReminderError("");
     setEventDate(dateKey ?? selectedDate ?? todayKey);
+    setEventEndDate("");
+    setDateSelectionMode("single");
     setIsAddOpen(true);
   };
 
@@ -233,6 +505,8 @@ function CalendarPage() {
     setEditingEventId(selectedEvent.id);
     setEventTitle(selectedEvent.title);
     setEventDate(selectedEvent.date);
+    setEventEndDate(selectedEvent.endDate ?? "");
+    setDateSelectionMode(selectedEvent.endDate ? "range" : "single");
     setEventDescription(selectedEvent.description);
     setContentMode(
       selectedEvent.contentMode ??
@@ -429,6 +703,7 @@ function CalendarPage() {
       id: editingEventId ?? Date.now(),
       title,
       date: eventDate,
+      ...(eventEndDate && eventEndDate !== eventDate ? { endDate: eventEndDate } : {}),
       description: eventDescription.trim(),
       contentMode,
       checklistItems: checklistItems
