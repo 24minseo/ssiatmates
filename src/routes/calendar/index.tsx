@@ -1128,8 +1128,11 @@ function CalendarPage() {
                     !calendarEvent.endDate || calendarEvent.endDate === calendarEvent.date,
                 );
                 const periodLaneCount = periodLaneCountByDate[day.key] ?? 0;
+                const hiddenPeriodCount = day.isCurrentMonth
+                  ? hiddenPeriodCountByDate[day.key] ?? 0
+                  : 0;
                 const hasOverflow =
-                  (hiddenPeriodCountByDate[day.key] ?? 0) > 0 ||
+                  hiddenPeriodCount > 0 ||
                   periodLaneCount + singleDayEvents.length > CALENDAR_VISIBLE_EVENT_ROWS;
                 const visibleRowLimit = hasOverflow
                   ? CALENDAR_VISIBLE_EVENT_ROWS - 1
@@ -1139,7 +1142,7 @@ function CalendarPage() {
                   Math.max(0, visibleRowLimit - periodLaneCount),
                 );
                 const hiddenSingleCount =
-                  (hiddenPeriodCountByDate[day.key] ?? 0) +
+                  hiddenPeriodCount +
                   Math.max(0, singleDayEvents.length - visibleSingleCount);
 
                 return (
@@ -1192,7 +1195,7 @@ function CalendarPage() {
                       </Link>
                     </div>
 
-                    {singleDayEvents.length > 0 || (hiddenPeriodCountByDate[day.key] ?? 0) > 0 ? (
+                    {singleDayEvents.length > 0 || hiddenPeriodCount > 0 ? (
                       <div
                         className="mt-1.5 flex min-w-0 flex-col gap-0.5"
                         style={
