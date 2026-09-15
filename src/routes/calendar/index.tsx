@@ -1065,151 +1065,182 @@ function CalendarPage() {
               </div>
             ))}
           </div>
-          <div className="grid min-h-0 flex-1 grid-cols-7 auto-rows-fr" role="grid" aria-label={`${year}년 ${month + 1}월`}>
-            {days.map((day, index) => {
-              const isSelected = selectedDate === day.key;
-              const isToday = todayKey === day.key;
-              const dayEvents = day.isCurrentMonth
-                ? [...(eventsByDate[day.key] ?? [])].sort(
-                    (a, b) =>
-                      getEventDurationDays(b) - getEventDurationDays(a) ||
-                      a.date.localeCompare(b.date) ||
-                      a.id - b.id,
-                  )
-                : [];
-              const weekDayIndex = index % 7;
-              const dragRangeStart = calendarDragStart && calendarDragEnd
-                ? [calendarDragStart, calendarDragEnd].sort()[0]
-                : calendarDragStart;
-              const dragRangeEnd = calendarDragStart && calendarDragEnd
-                ? [calendarDragStart, calendarDragEnd].sort()[1]
-                : calendarDragEnd;
-              const isInCalendarDragRange =
-                day.isCurrentMonth &&
-                dragRangeStart &&
-                dragRangeEnd &&
-                day.key >= dragRangeStart &&
-                day.key <= dragRangeEnd;
-              const isCalendarDragStart = dragRangeStart === day.key;
-              const isCalendarDragEnd = dragRangeEnd === day.key;
+          <div
+            className="relative min-h-0 flex-1"
+            role="grid"
+            aria-label={year + "년 " + (month + 1) + "월"}
+          >
+            <div className="grid h-full grid-cols-7 auto-rows-fr">
+              {days.map((day, index) => {
+                const isSelected = selectedDate === day.key;
+                const isToday = todayKey === day.key;
+                const dayEvents = day.isCurrentMonth
+                  ? [...(eventsByDate[day.key] ?? [])].sort(
+                      (a, b) =>
+                        getEventDurationDays(b) - getEventDurationDays(a) ||
+                        a.date.localeCompare(b.date) ||
+                        a.id - b.id,
+                    )
+                  : [];
+                const singleDayEvents = dayEvents.filter(
+                  (calendarEvent) =>
+                    !calendarEvent.endDate || calendarEvent.endDate === calendarEvent.date,
+                );
+                const hiddenSingleCount = Math.max(0, singleDayEvents.length - 2);
 
-              return (
-                <div
-                  key={day.key}
-                  role="gridcell"
-                  tabIndex={0}
-                  aria-selected={isSelected}
-                  aria-label={`${formatKoreanDate(day.key)}${isToday ? ", 오늘" : ""}`}
-                  onPointerDown={(event) => startCalendarDrag(day.key, event)}
-                  onPointerEnter={() => moveCalendarDrag(day.key)}
-                  onPointerUp={() => finishCalendarDrag(day.key)}
-                  onClick={() => {
-                    if (calendarDragMovedRef.current) {
-                      calendarDragMovedRef.current = false;
-                      return;
-                    }
-                    openAddDialog(day.key);
-                  }}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" || event.key === " ") {
-                      event.preventDefault();
+                return (
+                  <div
+                    key={day.key}
+                    role="gridcell"
+                    tabIndex={0}
+                    aria-selected={isSelected}
+                    aria-label={formatKoreanDate(day.key) + (isToday ? ", 오늘" : "")}
+                    onPointerDown={(event) => startCalendarDrag(day.key, event)}
+                    onPointerEnter={() => moveCalendarDrag(day.key)}
+                    onPointerUp={() => finishCalendarDrag(day.key)}
+                    onClick={() => {
+                      if (calendarDragMovedRef.current) {
+                        calendarDragMovedRef.current = false;
+                        return;
+                      }
                       openAddDialog(day.key);
-                    }
-                  }}
-                  className={cn(
-                    "group relative h-full min-w-0 cursor-pointer overflow-visible bg-surface p-2 text-ink",
-                    index < days.length - 7 && "border-b border-field-border",
-                  )}
-                >
-                  <div className="flex h-6 items-start justify-between gap-2">
-                    <span
-                      className={cn(
-                        "flex size-6 shrink-0 items-center justify-center rounded-[6px] text-sm font-normal leading-4",
-                        !day.isCurrentMonth && "text-content-disabled",
-                        day.isCurrentMonth && !isToday && !isSelected && "text-ink",
-                        isToday && "bg-brand text-brand-foreground",
-                      )}
-                    >
-                      {day.date.getDate()}
-                    </span>
-                    <Link
-                      to="/calendar/growth-journal"
-                      onClick={(event) => event.stopPropagation()}
-                      className="group/journal invisible flex h-6 items-center gap-0.5 rounded-[6px] bg-item-hover px-1.5 py-0.5 text-[13px] font-medium text-ink-muted group-hover:visible hover:bg-calendar-journal-hover hover:text-brand"
-                    >
-                      <img src="/assets/sidebar/journal-edit-default.svg" alt="" aria-hidden="true" className="h-[18px] w-3.5 object-contain group-hover/journal:hidden" />
-                      <img src="/assets/sidebar/journal-edit-hover.svg" alt="" aria-hidden="true" className="hidden h-[18px] w-3.5 object-contain group-hover/journal:block" />
-                      일지 쓰기
-                    </Link>
-                  </div>
-
-                  {isInCalendarDragRange ? (
-                    <div
-                      aria-hidden="true"
-                      className={cn(
-                        "pointer-events-none absolute left-0 right-0 top-10 z-10 flex h-[22px] items-center bg-pill text-[12px] font-normal text-pill-foreground shadow-[0_4px_10px_0_rgba(22,59,49,0.18)]",
-                        isCalendarDragStart && "rounded-l-[6px]",
-                        isCalendarDragEnd && "rounded-r-[6px]",
-                      )}
-                    >
-                      <span className={cn("truncate px-2", !isCalendarDragStart && "opacity-0")}>
-                        (제목 없음)
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        openAddDialog(day.key);
+                      }
+                    }}
+                    className={cn(
+                      "group relative h-full min-w-0 cursor-pointer overflow-hidden bg-surface p-2 text-ink",
+                      index < days.length - 7 && "border-b border-field-border",
+                    )}
+                  >
+                    <div className="flex h-6 items-start justify-between gap-2">
+                      <span
+                        className={cn(
+                          "flex size-6 shrink-0 items-center justify-center rounded-[6px] text-sm font-normal leading-4",
+                          !day.isCurrentMonth && "text-content-disabled",
+                          day.isCurrentMonth && !isToday && !isSelected && "text-ink",
+                          isToday && "bg-brand text-brand-foreground",
+                        )}
+                      >
+                        {day.date.getDate()}
                       </span>
+                      <Link
+                        to="/calendar/growth-journal"
+                        onClick={(event) => event.stopPropagation()}
+                        className="group/journal invisible flex h-6 items-center gap-0.5 rounded-[6px] bg-item-hover px-1.5 py-0.5 text-[13px] font-medium text-ink-muted group-hover:visible hover:bg-calendar-journal-hover hover:text-brand"
+                      >
+                        <img src="/assets/sidebar/journal-edit-default.svg" alt="" aria-hidden="true" className="h-[18px] w-3.5 object-contain group-hover/journal:hidden" />
+                        <img src="/assets/sidebar/journal-edit-hover.svg" alt="" aria-hidden="true" className="hidden h-[18px] w-3.5 object-contain group-hover/journal:block" />
+                        일지 쓰기
+                      </Link>
                     </div>
-                  ) : null}
 
-                  {dayEvents.length > 0 ? (
-                    <div className="mt-1.5 flex min-w-0 flex-col gap-0.5">
-                      {dayEvents.slice(0, 2).map((calendarEvent) => {
-                        const isPeriod = Boolean(calendarEvent.endDate && calendarEvent.endDate !== calendarEvent.date);
-                        const isWeekSegmentStart = isPeriod && (calendarEvent.date === day.key || weekDayIndex === 0);
-                        const isWeekSegmentEnd = isPeriod && (calendarEvent.endDate === day.key || weekDayIndex === 6);
-                        const showPeriodTitle = !isPeriod || calendarEvent.date === day.key || weekDayIndex === 0;
-                        return (
+                    {singleDayEvents.length > 0 ? (
+                      <div
+                        className="mt-1.5 flex min-w-0 flex-col gap-0.5"
+                        style={
+                          periodLaneCountByDate[day.key]
+                            ? { paddingTop: String(periodLaneCountByDate[day.key] * 24) + "px" }
+                            : undefined
+                        }
+                      >
+                        {singleDayEvents.slice(0, 2).map((calendarEvent) => (
                           <button
-                            key={`${calendarEvent.id}-${day.key}`}
+                            key={calendarEvent.id}
                             type="button"
-                            aria-label={
-                              isPeriod
-                                ? `${calendarEvent.title}, ${formatKoreanDate(calendarEvent.date)}부터 ${formatKoreanDate(calendarEvent.endDate!)}까지`
-                                : calendarEvent.title
-                            }
                             onClick={(event) => {
                               event.stopPropagation();
                               setSelectedEvent(calendarEvent);
                             }}
-                            className={cn(
-                              "relative z-10 h-[22px] w-full truncate rounded-[6px] px-2 text-left text-xs font-normal hover:bg-item-hover-selected",
-                              isPeriod
-                                ? cn(
-                                    "-mx-2 w-[calc(100%+1rem)] rounded-none bg-pill text-pill-foreground",
-                                    isWeekSegmentStart && "rounded-l-[6px]",
-                                    isWeekSegmentEnd && "rounded-r-[6px]",
-                                  )
-                                : "bg-item-hover text-ink",
-                            )}
+                            className="h-[22px] w-full truncate rounded-[6px] bg-item-hover px-2 text-left text-xs font-normal hover:bg-item-hover-selected"
                           >
-                            {showPeriodTitle ? calendarEvent.title : "\u00a0"}
+                            {calendarEvent.title}
                           </button>
-                        );
-                      })}
-                      {dayEvents.length > 2 ? (
-                        <button
-                          type="button"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            setSelectedDayEvents({ date: day.key, events: dayEvents });
-                          }}
-                          className="h-[22px] w-full truncate rounded-[6px] px-2 text-left text-xs font-normal text-ink-muted hover:bg-item-hover hover:underline"
-                        >
-                          {dayEvents.length - 2}개 더보기
-                        </button>
-                      ) : null}
-                    </div>
-                  ) : null}
+                        ))}
+                        {hiddenSingleCount > 0 ? (
+                          <button
+                            type="button"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              setSelectedDayEvents({ date: day.key, events: dayEvents });
+                            }}
+                            className="h-[22px] w-full truncate rounded-[6px] px-2 text-left text-xs font-normal text-ink-muted hover:bg-item-hover hover:underline"
+                          >
+                            {hiddenSingleCount}개 더보기
+                          </button>
+                        ) : null}
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              })}
+            </div>
+
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 grid"
+              style={{
+                gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
+                gridTemplateRows: "repeat(" + String(days.length / 7) + ", minmax(0, 1fr))",
+              }}
+            >
+              {calendarPeriodSegments.map((segment) => (
+                <button
+                  key={segment.event.id + "-" + segment.weekIndex}
+                  type="button"
+                  aria-label={
+                    segment.event.endDate
+                      ? segment.event.title +
+                        ", " +
+                        formatKoreanDate(segment.event.date) +
+                        "부터 " +
+                        formatKoreanDate(segment.event.endDate) +
+                        "까지"
+                      : segment.event.title
+                  }
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    setSelectedEvent(segment.event);
+                  }}
+                  className={cn(
+                    "pointer-events-auto z-10 flex items-center truncate px-2 text-xs font-normal hover:bg-item-hover-selected",
+                    segment.isStart && "rounded-l-[6px]",
+                    segment.isEnd && "rounded-r-[6px]",
+                    "bg-pill text-pill-foreground",
+                  )}
+                  style={{
+                    gridColumn: String(segment.startColumn + 1) + " / span " + String(segment.span),
+                    gridRow: String(segment.weekIndex + 1),
+                    marginTop: String(38 + segment.lane * 24) + "px",
+                    height: "22px",
+                  }}
+                >
+                  {segment.isStart || segment.startColumn === 0 ? segment.event.title : "\u00a0"}
+                </button>
+              ))}
+
+              {calendarDragSegments.map((segment) => (
+                <div
+                  key={"drag-" + segment.weekIndex}
+                  className={cn(
+                    "pointer-events-none z-20 flex items-center truncate bg-pill px-2 text-xs font-normal text-pill-foreground shadow-[0_4px_10px_0_rgba(22,59,49,0.18)]",
+                    segment.isStart && "rounded-l-[6px]",
+                    segment.isEnd && "rounded-r-[6px]",
+                  )}
+                  style={{
+                    gridColumn: String(segment.startColumn + 1) + " / span " + String(segment.span),
+                    gridRow: String(segment.weekIndex + 1),
+                    marginTop: "38px",
+                    height: "22px",
+                  }}
+                >
+                  {segment.isStart || segment.startColumn === 0 ? "(제목 없음)" : "\u00a0"}
                 </div>
-              );
-            })}
+              ))}
+            </div>
           </div>
         </div>
       ) : (
