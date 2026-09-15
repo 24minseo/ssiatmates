@@ -76,7 +76,7 @@ function PasswordRequirement({
         met ? "text-brand" : "text-[#84968E]"
       }`}
     >
-      <Check aria-hidden className="size-[18px] shrink-0" strokeWidth={2} />
+      <Check aria-hidden className="h-4 w-4 shrink-0" strokeWidth={3} />
       <span>{children}</span>
     </li>
   );
