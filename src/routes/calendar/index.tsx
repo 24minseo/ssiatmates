@@ -714,7 +714,7 @@ function CalendarPage() {
                             event.stopPropagation();
                             setSelectedEvent(calendarEvent);
                           }}
-                          className="h-6 w-full truncate rounded-[6px] bg-item-hover px-2 text-left text-xs font-normal text-ink hover:bg-item-hover-selected"
+                          className="h-6 w-full truncate rounded-[6px] bg-item-hover px-2 text-left text-xs font-normal text-ink hover:bg-surface"
                         >
                           {calendarEvent.title}
                         </button>
