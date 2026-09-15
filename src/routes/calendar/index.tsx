@@ -996,7 +996,7 @@ function CalendarPage() {
                         </>
                       ) : (
                         <>
-                          <div className="flex items-center gap-0">
+                          <div className="flex items-start gap-0">
                             <Button
                               type="button"
                               variant="ghost"
