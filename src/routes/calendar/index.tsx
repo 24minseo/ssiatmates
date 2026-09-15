@@ -453,19 +453,15 @@ function DateRangePicker({
                   className={cn(
                     "relative z-10 flex size-10 items-center justify-center rounded-[10px] text-[15px] font-normal transition-colors",
                     !day.isCurrentMonth && !isEndpoint && "text-content-disabled",
-                    day.isCurrentMonth && !inRange && !isEndpoint && "text-ink-muted hover:bg-item-hover",
+                    day.isCurrentMonth && !inRange && !isEndpoint && "text-ink-muted hover:bg-pill",
                     inRange && !isEndpoint && "text-ink-muted",
-                    isEndpoint &&
-                      (mode === "range"
-                        ? "font-semibold text-white"
-                        : "bg-pill font-semibold text-brand"),
+                    isEndpoint && "font-semibold text-white",
                   )}
                 >
                   <span
                     className={cn(
                       "flex items-center justify-center",
                       isEndpoint &&
-                        mode === "range" &&
                         "size-8 rounded-[8px] bg-brand text-white",
                     )}
                   >
