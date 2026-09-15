@@ -1410,7 +1410,10 @@ function CalendarPage() {
         open={selectedDayEvents !== null}
         onOpenChange={(open) => !open && setSelectedDayEvents(null)}
       >
-        <DialogContent className="rounded-[12px] border-0 bg-surface text-ink shadow-[0_12px_16px_0_rgba(9,31,23,0.12)] sm:max-w-[460px]">
+        <DialogContent
+          closeClassName="right-8 top-8 flex size-6 items-center justify-center rounded-none text-ink-muted opacity-100 hover:opacity-100 focus:ring-0 focus:ring-offset-0 [&_svg]:size-6"
+          className="rounded-[12px] border-0 bg-surface text-ink shadow-[0_12px_16px_0_rgba(9,31,23,0.12)] sm:max-w-[460px]"
+        >
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-ink">
               {selectedDayEvents ? formatKoreanDate(selectedDayEvents.date) : ""}
@@ -1438,7 +1441,10 @@ function CalendarPage() {
       </Dialog>
 
       <Dialog open={selectedEvent !== null} onOpenChange={(open) => !open && setSelectedEvent(null)}>
-        <DialogContent className="rounded-[12px] border-0 bg-surface text-ink shadow-[0_12px_16px_0_rgba(9,31,23,0.12)] sm:max-w-[460px]">
+        <DialogContent
+          closeClassName="right-8 top-8 flex size-6 items-center justify-center rounded-none text-ink-muted opacity-100 hover:opacity-100 focus:ring-0 focus:ring-offset-0 [&_svg]:size-6"
+          className="rounded-[12px] border-0 bg-surface text-ink shadow-[0_12px_16px_0_rgba(9,31,23,0.12)] sm:max-w-[460px]"
+        >
           <div className="absolute right-16 top-4 flex items-center gap-1">
             <Button
               type="button"
