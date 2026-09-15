@@ -1091,7 +1091,7 @@ function CalendarPage() {
       </div>
 
       {view === "month" ? (
-        <div className="mt-4 flex h-[675px] flex-col overflow-hidden rounded-[12px] border border-field-border bg-surface">
+        <div className="mt-4 flex h-[740px] flex-col overflow-hidden rounded-[12px] border border-field-border bg-surface">
           <div className="grid h-10 grid-cols-7 border-b border-field-border" role="row">
             {DAYS_OF_WEEK.map((day) => (
               <div
