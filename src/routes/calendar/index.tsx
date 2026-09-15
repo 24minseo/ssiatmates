@@ -1233,13 +1233,7 @@ function CalendarPage() {
               })}
             </div>
 
-            <div
-              className="pointer-events-none absolute inset-0 grid"
-              style={{
-                gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
-                gridTemplateRows: "repeat(" + String(days.length / 7) + ", minmax(0, 1fr))",
-              }}
-            >
+            <div className="pointer-events-none absolute inset-0">
               {Array.from({ length: days.length / 7 }, (_, weekIndex) => {
                 const weekSegments = visibleCalendarPeriodSegments.filter(
                   (segment) => segment.weekIndex === weekIndex,
@@ -1251,10 +1245,10 @@ function CalendarPage() {
                 return (
                   <div
                     key={"week-" + weekIndex}
-                    className="col-span-7 min-h-0 overflow-hidden"
+                    className="absolute left-0 right-0 min-h-0 overflow-hidden"
                     style={{
-                      gridColumn: "1 / -1",
-                      gridRow: String(weekIndex + 1),
+                      top: String((weekIndex * 100) / days.length / 7) + "%",
+                      height: String(100 / days.length / 7) + "%",
                     }}
                   >
                     <div
