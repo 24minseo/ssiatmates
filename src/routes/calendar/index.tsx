@@ -130,6 +130,12 @@ function formatDateLabel(dateKey: string) {
   return `${year}.${String(month).padStart(2, "0")}.${String(day).padStart(2, "0")}`;
 }
 
+function getEventDurationDays(event: CalendarEvent) {
+  const start = new Date(`${event.date}T00:00:00`);
+  const end = new Date(`${event.endDate ?? event.date}T00:00:00`);
+  return Math.max(1, Math.round((end.getTime() - start.getTime()) / 86_400_000) + 1);
+}
+
 function buildCalendarDays(year: number, month: number): CalendarDay[] {
   const firstDay = new Date(year, month, 1);
   const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -968,7 +974,15 @@ function CalendarPage() {
             {days.map((day, index) => {
               const isSelected = selectedDate === day.key;
               const isToday = todayKey === day.key;
-              const dayEvents = day.isCurrentMonth ? (eventsByDate[day.key] ?? []) : [];
+              const dayEvents = day.isCurrentMonth
+                ? [...(eventsByDate[day.key] ?? [])].sort(
+                    (a, b) =>
+                      getEventDurationDays(b) - getEventDurationDays(a) ||
+                      a.date.localeCompare(b.date) ||
+                      a.id - b.id,
+                  )
+                : [];
+              const weekDayIndex = index % 7;
               const dragRangeStart = calendarDragStart && calendarDragEnd
                 ? [calendarDragStart, calendarDragEnd].sort()[0]
                 : calendarDragStart;
@@ -1053,8 +1067,9 @@ function CalendarPage() {
                     <div className="mt-1.5 flex min-w-0 flex-col gap-0.5">
                       {dayEvents.slice(0, 2).map((calendarEvent) => {
                         const isPeriod = Boolean(calendarEvent.endDate && calendarEvent.endDate !== calendarEvent.date);
-                        const isPeriodStart = calendarEvent.date === day.key;
-                        const showPeriodTitle = !isPeriod || isPeriodStart || day.date.getDay() === 0;
+                        const isWeekSegmentStart = isPeriod && (calendarEvent.date === day.key || weekDayIndex === 0);
+                        const isWeekSegmentEnd = isPeriod && (calendarEvent.endDate === day.key || weekDayIndex === 6);
+                        const showPeriodTitle = !isPeriod || calendarEvent.date === day.key || weekDayIndex === 0;
                         return (
                           <button
                             key={`${calendarEvent.id}-${day.key}`}
@@ -1073,8 +1088,8 @@ function CalendarPage() {
                               isPeriod
                                 ? cn(
                                     "-mx-2 w-[calc(100%+1rem)] rounded-none bg-pill text-pill-foreground",
-                                    isPeriodStart && "rounded-l-[6px]",
-                                    calendarEvent.endDate === day.key && "rounded-r-[6px]",
+                                    isWeekSegmentStart && "rounded-l-[6px]",
+                                    isWeekSegmentEnd && "rounded-r-[6px]",
                                   )
                                 : "bg-item-hover text-ink",
                             )}
