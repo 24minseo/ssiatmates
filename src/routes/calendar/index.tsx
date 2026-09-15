@@ -1182,10 +1182,10 @@ function CalendarPage() {
                     <div className="flex h-6 items-start justify-between gap-2">
                       <span
                         className={cn(
-                          "flex size-6 shrink-0 items-center justify-center rounded-[6px] text-sm font-normal leading-4",
+                          "flex h-6 w-6 shrink-0 items-center justify-center rounded-[6px] text-sm font-normal leading-4",
                           !day.isCurrentMonth && "text-content-disabled",
                           day.isCurrentMonth && !isToday && !isSelected && "text-ink",
-                          isToday && "bg-brand text-brand-foreground",
+                          isToday && "w-[25px] bg-brand text-brand-foreground",
                         )}
                       >
                         {day.date.getDate()}
