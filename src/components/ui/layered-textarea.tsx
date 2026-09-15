@@ -38,7 +38,7 @@ const LayeredTextarea = React.forwardRef<HTMLTextAreaElement, LayeredTextareaPro
           <span
             aria-hidden="true"
             className={cn(
-              "pointer-events-none absolute z-0 translate-y-px",
+              "pointer-events-none absolute z-0 translate-x-px translate-y-px",
               placeholderClassName,
             )}
           >
