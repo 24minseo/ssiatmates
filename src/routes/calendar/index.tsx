@@ -438,9 +438,10 @@ function DateRangePicker({
                 key={day.key}
                 className={cn(
                   "relative flex h-11 items-center justify-center",
-                  inRange && "bg-pill",
-                  startsRowSegment && "rounded-l-[12px]",
-                  endsRowSegment && "rounded-r-[12px]",
+                  inRange &&
+                    "before:absolute before:inset-x-0 before:top-1.5 before:h-8 before:bg-pill before:content-['']",
+                  startsRowSegment && "before:rounded-l-[10px]",
+                  endsRowSegment && "before:rounded-r-[10px]",
                 )}
               >
                 <button
@@ -455,8 +456,8 @@ function DateRangePicker({
                     day.isCurrentMonth && !inRange && !isEndpoint && "text-ink-muted hover:bg-item-hover",
                     inRange && !isEndpoint && "text-ink-muted",
                     isEndpoint &&
-                      (hasRange
-                        ? "font-semibold text-brand"
+                      (mode === "range"
+                        ? "font-semibold text-white"
                         : "bg-pill font-semibold text-brand"),
                   )}
                 >
@@ -464,8 +465,8 @@ function DateRangePicker({
                     className={cn(
                       "flex items-center justify-center",
                       isEndpoint &&
-                        hasRange &&
-                        "size-9 rounded-[8px] bg-surface shadow-[0_2px_6px_0_rgba(85,113,78,0.12)]",
+                        mode === "range" &&
+                        "size-8 rounded-[8px] bg-brand text-white",
                     )}
                   >
                     {day.date.getDate()}
