@@ -933,13 +933,16 @@ function CalendarPage() {
                   align="start"
                   side="bottom"
                   sideOffset={8}
-                  className="w-[288px] rounded-[12px] border-0 bg-surface p-4 shadow-dropdown"
+                  className={cn(
+                    "rounded-[12px] border-0 bg-surface p-4 shadow-dropdown",
+                    eventStartTime ? "w-[344px]" : "w-[320px]",
+                  )}
                 >                      {reminderPickerMode === "quick" ? (
                         <>
                           <div className="mb-2">
                             <p className="text-[14px] font-semibold text-ink">알림 추가</p>
                           </div>
-                          <div className="flex w-full flex-wrap items-center gap-1">
+                          <div className="flex w-full flex-nowrap items-center gap-1">
                             {availableReminderQuickOptions.map((option) => {
                               const added = reminders.includes(option.label);
                               return (
