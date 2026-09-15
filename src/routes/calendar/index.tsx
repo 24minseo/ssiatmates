@@ -168,7 +168,7 @@ function DateRangePicker({
 }: DateRangePickerProps) {
   const [open, setOpen] = useState(false);
   const [visibleMonth, setVisibleMonth] = useState(() => {
-    const base = startDate ? new Date(\`\${startDate}T00:00:00\`) : new Date();
+    const base = startDate ? new Date(`${startDate}T00:00:00`) : new Date();
     return new Date(base.getFullYear(), base.getMonth(), 1);
   });
   const [draftStart, setDraftStart] = useState(startDate);
@@ -184,7 +184,7 @@ function DateRangePicker({
   const syncDraft = () => {
     setDraftStart(startDate);
     setDraftEnd(endDate);
-    const base = startDate ? new Date(\`\${startDate}T00:00:00\`) : new Date();
+    const base = startDate ? new Date(`${startDate}T00:00:00`) : new Date();
     setVisibleMonth(new Date(base.getFullYear(), base.getMonth(), 1));
   };
 
@@ -248,7 +248,7 @@ function DateRangePicker({
 
   const displayValue =
     mode === "range" && startDate && endDate
-      ? \`\${formatDateLabel(startDate)} ~ \${formatDateLabel(endDate)}\`
+      ? `${formatDateLabel(startDate)} ~ ${formatDateLabel(endDate)}`
       : startDate
         ? formatDateLabel(startDate)
         : "날짜 선택";
