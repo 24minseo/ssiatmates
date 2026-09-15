@@ -1267,7 +1267,7 @@ function CalendarPage() {
                                 aria-hidden="true"
                                 className="pointer-events-none absolute left-0 top-1 z-0 truncate text-[15px] leading-5 text-guide-text"
                               >
-                                항목 ${index + 1}
+                                항목 {index + 1}
                               </span>
                             ) : null}
                             <Textarea
