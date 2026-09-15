@@ -589,7 +589,7 @@ function CalendarPage() {
   const hiddenPeriodCountByDate = useMemo(() => {
     const counts: Record<string, number> = {};
     for (const segment of calendarPeriodSegments) {
-      if (segment.lane < CALENDAR_VISIBLE_EVENT_ROWS) continue;
+      if (segment.lane < (periodLaneLimitByWeek[segment.weekIndex] ?? CALENDAR_VISIBLE_EVENT_ROWS)) continue;
       for (let column = segment.startColumn; column < segment.startColumn + segment.span; column += 1) {
         const day = days[segment.weekIndex * 7 + column];
         if (!day) continue;
@@ -597,7 +597,7 @@ function CalendarPage() {
       }
     }
     return counts;
-  }, [calendarPeriodSegments, days]);
+  }, [calendarPeriodSegments, days, periodLaneLimitByWeek]);
   const periodLaneCountByDate = useMemo(() => {
     const counts: Record<string, number> = {};
     for (const segment of visibleCalendarPeriodSegments) {
