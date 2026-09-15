@@ -788,7 +788,7 @@ function CalendarPage() {
                     <div
                       role="group"
                       aria-label="알림 시간 선택"
-                      className="absolute left-0 top-full z-20 mt-2 w-[288px] rounded-[12px] border border-field-border bg-surface p-3 shadow-dropdown"
+                      className="absolute left-0 top-full z-20 mt-2 w-[320px] rounded-[12px] border-0 bg-surface p-4 shadow-dropdown"
                     >
                       <div className="flex flex-wrap gap-1.5">
                         {REMINDER_QUICK_OPTIONS.map((option) => {
@@ -797,6 +797,7 @@ function CalendarPage() {
                             <button
                               key={option}
                               type="button"
+                              aria-pressed={added}
                               disabled={added}
                               onClick={() => addReminder(option)}
                               className={cn(
@@ -811,7 +812,7 @@ function CalendarPage() {
                           );
                         })}
                       </div>
-                      <div className="mt-2 flex items-center gap-1.5">
+                      <div className="mt-3 flex h-10 items-center overflow-hidden rounded-[8px] border border-field-border bg-surface transition-colors focus-within:border-brand">
                         <Input
                           value={customReminder}
                           onChange={(event) =>
@@ -825,14 +826,14 @@ function CalendarPage() {
                           }}
                           placeholder="직접 입력 (예: 30분 전)"
                           aria-label="알림 시간 직접 입력"
-                          className="h-9 rounded-[8px] border-field-border px-3 text-[13px] md:text-[13px] text-ink shadow-none placeholder:text-guide-text focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft"
+                          className="h-full min-w-0 flex-1 rounded-none border-0 px-3 text-[13px] md:text-[13px] text-ink shadow-none placeholder:text-guide-text focus-visible:border-0 focus-visible:ring-0"
                         />
                         <Button
                           type="button"
                           variant="ghost"
                           onClick={addCustomReminder}
                           disabled={!customReminder.trim()}
-                          className="h-9 shrink-0 rounded-[8px] px-3 text-[13px] font-semibold text-brand hover:bg-item-hover-selected hover:text-brand disabled:opacity-40"
+                          className="h-full shrink-0 rounded-none border-l border-field-border px-3 text-[13px] font-semibold text-brand hover:bg-item-hover-selected hover:text-brand disabled:opacity-40"
                         >
                           추가
                         </Button>
