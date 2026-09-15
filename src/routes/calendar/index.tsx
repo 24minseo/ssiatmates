@@ -742,14 +742,14 @@ function CalendarPage() {
                   reminders.map((reminder) => (
                     <span
                       key={reminder}
-                      className="flex h-9 items-center gap-1.5 rounded-[18px] bg-item-hover pl-4 pr-2 text-[14px] font-normal text-icon-muted"
+                      className="flex h-9 items-center gap-1.5 rounded-[18px] bg-pill pl-4 pr-2 text-[14px] font-semibold text-pill-foreground"
                     >
                       {reminder}
                       <button
                         type="button"
                         aria-label={`${reminder} 알림 삭제`}
                         onClick={() => removeReminder(reminder)}
-                        className="flex size-5 items-center justify-center rounded-full text-ink-muted transition-colors duration-150 ease-out hover:bg-surface hover:text-ink motion-reduce:transition-none"
+                        className="flex size-5 items-center justify-center rounded-full text-pill-foreground transition-colors duration-150 ease-out hover:bg-surface hover:text-pill-foreground motion-reduce:transition-none"
                       >
                         <X aria-hidden="true" className="size-3.5" />
                       </button>
