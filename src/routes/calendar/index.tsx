@@ -63,6 +63,11 @@ const REMINDER_QUICK_OPTIONS = [
   { label: "1시간 전", minutes: 60 },
   { label: "1일 전", minutes: 1440 },
 ] as const;
+const REMINDER_DATE_ONLY_OPTIONS = [
+  { label: "1일 전", minutes: 1440 },
+  { label: "3일 전", minutes: 4320 },
+  { label: "7일 전", minutes: 10080 },
+] as const;
 const REMINDER_UNITS = [
   { label: "분", minutes: 1 },
   { label: "시간", minutes: 60 },
@@ -179,7 +184,7 @@ function CalendarPage() {
   const draggingChecklistItem = checklistItems.find((item) => item.id === draggingChecklistId) ?? null;
   const availableReminderQuickOptions = eventStartTime
     ? REMINDER_QUICK_OPTIONS
-    : REMINDER_QUICK_OPTIONS.filter((option) => option.minutes >= 1440);
+    : REMINDER_DATE_ONLY_OPTIONS;
   const availableReminderUnits = eventStartTime
     ? REMINDER_UNITS
     : REMINDER_UNITS.filter((unit) => unit.label === "일");
