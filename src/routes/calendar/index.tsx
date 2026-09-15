@@ -1038,9 +1038,9 @@ function CalendarPage() {
                     <div
                       aria-hidden="true"
                       className={cn(
-                        "pointer-events-none absolute left-0 right-0 top-10 z-10 flex h-8 items-center bg-brand text-[14px] font-medium text-brand-foreground shadow-[0_4px_10px_0_rgba(22,59,49,0.18)]",
-                        isCalendarDragStart && "rounded-l-[8px]",
-                        isCalendarDragEnd && "rounded-r-[8px]",
+                        "pointer-events-none absolute left-0 right-0 top-10 z-10 flex h-[22px] items-center bg-pill text-[12px] font-normal text-pill-foreground shadow-[0_4px_10px_0_rgba(22,59,49,0.18)]",
+                        isCalendarDragStart && "rounded-l-[6px]",
+                        isCalendarDragEnd && "rounded-r-[6px]",
                       )}
                     >
                       <span className={cn("truncate px-2", !isCalendarDragStart && "opacity-0")}>
