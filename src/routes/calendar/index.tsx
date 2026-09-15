@@ -1003,7 +1003,7 @@ function CalendarPage() {
                                 setReminderError("");
                                 setReminderPickerMode("quick");
                               }}
-                              className="-ml-4 size-8 rounded-[8px] text-ink-muted hover:bg-item-hover hover:text-ink"
+                              className="-ml-2 h-8 w-6 shrink-0 rounded-[8px] p-0 text-ink-muted hover:bg-item-hover hover:text-ink"
                             >
                               <ChevronLeft aria-hidden="true" className="size-4" />
                             </Button>
