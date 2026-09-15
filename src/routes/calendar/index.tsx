@@ -918,7 +918,7 @@ function CalendarPage() {
                         setReminderPickerOpen(true);
                       }
                     }}
-                    className="h-9 rounded-[18px] px-4 text-[14px] font-normal text-ink-muted hover:bg-item-hover hover:text-ink"
+                    className="h-9 gap-1 rounded-[18px] px-4 text-[14px] font-normal text-ink-muted hover:bg-item-hover hover:text-ink"
                   >
                     <Plus aria-hidden="true" className="size-4" />
                     알림 추가
