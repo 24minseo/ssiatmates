@@ -1767,7 +1767,11 @@ function CalendarPage() {
               {selectedEvent?.title}
             </DialogTitle>
             <DialogDescription className="text-sm font-semibold text-brand">
-              {selectedEvent ? formatKoreanDate(selectedEvent.date) : ""}
+              {selectedEvent
+                ? selectedEvent.endDate
+                  ? `${formatKoreanDate(selectedEvent.date)} ~ ${formatKoreanDate(selectedEvent.endDate)}`
+                  : formatKoreanDate(selectedEvent.date)
+                : ""}
             </DialogDescription>
           </DialogHeader>
           <div className="min-h-16 space-y-3">
