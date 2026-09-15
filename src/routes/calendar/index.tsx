@@ -1247,8 +1247,8 @@ function CalendarPage() {
                     key={"week-" + weekIndex}
                     className="absolute left-0 right-0 min-h-0 overflow-hidden"
                     style={{
-                      top: String((weekIndex * 100) / days.length / 7) + "%",
-                      height: String(100 / days.length / 7) + "%",
+                      top: String((weekIndex * 100) / (days.length / 7)) + "%",
+                      height: String(100 / (days.length / 7)) + "%",
                     }}
                   >
                     <div
