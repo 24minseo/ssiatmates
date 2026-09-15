@@ -117,6 +117,7 @@ type CalendarPeriodSegment = {
 const DAYS_OF_WEEK = ["일", "월", "화", "수", "목", "금", "토"] as const;
 const CHECKLIST_MAX_ITEMS = 10;
 const CHECKLIST_ITEM_MAX_LENGTH = 80;
+const CALENDAR_VISIBLE_EVENT_ROWS = 3;
 
 function resizeChecklistTextarea(element: HTMLTextAreaElement) {
   element.style.height = "32px";
@@ -558,9 +559,25 @@ function CalendarPage() {
       days,
     );
   }, [calendarDragStart, calendarDragEnd, days]);
-  const periodLaneCountByDate = useMemo(() => {
+  const visibleCalendarPeriodSegments = useMemo(
+    () => calendarPeriodSegments.filter((segment) => segment.lane < CALENDAR_VISIBLE_EVENT_ROWS),
+    [calendarPeriodSegments],
+  );
+  const hiddenPeriodCountByDate = useMemo(() => {
     const counts: Record<string, number> = {};
     for (const segment of calendarPeriodSegments) {
+      if (segment.lane < CALENDAR_VISIBLE_EVENT_ROWS) continue;
+      for (let column = segment.startColumn; column < segment.startColumn + segment.span; column += 1) {
+        const day = days[segment.weekIndex * 7 + column];
+        if (!day) continue;
+        counts[day.key] = (counts[day.key] ?? 0) + 1;
+      }
+    }
+    return counts;
+  }, [calendarPeriodSegments, days]);
+  const periodLaneCountByDate = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const segment of visibleCalendarPeriodSegments) {
       for (let column = segment.startColumn; column < segment.startColumn + segment.span; column += 1) {
         const day = days[segment.weekIndex * 7 + column];
         if (!day) continue;
@@ -568,7 +585,7 @@ function CalendarPage() {
       }
     }
     return counts;
-  }, [calendarPeriodSegments, days]);
+  }, [visibleCalendarPeriodSegments, days]);
   const draggingChecklistItem = checklistItems.find((item) => item.id === draggingChecklistId) ?? null;
   const availableReminderQuickOptions = eventStartTime
     ? REMINDER_QUICK_OPTIONS
@@ -1088,8 +1105,13 @@ function CalendarPage() {
                     !calendarEvent.endDate || calendarEvent.endDate === calendarEvent.date,
                 );
                 const periodLaneCount = periodLaneCountByDate[day.key] ?? 0;
-                const visibleSingleCount = Math.min(2, Math.max(0, 3 - periodLaneCount));
-                const hiddenSingleCount = Math.max(0, singleDayEvents.length - visibleSingleCount);
+                const visibleSingleCount = Math.min(
+                  2,
+                  Math.max(0, CALENDAR_VISIBLE_EVENT_ROWS - periodLaneCount),
+                );
+                const hiddenSingleCount =
+                  (hiddenPeriodCountByDate[day.key] ?? 0) +
+                  Math.max(0, singleDayEvents.length - visibleSingleCount);
 
                 return (
                   <div
@@ -1189,64 +1211,94 @@ function CalendarPage() {
                 gridTemplateRows: "repeat(" + String(days.length / 7) + ", minmax(0, 1fr))",
               }}
             >
-              {calendarPeriodSegments.map((segment) => (
-                <button
-                  key={segment.event.id + "-" + segment.weekIndex}
-                  type="button"
-                  aria-label={
-                    segment.event.endDate
-                      ? segment.event.title +
-                        ", " +
-                        formatKoreanDate(segment.event.date) +
-                        "부터 " +
-                        formatKoreanDate(segment.event.endDate) +
-                        "까지"
-                      : segment.event.title
-                  }
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    setSelectedEvent(segment.event);
-                  }}
-                  onMouseEnter={() => setHoveredPeriodEventId(segment.event.id)}
-                  onMouseLeave={() => setHoveredPeriodEventId(null)}
-                  className={cn(
-                    "pointer-events-auto z-10 flex items-center truncate px-2 text-xs font-normal transition-colors",
-                    hoveredPeriodEventId === segment.event.id
-                      ? "bg-item-hover-selected"
-                      : "bg-pill",
-                    segment.isStart && "rounded-l-[6px]",
-                    segment.isEnd && "rounded-r-[6px]",
-                    "text-pill-foreground",
-                  )}
-                  style={{
-                    gridColumn: String(segment.startColumn + 1) + " / span " + String(segment.span),
-                    gridRow: String(segment.weekIndex + 1),
-                    marginTop: String(38 + segment.lane * 24) + "px",
-                    height: "22px",
-                  }}
-                >
-                  {segment.isStart || segment.startColumn === 0 ? segment.event.title : "\u00a0"}
-                </button>
-              ))}
+              {Array.from({ length: days.length / 7 }, (_, weekIndex) => {
+                const weekSegments = visibleCalendarPeriodSegments.filter(
+                  (segment) => segment.weekIndex === weekIndex,
+                );
+                const weekDragSegments = calendarDragSegments.filter(
+                  (segment) => segment.weekIndex === weekIndex,
+                );
 
-              {calendarDragSegments.map((segment) => (
-                <div
-                  key={"drag-" + segment.weekIndex}
-                  className={cn(
-                    "pointer-events-none z-20 flex items-center truncate bg-pill px-2 text-xs font-normal text-pill-foreground shadow-[0_4px_10px_0_rgba(22,59,49,0.18)]",
-                    segment.isStart && "rounded-l-[6px]",
-                    segment.isEnd && "rounded-r-[6px]",
-                  )}
-                  style={{
-                    gridColumn: String(segment.startColumn + 1) + " / span " + String(segment.span),
-                    gridRow: String(segment.weekIndex + 1),
-                    marginTop: "38px",
-                    height: "22px",
-                  }}
-                >
-                  {segment.isStart || segment.startColumn === 0 ? "(제목 없음)" : "\u00a0"}
-                </div>
-              ))}
+                return (
+                  <div
+                    key={"week-" + weekIndex}
+                    className="col-span-7 min-h-0 overflow-hidden"
+                    style={{
+                      gridColumn: "1 / -1",
+                      gridRow: String(weekIndex + 1),
+                    }}
+                  >
+                    <div className="grid h-full grid-cols-7">
+                      {weekSegments.map((segment) => (
+                        <button
+                          key={segment.event.id + "-" + segment.weekIndex}
+                          type="button"
+                          aria-label={
+                            segment.event.endDate
+                              ? segment.event.title +
+                                ", " +
+                                formatKoreanDate(segment.event.date) +
+                                "부터 " +
+                                formatKoreanDate(segment.event.endDate) +
+                                "까지"
+                              : segment.event.title
+                          }
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setSelectedEvent(segment.event);
+                          }}
+                          onMouseEnter={() => setHoveredPeriodEventId(segment.event.id)}
+                          onMouseLeave={() => setHoveredPeriodEventId(null)}
+                          className={cn(
+                            "pointer-events-auto z-10 flex items-center truncate px-2 text-xs font-normal transition-colors",
+                            hoveredPeriodEventId === segment.event.id
+                              ? "bg-item-hover-selected"
+                              : "bg-pill",
+                            segment.isStart && "rounded-l-[6px]",
+                            segment.isEnd && "rounded-r-[6px]",
+                            "text-pill-foreground",
+                          )}
+                          style={{
+                            gridColumn:
+                              String(segment.startColumn + 1) +
+                              " / span " +
+                              String(segment.span),
+                            marginTop: String(38 + segment.lane * 24) + "px",
+                            height: "22px",
+                          }}
+                        >
+                          {segment.isStart || segment.startColumn === 0
+                            ? segment.event.title
+                            : "\u00a0"}
+                        </button>
+                      ))}
+
+                      {weekDragSegments.map((segment) => (
+                        <div
+                          key={"drag-" + segment.weekIndex}
+                          className={cn(
+                            "pointer-events-none z-20 flex items-center truncate bg-pill px-2 text-xs font-normal text-pill-foreground shadow-[0_4px_10px_0_rgba(22,59,49,0.18)]",
+                            segment.isStart && "rounded-l-[6px]",
+                            segment.isEnd && "rounded-r-[6px]",
+                          )}
+                          style={{
+                            gridColumn:
+                              String(segment.startColumn + 1) +
+                              " / span " +
+                              String(segment.span),
+                            marginTop: "38px",
+                            height: "22px",
+                          }}
+                        >
+                          {segment.isStart || segment.startColumn === 0
+                            ? "(제목 없음)"
+                            : "\u00a0"}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
