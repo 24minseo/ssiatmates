@@ -351,7 +351,7 @@ function DateRangePicker({
       <PopoverContent
         align="start"
         sideOffset={8}
-        className="w-[400px] max-w-[calc(100vw-24px)] rounded-[20px] border-0 bg-surface p-[18px] shadow-dropdown"
+        className="w-[360px] max-w-[calc(100vw-24px)] rounded-[16px] border-0 bg-surface p-4 shadow-dropdown"
       >
         <div
           role="tablist"
@@ -372,7 +372,7 @@ function DateRangePicker({
                 }
               }}
               className={cn(
-                "relative h-10 text-[15px] font-medium transition-colors after:absolute after:left-1/2 after:-bottom-px after:h-0.5 after:w-16 after:-translate-x-1/2 after:rounded-full after:bg-brand after:content-['']",
+                "relative h-[38px] text-[14px] font-medium transition-colors after:absolute after:left-1/2 after:-bottom-px after:h-0.5 after:w-14 after:-translate-x-1/2 after:rounded-full after:bg-brand after:content-['']",
                 mode === option
                   ? "font-semibold text-brand after:opacity-100"
                   : "text-ink-muted after:opacity-0 hover:text-ink",
@@ -393,7 +393,7 @@ function DateRangePicker({
           >
             <ChevronLeft aria-hidden="true" className="size-4" />
           </Button>
-          <span className="text-center text-[16px] font-semibold text-ink">
+          <span className="text-center text-[15px] font-semibold text-ink">
             {visibleMonth.getFullYear()}년 {visibleMonth.getMonth() + 1}월
           </span>
           <Button
@@ -407,9 +407,9 @@ function DateRangePicker({
             <ChevronRight aria-hidden="true" className="size-4" />
           </Button>
         </div>
-        <div className="mt-3 grid grid-cols-7 text-center text-[14px] font-medium text-ink">
+        <div className="mt-2.5 grid grid-cols-7 text-center text-[13px] font-medium text-ink">
           {["일", "월", "화", "수", "목", "금", "토"].map((day) => (
-            <span key={day} className="flex h-11 items-center justify-center">{day}</span>
+            <span key={day} className="flex h-10 items-center justify-center">{day}</span>
           ))}
         </div>
         <div className="grid grid-cols-7">
@@ -429,10 +429,10 @@ function DateRangePicker({
               <div
                 key={day.key}
                 className={cn(
-                  "relative flex h-12 items-center justify-center",
+                  "relative flex h-11 items-center justify-center",
                   inRange && "bg-pill",
-                  startsRowSegment && "rounded-l-[14px]",
-                  endsRowSegment && "rounded-r-[14px]",
+                  startsRowSegment && "rounded-l-[12px]",
+                  endsRowSegment && "rounded-r-[12px]",
                 )}
               >
                 <button
@@ -442,7 +442,7 @@ function DateRangePicker({
                   onPointerUp={() => handleDayPointerUp(day.key)}
                   onClick={() => handleDayClick(day.key)}
                   className={cn(
-                    "relative z-10 flex size-11 items-center justify-center rounded-[12px] text-[16px] font-normal transition-colors",
+                    "relative z-10 flex size-10 items-center justify-center rounded-[10px] text-[15px] font-normal transition-colors",
                     !day.isCurrentMonth && !isEndpoint && "text-content-disabled",
                     day.isCurrentMonth && !inRange && !isEndpoint && "text-ink-muted hover:bg-item-hover",
                     inRange && !isEndpoint && "text-ink-muted",
@@ -458,7 +458,7 @@ function DateRangePicker({
             );
           })}
         </div>
-        <div className="mt-3 flex items-center justify-between border-t border-field-border px-1 pt-3">
+        <div className="mt-2.5 flex items-center justify-between border-t border-field-border px-1 pt-2.5">
           <button
             type="button"
             onClick={() => {
@@ -467,7 +467,7 @@ function DateRangePicker({
               onChange(startDate, endDate || undefined);
               closePicker();
             }}
-            className="h-8 px-1 text-[14px] text-ink-muted hover:text-ink"
+            className="h-8 px-1 text-[13px] text-ink-muted hover:text-ink"
           >
             초기화
           </button>
@@ -484,7 +484,7 @@ function DateRangePicker({
                 setDraftEnd("");
               }
             }}
-            className="h-8 px-1 text-[14px] font-semibold text-brand hover:underline"
+            className="h-8 px-1 text-[13px] font-semibold text-brand hover:underline"
           >
             오늘
           </button>
