@@ -1,11 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
-  CalendarDays,
   Check,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  Clock3,
   Pencil,
   Plus,
   Trash2,
@@ -704,7 +702,12 @@ function CalendarPage() {
                     onChange={(event) => setEventDate(event.target.value)}
                     className="h-12 rounded-[12px] border-field-border px-3.5 pr-10 text-[15px] md:text-[15px] text-ink shadow-none focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0"
                   />
-                  <CalendarDays aria-hidden="true" className="pointer-events-none absolute right-3.5 top-1/2 size-[18px] -translate-y-1/2 text-guide-text" />
+                  <img
+                  src="/assets/calendar/21.svg"
+                  alt=""
+                  aria-hidden="true"
+                  className="pointer-events-none absolute right-3.5 top-1/2 size-5 -translate-y-1/2 object-contain"
+                />
                 </div>
               </div>
               <div className="grid gap-1">
@@ -726,7 +729,12 @@ function CalendarPage() {
                       시작 시간 선택
                     </span>
                   ) : null}
-                  <Clock3 aria-hidden="true" className="pointer-events-none absolute right-3.5 top-1/2 size-[18px] -translate-y-1/2 text-guide-text" />
+                  <img
+                  src="/assets/clock/21.svg"
+                  alt=""
+                  aria-hidden="true"
+                  className="pointer-events-none absolute right-3.5 top-1/2 size-5 -translate-y-1/2 object-contain"
+                />
                 </div>
               </div>
             </div>
@@ -798,7 +806,6 @@ function CalendarPage() {
                                   : "bg-item-hover text-ink-muted hover:bg-item-hover-selected hover:text-brand",
                               )}
                             >
-                              {added ? <Check aria-hidden="true" className="mr-1 size-3.5" /> : null}
                               {option}
                             </button>
                           );
