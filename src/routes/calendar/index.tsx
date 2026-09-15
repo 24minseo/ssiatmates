@@ -1658,7 +1658,7 @@ function CalendarPage() {
                             />
                             <span aria-hidden="true" className="h-full w-px shrink-0 bg-field-border" />
                             {availableReminderUnits.length <= 1 ? (
-                              <span className="flex h-full w-[72px] shrink-0 items-center justify-center bg-surface text-[14px] text-ink">
+                              <span className="flex h-full w-[54px] shrink-0 items-center justify-center bg-item-hover text-[14px] text-icon-muted">
                                 일
                               </span>
                             ) : (
@@ -1723,7 +1723,12 @@ function CalendarPage() {
                               ) : null}
                             </Tooltip>
                             )}
-                            <span className="flex h-full w-9 shrink-0 items-center justify-center bg-item-hover text-[14px] text-icon-muted">
+                            <span
+                              className={cn(
+                                "flex h-full shrink-0 items-center justify-center bg-item-hover text-[14px] text-icon-muted",
+                                availableReminderUnits.length <= 1 ? "w-[54px]" : "w-9",
+                              )}
+                            >
                               전
                             </span>
                             </div>
