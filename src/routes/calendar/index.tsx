@@ -202,8 +202,9 @@ function DateRangePicker({
     closePicker();
   };
 
-  const handleDayPointerDown = (dayKey: string) => {
+  const handleDayPointerDown = (dayKey: string, event: ReactPointerEvent<HTMLButtonElement>) => {
     if (mode !== "range") return;
+    event.preventDefault();
     dragMovedRef.current = false;
     if (!draftStart || draftEnd) {
       setDraftStart(dayKey);
@@ -349,7 +350,7 @@ function DateRangePicker({
               <button
                 key={day.key}
                 type="button"
-                onPointerDown={() => handleDayPointerDown(day.key)}
+                onPointerDown={(event) => handleDayPointerDown(day.key, event)}
                 onPointerEnter={() => handleDayPointerEnter(day.key)}
                 onPointerUp={() => handleDayPointerUp(day.key)}
                 onClick={() => handleDayClick(day.key)}
@@ -486,6 +487,7 @@ function CalendarPage() {
   const startCalendarDrag = (dayKey: string, event: ReactPointerEvent<HTMLDivElement>) => {
     const target = event.target as HTMLElement;
     if (target.closest("button, a")) return;
+    event.preventDefault();
     calendarDragMovedRef.current = false;
     setCalendarDragStart(dayKey);
     setCalendarDragEnd(null);
