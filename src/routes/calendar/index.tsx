@@ -964,7 +964,7 @@ function CalendarPage() {
                       type="button"
                       variant="ghost"
                       onClick={addChecklistItem}
-                      className="mt-1 ml-[60px] h-8 rounded-[8px] px-2 text-[13px] font-normal text-brand shadow-none hover:bg-transparent hover:text-brand hover:underline"
+                      className="mt-1 ml-[44px] h-8 rounded-[8px] px-2 text-[13px] font-normal text-icon-muted shadow-none transition-colors duration-150 ease-out hover:bg-transparent hover:text-brand"
                     >
                       <Plus aria-hidden="true" className="size-4" />
                       항목 추가
