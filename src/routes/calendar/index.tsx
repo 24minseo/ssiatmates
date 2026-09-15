@@ -907,6 +907,17 @@ function CalendarPage() {
                     type="button"
                     variant="ghost"
                     aria-expanded={reminderPickerOpen}
+                    onClick={() => {
+                      if (reminderPickerOpen) {
+                        closeReminderPicker();
+                      } else {
+                        setReminderPickerMode("quick");
+                        setCustomReminderAmount("");
+                        setCustomReminderUnit(eventStartTime ? "분" : "일");
+                        setReminderError("");
+                        setReminderPickerOpen(true);
+                      }
+                    }}
                     className="h-9 rounded-[8px] px-2 text-[14px] font-normal text-ink-muted hover:bg-item-hover hover:text-ink"
                   >
                     <Plus aria-hidden="true" className="size-4" />
