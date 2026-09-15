@@ -23,7 +23,7 @@ import {
 import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { LayeredTextarea } from "@/components/ui/layered-textarea";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/calendar/")({
@@ -1126,21 +1126,14 @@ function CalendarPage() {
 
               {contentMode === "memo" ? (
                 <div className="relative mt-1.5">
-                  {!eventDescription ? (
-                    <span
-                      aria-hidden="true"
-                      className="pointer-events-none absolute left-3.5 top-3 z-0 text-[15px] leading-5 text-guide-text"
-                    >
-                      메모할 내용이 있으면 적어주세요.
-                    </span>
-                  ) : null}
-                  <Textarea
+                  <LayeredTextarea
                     id="todo-description"
                     value={eventDescription}
                     onChange={(event) => setEventDescription(event.target.value)}
                     maxLength={500}
-                    placeholder=""
-                    className="relative z-10 h-[164px] resize-none rounded-[12px] border-field-border px-3.5 py-3 pb-3 text-[15px] md:text-[15px] text-ink shadow-none focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft"
+                    placeholder="메모할 내용이 있으면 적어주세요."
+                    placeholderClassName="left-3.5 top-3 text-[15px] leading-5 text-guide-text"
+                    className="h-[164px] resize-none rounded-[12px] border-field-border px-3.5 py-3 pb-3 text-[15px] md:text-[15px] text-ink shadow-none focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft"
                   />
                   <span
                     aria-live="polite"
@@ -1262,15 +1255,7 @@ function CalendarPage() {
                             className="mt-1.5 size-[18px] shrink-0 rounded-[5px] border-field-border [&_svg]:size-3 data-[state=checked]:border-brand data-[state=checked]:bg-brand data-[state=checked]:text-brand-foreground"
                           />
                           <div className="relative min-w-0 flex-1">
-                            {!item.text ? (
-                              <span
-                                aria-hidden="true"
-                                className="pointer-events-none absolute left-0 top-1 z-0 truncate text-[15px] leading-5 text-guide-text"
-                              >
-                                항목 {index + 1}
-                              </span>
-                            ) : null}
-                            <Textarea
+                            <LayeredTextarea
                               value={item.text}
                               rows={1}
                               maxLength={CHECKLIST_ITEM_MAX_LENGTH}
@@ -1288,9 +1273,10 @@ function CalendarPage() {
                                 addChecklistItemAfter(item.id);
                               }}
                               onChange={(event) => updateChecklistItem(item.id, event.target.value)}
-                              placeholder=""
+                              placeholder={`항목 ${index + 1}`}
+                              placeholderClassName="left-0 top-1 truncate text-[15px] leading-5 text-guide-text"
                               className={cn(
-                                "relative z-10 h-8 !min-h-8 max-h-16 resize-none overflow-y-auto rounded-none border border-transparent bg-transparent px-0 py-1 text-[15px] md:text-[15px] leading-5 text-ink shadow-none focus-visible:border-transparent focus-visible:bg-transparent focus-visible:ring-0 focus-visible:ring-focus-soft",
+                                "h-8 !min-h-8 max-h-16 resize-none overflow-y-auto rounded-none border border-transparent bg-transparent px-0 py-1 text-[15px] md:text-[15px] leading-5 text-ink shadow-none focus-visible:border-transparent focus-visible:bg-transparent focus-visible:ring-0 focus-visible:ring-focus-soft",
                                 item.completed && "text-icon-muted line-through",
                               )}
                             />
