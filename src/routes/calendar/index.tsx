@@ -1008,7 +1008,7 @@ function CalendarPage() {
                     }
                   }}
                   className={cn(
-                    "group relative h-full min-w-0 cursor-pointer overflow-hidden bg-surface p-2 text-ink",
+                    "group relative h-full min-w-0 cursor-pointer overflow-visible bg-surface p-2 text-ink",
                     index < days.length - 7 && "border-b border-field-border",
                   )}
                 >
@@ -1069,9 +1069,13 @@ function CalendarPage() {
                               setSelectedEvent(calendarEvent);
                             }}
                             className={cn(
-                              "h-[22px] w-full truncate rounded-[6px] px-2 text-left text-xs font-normal hover:bg-item-hover-selected",
+                              "relative z-10 h-[22px] w-full truncate rounded-[6px] px-2 text-left text-xs font-normal hover:bg-item-hover-selected",
                               isPeriod
-                                ? "bg-pill text-pill-foreground"
+                                ? cn(
+                                    "-mx-2 w-[calc(100%+1rem)] rounded-none bg-pill text-pill-foreground",
+                                    isPeriodStart && "rounded-l-[6px]",
+                                    calendarEvent.endDate === day.key && "rounded-r-[6px]",
+                                  )
                                 : "bg-item-hover text-ink",
                             )}
                           >
