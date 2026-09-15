@@ -1163,7 +1163,7 @@ function CalendarPage() {
                       </Link>
                     </div>
 
-                    {singleDayEvents.length > 0 ? (
+                    {singleDayEvents.length > 0 || (hiddenPeriodCountByDate[day.key] ?? 0) > 0 ? (
                       <div
                         className="mt-1.5 flex min-w-0 flex-col gap-0.5"
                         style={
