@@ -1714,7 +1714,7 @@ function CalendarPage() {
                               </TooltipTrigger>
                               {availableReminderUnits.length > 1 ? (
                                 <TooltipContent
-                                  side="top"
+                                  side="bottom"
                                   sideOffset={6}
                                   className="rounded-[6px] bg-[#434343] px-2 py-1.5 text-[12px] font-medium leading-[18px] text-white shadow-none"
                                 >
