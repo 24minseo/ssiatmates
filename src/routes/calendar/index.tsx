@@ -1027,9 +1027,9 @@ function CalendarPage() {
                                 setReminderError("");
                                 setReminderPickerMode("quick");
                               }}
-                              className="-ml-2 h-8 w-6 shrink-0 rounded-[8px] p-0 text-ink-muted hover:bg-item-hover hover:text-ink focus-visible:outline-none focus-visible:ring-[3.2px] focus-visible:ring-focus-soft"
+                              className="-ml-1 h-8 w-5 shrink-0 rounded-[6px] p-0 text-ink-muted hover:bg-item-hover hover:text-ink focus-visible:outline-none focus-visible:ring-[3.2px] focus-visible:ring-focus-soft"
                             >
-                              <ChevronLeft aria-hidden="true" className="size-4" />
+                              <ChevronLeft aria-hidden="true" className="size-4 -translate-y-1.5" />
                             </Button>
                             <p className="text-[14px] font-semibold text-ink">직접 알림 설정</p>
                           </div>
