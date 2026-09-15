@@ -559,9 +559,32 @@ function CalendarPage() {
       days,
     );
   }, [calendarDragStart, calendarDragEnd, days]);
+  const periodLaneLimitByWeek = useMemo(() => {
+    return Array.from({ length: days.length / 7 }, (_, weekIndex) => {
+      const weekPeriodCount = calendarPeriodSegments.filter(
+        (segment) => segment.weekIndex === weekIndex,
+      ).length;
+      const hasSingleDayEvent = days
+        .slice(weekIndex * 7, weekIndex * 7 + 7)
+        .some((day) =>
+          (eventsByDate[day.key] ?? []).some(
+            (event) => !event.endDate || event.endDate === event.date,
+          ),
+        );
+
+      return weekPeriodCount >= CALENDAR_VISIBLE_EVENT_ROWS &&
+        (weekPeriodCount > CALENDAR_VISIBLE_EVENT_ROWS || hasSingleDayEvent)
+        ? CALENDAR_VISIBLE_EVENT_ROWS - 1
+        : CALENDAR_VISIBLE_EVENT_ROWS;
+    });
+  }, [calendarPeriodSegments, days, eventsByDate]);
   const visibleCalendarPeriodSegments = useMemo(
-    () => calendarPeriodSegments.filter((segment) => segment.lane < CALENDAR_VISIBLE_EVENT_ROWS),
-    [calendarPeriodSegments],
+    () =>
+      calendarPeriodSegments.filter(
+        (segment) =>
+          segment.lane < (periodLaneLimitByWeek[segment.weekIndex] ?? CALENDAR_VISIBLE_EVENT_ROWS),
+      ),
+    [calendarPeriodSegments, periodLaneLimitByWeek],
   );
   const hiddenPeriodCountByDate = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -1105,9 +1128,15 @@ function CalendarPage() {
                     !calendarEvent.endDate || calendarEvent.endDate === calendarEvent.date,
                 );
                 const periodLaneCount = periodLaneCountByDate[day.key] ?? 0;
+                const hasOverflow =
+                  (hiddenPeriodCountByDate[day.key] ?? 0) > 0 ||
+                  periodLaneCount + singleDayEvents.length > CALENDAR_VISIBLE_EVENT_ROWS;
+                const visibleRowLimit = hasOverflow
+                  ? CALENDAR_VISIBLE_EVENT_ROWS - 1
+                  : CALENDAR_VISIBLE_EVENT_ROWS;
                 const visibleSingleCount = Math.min(
                   2,
-                  Math.max(0, CALENDAR_VISIBLE_EVENT_ROWS - periodLaneCount),
+                  Math.max(0, visibleRowLimit - periodLaneCount),
                 );
                 const hiddenSingleCount =
                   (hiddenPeriodCountByDate[day.key] ?? 0) +
