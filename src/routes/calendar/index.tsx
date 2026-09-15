@@ -1063,7 +1063,7 @@ function CalendarPage() {
                                 setReminderError("");
                                 setReminderPickerMode("quick");
                               }}
-                              className="h-9 rounded-[8px] px-3 text-[13px] font-semibold text-ink-muted hover:bg-item-hover hover:text-ink"
+                              className="h-9 min-w-[72px] rounded-[8px] px-4 text-[13px] font-semibold text-ink-muted hover:bg-item-hover hover:text-ink"
                             >
                               취소
                             </Button>
@@ -1071,7 +1071,7 @@ function CalendarPage() {
                               type="button"
                               disabled={!customReminderAmount}
                               onClick={addCustomReminder}
-                              className="h-9 rounded-[8px] bg-brand px-3 text-[13px] font-semibold text-brand-foreground shadow-none hover:bg-brand/88 disabled:bg-brand-disabled disabled:opacity-100"
+                              className="h-9 min-w-[72px] rounded-[8px] bg-brand px-4 text-[13px] font-semibold text-brand-foreground shadow-none hover:bg-brand/88 disabled:bg-brand-disabled disabled:opacity-100"
                             >
                               추가
                             </Button>
