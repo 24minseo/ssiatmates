@@ -1253,7 +1253,7 @@ function CalendarPage() {
                             aria-checked={item.completed}
                             aria-label={item.completed ? `항목 ${index + 1} 완료 취소` : `항목 ${index + 1} 완료`}
                             onClick={() => toggleChecklistItem(item.id)}
-                            className="mt-1.5 flex size-[18px] shrink-0 items-center justify-center rounded-[4px] text-brand focus-visible:outline-none focus-visible:ring-[3.2px] focus-visible:ring-focus-soft"
+                            className="mt-1.5 flex size-[18px] shrink-0 items-center justify-center rounded-[4px] border-0 bg-transparent p-0 text-brand focus-visible:outline-none focus-visible:ring-[3.2px] focus-visible:ring-focus-soft"
                           >
                             {item.completed ? <Check aria-hidden="true" className="size-[18px] stroke-[2.25]" /> : null}
                           </button>
