@@ -242,7 +242,7 @@ export function TimeWheelPicker({
         side="bottom"
         sideOffset={8}
         onOpenAutoFocus={(event) => event.preventDefault()}
-        className="w-[252px] rounded-[12px] border border-field-border bg-surface p-2 shadow-dropdown"
+        className="w-[252px] rounded-[12px] border-0 bg-surface p-2 shadow-dropdown"
       >
         <div className="grid grid-cols-[72px_72px_72px] justify-center gap-1">
           <TimeWheel
