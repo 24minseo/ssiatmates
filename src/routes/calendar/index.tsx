@@ -58,8 +58,18 @@ type ChecklistItem = {
 type ChecklistDropPosition = "before" | "after";
 
 const REMINDER_MAX_ITEMS = 4;
-const REMINDER_CUSTOM_MAX_LENGTH = 20;
-const REMINDER_QUICK_OPTIONS = ["10분 전", "1시간 전", "1일 전"] as const;
+const REMINDER_QUICK_OPTIONS = [
+  { label: "10분 전", minutes: 10 },
+  { label: "1시간 전", minutes: 60 },
+  { label: "1일 전", minutes: 1440 },
+] as const;
+const REMINDER_UNITS = [
+  { label: "분", minutes: 1 },
+  { label: "시간", minutes: 60 },
+  { label: "일", minutes: 1440 },
+] as const;
+
+type ReminderUnit = (typeof REMINDER_UNITS)[number]["label"];
 
 type CalendarEvent = {
   id: number;
@@ -147,7 +157,9 @@ function CalendarPage() {
   const [eventStartTime, setEventStartTime] = useState("");
   const [reminders, setReminders] = useState<string[]>([]);
   const [reminderPickerOpen, setReminderPickerOpen] = useState(false);
-  const [customReminder, setCustomReminder] = useState("");
+  const [customReminderAmount, setCustomReminderAmount] = useState("");
+  const [customReminderUnit, setCustomReminderUnit] = useState<ReminderUnit>("분");
+  const [reminderError, setReminderError] = useState("");
 
   const today = useMemo(() => new Date(), []);
   const todayKey = toDateKey(today);
@@ -185,7 +197,9 @@ function CalendarPage() {
     setEventStartTime("");
     setReminders([]);
     setReminderPickerOpen(false);
-    setCustomReminder("");
+    setCustomReminderAmount("");
+    setCustomReminderUnit("분");
+    setReminderError("");
     setEventDate(dateKey ?? selectedDate ?? todayKey);
     setIsAddOpen(true);
   };
@@ -207,7 +221,9 @@ function CalendarPage() {
     setEventStartTime(selectedEvent.startTime ?? "");
     setReminders(selectedEvent.reminders ?? []);
     setReminderPickerOpen(false);
-    setCustomReminder("");
+    setCustomReminderAmount("");
+    setCustomReminderUnit("분");
+    setReminderError("");
     setSelectedEvent(null);
     setIsAddOpen(true);
   };
@@ -218,18 +234,51 @@ function CalendarPage() {
     setSelectedEvent(null);
   };
 
-  const addReminder = (label: string) => {
+  const getReminderAnchor = () => {
+    if (!eventDate || !eventStartTime) return null;
+    const anchor = new Date(`${eventDate}T${eventStartTime}`);
+    return Number.isNaN(anchor.getTime()) ? null : anchor;
+  };
+
+  const getReminderError = (offsetMinutes: number) => {
+    const anchor = getReminderAnchor();
+    if (!anchor) return "알림을 설정하려면 시작 시간을 먼저 선택하세요.";
+    if (anchor.getTime() - offsetMinutes * 60_000 <= Date.now()) {
+      return "계산된 알림 시간이 이미 지났어요. 더 짧은 시간을 선택하세요.";
+    }
+    return "";
+  };
+
+  const addReminder = (label: string, offsetMinutes?: number) => {
     const trimmed = label.trim();
     if (!trimmed) return;
+    const error = offsetMinutes === undefined ? "" : getReminderError(offsetMinutes);
+    if (error) {
+      setReminderError(error);
+      return;
+    }
     setReminders((current) => {
       if (current.length >= REMINDER_MAX_ITEMS || current.includes(trimmed)) return current;
       return [...current, trimmed];
     });
+    setReminderError("");
   };
 
   const addCustomReminder = () => {
-    addReminder(customReminder);
-    setCustomReminder("");
+    const amount = Number(customReminderAmount);
+    const unit = REMINDER_UNITS.find((option) => option.label === customReminderUnit);
+    if (!Number.isInteger(amount) || amount < 1 || !unit) {
+      setReminderError("1 이상의 숫자를 입력하세요.");
+      return;
+    }
+    const error = getReminderError(amount * unit.minutes);
+    if (error) {
+      setReminderError(error);
+      return;
+    }
+    addReminder(`${amount}${unit.label} 전`, amount * unit.minutes);
+    setCustomReminderAmount("");
+    setReminderError("");
   };
 
   const removeReminder = (label: string) => {
@@ -310,6 +359,11 @@ function CalendarPage() {
   const saveEvent = () => {
     const title = eventTitle.trim();
     if (!title || !eventDate) return;
+    if (reminders.length > 0 && !eventStartTime) {
+      setReminderError("알림을 저장하려면 시작 시간을 먼저 선택하세요.");
+      setReminderPickerOpen(true);
+      return;
+    }
 
     const nextEvent: CalendarEvent = {
       id: editingEventId ?? Date.now(),
@@ -793,14 +847,14 @@ function CalendarPage() {
                       <p className="mb-2 text-[12px] font-semibold text-ink-muted">빠른 알림</p>
                       <div className="flex flex-wrap gap-1.5">
                         {REMINDER_QUICK_OPTIONS.map((option) => {
-                          const added = reminders.includes(option);
+                          const added = reminders.includes(option.label);
                           return (
                             <button
-                              key={option}
+                              key={option.label}
                               type="button"
                               aria-pressed={added}
                               disabled={added}
-                              onClick={() => addReminder(option)}
+                              onClick={() => addReminder(option.label, option.minutes)}
                               className={cn(
                                 "flex h-8 items-center rounded-[16px] px-3 text-[13px] font-normal transition-colors duration-150 ease-out motion-reduce:transition-none",
                                 added
@@ -808,7 +862,7 @@ function CalendarPage() {
                                   : "bg-item-hover text-ink-muted hover:bg-item-hover-selected hover:text-brand",
                               )}
                             >
-                              {option}
+                              {option.label}
                             </button>
                           );
                         })}
@@ -817,9 +871,9 @@ function CalendarPage() {
                         <p className="mb-2 text-[12px] font-semibold text-ink-muted">직접 입력</p>
                         <div className="flex h-10 items-center overflow-hidden rounded-[8px] border border-field-border bg-surface transition-colors focus-within:border-brand">
                           <Input
-                            value={customReminder}
+                            value={customReminderAmount}
                             onChange={(event) =>
-                              setCustomReminder(event.target.value.slice(0, REMINDER_CUSTOM_MAX_LENGTH))
+                              setCustomReminderAmount(event.target.value.replace(/\D/g, "").slice(0, 4))
                             }
                             onKeyDown={(event) => {
                               if (event.key === "Enter") {
@@ -827,20 +881,40 @@ function CalendarPage() {
                                 addCustomReminder();
                               }
                             }}
-                            placeholder="예: 30분 전"
-                            aria-label="알림 시간 직접 입력"
-                            className="h-full min-w-0 flex-1 rounded-none border-0 px-3 text-[13px] md:text-[13px] text-ink shadow-none placeholder:text-guide-text focus-visible:border-0 focus-visible:ring-0"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            placeholder="30"
+                            aria-label="알림 전 숫자"
+                            className="h-full w-16 shrink-0 rounded-none border-0 px-2 text-center text-[13px] md:text-[13px] text-ink shadow-none placeholder:text-guide-text focus-visible:border-0 focus-visible:ring-0"
                           />
+                          <select
+                            value={customReminderUnit}
+                            onChange={(event) => setCustomReminderUnit(event.target.value as ReminderUnit)}
+                            aria-label="알림 시간 단위"
+                            className="h-full w-[76px] shrink-0 appearance-none border-l border-field-border bg-surface px-2 text-center text-[13px] text-ink outline-none"
+                          >
+                            {REMINDER_UNITS.map((unit) => (
+                              <option key={unit.label} value={unit.label}>
+                                {unit.label}
+                              </option>
+                            ))}
+                          </select>
+                          <span className="px-1 text-[13px] text-ink-muted">전</span>
                           <Button
                             type="button"
                             variant="ghost"
                             onClick={addCustomReminder}
-                            disabled={!customReminder.trim()}
+                            disabled={!customReminderAmount}
                             className="h-full shrink-0 rounded-none border-l border-field-border px-3 text-[13px] font-semibold text-brand hover:bg-item-hover-selected hover:text-brand disabled:opacity-40"
                           >
                             추가
                           </Button>
                         </div>
+                        {reminderError ? (
+                          <p role="alert" className="mt-1.5 text-[12px] leading-4 text-[#B44A4A]">
+                            {reminderError}
+                          </p>
+                        ) : null}
                       </div>
                     </div>
                   </>
