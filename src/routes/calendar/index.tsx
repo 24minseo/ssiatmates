@@ -494,6 +494,7 @@ function CalendarPage() {
   const [dateSelectionMode, setDateSelectionMode] = useState<DateSelectionMode>("single");
   const [calendarDragStart, setCalendarDragStart] = useState<string | null>(null);
   const [calendarDragEnd, setCalendarDragEnd] = useState<string | null>(null);
+  const [hoveredPeriodEventId, setHoveredPeriodEventId] = useState<number | null>(null);
   const calendarDragMovedRef = useRef(false);
   const [eventDescription, setEventDescription] = useState("");
   const [contentMode, setContentMode] = useState<ContentMode>("memo");
@@ -1180,7 +1181,6 @@ function CalendarPage() {
             </div>
 
             <div
-              aria-hidden="true"
               className="pointer-events-none absolute inset-0 grid"
               style={{
                 gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
@@ -1205,11 +1205,16 @@ function CalendarPage() {
                     event.stopPropagation();
                     setSelectedEvent(segment.event);
                   }}
+                  onMouseEnter={() => setHoveredPeriodEventId(segment.event.id)}
+                  onMouseLeave={() => setHoveredPeriodEventId(null)}
                   className={cn(
-                    "pointer-events-auto z-10 flex items-center truncate px-2 text-xs font-normal hover:bg-item-hover-selected",
+                    "pointer-events-auto z-10 flex items-center truncate px-2 text-xs font-normal transition-colors",
+                    hoveredPeriodEventId === segment.event.id
+                      ? "bg-item-hover-selected"
+                      : "bg-pill",
                     segment.isStart && "rounded-l-[6px]",
                     segment.isEnd && "rounded-r-[6px]",
-                    "bg-pill text-pill-foreground",
+                    "text-pill-foreground",
                   )}
                   style={{
                     gridColumn: String(segment.startColumn + 1) + " / span " + String(segment.span),
