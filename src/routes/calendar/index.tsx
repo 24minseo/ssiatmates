@@ -890,7 +890,7 @@ function CalendarPage() {
                       className="absolute left-0 top-full z-20 mt-2 w-[320px] rounded-[12px] border-0 bg-surface p-4 shadow-dropdown"
                     >
                       <p className="mb-2 text-[14px] font-semibold text-ink">빠른 알림</p>
-                      <div className="flex flex-wrap gap-1.5">
+                      <div className="flex flex-wrap items-center gap-1.5">
                         {availableReminderQuickOptions.map((option) => {
                           const added = reminders.includes(option.label);
                           return (
@@ -921,9 +921,6 @@ function CalendarPage() {
                             </button>
                           );
                         })}
-                      </div>
-                      <div className="mt-3 border-t border-field-border/70 pt-3">
-                        <p className="mb-2 text-[14px] font-semibold text-ink">직접 입력</p>
                         <Button
                           type="button"
                           variant="ghost"
@@ -931,17 +928,16 @@ function CalendarPage() {
                             setReminderError("");
                             setCustomReminderDialogOpen(true);
                           }}
-                          className="h-10 w-full justify-between rounded-[8px] border border-field-border px-3 text-[13px] font-normal text-ink-muted hover:bg-item-hover hover:text-ink"
+                          className="h-8 rounded-[16px] border border-field-border bg-surface px-3 text-[13px] font-normal text-ink-muted hover:bg-[#EFF8F5] hover:text-brand"
                         >
-                          <span>숫자와 단위로 직접 설정</span>
-                          <ChevronRight aria-hidden="true" className="size-4" />
+                          직접 입력
                         </Button>
-                        {reminderError ? (
-                          <p role="alert" className="mt-1.5 text-[12px] leading-4 text-[#B44A4A]">
-                            {reminderError}
-                          </p>
-                        ) : null}
-                      </div>                    </div>
+                      </div>
+                      {reminderError ? (
+                        <p role="alert" className="mt-2 text-[12px] leading-4 text-[#B44A4A]">
+                          {reminderError}
+                        </p>
+                      ) : null}                    </div>
                   </>
                 ) : null}
               </div>
