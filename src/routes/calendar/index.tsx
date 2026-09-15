@@ -441,9 +441,9 @@ function DateRangePicker({
           <button
             type="button"
             onClick={() => {
-              setDraftStart("");
-              setDraftEnd("");
-              onChange("");
+              setDraftStart(startDate);
+              setDraftEnd(endDate);
+              onChange(startDate, endDate || undefined);
               closePicker();
             }}
             className="text-[13px] text-ink-muted hover:text-ink"
