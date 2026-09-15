@@ -937,8 +937,8 @@ function CalendarPage() {
                 >                      {reminderPickerMode === "quick" ? (
                         <>
                           <div className="mb-2 flex items-baseline gap-2">
-                            <p className="text-[16px] font-semibold text-ink">알림 추가</p>
-                            <span className="text-[13px] font-normal text-ink-muted">빠른 알림</span>
+                            <p className="text-[14px] font-semibold text-ink">알림 추가</p>
+                            <span className="text-[14px] font-normal text-ink-muted">빠른 알림</span>
                           </div>
                           <div className="flex flex-wrap items-center gap-1.5">
                             {availableReminderQuickOptions.map((option) => {
@@ -1005,8 +1005,7 @@ function CalendarPage() {
                             >
                               <ChevronLeft aria-hidden="true" className="size-4" />
                             </Button>
-                            <p className="text-[16px] font-semibold text-ink">알림 추가</p>
-                            <span className="ml-2 text-[13px] font-normal text-ink-muted">직접 알림 설정</span>
+                            <p className="text-[14px] font-semibold text-ink">직접 알림 설정</p>
                           </div>
                           <p className="mt-1 text-[12px] text-ink-muted">
                             마감일 기준으로 알림을 설정하세요.
