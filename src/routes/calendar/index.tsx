@@ -958,7 +958,7 @@ function CalendarPage() {
                         </>
                       ) : (
                         <>
-                          <div className="flex items-center gap-1">
+                          <div className="flex items-center gap-0">
                             <Button
                               type="button"
                               variant="ghost"
@@ -968,7 +968,7 @@ function CalendarPage() {
                                 setReminderError("");
                                 setReminderPickerMode("quick");
                               }}
-                              className="size-8 rounded-[8px] text-ink-muted hover:bg-item-hover hover:text-ink"
+                              className="-ml-4 size-8 rounded-[8px] text-ink-muted hover:bg-item-hover hover:text-ink"
                             >
                               <ChevronLeft aria-hidden="true" className="size-4" />
                             </Button>
