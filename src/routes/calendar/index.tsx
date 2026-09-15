@@ -348,7 +348,7 @@ function DateRangePicker({
           <ChevronDown aria-hidden="true" className="size-5 text-ink-muted" />
         </button>
       </PopoverTrigger>
-      <PopoverContent align="start" sideOffset={8} className="w-[320px] rounded-[12px] border-field-border bg-surface p-3 shadow-dropdown">
+      <PopoverContent align="start" sideOffset={8} className="w-[320px] rounded-[12px] border-0 bg-surface p-3 shadow-dropdown">
         <div className="flex items-center">
           <div className="flex rounded-[8px] bg-item-hover p-0.5">
             {(["single", "range"] as const).map((option) => (
