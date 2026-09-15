@@ -768,7 +768,7 @@ function CalendarPage() {
                       src="/assets/header/notification-button.svg"
                       alt=""
                       aria-hidden="true"
-                      className="size-4 object-contain"
+                      className="size-5 object-contain"
                     />
                     알림 추가
                   </Button>
