@@ -270,7 +270,7 @@ export function TimeWheelPicker({
             onChange={(minute) => updateDraft({ ...draft, minute })}
           />
         </div>
-        <div className="mt-2 flex items-center justify-between border-t border-field-border pt-2">
+        <div className="mt-2 flex items-center justify-between border-t border-field-border px-2 pt-2">
           <button
             type="button"
             onClick={() => {
