@@ -1097,7 +1097,7 @@ function CalendarPage() {
                                     setCustomReminderUnit(availableReminderUnits[nextIndex].label);
                                     dismissReminderUnitHint();
                                   }}
-                                  className="h-full w-[72px] shrink-0 border-0 bg-surface px-2 text-center text-[14px] text-ink outline-none disabled:cursor-default"
+                                  className="h-full w-[72px] shrink-0 cursor-pointer border-0 bg-surface px-2 text-center text-[14px] text-ink outline-none disabled:cursor-default"
                                 >
                                   {customReminderUnit}
                                 </button>
