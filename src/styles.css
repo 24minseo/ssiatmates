@@ -77,6 +77,7 @@
   --color-item-hover-selected: var(--item-hover-selected);
   --color-dropdown-hover: var(--dropdown-hover);
   --color-dropdown-selected-hover: var(--dropdown-selected-hover);
+  --color-calendar-journal-hover: var(--calendar-journal-hover);
   --color-menu-hover: var(--menu-hover);
   --color-menu-badge: var(--menu-badge);
   --color-secondary-btn: var(--secondary-btn);
@@ -163,6 +164,7 @@
   --item-hover-selected: #eaf1ec;
   --dropdown-hover: #f6f8f7;
   --dropdown-selected-hover: rgb(234 241 236 / 0.5);
+  --calendar-journal-hover: #f2f7f4;
   --menu-hover: #f1f3f2;
   --menu-badge: #e2ede5;
   --secondary-btn: #f6f8f7;
