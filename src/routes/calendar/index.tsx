@@ -561,13 +561,13 @@ function CalendarPage() {
   }, [calendarDragStart, calendarDragEnd, days]);
   const periodLaneLimitByWeek = useMemo(() => {
     return Array.from({ length: days.length / 7 }, (_, weekIndex) => {
-      const weekPeriodCount = calendarPeriodSegments.filter(
-        (segment) => segment.weekIndex === weekIndex,
-      ).length;
+      const weekPeriodLaneCount = calendarPeriodSegments
+        .filter((segment) => segment.weekIndex === weekIndex)
+        .reduce((maxLane, segment) => Math.max(maxLane, segment.lane + 1), 0);
 
       // Reserve the overflow row as soon as the maximum period lanes are reached,
       // so adding another event does not move already-rendered bars downward.
-      return weekPeriodCount >= CALENDAR_VISIBLE_EVENT_ROWS
+      return weekPeriodLaneCount >= CALENDAR_VISIBLE_EVENT_ROWS
         ? CALENDAR_VISIBLE_EVENT_ROWS - 1
         : CALENDAR_VISIBLE_EVENT_ROWS;
     });
