@@ -1055,7 +1055,7 @@ function CalendarPage() {
                               type="button"
                               disabled={!customReminderAmount}
                               onClick={addCustomReminder}
-                              className="h-full w-[64px] shrink-0 rounded-none border-l border-field-border bg-surface px-2 text-[14px] font-semibold text-brand shadow-none hover:bg-item-hover hover:text-brand disabled:bg-surface disabled:text-control-inactive disabled:opacity-100"
+                              className="h-full w-[64px] shrink-0 rounded-none border-l border-field-border bg-brand px-2 text-[14px] font-semibold text-brand-foreground shadow-none hover:bg-brand/88 disabled:bg-brand-disabled disabled:text-brand-foreground disabled:opacity-100"
                             >
                               추가
                             </Button>
