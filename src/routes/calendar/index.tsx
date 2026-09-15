@@ -451,16 +451,20 @@ function DateRangePicker({
                   onPointerUp={() => handleDayPointerUp(day.key)}
                   onClick={() => handleDayClick(day.key)}
                   className={cn(
-                    "relative z-10 flex size-10 items-center justify-center rounded-[10px] text-[15px] font-normal transition-colors",
+                    "group relative z-10 flex size-10 items-center justify-center rounded-[10px] text-[15px] font-normal",
                     !day.isCurrentMonth && !isEndpoint && "text-content-disabled",
-                    day.isCurrentMonth && !inRange && !isEndpoint && "text-ink-muted hover:bg-pill",
+                    day.isCurrentMonth && !inRange && !isEndpoint && "text-ink-muted",
                     inRange && !isEndpoint && "text-ink-muted",
                     isEndpoint && "font-semibold text-white",
                   )}
                 >
                   <span
                     className={cn(
-                      "flex items-center justify-center",
+                      "flex items-center justify-center transition-colors",
+                      day.isCurrentMonth &&
+                        !inRange &&
+                        !isEndpoint &&
+                        "size-8 rounded-[8px] group-hover:bg-pill",
                       isEndpoint &&
                         "size-8 rounded-[8px] bg-brand text-white",
                     )}
