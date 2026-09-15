@@ -21,6 +21,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LayeredTextarea } from "@/components/ui/layered-textarea";
@@ -66,6 +67,7 @@ type ChecklistItem = {
 type ChecklistDropPosition = "before" | "after";
 
 const REMINDER_MAX_ITEMS = 4;
+const REMINDER_UNIT_HINT_STORAGE_KEY = "growth-step-register.reminder-unit-hint-seen";
 const REMINDER_QUICK_OPTIONS = [
   { label: "10분 전", minutes: 10 },
   { label: "1시간 전", minutes: 60 },
@@ -174,6 +176,15 @@ function CalendarPage() {
   const [customReminderAmount, setCustomReminderAmount] = useState("");
   const [customReminderUnit, setCustomReminderUnit] = useState<ReminderUnit>("분");
   const [reminderError, setReminderError] = useState("");
+  const [reminderUnitHintOpen, setReminderUnitHintOpen] = useState(false);
+  const [reminderUnitHintSeen, setReminderUnitHintSeen] = useState(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      return window.localStorage.getItem(REMINDER_UNIT_HINT_STORAGE_KEY) === "true";
+    } catch {
+      return false;
+    }
+  });
 
   const today = useMemo(() => new Date(), []);
   const todayKey = toDateKey(today);
@@ -323,6 +334,16 @@ function CalendarPage() {
 
   const removeReminder = (label: string) => {
     setReminders((current) => current.filter((reminder) => reminder !== label));
+  };
+
+  const dismissReminderUnitHint = () => {
+    setReminderUnitHintSeen(true);
+    setReminderUnitHintOpen(false);
+    try {
+      window.localStorage.setItem(REMINDER_UNIT_HINT_STORAGE_KEY, "true");
+    } catch {
+      // Ignore storage failures and keep the hint dismissed for this session.
+    }
   };
 
   const closeReminderPicker = () => {
@@ -1039,25 +1060,66 @@ function CalendarPage() {
                               className="h-full min-w-0 flex-1 rounded-none border-0 px-3 text-[14px] text-ink shadow-none placeholder:text-guide-text focus-visible:border-0 focus-visible:ring-0"
                             />
                             <span aria-hidden="true" className="h-full w-px shrink-0 bg-field-border" />
-                            <button
-                              type="button"
-                              disabled={availableReminderUnits.length <= 1}
-                              aria-label={`알림 시간 단위: ${customReminderUnit}. 클릭하여 변경`}
-                              onClick={() => {
-                                if (availableReminderUnits.length <= 1) return;
-                                const currentIndex = availableReminderUnits.findIndex(
-                                  (unit) => unit.label === customReminderUnit,
-                                );
-                                const nextIndex =
-                                  currentIndex === -1
-                                    ? 0
-                                    : (currentIndex + 1) % availableReminderUnits.length;
-                                setCustomReminderUnit(availableReminderUnits[nextIndex].label);
+                            <Tooltip
+                              open={
+                                availableReminderUnits.length > 1 &&
+                                !reminderUnitHintSeen &&
+                                reminderUnitHintOpen
+                              }
+                              onOpenChange={(open) => {
+                                if (!reminderUnitHintSeen) setReminderUnitHintOpen(open);
                               }}
-                              className="h-full w-[72px] shrink-0 border-0 bg-surface px-2 text-center text-[14px] text-ink outline-none disabled:cursor-default"
                             >
-                              {customReminderUnit}
-                            </button>
+                              <TooltipTrigger asChild>
+                                <button
+                                  type="button"
+                                  disabled={availableReminderUnits.length <= 1}
+                                  aria-label={`알림 시간 단위: ${customReminderUnit}. 클릭하여 변경`}
+                                  onPointerEnter={() => {
+                                    if (
+                                      availableReminderUnits.length > 1 &&
+                                      !reminderUnitHintSeen
+                                    ) {
+                                      setReminderUnitHintOpen(true);
+                                    }
+                                  }}
+                                  onPointerLeave={() => setReminderUnitHintOpen(false)}
+                                  onFocus={() => {
+                                    if (
+                                      availableReminderUnits.length > 1 &&
+                                      !reminderUnitHintSeen
+                                    ) {
+                                      setReminderUnitHintOpen(true);
+                                    }
+                                  }}
+                                  onBlur={() => setReminderUnitHintOpen(false)}
+                                  onClick={() => {
+                                    if (availableReminderUnits.length <= 1) return;
+                                    const currentIndex = availableReminderUnits.findIndex(
+                                      (unit) => unit.label === customReminderUnit,
+                                    );
+                                    const nextIndex =
+                                      currentIndex === -1
+                                        ? 0
+                                        : (currentIndex + 1) % availableReminderUnits.length;
+                                    setCustomReminderUnit(availableReminderUnits[nextIndex].label);
+                                    dismissReminderUnitHint();
+                                  }}
+                                  className="h-full w-[72px] shrink-0 border-0 bg-surface px-2 text-center text-[14px] text-ink outline-none disabled:cursor-default"
+                                >
+                                  {customReminderUnit}
+                                </button>
+                              </TooltipTrigger>
+                              {availableReminderUnits.length > 1 ? (
+                                <TooltipContent
+                                  side="top"
+                                  sideOffset={6}
+                                  className="rounded-[6px] bg-[#434343] px-2 py-1.5 text-[12px] font-medium leading-[18px] text-white shadow-none"
+                                >
+                                  클릭으로 전환
+                                </TooltipContent>
+                              ) : null}
+                            </Tooltip>
                             <span className="flex h-full w-9 shrink-0 items-center justify-center bg-item-hover text-[14px] text-icon-muted">
                               전
                             </span>
