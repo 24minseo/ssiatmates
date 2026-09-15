@@ -163,25 +163,26 @@ function TimeWheel({
           const selected = option === value;
 
           return (
-            <button
-              key={option}
-              type="button"
-              role="option"
-              aria-selected={selected}
-              tabIndex={-1}
-              onClick={() => {
-                onChange(option);
-                scrollToValue(option);
-              }}
-              className={cn(
-                "flex h-9 w-full snap-center items-center justify-center rounded-[8px] text-[14px] transition-colors",
-                selected
-                  ? "bg-item-hover-selected font-semibold text-brand"
-                  : "font-normal text-ink-muted hover:bg-item-hover",
-              )}
-            >
-              {option}
-            </button>
+            <div key={option} className="flex h-9 snap-center items-center">
+              <button
+                type="button"
+                role="option"
+                aria-selected={selected}
+                tabIndex={-1}
+                onClick={() => {
+                  onChange(option);
+                  scrollToValue(option);
+                }}
+                className={cn(
+                  "flex h-[34px] w-full items-center justify-center rounded-[8px] text-[14px] transition-colors",
+                  selected
+                    ? "bg-item-hover-selected font-semibold text-brand"
+                    : "font-normal text-ink-muted hover:bg-item-hover",
+                )}
+              >
+                {option}
+              </button>
+            </div>
           );
         })}
       </div>
