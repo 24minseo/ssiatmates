@@ -1087,7 +1087,9 @@ function CalendarPage() {
                   (calendarEvent) =>
                     !calendarEvent.endDate || calendarEvent.endDate === calendarEvent.date,
                 );
-                const hiddenSingleCount = Math.max(0, singleDayEvents.length - 2);
+                const periodLaneCount = periodLaneCountByDate[day.key] ?? 0;
+                const visibleSingleCount = Math.min(2, Math.max(0, 3 - periodLaneCount));
+                const hiddenSingleCount = Math.max(0, singleDayEvents.length - visibleSingleCount);
 
                 return (
                   <div
@@ -1148,7 +1150,7 @@ function CalendarPage() {
                             : undefined
                         }
                       >
-                        {singleDayEvents.slice(0, 2).map((calendarEvent) => (
+                        {singleDayEvents.slice(0, visibleSingleCount).map((calendarEvent) => (
                           <button
                             key={calendarEvent.id}
                             type="button"
