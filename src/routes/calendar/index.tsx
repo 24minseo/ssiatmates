@@ -104,6 +104,16 @@ type CalendarDay = {
   isCurrentMonth: boolean;
 };
 
+type CalendarPeriodSegment = {
+  event: CalendarEvent;
+  weekIndex: number;
+  startColumn: number;
+  span: number;
+  lane: number;
+  isStart: boolean;
+  isEnd: boolean;
+};
+
 const DAYS_OF_WEEK = ["일", "월", "화", "수", "목", "금", "토"] as const;
 const CHECKLIST_MAX_ITEMS = 10;
 const CHECKLIST_ITEM_MAX_LENGTH = 80;
@@ -134,6 +144,62 @@ function getEventDurationDays(event: CalendarEvent) {
   const start = new Date(`${event.date}T00:00:00`);
   const end = new Date(`${event.endDate ?? event.date}T00:00:00`);
   return Math.max(1, Math.round((end.getTime() - start.getTime()) / 86_400_000) + 1);
+}
+
+
+function buildCalendarPeriodSegments(events: CalendarEvent[], days: CalendarDay[]): CalendarPeriodSegment[] {
+  const segments: CalendarPeriodSegment[] = [];
+  const weekCount = days.length / 7;
+
+  for (let weekIndex = 0; weekIndex < weekCount; weekIndex += 1) {
+    const weekDays = days.slice(weekIndex * 7, weekIndex * 7 + 7);
+    const weekStart = weekDays[0].key;
+    const weekEnd = weekDays[6].key;
+    const lanes: Array<Array<{ start: number; end: number }>> = [];
+    const weekEvents = events
+      .filter((event) => {
+        const endDate = event.endDate ?? event.date;
+        return endDate > event.date && event.date <= weekEnd && endDate >= weekStart;
+      })
+      .sort(
+        (a, b) =>
+          getEventDurationDays(b) - getEventDurationDays(a) ||
+          a.date.localeCompare(b.date) ||
+          a.id - b.id,
+      );
+
+    for (const event of weekEvents) {
+      const endDate = event.endDate ?? event.date;
+      const segmentStart = event.date > weekStart ? event.date : weekStart;
+      const segmentEnd = endDate < weekEnd ? endDate : weekEnd;
+      const startColumn = weekDays.findIndex((day) => day.key === segmentStart);
+      const endColumn = weekDays.findIndex((day) => day.key === segmentEnd);
+      if (startColumn === -1 || endColumn === -1) continue;
+
+      const lane = lanes.findIndex((intervals) =>
+        intervals.every(
+          (interval) => endColumn < interval.start || startColumn > interval.end,
+        ),
+      );
+      if (lane === -1) {
+        lanes.push([{ start: startColumn, end: endColumn }]);
+      } else {
+        lanes[lane].push({ start: startColumn, end: endColumn });
+      }
+
+      segments.push({
+        event,
+        weekIndex,
+        startColumn,
+        span: endColumn - startColumn + 1,
+        lane: lane === -1 ? lanes.length - 1 : lane,
+        isStart: event.date === segmentStart,
+        isEnd: endDate === segmentEnd,
+      });
+    }
+  }
+
+  return segments;
 }
 
 function buildCalendarDays(year: number, month: number): CalendarDay[] {
@@ -473,6 +539,35 @@ function CalendarPage() {
     () => [...events].sort((a, b) => a.date.localeCompare(b.date)),
     [events],
   );
+  const calendarPeriodSegments = useMemo(
+    () => buildCalendarPeriodSegments(events, days),
+    [events, days],
+  );
+  const calendarDragSegments = useMemo(() => {
+    if (!calendarDragStart || !calendarDragEnd) return [];
+    const [startDate, endDate] = [calendarDragStart, calendarDragEnd].sort();
+    return buildCalendarPeriodSegments(
+      [{
+        id: -1,
+        title: "(제목 없음)",
+        date: startDate,
+        endDate,
+        description: "",
+      }],
+      days,
+    );
+  }, [calendarDragStart, calendarDragEnd, days]);
+  const periodLaneCountByDate = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const segment of calendarPeriodSegments) {
+      for (let column = segment.startColumn; column < segment.startColumn + segment.span; column += 1) {
+        const day = days[segment.weekIndex * 7 + column];
+        if (!day) continue;
+        counts[day.key] = Math.max(counts[day.key] ?? 0, segment.lane + 1);
+      }
+    }
+    return counts;
+  }, [calendarPeriodSegments, days]);
   const draggingChecklistItem = checklistItems.find((item) => item.id === draggingChecklistId) ?? null;
   const availableReminderQuickOptions = eventStartTime
     ? REMINDER_QUICK_OPTIONS
