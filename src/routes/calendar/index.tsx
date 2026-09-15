@@ -881,7 +881,7 @@ function CalendarPage() {
                   reminders.map((reminder) => (
                     <span
                       key={reminder}
-                      className="flex h-9 items-center gap-1.5 rounded-[18px] bg-pill pl-4 pr-2 text-[14px] font-semibold text-pill-foreground"
+                      className="flex h-9 items-center gap-1 rounded-[18px] bg-pill pl-4 pr-2 text-[14px] font-semibold text-pill-foreground"
                     >
                       {reminder}
                       <button
