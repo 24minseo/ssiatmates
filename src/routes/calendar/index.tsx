@@ -67,7 +67,6 @@ type ChecklistItem = {
 type ChecklistDropPosition = "before" | "after";
 
 const REMINDER_MAX_ITEMS = 4;
-const REMINDER_UNIT_HINT_STORAGE_KEY = "growth-step-register.reminder-unit-hint-seen";
 const REMINDER_QUICK_OPTIONS = [
   { label: "10분 전", minutes: 10 },
   { label: "1시간 전", minutes: 60 },
@@ -177,14 +176,7 @@ function CalendarPage() {
   const [customReminderUnit, setCustomReminderUnit] = useState<ReminderUnit>("분");
   const [reminderError, setReminderError] = useState("");
   const [reminderUnitHintOpen, setReminderUnitHintOpen] = useState(false);
-  const [reminderUnitHintSeen, setReminderUnitHintSeen] = useState(() => {
-    if (typeof window === "undefined") return false;
-    try {
-      return window.localStorage.getItem(REMINDER_UNIT_HINT_STORAGE_KEY) === "true";
-    } catch {
-      return false;
-    }
-  });
+  const [reminderUnitHintSeen, setReminderUnitHintSeen] = useState(false);
 
   const today = useMemo(() => new Date(), []);
   const todayKey = toDateKey(today);
@@ -339,11 +331,6 @@ function CalendarPage() {
   const dismissReminderUnitHint = () => {
     setReminderUnitHintSeen(true);
     setReminderUnitHintOpen(false);
-    try {
-      window.localStorage.setItem(REMINDER_UNIT_HINT_STORAGE_KEY, "true");
-    } catch {
-      // Ignore storage failures and keep the hint dismissed for this session.
-    }
   };
 
   const closeReminderPicker = () => {
