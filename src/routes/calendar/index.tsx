@@ -25,6 +25,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LayeredTextarea } from "@/components/ui/layered-textarea";
+import { TimeWheelPicker } from "@/components/ui/time-wheel-picker";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/calendar/")({
@@ -1442,34 +1443,14 @@ function CalendarPage() {
               </div>
               <div className="grid gap-1">
                 <Label htmlFor="todo-time" className="text-sm font-semibold text-ink">시작 시간</Label>
-                <div className="relative">
-                  <Input
-                    id="todo-time"
-                    type="time"
-                    value={eventStartTime}
-                    onChange={(event) => {
-                      const nextTime = event.target.value;
-                      setEventStartTime(nextTime);
-                      if (!nextTime) setCustomReminderUnit("일");
-                    }}
-                    placeholder="시작 시간 선택"
-                    className={cn(
-                      "h-12 rounded-[12px] border-field-border px-3.5 pr-10 text-[15px] md:text-[15px] text-ink shadow-none focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0",
-                      !eventStartTime && "text-transparent placeholder:text-transparent caret-[#1F8064]",
-                    )}
-                  />
-                  {!eventStartTime ? (
-                    <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[15px] text-guide-text">
-                      시작 시간 선택
-                    </span>
-                  ) : null}
-                  <img
-                    src="/assets/clock/21.svg"
-                    alt=""
-                    aria-hidden="true"
-                    className="pointer-events-none absolute right-3.5 top-1/2 size-5 -translate-y-1/2 object-contain"
-                  />
-                </div>
+                <TimeWheelPicker
+                  id="todo-time"
+                  value={eventStartTime}
+                  onChange={(nextTime) => {
+                    setEventStartTime(nextTime);
+                    if (!nextTime) setCustomReminderUnit("일");
+                  }}
+                />
               </div>
             </div>
 
