@@ -10,6 +10,7 @@ import {
   Pencil,
   Plus,
   Trash2,
+  X,
 } from "lucide-react";
 import { useMemo, useState, type PointerEvent as ReactPointerEvent } from "react";
 
@@ -59,6 +60,10 @@ type ChecklistItem = {
 
 type ChecklistDropPosition = "before" | "after";
 
+const REMINDER_MAX_ITEMS = 4;
+const REMINDER_CUSTOM_MAX_LENGTH = 20;
+const REMINDER_QUICK_OPTIONS = ["10분 전", "1시간 전", "1일 전"] as const;
+
 type CalendarEvent = {
   id: number;
   title: string;
@@ -67,7 +72,7 @@ type CalendarEvent = {
   contentMode?: ContentMode;
   checklistItems?: ChecklistItem[];
   startTime?: string;
-  reminder?: boolean;
+  reminders?: string[];
 };
 
 type CalendarDay = {
@@ -143,7 +148,9 @@ function CalendarPage() {
   const [checklistHandleVisible, setChecklistHandleVisible] = useState(false);
   const [checklistGhostTop, setChecklistGhostTop] = useState<number | null>(null);
   const [eventStartTime, setEventStartTime] = useState("");
-  const [hasReminder, setHasReminder] = useState(false);
+  const [reminders, setReminders] = useState<string[]>([]);
+  const [reminderPickerOpen, setReminderPickerOpen] = useState(false);
+  const [customReminder, setCustomReminder] = useState("");
 
   const today = useMemo(() => new Date(), []);
   const todayKey = toDateKey(today);
@@ -179,7 +186,9 @@ function CalendarPage() {
     setChecklistItems([]);
     setFocusedChecklistId(null);
     setEventStartTime("");
-    setHasReminder(false);
+    setReminders([]);
+    setReminderPickerOpen(false);
+    setCustomReminder("");
     setEventDate(dateKey ?? selectedDate ?? todayKey);
     setIsAddOpen(true);
   };
@@ -199,7 +208,9 @@ function CalendarPage() {
     );
     setFocusedChecklistId(null);
     setEventStartTime(selectedEvent.startTime ?? "");
-    setHasReminder(selectedEvent.reminder ?? false);
+    setReminders(selectedEvent.reminders ?? []);
+    setReminderPickerOpen(false);
+    setCustomReminder("");
     setSelectedEvent(null);
     setIsAddOpen(true);
   };
@@ -208,6 +219,24 @@ function CalendarPage() {
     if (!selectedEvent) return;
     setEvents((current) => current.filter((calendarEvent) => calendarEvent.id !== selectedEvent.id));
     setSelectedEvent(null);
+  };
+
+  const addReminder = (label: string) => {
+    const trimmed = label.trim();
+    if (!trimmed) return;
+    setReminders((current) => {
+      if (current.length >= REMINDER_MAX_ITEMS || current.includes(trimmed)) return current;
+      return [...current, trimmed];
+    });
+  };
+
+  const addCustomReminder = () => {
+    addReminder(customReminder);
+    setCustomReminder("");
+  };
+
+  const removeReminder = (label: string) => {
+    setReminders((current) => current.filter((reminder) => reminder !== label));
   };
 
   const createChecklistItem = (): ChecklistItem => ({
@@ -299,7 +328,7 @@ function CalendarPage() {
         }))
         .filter((item) => item.text.length > 0),
       ...(eventStartTime ? { startTime: eventStartTime } : {}),
-      reminder: hasReminder,
+      ...(reminders.length ? { reminders } : {}),
     };
     setEvents((current) => {
       if (editingEventId === null) return [...current, nextEvent];
@@ -364,7 +393,7 @@ function CalendarPage() {
         return;
       }
 
-      targetId = Number(targetRow.dataset.checklistId);
+      targetId = Number(targetRow.dataset["checklistId"]);
       const bounds = targetRow.getBoundingClientRect();
       targetPosition = clientY < bounds.top + bounds.height / 2 ? "before" : "after";
       setDragOverChecklistId(targetId);
@@ -705,25 +734,107 @@ function CalendarPage() {
 
             <fieldset className="mt-[18px]">
               <legend className="text-sm font-semibold text-ink">알림</legend>
-              <div className="mt-2 flex h-9 items-center gap-1.5">
-                <span
-                  className={cn(
-                    "flex h-9 items-center gap-1.5 rounded-[18px] bg-item-hover px-4 text-[14px] font-normal",
-                    hasReminder ? "text-icon-muted" : "text-ink-muted",
-                  )}
-                >
-                  {hasReminder ? <Bell aria-hidden="true" className="size-3.5" /> : null}
-                  {hasReminder ? "10분 전" : "알림 없음"}
-                </span>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => setHasReminder((current) => !current)}
-                  className="h-9 rounded-[8px] px-2 text-[14px] font-normal text-ink-muted hover:bg-item-hover hover:text-ink"
-                >
-                  <Plus aria-hidden="true" className="size-4" />
-                  {hasReminder ? "알림 제거" : "알림 추가"}
-                </Button>
+              <div className="relative mt-2 flex min-h-9 flex-wrap items-center gap-1.5">
+                {reminders.length === 0 ? (
+                  <span className="flex h-9 items-center rounded-[18px] bg-item-hover px-4 text-[14px] font-normal text-ink-muted">
+                    알림 없음
+                  </span>
+                ) : (
+                  reminders.map((reminder) => (
+                    <span
+                      key={reminder}
+                      className="flex h-9 items-center gap-1.5 rounded-[18px] bg-item-hover pl-4 pr-2 text-[14px] font-normal text-icon-muted"
+                    >
+                      <Bell aria-hidden="true" className="size-3.5" />
+                      {reminder}
+                      <button
+                        type="button"
+                        aria-label={`${reminder} 알림 삭제`}
+                        onClick={() => removeReminder(reminder)}
+                        className="flex size-5 items-center justify-center rounded-full text-ink-muted transition-colors duration-150 ease-out hover:bg-surface hover:text-ink motion-reduce:transition-none"
+                      >
+                        <X aria-hidden="true" className="size-3.5" />
+                      </button>
+                    </span>
+                  ))
+                )}
+                {reminders.length < REMINDER_MAX_ITEMS ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    aria-expanded={reminderPickerOpen}
+                    onClick={() => setReminderPickerOpen((current) => !current)}
+                    className="h-9 rounded-[8px] px-2 text-[14px] font-normal text-ink-muted hover:bg-item-hover hover:text-ink"
+                  >
+                    <Plus aria-hidden="true" className="size-4" />
+                    알림 추가
+                  </Button>
+                ) : null}
+                {reminderPickerOpen && reminders.length < REMINDER_MAX_ITEMS ? (
+                  <>
+                    <button
+                      type="button"
+                      aria-label="알림 선택 닫기"
+                      tabIndex={-1}
+                      onClick={() => setReminderPickerOpen(false)}
+                      className="fixed inset-0 z-10 cursor-default"
+                    />
+                    <div
+                      role="group"
+                      aria-label="알림 시간 선택"
+                      className="absolute left-0 top-full z-20 mt-2 w-[288px] rounded-[12px] border border-field-border bg-surface p-3 shadow-dropdown"
+                    >
+                      <div className="flex flex-wrap gap-1.5">
+                        {REMINDER_QUICK_OPTIONS.map((option) => {
+                          const added = reminders.includes(option);
+                          return (
+                            <button
+                              key={option}
+                              type="button"
+                              disabled={added}
+                              onClick={() => addReminder(option)}
+                              className={cn(
+                                "flex h-8 items-center rounded-[16px] px-3 text-[13px] font-normal transition-colors duration-150 ease-out motion-reduce:transition-none",
+                                added
+                                  ? "cursor-default bg-pill font-semibold text-pill-foreground"
+                                  : "bg-item-hover text-ink-muted hover:bg-item-hover-selected hover:text-brand",
+                              )}
+                            >
+                              {added ? <Check aria-hidden="true" className="mr-1 size-3.5" /> : null}
+                              {option}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <div className="mt-2 flex items-center gap-1.5">
+                        <Input
+                          value={customReminder}
+                          onChange={(event) =>
+                            setCustomReminder(event.target.value.slice(0, REMINDER_CUSTOM_MAX_LENGTH))
+                          }
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter") {
+                              event.preventDefault();
+                              addCustomReminder();
+                            }
+                          }}
+                          placeholder="직접 입력 (예: 30분 전)"
+                          aria-label="알림 시간 직접 입력"
+                          className="h-9 rounded-[8px] border-field-border px-3 text-[13px] md:text-[13px] text-ink shadow-none placeholder:text-guide-text focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          onClick={addCustomReminder}
+                          disabled={!customReminder.trim()}
+                          className="h-9 shrink-0 rounded-[8px] px-3 text-[13px] font-semibold text-brand hover:bg-item-hover-selected hover:text-brand disabled:opacity-40"
+                        >
+                          추가
+                        </Button>
+                      </div>
+                    </div>
+                  </>
+                ) : null}
               </div>
             </fieldset>
 
