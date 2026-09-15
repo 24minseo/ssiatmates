@@ -1254,6 +1254,14 @@ function CalendarPage() {
                             className="mt-1.5 size-[18px] shrink-0 rounded-[5px] border-field-border [&_svg]:size-3 data-[state=checked]:border-brand data-[state=checked]:bg-brand data-[state=checked]:text-brand-foreground"
                           />
                           <div className="relative min-w-0 flex-1">
+                            {!item.text ? (
+                              <span
+                                aria-hidden="true"
+                                className="pointer-events-none absolute left-0 top-1 z-0 truncate text-[15px] leading-5 text-guide-text"
+                              >
+                                항목 {index + 1}
+                              </span>
+                            ) : null}
                             <Textarea
                               value={item.text}
                               rows={1}
@@ -1272,9 +1280,9 @@ function CalendarPage() {
                                 addChecklistItemAfter(item.id);
                               }}
                               onChange={(event) => updateChecklistItem(item.id, event.target.value)}
-                              placeholder={`항목 ${index + 1}`}
+                              placeholder=""
                               className={cn(
-                                "h-8 !min-h-8 max-h-16 resize-none overflow-y-auto rounded-none border border-transparent bg-transparent px-0 py-1 text-[15px] md:text-[15px] leading-5 text-ink shadow-none placeholder:text-guide-text focus-visible:border-transparent focus-visible:bg-transparent focus-visible:ring-0 focus-visible:ring-focus-soft",
+                                "relative z-10 h-8 !min-h-8 max-h-16 resize-none overflow-y-auto rounded-none border border-transparent bg-transparent px-0 py-1 text-[15px] md:text-[15px] leading-5 text-ink shadow-none placeholder:text-guide-text focus-visible:border-transparent focus-visible:bg-transparent focus-visible:ring-0 focus-visible:ring-focus-soft",
                                 item.completed && "text-icon-muted line-through",
                               )}
                             />
