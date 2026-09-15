@@ -1011,9 +1011,6 @@ function CalendarPage() {
                             </Button>
                             <p className="text-[14px] font-semibold text-ink">직접 알림 설정</p>
                           </div>
-                          <p className="mt-1 text-[12px] text-ink-muted">
-                            마감일 기준으로 알림을 설정하세요.
-                          </p>
                           <div className="mt-3 flex h-11 items-center gap-2">
                             <div className="flex min-w-0 flex-1 items-center overflow-hidden rounded-[8px] border border-field-border bg-surface transition-colors focus-within:border-brand">
                             <Input
