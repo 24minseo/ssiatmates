@@ -82,7 +82,7 @@ export function MultiSelectDropdown({
               {value.map((item) => (
                 <span
                   key={item}
-                  className="inline-flex h-7 items-center gap-1 rounded-full border-0 bg-[#F5F5F5] pl-2.5 pr-[7px] text-xs text-ink"
+                  className="inline-flex h-7 items-center gap-1 rounded-full border-0 bg-item-hover pl-2.5 pr-[7px] text-xs text-ink"
                 >
                   <span>{item}</span>
                   <span
