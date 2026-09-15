@@ -10,6 +10,7 @@ import {
   Pencil,
   Plus,
   Trash2,
+  X,
 } from "lucide-react";
 import { useMemo, useState, type PointerEvent as ReactPointerEvent } from "react";
 
@@ -67,7 +68,7 @@ type CalendarEvent = {
   contentMode?: ContentMode;
   checklistItems?: ChecklistItem[];
   startTime?: string;
-  reminder?: boolean;
+  reminders?: string[];
 };
 
 type CalendarDay = {
@@ -143,7 +144,9 @@ function CalendarPage() {
   const [checklistHandleVisible, setChecklistHandleVisible] = useState(false);
   const [checklistGhostTop, setChecklistGhostTop] = useState<number | null>(null);
   const [eventStartTime, setEventStartTime] = useState("");
-  const [hasReminder, setHasReminder] = useState(false);
+  const [reminders, setReminders] = useState<string[]>([]);
+  const [reminderPickerOpen, setReminderPickerOpen] = useState(false);
+  const [customReminder, setCustomReminder] = useState("");
 
   const today = useMemo(() => new Date(), []);
   const todayKey = toDateKey(today);
@@ -179,7 +182,9 @@ function CalendarPage() {
     setChecklistItems([]);
     setFocusedChecklistId(null);
     setEventStartTime("");
-    setHasReminder(false);
+    setReminders([]);
+    setReminderPickerOpen(false);
+    setCustomReminder("");
     setEventDate(dateKey ?? selectedDate ?? todayKey);
     setIsAddOpen(true);
   };
@@ -199,7 +204,9 @@ function CalendarPage() {
     );
     setFocusedChecklistId(null);
     setEventStartTime(selectedEvent.startTime ?? "");
-    setHasReminder(selectedEvent.reminder ?? false);
+    setReminders(selectedEvent.reminders ?? []);
+    setReminderPickerOpen(false);
+    setCustomReminder("");
     setSelectedEvent(null);
     setIsAddOpen(true);
   };
@@ -299,7 +306,7 @@ function CalendarPage() {
         }))
         .filter((item) => item.text.length > 0),
       ...(eventStartTime ? { startTime: eventStartTime } : {}),
-      reminder: hasReminder,
+      ...(reminders.length ? { reminders } : {}),
     };
     setEvents((current) => {
       if (editingEventId === null) return [...current, nextEvent];
