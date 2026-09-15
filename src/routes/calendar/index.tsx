@@ -940,7 +940,7 @@ function CalendarPage() {
                             <p className="text-[14px] font-semibold text-ink">알림 추가</p>
                             <span className="text-[14px] font-normal text-ink-muted">빠른 알림</span>
                           </div>
-                          <div className="flex flex-wrap items-center gap-1.5">
+                          <div className="flex w-full flex-wrap items-center justify-between gap-1.5">
                             {availableReminderQuickOptions.map((option) => {
                               const added = reminders.includes(option.label);
                               return (
