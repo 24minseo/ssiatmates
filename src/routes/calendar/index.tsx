@@ -705,7 +705,7 @@ function CalendarPage() {
                   </div>
 
                   {dayEvents.length > 0 ? (
-                    <div className="mt-1.5 flex min-w-0 flex-col gap-px">
+                    <div className="mt-1.5 flex min-w-0 flex-col gap-0.5">
                       {dayEvents.slice(0, 2).map((calendarEvent) => (
                         <button
                           key={calendarEvent.id}
