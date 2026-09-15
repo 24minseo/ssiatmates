@@ -60,6 +60,10 @@ type ChecklistItem = {
 
 type ChecklistDropPosition = "before" | "after";
 
+const REMINDER_MAX_ITEMS = 4;
+const REMINDER_CUSTOM_MAX_LENGTH = 20;
+const REMINDER_QUICK_OPTIONS = ["10분 전", "1시간 전", "1일 전"] as const;
+
 type CalendarEvent = {
   id: number;
   title: string;
@@ -215,6 +219,24 @@ function CalendarPage() {
     if (!selectedEvent) return;
     setEvents((current) => current.filter((calendarEvent) => calendarEvent.id !== selectedEvent.id));
     setSelectedEvent(null);
+  };
+
+  const addReminder = (label: string) => {
+    const trimmed = label.trim();
+    if (!trimmed) return;
+    setReminders((current) => {
+      if (current.length >= REMINDER_MAX_ITEMS || current.includes(trimmed)) return current;
+      return [...current, trimmed];
+    });
+  };
+
+  const addCustomReminder = () => {
+    addReminder(customReminder);
+    setCustomReminder("");
+  };
+
+  const removeReminder = (label: string) => {
+    setReminders((current) => current.filter((reminder) => reminder !== label));
   };
 
   const createChecklistItem = (): ChecklistItem => ({
