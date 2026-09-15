@@ -935,7 +935,7 @@ function CalendarPage() {
                                 setReminderError("");
                                 setReminderPickerMode("custom");
                               }}
-                              className="h-8 rounded-[16px] border border-field-border bg-surface px-3 text-[13px] font-normal text-ink-muted hover:bg-[#EFF8F5] hover:text-brand"
+                              className="h-8 rounded-[16px] border border-field-border bg-surface px-3 text-[13px] font-normal text-ink-muted hover:bg-item-hover hover:text-ink-muted"
                             >
                               직접 입력
                             </Button>
