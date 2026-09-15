@@ -117,7 +117,6 @@ type CalendarPeriodSegment = {
 const DAYS_OF_WEEK = ["일", "월", "화", "수", "목", "금", "토"] as const;
 const CHECKLIST_MAX_ITEMS = 10;
 const CHECKLIST_ITEM_MAX_LENGTH = 80;
-const CALENDAR_VISIBLE_EVENT_ROWS = 3;
 
 function resizeChecklistTextarea(element: HTMLTextAreaElement) {
   element.style.height = "32px";
@@ -523,6 +522,7 @@ function CalendarPage() {
   const year = visibleMonth.getFullYear();
   const month = visibleMonth.getMonth();
   const days = useMemo(() => buildCalendarDays(year, month), [year, month]);
+  const calendarVisibleEventRows = days.length === 35 ? 4 : 3;
   const eventsByDate = useMemo(() => {
     return events.reduce<Record<string, CalendarEvent[]>>((grouped, event) => {
       const start = event.date;
@@ -565,25 +565,34 @@ function CalendarPage() {
         .filter((segment) => segment.weekIndex === weekIndex)
         .reduce((maxLane, segment) => Math.max(maxLane, segment.lane + 1), 0);
 
-      // Reserve the overflow row as soon as the maximum period lanes are reached,
-      // so adding another event does not move already-rendered bars downward.
-      return weekPeriodLaneCount >= CALENDAR_VISIBLE_EVENT_ROWS
-        ? CALENDAR_VISIBLE_EVENT_ROWS - 1
-        : CALENDAR_VISIBLE_EVENT_ROWS;
+      const hasSingleDayEvent = days
+        .slice(weekIndex * 7, weekIndex * 7 + 7)
+        .some((day) =>
+          (eventsByDate[day.key] ?? []).some(
+            (event) => !event.endDate || event.endDate === event.date,
+          ),
+        );
+      const needsOverflowRow =
+        weekPeriodLaneCount > calendarVisibleEventRows ||
+        (weekPeriodLaneCount === calendarVisibleEventRows && hasSingleDayEvent);
+
+      return needsOverflowRow
+        ? calendarVisibleEventRows - 1
+        : calendarVisibleEventRows;
     });
-  }, [calendarPeriodSegments, days]);
+  }, [calendarPeriodSegments, calendarVisibleEventRows, days, eventsByDate]);
   const visibleCalendarPeriodSegments = useMemo(
     () =>
       calendarPeriodSegments.filter(
         (segment) =>
-          segment.lane < (periodLaneLimitByWeek[segment.weekIndex] ?? CALENDAR_VISIBLE_EVENT_ROWS),
+          segment.lane < (periodLaneLimitByWeek[segment.weekIndex] ?? calendarVisibleEventRows),
       ),
     [calendarPeriodSegments, periodLaneLimitByWeek],
   );
   const hiddenPeriodCountByDate = useMemo(() => {
     const counts: Record<string, number> = {};
     for (const segment of calendarPeriodSegments) {
-      if (segment.lane < (periodLaneLimitByWeek[segment.weekIndex] ?? CALENDAR_VISIBLE_EVENT_ROWS)) continue;
+      if (segment.lane < (periodLaneLimitByWeek[segment.weekIndex] ?? calendarVisibleEventRows)) continue;
       for (let column = segment.startColumn; column < segment.startColumn + segment.span; column += 1) {
         const day = days[segment.weekIndex * 7 + column];
         if (!day) continue;
@@ -1130,10 +1139,10 @@ function CalendarPage() {
                   : 0;
                 const hasOverflow =
                   hiddenPeriodCount > 0 ||
-                  periodLaneCount + singleDayEvents.length > CALENDAR_VISIBLE_EVENT_ROWS;
+                  periodLaneCount + singleDayEvents.length > calendarVisibleEventRows;
                 const visibleRowLimit = hasOverflow
-                  ? CALENDAR_VISIBLE_EVENT_ROWS - 1
-                  : CALENDAR_VISIBLE_EVENT_ROWS;
+                  ? calendarVisibleEventRows - 1
+                  : calendarVisibleEventRows;
                 const visibleSingleCount = Math.min(
                   2,
                   Math.max(0, visibleRowLimit - periodLaneCount),
