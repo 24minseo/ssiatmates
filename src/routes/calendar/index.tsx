@@ -1033,7 +1033,7 @@ function CalendarPage() {
                               placeholder="숫자 입력"
                               aria-label="알림 전 숫자"
                               autoFocus
-                              className="h-full min-w-0 flex-1 rounded-none border-0 px-3 text-[14px] text-ink shadow-none placeholder:text-guide-text focus-visible:border-0 focus-visible:ring-0"
+                              className="h-full min-w-0 flex-1 rounded-none border-0 px-3 text-[14px] text-ink shadow-none placeholder:text-guide-text focus-visible:border-0 focus-visible:ring-[3.2px] focus-visible:ring-focus-soft"
                             />
                             <span aria-hidden="true" className="h-full w-px shrink-0 bg-field-border" />
                             <select
