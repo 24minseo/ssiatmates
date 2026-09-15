@@ -27,9 +27,10 @@ type TimeWheelProps = {
 };
 
 const WHEEL_ITEM_HEIGHT = 36;
-const HOURS = Array.from({ length: 12 }, (_, index) =>
-  String(index + 1).padStart(2, "0"),
-);
+const HOURS = [
+  "12",
+  ...Array.from({ length: 11 }, (_, index) => String(index + 1).padStart(2, "0")),
+];
 const MINUTES = Array.from({ length: 60 }, (_, index) =>
   String(index).padStart(2, "0"),
 );
