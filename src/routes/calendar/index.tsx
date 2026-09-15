@@ -1035,11 +1035,12 @@ function CalendarPage() {
                               autoFocus
                               className="h-full min-w-0 flex-1 rounded-none border-0 px-3 text-[14px] text-ink shadow-none placeholder:text-guide-text focus-visible:border-0 focus-visible:ring-0"
                             />
+                            <span aria-hidden="true" className="h-full w-px shrink-0 bg-field-border" />
                             <select
                               value={customReminderUnit}
                               onChange={(event) => setCustomReminderUnit(event.target.value as ReminderUnit)}
                               aria-label="알림 시간 단위"
-                              className="h-full w-[72px] shrink-0 appearance-none border-l border-field-border bg-surface px-2 text-center text-[14px] text-ink outline-none"
+                              className="h-full w-[72px] shrink-0 appearance-none bg-surface px-2 text-center text-[14px] text-ink outline-none"
                             >
                               {availableReminderUnits.map((unit) => (
                                 <option key={unit.label} value={unit.label}>
