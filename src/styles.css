@@ -75,6 +75,8 @@
   --color-focus-soft: var(--focus-soft);
   --color-item-hover: var(--item-hover);
   --color-item-hover-selected: var(--item-hover-selected);
+  --color-dropdown-hover: var(--dropdown-hover);
+  --color-dropdown-selected-hover: var(--dropdown-selected-hover);
   --color-menu-hover: var(--menu-hover);
   --color-menu-badge: var(--menu-badge);
   --color-secondary-btn: var(--secondary-btn);
@@ -159,6 +161,8 @@
   --focus-soft: #E2F8F0;
   --item-hover: rgb(246 248 247);
   --item-hover-selected: #eaf1ec;
+  --dropdown-hover: #f6f8f7;
+  --dropdown-selected-hover: #f2f7f4;
   --menu-hover: #f1f3f2;
   --menu-badge: #e2ede5;
   --secondary-btn: #f6f8f7;
