@@ -349,7 +349,7 @@ function DateRangePicker({
         </button>
       </PopoverTrigger>
       <PopoverContent align="start" sideOffset={8} className="w-[320px] rounded-[12px] border-field-border bg-surface p-3 shadow-dropdown">
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center">
           <div className="flex rounded-[8px] bg-item-hover p-0.5">
             {(["single", "range"] as const).map((option) => (
               <button
@@ -373,6 +373,11 @@ function DateRangePicker({
               </button>
             ))}
           </div>
+        </div>
+        <div className="mt-3 flex items-center justify-between px-1">
+          <span className="text-[15px] font-semibold text-ink">
+            {visibleMonth.getFullYear()}년 {visibleMonth.getMonth() + 1}월
+          </span>
           <div className="flex items-center gap-1">
             <Button
               type="button"
@@ -395,14 +400,6 @@ function DateRangePicker({
               <ChevronRight aria-hidden="true" className="size-4" />
             </Button>
           </div>
-        </div>
-        <div className="mt-3 flex items-center justify-between px-1">
-          <span className="text-[15px] font-semibold text-ink">
-            {visibleMonth.getFullYear()}년 {visibleMonth.getMonth() + 1}월
-          </span>
-          <span className="text-[12px] text-ink-muted">
-            {mode === "range" ? "드래그해서 기간 선택" : "날짜 하나 선택"}
-          </span>
         </div>
         <div className="mt-3 grid grid-cols-7 text-center text-[12px] font-semibold text-ink-muted">
           {["일", "월", "화", "수", "목", "금", "토"].map((day) => (
