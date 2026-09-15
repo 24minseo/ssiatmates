@@ -1050,6 +1050,14 @@ function CalendarPage() {
                             <span className="flex h-full w-9 shrink-0 items-center justify-center border-l border-field-border text-[14px] text-ink-muted">
                               전
                             </span>
+                            <Button
+                              type="button"
+                              disabled={!customReminderAmount}
+                              onClick={addCustomReminder}
+                              className="h-full w-[64px] shrink-0 rounded-none border-l border-field-border bg-surface px-2 text-[14px] font-semibold text-brand shadow-none hover:bg-item-hover hover:text-brand disabled:bg-surface disabled:text-control-inactive disabled:opacity-100"
+                            >
+                              추가
+                            </Button>
                           </div>
                           {customReminderAmount ? (
                             <p className="mt-2 text-[13px] text-ink-muted">
@@ -1061,27 +1069,6 @@ function CalendarPage() {
                               {reminderError}
                             </p>
                           ) : null}
-                          <div className="mt-4 flex justify-end gap-2">
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              onClick={() => {
-                                setReminderError("");
-                                setReminderPickerMode("quick");
-                              }}
-                              className="h-9 min-w-[72px] rounded-[8px] px-4 text-[13px] font-semibold text-ink-muted hover:bg-item-hover hover:text-ink"
-                            >
-                              취소
-                            </Button>
-                            <Button
-                              type="button"
-                              disabled={!customReminderAmount}
-                              onClick={addCustomReminder}
-                              className="h-9 min-w-[72px] rounded-[8px] bg-brand px-4 text-[13px] font-semibold text-brand-foreground shadow-none hover:bg-brand/88 disabled:bg-brand-disabled disabled:opacity-100"
-                            >
-                              추가
-                            </Button>
-                          </div>
                         </>
                       )}
 
