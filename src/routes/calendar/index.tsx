@@ -1095,22 +1095,20 @@ function CalendarPage() {
 
             <div className="mt-[18px] grid grid-cols-2 gap-4">
               <div className="grid gap-1.5">
-                <Label htmlFor="todo-date" className="text-sm font-semibold text-ink">날짜</Label>
-                <div className="relative">
-                  <Input
-                    id="todo-date"
-                    type="date"
-                    value={eventDate}
-                    onChange={(event) => setEventDate(event.target.value)}
-                    className="h-12 rounded-[12px] border-field-border px-3.5 pr-10 text-[15px] md:text-[15px] text-ink shadow-none focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0"
-                  />
-                  <img
-                    src="/assets/calendar/21.svg"
-                    alt=""
-                    aria-hidden="true"
-                    className="pointer-events-none absolute right-3.5 top-1/2 size-5 -translate-y-1/2 object-contain"
-                  />
-                </div>
+                <Label className="text-sm font-semibold text-ink">날짜</Label>
+                <DateRangePicker
+                  mode={dateSelectionMode}
+                  startDate={eventDate}
+                  endDate={eventEndDate}
+                  onModeChange={(nextMode) => {
+                    setDateSelectionMode(nextMode);
+                    if (nextMode === "single") setEventEndDate("");
+                  }}
+                  onChange={(startDate, endDate) => {
+                    setEventDate(startDate);
+                    setEventEndDate(endDate ?? "");
+                  }}
+                />
               </div>
               <div className="grid gap-1">
                 <Label htmlFor="todo-time" className="text-sm font-semibold text-ink">시작 시간</Label>
