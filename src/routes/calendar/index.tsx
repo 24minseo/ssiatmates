@@ -419,6 +419,9 @@ function CalendarPage() {
   const [eventDate, setEventDate] = useState("");
   const [eventEndDate, setEventEndDate] = useState("");
   const [dateSelectionMode, setDateSelectionMode] = useState<DateSelectionMode>("single");
+  const [calendarDragStart, setCalendarDragStart] = useState<string | null>(null);
+  const [calendarDragEnd, setCalendarDragEnd] = useState<string | null>(null);
+  const calendarDragMovedRef = useRef(false);
   const [eventDescription, setEventDescription] = useState("");
   const [contentMode, setContentMode] = useState<ContentMode>("memo");
   const [checklistItems, setChecklistItems] = useState<ChecklistItem[]>([]);
@@ -478,6 +481,33 @@ function CalendarPage() {
   const goToToday = () => {
     setVisibleMonth(new Date(today.getFullYear(), today.getMonth(), 1));
     setSelectedDate(todayKey);
+  };
+
+  const startCalendarDrag = (dayKey: string, event: ReactPointerEvent<HTMLDivElement>) => {
+    const target = event.target as HTMLElement;
+    if (target.closest("button, a")) return;
+    calendarDragMovedRef.current = false;
+    setCalendarDragStart(dayKey);
+    setCalendarDragEnd(null);
+  };
+
+  const moveCalendarDrag = (dayKey: string) => {
+    if (!calendarDragStart) return;
+    if (dayKey !== calendarDragStart) calendarDragMovedRef.current = true;
+    setCalendarDragEnd(dayKey);
+  };
+
+  const finishCalendarDrag = (dayKey: string) => {
+    if (!calendarDragStart) return;
+    const wasMoved = calendarDragMovedRef.current;
+    if (wasMoved) {
+      const [startDate, endDate] = [calendarDragStart, dayKey].sort();
+      openAddDialog(startDate);
+      setEventEndDate(endDate === startDate ? "" : endDate);
+      setDateSelectionMode(endDate === startDate ? "single" : "range");
+    }
+    setCalendarDragStart(null);
+    setCalendarDragEnd(null);
   };
 
   const openAddDialog = (dateKey?: string) => {
@@ -937,6 +967,18 @@ function CalendarPage() {
               const isSelected = selectedDate === day.key;
               const isToday = todayKey === day.key;
               const dayEvents = day.isCurrentMonth ? (eventsByDate[day.key] ?? []) : [];
+              const dragRangeStart = calendarDragStart && calendarDragEnd
+                ? [calendarDragStart, calendarDragEnd].sort()[0]
+                : calendarDragStart;
+              const dragRangeEnd = calendarDragStart && calendarDragEnd
+                ? [calendarDragStart, calendarDragEnd].sort()[1]
+                : calendarDragEnd;
+              const isInCalendarDragRange =
+                day.isCurrentMonth &&
+                dragRangeStart &&
+                dragRangeEnd &&
+                day.key >= dragRangeStart &&
+                day.key <= dragRangeEnd;
 
               return (
                 <div
@@ -945,7 +987,16 @@ function CalendarPage() {
                   tabIndex={0}
                   aria-selected={isSelected}
                   aria-label={`${formatKoreanDate(day.key)}${isToday ? ", 오늘" : ""}`}
-                  onClick={() => openAddDialog(day.key)}
+                  onPointerDown={(event) => startCalendarDrag(day.key, event)}
+                  onPointerEnter={() => moveCalendarDrag(day.key)}
+                  onPointerUp={() => finishCalendarDrag(day.key)}
+                  onClick={() => {
+                    if (calendarDragMovedRef.current) {
+                      calendarDragMovedRef.current = false;
+                      return;
+                    }
+                    openAddDialog(day.key);
+                  }}
                   onKeyDown={(event) => {
                     if (event.key === "Enter" || event.key === " ") {
                       event.preventDefault();
@@ -954,6 +1005,7 @@ function CalendarPage() {
                   }}
                   className={cn(
                     "group relative h-full min-w-0 cursor-pointer overflow-hidden bg-surface p-2 text-ink hover:bg-item-hover",
+                    isInCalendarDragRange && "bg-pill/60",
                     index < days.length - 7 && "border-b border-field-border",
                   )}
                 >
