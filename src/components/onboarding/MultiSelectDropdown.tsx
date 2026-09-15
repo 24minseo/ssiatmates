@@ -141,9 +141,9 @@ export function MultiSelectDropdown({
                     value={option}
                     onSelect={() => toggle(option)}
                     className={cn(
-                      "min-h-10 scroll-mt-1 rounded-[8px] text-ink data-[selected=true]:bg-item-hover data-[selected=true]:text-ink",
+                      "min-h-10 scroll-mt-1 rounded-[8px] text-ink data-[selected=true]:bg-[#F1F3F2] data-[selected=true]:text-ink",
                       selected &&
-                        "font-bold text-brand data-[selected=true]:bg-[#F2F7F4] data-[selected=true]:text-brand",
+                        "font-bold text-brand data-[selected=true]:bg-[#F1F3F2] data-[selected=true]:text-brand",
                     )}
                   >
                     <span className="flex-1">{option}</span>
