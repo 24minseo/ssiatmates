@@ -16,6 +16,7 @@ import type { AppNavigationKey } from "../components/app/AppSidebar";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
   return (
@@ -141,6 +142,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <AppSidebarProvider>
+          <Toaster position="bottom-right" />
         {activeNavigation ? (
           <AppShell active={activeNavigation}>{routeContent}</AppShell>
         ) : (
