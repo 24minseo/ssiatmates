@@ -1166,8 +1166,16 @@ function CalendarPage() {
                 autoFocus
                 type="text"
                 inputMode="numeric"
+                role="spinbutton"
                 value={monthInput}
                 aria-label="이동할 월"
+                aria-valuemin={1}
+                aria-valuemax={12}
+                aria-valuenow={
+                  Number(monthInput) >= 1 && Number(monthInput) <= 12
+                    ? Number(monthInput)
+                    : undefined
+                }
                 aria-invalid={monthInputError}
                 onFocus={(event) => event.currentTarget.select()}
                 onChange={(event) => {
@@ -1184,7 +1192,25 @@ function CalendarPage() {
                 }}
                 onBlur={commitMonthInput}
                 onKeyDown={(event) => {
-                  if (event.key === "Enter") {
+                  if (event.key === "ArrowUp" || event.key === "ArrowDown") {
+                    event.preventDefault();
+                    const currentMonth = Number(monthInput);
+                    const baseMonth =
+                      Number.isInteger(currentMonth) &&
+                      currentMonth >= 1 &&
+                      currentMonth <= 12
+                        ? currentMonth
+                        : month + 1;
+                    const nextMonth =
+                      event.key === "ArrowUp"
+                        ? Math.min(12, baseMonth + 1)
+                        : Math.max(1, baseMonth - 1);
+                    setMonthInput(String(nextMonth).padStart(2, "0"));
+                    setMonthInputError(false);
+                    window.requestAnimationFrame(() =>
+                      monthInputRef.current?.select(),
+                    );
+                  } else if (event.key === "Enter") {
                     event.preventDefault();
                     commitMonthInput();
                   } else if (event.key === "Escape") {
@@ -1193,7 +1219,7 @@ function CalendarPage() {
                   }
                 }}
                 className={cn(
-                  "h-7 w-7 border-0 bg-transparent px-0 text-center text-[15px] font-semibold outline-none ring-0 selection:bg-pill selection:text-ink focus:ring-0",
+                  "h-7 w-7 rounded-[4px] border-0 bg-focus-soft px-0 text-center text-[15px] font-semibold outline-none ring-0 selection:bg-transparent selection:text-inherit focus:ring-0",
                   monthInputError ? "text-destructive" : "text-ink",
                 )}
               />
