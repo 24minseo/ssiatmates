@@ -222,7 +222,7 @@ function MyProgramsPage() {
       </div>
 
       <div className="flex items-end justify-between gap-4 border-b border-field-border">
-        <div className="flex items-end gap-1" role="tablist" aria-label="지원사업 상태">
+        <div className="-ml-3 flex items-end gap-1" role="tablist" aria-label="지원사업 상태">
           {statusTabs.map((tab) => {
             const selected = activeFilter === tab.value;
             return (
@@ -232,7 +232,7 @@ function MyProgramsPage() {
                 role="tab"
                 aria-selected={selected}
                 onClick={() => setActiveFilter(tab.value)}
-                className={`relative inline-flex items-center gap-2 rounded-t-[10px] px-3 pb-3 pt-2 text-[18px] transition-colors hover:bg-item-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand ${
+                className={`relative inline-flex items-center gap-[6px] rounded-[10px] pl-3 pr-1.5 py-2 text-[18px] transition-colors hover:bg-item-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand ${
                   selected
                     ? "font-bold text-brand"
                     : "font-medium text-ink-muted"
@@ -243,7 +243,7 @@ function MyProgramsPage() {
                   className={`inline-flex size-6 shrink-0 items-center justify-center rounded-[13px] px-0 py-0 text-[14px] font-semibold ${
                     selected
                       ? "bg-item-hover-selected text-brand"
-                      : "bg-surface text-ink-muted"
+                      : "bg-item-hover text-ink-muted"
                   }`}
                 >
                   {counts[tab.value]}
@@ -256,7 +256,7 @@ function MyProgramsPage() {
           })}
         </div>
 
-        <div className="mb-2 flex items-center gap-[6px]">
+        <div className="mb-1 flex items-center gap-[6px]">
           <Select
             value={sort}
             onValueChange={(value) => setSort(value as SortOption)}
