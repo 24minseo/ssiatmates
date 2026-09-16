@@ -9,6 +9,10 @@ import { ProgramCard } from "@/components/my-programs/ProgramCard";
 import { ProgramFormDialog } from "@/components/my-programs/ProgramFormDialog";
 import { ProgramScheduleDialog } from "@/components/my-programs/ProgramScheduleDialog";
 import {
+  StatusTabs,
+  type StatusTabValue,
+} from "@/components/my-programs/StatusTabs";
+import {
   programService,
   type Program,
   type ProgramInput,
@@ -21,14 +25,8 @@ export const Route = createFileRoute("/my-programs")({
   component: MyProgramsPage,
 });
 
-type StatusFilter = "all" | ProgramStatus;
+type StatusFilter = StatusTabValue;
 type SortOption = "deadline" | "fit" | "created";
-
-const statusTabs: Array<{ value: StatusFilter; label: string }> = [
-  { value: "all", label: "전체" },
-  { value: "preparing", label: "준비 중" },
-  { value: "submitted", label: "제출 완료" },
-];
 
 const sortLabels: Record<SortOption, string> = {
   deadline: "다가오는 일정순",
@@ -72,8 +70,6 @@ function MyProgramsPage() {
   const counts = useMemo(
     () => ({
       all: programs.length,
-      not_started: programs.filter((program) => program.status === "not_started")
-        .length,
       preparing: programs.filter((program) => program.status === "preparing")
         .length,
       submitted: programs.filter((program) => program.status === "submitted")
@@ -222,42 +218,15 @@ function MyProgramsPage() {
       </div>
 
       <div className="flex items-end justify-between gap-4 border-b border-field-border">
-        <div className="-ml-3 flex items-end gap-1" role="tablist" aria-label="지원사업 상태">
-          {statusTabs.map((tab) => {
-            const selected = activeFilter === tab.value;
-            return (
-              <button
-                key={tab.value}
-                type="button"
-                role="tab"
-                aria-selected={selected}
-                onClick={() => setActiveFilter(tab.value)}
-                className={`relative inline-flex items-center gap-[6px] rounded-[10px] pl-3 pr-1.5 py-2 text-[18px] transition-colors hover:bg-item-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand ${
-                  selected
-                    ? "font-bold text-brand"
-                    : "font-medium text-ink-muted"
-                }`}
-              >
-                {tab.label}
-                <span
-                  className={`inline-flex size-6 shrink-0 items-center justify-center rounded-[13px] px-0 py-0 text-[14px] font-semibold ${
-                    selected
-                      ? "bg-item-hover-selected text-brand"
-                      : "bg-item-hover text-ink-muted"
-                  }`}
-                >
-                  {counts[tab.value]}
-                </span>
-                <span
-                  aria-hidden
-                  className={`absolute inset-x-2 -bottom-px h-[3px] rounded-full bg-brand transition-opacity duration-200 ease-out ${
-                    selected ? "opacity-100" : "opacity-0"
-                  }`}
-                />
-              </button>
-            );
-          })}
-        </div>
+        <StatusTabs
+          selected={activeFilter}
+          counts={{
+            all: counts.all,
+            preparing: counts.preparing,
+            submitted: counts.submitted,
+          }}
+          onChange={setActiveFilter}
+        />
 
         <div className="mb-1 flex items-center gap-[6px]">
           <Select
