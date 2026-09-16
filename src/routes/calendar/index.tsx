@@ -530,6 +530,10 @@ function CalendarPage() {
   });
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [view, setView] = useState<CalendarView>("month");
+  const [isMonthEditing, setIsMonthEditing] = useState(false);
+  const [monthInput, setMonthInput] = useState("");
+  const [monthInputError, setMonthInputError] = useState(false);
+  const monthInputRef = useRef<HTMLInputElement>(null);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
@@ -678,11 +682,46 @@ function CalendarPage() {
     ? REMINDER_UNITS
     : REMINDER_UNITS.filter((unit) => unit.label === "일");
 
+  const beginMonthInput = () => {
+    setMonthInput(String(month + 1));
+    setMonthInputError(false);
+    setIsMonthEditing(true);
+  };
+
+  const cancelMonthInput = () => {
+    setMonthInput(String(month + 1));
+    setMonthInputError(false);
+    setIsMonthEditing(false);
+  };
+
+  const commitMonthInput = () => {
+    const parsedMonth = Number(monthInput);
+    const isValid =
+      /^\d{1,2}$/.test(monthInput) &&
+      Number.isInteger(parsedMonth) &&
+      parsedMonth >= 1 &&
+      parsedMonth <= 12;
+
+    if (!isValid) {
+      setMonthInputError(true);
+      window.requestAnimationFrame(() => monthInputRef.current?.focus());
+      return false;
+    }
+
+    setVisibleMonth(new Date(year, parsedMonth - 1, 1));
+    setMonthInputError(false);
+    setIsMonthEditing(false);
+    return true;
+  };
+
   const moveMonth = (offset: number) => {
+    if (isMonthEditing && !commitMonthInput()) return;
     setVisibleMonth((current) => new Date(current.getFullYear(), current.getMonth() + offset, 1));
   };
 
   const goToToday = () => {
+    setIsMonthEditing(false);
+    setMonthInputError(false);
     setVisibleMonth(new Date(today.getFullYear(), today.getMonth(), 1));
     setSelectedDate(todayKey);
   };
@@ -1112,9 +1151,69 @@ function CalendarPage() {
           >
             <ChevronRight aria-hidden="true" className="size-5" />
           </Button>
-          <div className="flex h-[42px] items-center rounded-[12px] border border-field-border bg-surface px-4 text-[15px] font-semibold text-ink">
-            {year}년 {month + 1}월
-          </div>
+          {isMonthEditing ? (
+            <div className="relative flex h-[42px] items-center gap-1 rounded-[12px] border border-field-border bg-surface px-4 text-[15px] font-semibold text-ink">
+              <span>{year}년</span>
+              <input
+                ref={monthInputRef}
+                autoFocus
+                type="text"
+                inputMode="numeric"
+                value={monthInput}
+                aria-label="이동할 월"
+                aria-invalid={monthInputError}
+                aria-describedby={monthInputError ? "calendar-month-error" : undefined}
+                onFocus={(event) => event.currentTarget.select()}
+                onChange={(event) => {
+                  const nextValue = event.target.value.replace(/\D/g, "").slice(0, 2);
+                  setMonthInput(nextValue);
+                  const parsedMonth = Number(nextValue);
+                  if (
+                    /^\d{1,2}$/.test(nextValue) &&
+                    parsedMonth >= 1 &&
+                    parsedMonth <= 12
+                  ) {
+                    setMonthInputError(false);
+                  }
+                }}
+                onBlur={commitMonthInput}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    commitMonthInput();
+                  } else if (event.key === "Escape") {
+                    event.preventDefault();
+                    cancelMonthInput();
+                  }
+                }}
+                className={cn(
+                  "h-7 w-7 rounded-[6px] border bg-surface px-0 text-center text-[15px] font-semibold outline-none transition-colors focus:ring-[3.2px]",
+                  monthInputError
+                    ? "border-[#B44A4A] text-[#B44A4A] focus:ring-[#B44A4A]/15"
+                    : "border-brand text-ink focus:ring-focus-soft",
+                )}
+              />
+              <span>월</span>
+              {monthInputError ? (
+                <span
+                  id="calendar-month-error"
+                  role="alert"
+                  className="absolute left-0 top-[46px] z-30 whitespace-nowrap text-[12px] font-normal text-[#B44A4A]"
+                >
+                  1~12 사이로 입력해주세요
+                </span>
+              ) : null}
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={beginMonthInput}
+              aria-label={`${year}년 ${month + 1}월, 월 직접 입력`}
+              className="flex h-[42px] items-center rounded-[12px] border border-field-border bg-surface px-4 text-[15px] font-semibold text-ink transition-colors hover:bg-item-hover focus-visible:border-brand focus-visible:outline-none focus-visible:ring-[3.2px] focus-visible:ring-focus-soft"
+            >
+              {year}년 {month + 1}월
+            </button>
+          )}
         </div>
 
         <div className="flex items-center gap-3">
