@@ -8,7 +8,7 @@ import {
   Plus,
   Trash2,
 } from "lucide-react";
-import { useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -581,6 +581,27 @@ function CalendarPage() {
   const todayKey = toDateKey(today);
   const year = visibleMonth.getFullYear();
   const month = visibleMonth.getMonth();
+
+  useEffect(() => {
+    if (!isMonthEditing) return;
+    const parsedMonth = Number(monthInput);
+    const isValid =
+      /^\d{1,2}$/.test(monthInput) &&
+      Number.isInteger(parsedMonth) &&
+      parsedMonth >= 1 &&
+      parsedMonth <= 12;
+    if (!isValid) return;
+
+    const timeout = window.setTimeout(() => {
+      setVisibleMonth(
+        (current) =>
+          new Date(current.getFullYear(), parsedMonth - 1, 1),
+      );
+    }, 250);
+
+    return () => window.clearTimeout(timeout);
+  }, [isMonthEditing, monthInput]);
+
   const days = useMemo(() => buildCalendarDays(year, month), [year, month]);
   const calendarVisibleEventRows = days.length === 35 ? 4 : 3;
   const eventsByDate = useMemo(() => {
@@ -1207,6 +1228,10 @@ function CalendarPage() {
                         : Math.max(1, baseMonth - 1);
                     setMonthInput(String(nextMonth).padStart(2, "0"));
                     setMonthInputError(false);
+                    setVisibleMonth(
+                      (current) =>
+                        new Date(current.getFullYear(), nextMonth - 1, 1),
+                    );
                     window.requestAnimationFrame(() =>
                       monthInputRef.current?.select(),
                     );
