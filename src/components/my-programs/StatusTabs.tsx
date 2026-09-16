@@ -39,7 +39,7 @@ export function StatusTabs({
     >
       <div
         aria-hidden
-        className="pointer-events-none absolute left-[-2px] top-[37px] h-px w-[1208px] bg-field-border"
+        className="pointer-events-none absolute left-[-2px] top-[47px] h-px w-[1208px] bg-field-border"
       />
 
       <div className="absolute left-[-12px] top-0 flex items-start gap-[6px]">
