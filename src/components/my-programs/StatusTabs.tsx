@@ -39,7 +39,9 @@ export function StatusTabs({
   counts,
   onChange,
 }: StatusTabsProps) {
-  const activeTab = TAB_DEFINITIONS.find((tab) => tab.value === selected) ?? TAB_DEFINITIONS[0];
+  const activeTab =
+    TAB_DEFINITIONS.find((tab) => tab.value === selected) ??
+    TAB_DEFINITIONS[0]!;
 
   return (
     <div
