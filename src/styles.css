@@ -94,6 +94,7 @@
   --color-pill: var(--pill);
   --color-pill-foreground: var(--pill-foreground);
   --color-page: var(--page);
+  --color-overlay: var(--overlay);
   --color-surface: var(--surface);
   --color-field-border: var(--field-border);
   --color-content-disabled: var(--content-disabled);
@@ -153,7 +154,8 @@
   --control-inactive: #9a9d9b;
   --pill: #E2F8F0;
   --pill-foreground: #1f8064;
-  --page: rgba(158, 169, 174, 0.5);
+  --overlay: rgb(147 159 164 / 0.5);
+  --page: var(--overlay);
   --surface: #ffffff;
   --field-border: #d8e1dd;
   --content-disabled: #b4c1bd;
