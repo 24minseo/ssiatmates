@@ -73,8 +73,8 @@ export function StatusTabs({
               className={cn(
                 "inline-flex h-[40px] items-center gap-[4px] whitespace-nowrap rounded-[10px] pl-2 pr-0 py-2 text-[18px] transition-colors",
                 isSelected
-                  ? "font-bold text-brand hover:bg-item-hover-selected"
-                  : "font-medium text-ink-muted hover:bg-item-hover",
+                  ? "font-semibold text-brand hover:bg-item-hover-selected"
+                  : "font-normal text-ink-muted hover:bg-item-hover",
               )}
             >
               {tab.label}
