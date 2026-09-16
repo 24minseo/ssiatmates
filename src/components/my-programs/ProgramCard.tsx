@@ -1,4 +1,4 @@
-import { ChevronRight, MoreHorizontal } from "lucide-react";
+import { ChevronRight, MoreVertical } from "lucide-react";
 
 import {
   DropdownMenu,
@@ -108,7 +108,7 @@ export function ProgramCard({
                 aria-label={`${program.title} 더보기 메뉴`}
                 className="flex size-6 items-center justify-center rounded-[8px] text-icon-muted transition-colors hover:bg-item-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
               >
-                <MoreHorizontal className="size-6" />
+                <MoreVertical className="size-6" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-44">
