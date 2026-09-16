@@ -232,7 +232,7 @@ function TimeWheel({
   };
 
   return (
-    <div className="relative">
+    <div className="relative before:pointer-events-none before:absolute before:inset-x-0 before:top-[73px] before:z-0 before:h-[34px] before:rounded-[8px] before:bg-item-hover-selected before:content-['']">
       <div
         ref={listRef}
         role="listbox"
@@ -240,7 +240,7 @@ function TimeWheel({
         tabIndex={0}
         onScroll={handleScroll}
         onKeyDown={handleKeyDown}
-        className="h-[180px] snap-y snap-mandatory overflow-y-auto overscroll-contain rounded-[8px] py-[72px] outline-none [scrollbar-width:none] focus-visible:ring-[3.2px] focus-visible:ring-focus-soft [&::-webkit-scrollbar]:hidden"
+        className="relative z-10 h-[180px] snap-y snap-mandatory overflow-y-auto overscroll-contain rounded-[8px] py-[72px] outline-none [scrollbar-width:none] focus-visible:ring-[3.2px] focus-visible:ring-focus-soft [&::-webkit-scrollbar]:hidden"
       >
         {Array.from({ length: loopCopies }, (_, copyIndex) =>
           options.map((option) => ({ option, copyIndex })),
@@ -275,7 +275,7 @@ function TimeWheel({
                     }
                   }}
                   onBlur={commitNumericInput}
-                  className="flex h-[34px] w-full items-center justify-center rounded-[8px] border-0 bg-item-hover-selected text-center text-[14px] font-semibold text-brand outline-none ring-0"
+                  className="flex h-[34px] w-full items-center justify-center rounded-[8px] border-0 bg-transparent text-center text-[14px] font-semibold text-brand outline-none ring-0"
                 />
               ) : (
                 <button
@@ -294,7 +294,7 @@ function TimeWheel({
                   className={cn(
                     "flex h-[34px] w-full items-center justify-center rounded-[8px] text-[14px] transition-colors",
                     selected
-                      ? "bg-item-hover-selected font-semibold text-brand"
+                      ? "font-semibold text-brand"
                       : "font-normal text-ink-muted hover:bg-item-hover",
                   )}
                 >
