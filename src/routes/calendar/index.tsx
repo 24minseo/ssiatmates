@@ -557,6 +557,7 @@ function CalendarPage() {
   const [calendarDragEnd, setCalendarDragEnd] = useState<string | null>(null);
   const [hoveredPeriodEventId, setHoveredPeriodEventId] = useState<number | null>(null);
   const calendarDragMovedRef = useRef(false);
+  const calendarAddOriginRef = useRef<"toolbar" | "calendar">("toolbar");
   const [eventDescription, setEventDescription] = useState("");
   const [contentMode, setContentMode] = useState<ContentMode>("memo");
   const [checklistItems, setChecklistItems] = useState<ChecklistItem[]>([]);
@@ -785,13 +786,14 @@ function CalendarPage() {
     const wasMoved = calendarDragMovedRef.current;
     if (wasMoved) {
       const [startDate, endDate] = [calendarDragStart, dayKey].sort();
-      openAddDialog(startDate, endDate === startDate ? "" : endDate);
+      openAddDialog(startDate, endDate === startDate ? "" : endDate, "calendar");
     }
     setCalendarDragStart(null);
     setCalendarDragEnd(null);
   };
 
-  const openAddDialog = (dateKey?: string, endDate = "") => {
+  const openAddDialog = (dateKey?: string, endDate = "", origin: "toolbar" | "calendar" = "toolbar") => {
+    calendarAddOriginRef.current = origin;
     const initialStartDate = dateKey ?? todayKey;
     const initialEndDate = endDate === initialStartDate ? "" : endDate;
     const initialMode: DateSelectionMode = initialEndDate ? "range" : "single";
@@ -822,6 +824,7 @@ function CalendarPage() {
 
   const editSelectedEvent = () => {
     if (!selectedEvent) return;
+    calendarAddOriginRef.current = "calendar";
     setEditingEventId(selectedEvent.id);
     setEventTitle(selectedEvent.title);
     setEventDate(selectedEvent.date);
@@ -1053,6 +1056,7 @@ function CalendarPage() {
       eventMonth !== undefined &&
       Number.isInteger(eventYear) &&
       Number.isInteger(eventMonth) &&
+      calendarAddOriginRef.current === "toolbar" &&
       (eventYear !== year || eventMonth - 1 !== month)
     ) {
       setVisibleMonth(new Date(eventYear, eventMonth - 1, 1));
@@ -1402,12 +1406,12 @@ function CalendarPage() {
                         calendarDragMovedRef.current = false;
                         return;
                       }
-                      openAddDialog(day.key);
+                      openAddDialog(day.key, "", "calendar");
                     }}
                     onKeyDown={(event) => {
                       if (event.key === "Enter" || event.key === " ") {
                         event.preventDefault();
-                        openAddDialog(day.key);
+                        openAddDialog(day.key, "", "calendar");
                       }
                     }}
                     className={cn(
