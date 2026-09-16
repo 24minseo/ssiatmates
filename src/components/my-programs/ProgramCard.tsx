@@ -95,7 +95,7 @@ export function ProgramCard({
 
         <div className="flex shrink-0 items-center gap-2">
           <span
-            className={`inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-[14px] font-bold ${statusPillClass[program.status]}`}
+            className={`inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-[14px] font-semibold ${statusPillClass[program.status]}`}
           >
             <span aria-hidden className="size-1.5 rounded-full bg-current" />
             {PROGRAM_STATUS_LABEL[program.status]}
