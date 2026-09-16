@@ -24,6 +24,7 @@ type TimeWheelProps = {
   value: string;
   open: boolean;
   onChange: (value: string) => void;
+  loop?: boolean;
 };
 
 const WHEEL_ITEM_HEIGHT = 36;
@@ -85,6 +86,7 @@ function TimeWheel({
   value,
   open,
   onChange,
+  loop = true,
 }: TimeWheelProps) {
   const listRef = useRef<HTMLDivElement>(null);
   const frameRef = useRef<number | null>(null);
@@ -92,12 +94,14 @@ function TimeWheel({
   const latestValueRef = useRef(value);
   latestOptionsRef.current = options;
   latestValueRef.current = value;
+  const loopCopies = loop ? TIME_WHEEL_LOOP_COPIES : 1;
+  const loopCenterCopy = loop ? TIME_WHEEL_CENTER_COPY : 0;
 
   const scrollToValue = (nextValue: string, behavior: ScrollBehavior = "smooth") => {
     const index = options.indexOf(nextValue);
     if (index < 0) return;
     listRef.current?.scrollTo({
-      top: (TIME_WHEEL_CENTER_COPY * options.length + index) * WHEEL_ITEM_HEIGHT,
+      top: (loopCenterCopy * options.length + index) * WHEEL_ITEM_HEIGHT,
       behavior,
     });
   };
@@ -108,7 +112,7 @@ function TimeWheel({
     if (index < 0) return;
     const frame = window.requestAnimationFrame(() => {
       listRef.current?.scrollTo({
-        top: (TIME_WHEEL_CENTER_COPY * latestOptionsRef.current.length + index) * WHEEL_ITEM_HEIGHT,
+        top: (loopCenterCopy * latestOptionsRef.current.length + index) * WHEEL_ITEM_HEIGHT,
         behavior: "auto",
       });
     });
@@ -125,8 +129,10 @@ function TimeWheel({
   );
 
   const selectIndex = (index: number) => {
-    const wrappedIndex = ((index % options.length) + options.length) % options.length;
-    const nextValue = options[wrappedIndex];
+    const nextIndex = loop
+      ? ((index % options.length) + options.length) % options.length
+      : Math.min(options.length - 1, Math.max(0, index));
+    const nextValue = options[nextIndex];
     if (!nextValue) return;
     if (nextValue !== value) onChange(nextValue);
     scrollToValue(nextValue);
@@ -142,12 +148,15 @@ function TimeWheel({
       );
       const normalizedIndex =
         ((rawIndex % options.length) + options.length) % options.length;
-      const firstEdge = TIME_WHEEL_CENTER_COPY * options.length;
-      const lastEdge = (TIME_WHEEL_CENTER_COPY + 1) * options.length;
+      const firstEdge = loopCenterCopy * options.length;
+      const lastEdge = (loopCenterCopy + 1) * options.length;
 
-      if (rawIndex < firstEdge || rawIndex >= lastEdge) {
+      if (
+        loop &&
+        (rawIndex < firstEdge || rawIndex >= lastEdge)
+      ) {
         listRef.current?.scrollTo({
-          top: (TIME_WHEEL_CENTER_COPY * options.length + normalizedIndex) * WHEEL_ITEM_HEIGHT,
+          top: (loopCenterCopy * options.length + normalizedIndex) * WHEEL_ITEM_HEIGHT,
           behavior: "auto",
         });
       }
@@ -185,12 +194,12 @@ function TimeWheel({
         onKeyDown={handleKeyDown}
         className="h-[180px] snap-y snap-mandatory overflow-y-auto overscroll-contain rounded-[8px] py-[72px] outline-none [scrollbar-width:none] focus-visible:ring-[3.2px] focus-visible:ring-focus-soft [&::-webkit-scrollbar]:hidden"
       >
-        {Array.from({ length: TIME_WHEEL_LOOP_COPIES }, (_, copyIndex) =>
+        {Array.from({ length: loopCopies }, (_, copyIndex) =>
           options.map((option) => ({ option, copyIndex })),
         )
           .flat()
           .map(({ option, copyIndex }) => {
-            const selected = option === value && copyIndex === TIME_WHEEL_CENTER_COPY;
+            const selected = option === value && copyIndex === loopCenterCopy;
 
             return (
               <div key={`${copyIndex}-${option}`} className="flex h-9 snap-center items-center">
@@ -281,6 +290,7 @@ export function TimeWheelPicker({
             label="오전 또는 오후"
             options={MERIDIEMS}
             value={draft.meridiem}
+            loop={false}
             open={open}
             onChange={(meridiem) =>
               updateDraft({ ...draft, meridiem: meridiem as Meridiem })
