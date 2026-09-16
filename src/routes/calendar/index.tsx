@@ -704,13 +704,13 @@ function CalendarPage() {
     : REMINDER_UNITS.filter((unit) => unit.label === "일");
 
   const beginMonthInput = () => {
-    setMonthInput(String(month + 1));
+    setMonthInput(String(month + 1).padStart(2, "0"));
     setMonthInputError(false);
     setIsMonthEditing(true);
   };
 
   const cancelMonthInput = () => {
-    setMonthInput(String(month + 1));
+    setMonthInput(String(month + 1).padStart(2, "0"));
     setMonthInputError(false);
     setIsMonthEditing(false);
   };
@@ -1257,7 +1257,7 @@ function CalendarPage() {
               aria-label={`${year}년 ${month + 1}월, 월 직접 입력`}
               className="flex h-[42px] items-center rounded-[12px] border border-field-border bg-surface px-4 text-[15px] font-semibold text-ink transition-colors hover:bg-item-hover focus-visible:border-brand focus-visible:outline-none focus-visible:ring-[3.2px] focus-visible:ring-focus-soft"
             >
-              {year}년 {month + 1}월
+              {year}년 {String(month + 1).padStart(2, "0")}월
             </button>
           )}
         </div>
