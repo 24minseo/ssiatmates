@@ -296,7 +296,7 @@ function TimeWheel({
                     }
                   }}
                   onBlur={commitNumericInput}
-                  className="flex h-[34px] w-full items-center justify-center rounded-[8px] border border-brand bg-transparent text-center text-[14px] font-semibold text-brand outline-none ring-0"
+                  className="flex h-[34px] w-full items-center justify-center rounded-[8px] border border-brand bg-transparent text-center text-[14px] font-semibold text-brand outline-none ring-0 focus-visible:ring-2 focus-visible:ring-focus-soft"
                 />
               ) : (
                 <button
