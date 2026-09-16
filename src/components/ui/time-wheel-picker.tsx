@@ -27,6 +27,8 @@ type TimeWheelProps = {
 };
 
 const WHEEL_ITEM_HEIGHT = 36;
+const TIME_WHEEL_LOOP_COPIES = 5;
+const TIME_WHEEL_CENTER_COPY = Math.floor(TIME_WHEEL_LOOP_COPIES / 2);
 const HOURS = [
   "12",
   ...Array.from({ length: 11 }, (_, index) => String(index + 1).padStart(2, "0")),
@@ -95,7 +97,7 @@ function TimeWheel({
     const index = options.indexOf(nextValue);
     if (index < 0) return;
     listRef.current?.scrollTo({
-      top: index * WHEEL_ITEM_HEIGHT,
+      top: (TIME_WHEEL_CENTER_COPY * options.length + index) * WHEEL_ITEM_HEIGHT,
       behavior,
     });
   };
@@ -106,7 +108,7 @@ function TimeWheel({
     if (index < 0) return;
     const frame = window.requestAnimationFrame(() => {
       listRef.current?.scrollTo({
-        top: index * WHEEL_ITEM_HEIGHT,
+        top: (TIME_WHEEL_CENTER_COPY * latestOptionsRef.current.length + index) * WHEEL_ITEM_HEIGHT,
         behavior: "auto",
       });
     });
@@ -123,8 +125,8 @@ function TimeWheel({
   );
 
   const selectIndex = (index: number) => {
-    const boundedIndex = Math.min(options.length - 1, Math.max(0, index));
-    const nextValue = options[boundedIndex];
+    const wrappedIndex = ((index % options.length) + options.length) % options.length;
+    const nextValue = options[wrappedIndex];
     if (!nextValue) return;
     if (nextValue !== value) onChange(nextValue);
     scrollToValue(nextValue);
@@ -135,11 +137,22 @@ function TimeWheel({
       window.cancelAnimationFrame(frameRef.current);
     }
     frameRef.current = window.requestAnimationFrame(() => {
-      const nextIndex = Math.min(
-        options.length - 1,
-        Math.max(0, Math.round((listRef.current?.scrollTop ?? 0) / WHEEL_ITEM_HEIGHT)),
+      const rawIndex = Math.round(
+        (listRef.current?.scrollTop ?? 0) / WHEEL_ITEM_HEIGHT,
       );
-      const nextValue = options[nextIndex];
+      const normalizedIndex =
+        ((rawIndex % options.length) + options.length) % options.length;
+      const firstEdge = options.length;
+      const lastEdge = (TIME_WHEEL_LOOP_COPIES - 1) * options.length;
+
+      if (rawIndex < firstEdge || rawIndex >= lastEdge) {
+        listRef.current?.scrollTo({
+          top: (TIME_WHEEL_CENTER_COPY * options.length + normalizedIndex) * WHEEL_ITEM_HEIGHT,
+          behavior: "auto",
+        });
+      }
+
+      const nextValue = options[normalizedIndex];
       if (nextValue && nextValue !== value) onChange(nextValue);
     });
   };
@@ -172,11 +185,15 @@ function TimeWheel({
         onKeyDown={handleKeyDown}
         className="h-[180px] snap-y snap-mandatory overflow-y-auto overscroll-contain rounded-[8px] py-[72px] outline-none [scrollbar-width:none] focus-visible:ring-[3.2px] focus-visible:ring-focus-soft [&::-webkit-scrollbar]:hidden"
       >
-        {options.map((option) => {
-          const selected = option === value;
+        {Array.from({ length: TIME_WHEEL_LOOP_COPIES }, (_, copyIndex) =>
+          options.map((option) => ({ option, copyIndex })),
+        )
+          .flat()
+          .map(({ option, copyIndex }) => {
+            const selected = option === value;
 
-          return (
-            <div key={option} className="flex h-9 snap-center items-center">
+            return (
+              <div key={`${copyIndex}-${option}`} className="flex h-9 snap-center items-center">
               <button
                 type="button"
                 role="option"
@@ -196,8 +213,8 @@ function TimeWheel({
                 {option}
               </button>
             </div>
-          );
-        })}
+            );
+          })}
       </div>
       <span
         aria-hidden="true"
