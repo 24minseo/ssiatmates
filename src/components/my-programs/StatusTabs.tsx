@@ -123,7 +123,7 @@ export function StatusTabs({
                   className={cn(
                     "inline-flex h-6 min-w-6 shrink-0 items-center justify-center overflow-hidden rounded-[13px] px-[7px] py-1 text-[14px] font-semibold",
                     isSelected
-                      ? "bg-[rgba(234,241,236,0.5)] text-brand"
+                      ? "bg-calendar-journal-hover text-brand"
                       : "bg-item-hover text-ink-muted",
                   )}
                 >
