@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowUpDown, Loader2, Plus } from "lucide-react";
+import { Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -214,24 +214,11 @@ function MyProgramsPage() {
   }
 
   return (
-    <section className="space-y-8">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-[28px] font-bold leading-tight text-ink">
-            내 지원사업
-          </h1>
-          <p className="mt-2 text-[14px] text-ink-muted">
-            관심 있는 지원사업을 한곳에서 관리해보세요.
-          </p>
-        </div>
-        <Button
-          type="button"
-          aria-label="지원사업 추가"
-          onClick={openCreateDialog}
-          className="size-11 shrink-0 rounded-[12px] bg-brand p-0 text-brand-foreground shadow-none hover:bg-brand/88"
-        >
-          <Plus className="size-5" />
-        </Button>
+    <section className="space-y-[18px]">
+      <div className="flex items-center">
+        <h1 className="text-[28px] font-extrabold leading-tight text-ink">
+          내 지원사업
+        </h1>
       </div>
 
       <div className="flex items-end justify-between gap-4 border-b border-field-border">
@@ -245,28 +232,38 @@ function MyProgramsPage() {
                 role="tab"
                 aria-selected={selected}
                 onClick={() => setActiveFilter(tab.value)}
-                className={`relative inline-flex items-center gap-2 rounded-t-[10px] px-3 pb-3 pt-2 text-[15px] font-semibold transition-colors hover:bg-item-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand ${
-                  selected ? "text-brand" : "text-ink-muted"
+                className={`relative inline-flex items-center gap-2 rounded-t-[10px] px-3 pb-3 pt-2 text-[18px] transition-colors hover:bg-item-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand ${
+                  selected
+                    ? "font-bold text-brand"
+                    : "font-medium text-ink-muted"
                 }`}
               >
                 {tab.label}
-                <span className="inline-flex min-w-6 items-center justify-center rounded-full bg-item-hover px-1.5 py-0.5 text-[12px] font-semibold text-ink-muted">
+                <span
+                  className={`inline-flex size-6 shrink-0 items-center justify-center rounded-[13px] px-0 py-0 text-[14px] font-semibold ${
+                    selected
+                      ? "bg-item-hover-selected text-brand"
+                      : "bg-surface text-ink-muted"
+                  }`}
+                >
                   {counts[tab.value]}
                 </span>
                 {selected ? (
-                  <span className="absolute inset-x-2 -bottom-px h-[3px] rounded-full bg-brand" />
+                  <span className="absolute inset-x-2 -bottom-px h-[3px] rounded-full bg-brand transition-all duration-200 ease-out" />
                 ) : null}
               </button>
             );
           })}
         </div>
 
-        <div className="mb-2 flex items-center gap-2">
-          <ArrowUpDown className="size-4 text-icon-muted" aria-hidden />
-          <Select value={sort} onValueChange={(value) => setSort(value as SortOption)}>
+        <div className="mb-2 flex items-center gap-[6px]">
+          <Select
+            value={sort}
+            onValueChange={(value) => setSort(value as SortOption)}
+          >
             <SelectTrigger
               aria-label="지원사업 정렬"
-              className="h-10 w-[168px] rounded-[12px] border-field-border bg-surface px-3 text-[14px] font-semibold text-ink shadow-none"
+              className="h-[42px] w-[136px] rounded-[12px] border-field-border bg-surface px-[14px] text-[15px] font-semibold text-ink shadow-none"
             >
               <SelectValue />
             </SelectTrigger>
@@ -276,6 +273,14 @@ function MyProgramsPage() {
               <SelectItem value="created">{sortLabels.created}</SelectItem>
             </SelectContent>
           </Select>
+          <Button
+            type="button"
+            aria-label="지원사업 추가"
+            onClick={openCreateDialog}
+            className="size-[42px] shrink-0 rounded-[12px] border border-field-border bg-surface p-0 text-ink shadow-none hover:bg-item-hover"
+          >
+            <Plus className="size-5" />
+          </Button>
         </div>
       </div>
 
