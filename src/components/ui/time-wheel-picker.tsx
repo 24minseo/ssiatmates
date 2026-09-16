@@ -347,7 +347,7 @@ export function TimeWheelPicker({
         onOpenAutoFocus={(event) => event.preventDefault()}
         className="w-[252px] rounded-[12px] border-0 bg-surface p-2 shadow-dropdown"
       >
-        <div className="grid grid-cols-[72px_72px_72px] justify-center gap-1">
+        <div className="grid grid-cols-[64px_64px_64px] justify-center gap-4">
           <TimeWheel
             label="오전 또는 오후"
             options={MERIDIEMS}
