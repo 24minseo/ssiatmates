@@ -95,6 +95,8 @@ function TimeWheel({
   const latestOptionsRef = useRef(options);
   const latestValueRef = useRef(value);
   const previousFiniteValueRef = useRef(value);
+  const suppressScrollRef = useRef(false);
+  const suppressScrollTimeoutRef = useRef<number | null>(null);
   latestOptionsRef.current = options;
   latestValueRef.current = value;
   const loopCopies = loop ? TIME_WHEEL_LOOP_COPIES : 1;
@@ -102,13 +104,28 @@ function TimeWheel({
   const [isEditing, setIsEditing] = useState(false);
   const [inputValue, setInputValue] = useState(value);
 
+  const scrollToPosition = (top: number, behavior: ScrollBehavior) => {
+    if (behavior === "smooth") {
+      suppressScrollRef.current = true;
+      if (suppressScrollTimeoutRef.current !== null) {
+        window.clearTimeout(suppressScrollTimeoutRef.current);
+      }
+      suppressScrollTimeoutRef.current = window.setTimeout(() => {
+        suppressScrollRef.current = false;
+        suppressScrollTimeoutRef.current = null;
+      }, 300);
+    }
+
+    listRef.current?.scrollTo({ top, behavior });
+  };
+
   const scrollToValue = (nextValue: string, behavior: ScrollBehavior = "smooth") => {
     const index = options.indexOf(nextValue);
     if (index < 0) return;
-    listRef.current?.scrollTo({
-      top: (loopCenterCopy * options.length + index) * WHEEL_ITEM_HEIGHT,
+    scrollToPosition(
+      (loopCenterCopy * options.length + index) * WHEEL_ITEM_HEIGHT,
       behavior,
-    });
+    );
   };
 
   useEffect(() => {
@@ -129,6 +146,9 @@ function TimeWheel({
       if (frameRef.current !== null) {
         window.cancelAnimationFrame(frameRef.current);
       }
+      if (suppressScrollTimeoutRef.current !== null) {
+        window.clearTimeout(suppressScrollTimeoutRef.current);
+      }
     },
     [],
   );
@@ -141,10 +161,10 @@ function TimeWheel({
     previousFiniteValueRef.current = value;
 
     const frame = window.requestAnimationFrame(() => {
-      listRef.current?.scrollTo({
-        top: index * WHEEL_ITEM_HEIGHT,
-        behavior: shouldAnimate ? "smooth" : "auto",
-      });
+      scrollToPosition(
+        index * WHEEL_ITEM_HEIGHT,
+        shouldAnimate ? "smooth" : "auto",
+      );
     });
 
     return () => window.cancelAnimationFrame(frame);
@@ -187,6 +207,7 @@ function TimeWheel({
   };
 
   const handleScroll = () => {
+    if (suppressScrollRef.current) return;
     if (frameRef.current !== null) {
       window.cancelAnimationFrame(frameRef.current);
     }
