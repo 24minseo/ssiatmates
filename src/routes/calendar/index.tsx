@@ -1457,6 +1457,7 @@ function CalendarPage() {
                           onMouseLeave={() => setHoveredPeriodEventId(null)}
                           className={cn(
                             "pointer-events-auto z-10 flex items-center truncate px-2 text-xs font-normal transition-colors",
+                            !segment.isStart && segment.startColumn === 0 && "pl-4",
                             hoveredPeriodEventId === segment.event.id
                               ? "bg-item-hover-selected"
                               : "bg-pill",
@@ -1487,6 +1488,7 @@ function CalendarPage() {
                           key={"drag-" + segment.weekIndex}
                           className={cn(
                             "pointer-events-none z-20 flex items-center truncate bg-pill px-2 text-xs font-normal text-pill-foreground shadow-[0_4px_10px_0_rgba(22,59,49,0.18)]",
+                            !segment.isStart && segment.startColumn === 0 && "pl-4",
                             segment.isStart && "rounded-l-[6px]",
                             segment.isEnd && "rounded-r-[6px]",
                           )}
