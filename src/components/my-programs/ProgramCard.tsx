@@ -1,4 +1,4 @@
-import { CalendarDays, MoreVertical } from "lucide-react";
+import { CalendarDays, MoreHorizontal } from "lucide-react";
 
 import {
   DropdownMenu,
@@ -69,11 +69,11 @@ export function ProgramCard({
   const remaining = program.schedules.filter((s) => !s.completed).length;
 
   return (
-    <article className="overflow-hidden rounded-[12px] border border-field-border bg-surface">
-      <div className="flex flex-wrap items-start gap-3 px-6 pb-4 pt-5">
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <h3 className="min-w-0 break-keep text-[18px] font-bold leading-7 text-ink">
+    <article className="overflow-hidden rounded-[12px] bg-surface">
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4 rounded-tl-[12px] rounded-tr-[12px] border-l border-r border-t border-solid border-field-border px-6 py-6">
+        <div className="min-w-0">
+          <div className="flex min-w-0 items-center gap-2">
+            <h3 className="min-w-0 truncate break-keep text-[20px] font-bold leading-7 text-ink">
               {program.title}
             </h3>
             <span
@@ -86,16 +86,16 @@ export function ProgramCard({
               {deadline.label}
             </span>
           </div>
-          <p className="mt-1 truncate text-[14px] text-ink-muted">
+          <p className="mt-8 truncate text-[14px] font-medium text-ink-muted">
             {[program.organization, program.category, program.stage, program.region]
               .filter(Boolean)
               .join(" · ")}
           </p>
         </div>
 
-        <div className="flex shrink-0 items-center gap-1">
+        <div className="flex shrink-0 items-center gap-2">
           <span
-            className={`inline-flex h-7 items-center gap-1.5 rounded-full px-3 text-[13px] font-semibold ${statusPillClass[program.status]}`}
+            className={`inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-[14px] font-bold ${statusPillClass[program.status]}`}
           >
             <span aria-hidden className="size-1.5 rounded-full bg-current" />
             {PROGRAM_STATUS_LABEL[program.status]}
@@ -106,9 +106,9 @@ export function ProgramCard({
               <button
                 type="button"
                 aria-label={`${program.title} 더보기 메뉴`}
-                className="flex size-8 items-center justify-center rounded-[8px] text-icon-muted transition-colors hover:bg-item-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                className="flex size-6 items-center justify-center rounded-[8px] text-icon-muted transition-colors hover:bg-item-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
               >
-                <MoreVertical className="size-4" />
+                <MoreHorizontal className="size-6" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-44">
@@ -141,13 +141,13 @@ export function ProgramCard({
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-field-border bg-item-hover px-6 py-3">
-        <span className="flex items-center gap-1.5 text-[13px] text-ink-muted">
+      <div className="flex min-w-0 items-center gap-x-5 rounded-bl-[12px] rounded-br-[12px] border-b border-l border-r border-solid border-field-border bg-item-hover px-6 py-[14px] pr-[22px]">
+        <span className="flex shrink-0 items-center gap-1.5 text-[13px] text-ink-muted">
           <CalendarDays aria-hidden className="size-4 text-icon-muted" />
           {remaining > 0 ? `남은 일정 ${remaining}개` : "연결된 일정 없음"}
         </span>
         {nextSchedule ? (
-          <span className="min-w-0 truncate text-[13px] text-ink">
+          <span className="min-w-0 flex-1 truncate text-[13px] text-ink">
             다음 일정 · {formatScheduleDate(nextSchedule.scheduledAt)}{" "}
             {nextSchedule.title}
           </span>
@@ -155,7 +155,7 @@ export function ProgramCard({
         <button
           type="button"
           onClick={() => onManageSchedules(program)}
-          className="ml-auto rounded-[8px] px-1 text-[13px] font-medium text-ink-muted transition-colors hover:text-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+          className="ml-auto shrink-0 rounded-[8px] px-1 text-[13px] font-semibold text-ink-muted transition-colors hover:text-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
         >
           {remaining > 0 || program.schedules.length > 0
             ? "일정 관리하기 →"
