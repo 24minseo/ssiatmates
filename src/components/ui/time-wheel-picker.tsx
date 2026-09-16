@@ -317,7 +317,7 @@ function TimeWheel({
                     }
                   }}
                   onBlur={commitNumericInput}
-                  className="flex h-[34px] w-full items-center justify-center rounded-[8px] border border-brand bg-transparent text-center text-[14px] font-semibold text-brand outline-none ring-0 focus-visible:border-2 focus-visible:border-brand focus-visible:ring-0"
+                  className="flex h-[34px] w-full items-center justify-center rounded-[8px] border border-brand bg-transparent text-center text-[14px] font-semibold text-brand outline-none ring-0 focus-visible:border-brand focus-visible:ring-0"
                 />
               ) : (
                 <button
@@ -347,6 +347,12 @@ function TimeWheel({
             );
           })}
       </div>
+      {isEditing && (
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 top-[73px] z-20 h-[34px] rounded-[8px] ring-[3.2px] ring-focus-soft"
+        />
+      )}
       <span
         aria-hidden="true"
         className="pointer-events-none absolute inset-x-0 top-0 h-8 rounded-t-[8px] bg-gradient-to-b from-surface to-transparent"
