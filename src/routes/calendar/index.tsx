@@ -353,7 +353,12 @@ function DateRangePicker({
           aria-label={mode === "range" ? "기간 날짜 선택" : "날짜 선택"}
         >
           <span className={startDate ? "text-ink" : "text-guide-text"}>{displayValue}</span>
-          <ChevronDown aria-hidden="true" className="size-5 text-ink-muted" />
+          <img
+            src="/assets/calendar/21.svg"
+            alt=""
+            aria-hidden="true"
+            className="size-5 object-contain"
+          />
         </button>
       </PopoverTrigger>
       <PopoverContent
