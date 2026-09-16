@@ -142,8 +142,8 @@ function TimeWheel({
       );
       const normalizedIndex =
         ((rawIndex % options.length) + options.length) % options.length;
-      const firstEdge = options.length;
-      const lastEdge = (TIME_WHEEL_LOOP_COPIES - 1) * options.length;
+      const firstEdge = TIME_WHEEL_CENTER_COPY * options.length;
+      const lastEdge = (TIME_WHEEL_CENTER_COPY + 1) * options.length;
 
       if (rawIndex < firstEdge || rawIndex >= lastEdge) {
         listRef.current?.scrollTo({
@@ -190,7 +190,7 @@ function TimeWheel({
         )
           .flat()
           .map(({ option, copyIndex }) => {
-            const selected = option === value;
+            const selected = option === value && copyIndex === TIME_WHEEL_CENTER_COPY;
 
             return (
               <div key={`${copyIndex}-${option}`} className="flex h-9 snap-center items-center">
