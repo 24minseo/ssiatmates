@@ -114,7 +114,7 @@ export function StatusTabs({
                 className={cn(
                   "inline-flex items-center justify-center gap-[6px] overflow-hidden rounded-[10px] pl-3 pr-1.5 py-2 text-[18px] whitespace-nowrap transition-colors",
                   isSelected
-                    ? "bg-[rgba(234,241,236,0.5)] font-semibold text-brand"
+                    ? "font-semibold text-brand hover:bg-[rgba(234,241,236,0.5)]"
                     : "font-normal text-ink-muted hover:bg-item-hover",
                 )}
               >
@@ -123,8 +123,8 @@ export function StatusTabs({
                   className={cn(
                     "inline-flex h-6 min-w-6 shrink-0 items-center justify-center overflow-hidden rounded-[13px] px-[7px] py-1 text-[14px] font-semibold",
                     isSelected
-                      ? "bg-[rgba(234,241,236,0.5)] text-brand"
-                      : "bg-item-hover text-ink-muted",
+                      ? "bg-transparent text-brand"
+                      : "bg-transparent text-ink-muted",
                   )}
                 >
                   {counts[tab.value]}
