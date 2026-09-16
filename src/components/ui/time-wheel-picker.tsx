@@ -132,6 +132,21 @@ function TimeWheel({
     [],
   );
 
+  useEffect(() => {
+    if (!open || loop) return;
+    const index = options.indexOf(value);
+    if (index < 0) return;
+
+    const frame = window.requestAnimationFrame(() => {
+      listRef.current?.scrollTo({
+        top: index * WHEEL_ITEM_HEIGHT,
+        behavior: "auto",
+      });
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [open, loop, options, value]);
+
   const beginNumericInput = () => {
     if (!inputKind) return;
     setInputValue(value);
