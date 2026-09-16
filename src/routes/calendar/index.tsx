@@ -362,7 +362,7 @@ function DateRangePicker({
         <div
           role="tablist"
           aria-label="일정 기간 유형"
-          className="grid grid-cols-2 border-b border-field-border"
+          className="flex items-start gap-4 border-b border-field-border"
         >
           {(["single", "range"] as const).map((option) => (
             <button
@@ -378,7 +378,7 @@ function DateRangePicker({
                 }
               }}
               className={cn(
-                "relative h-[38px] text-[14px] font-medium transition-colors after:absolute after:left-1/2 after:-bottom-px after:h-0.5 after:w-14 after:-translate-x-1/2 after:rounded-full after:bg-brand after:content-['']",
+                "relative h-[38px] shrink-0 px-3 text-[14px] font-medium transition-colors after:absolute after:inset-x-0 after:-bottom-px after:h-0.5 after:rounded-full after:bg-brand after:content-['']",
                 mode === option
                   ? "font-semibold text-brand after:opacity-100"
                   : "text-ink-muted after:opacity-0 hover:text-ink",
