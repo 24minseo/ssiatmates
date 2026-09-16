@@ -26,7 +26,6 @@ type SortOption = "deadline" | "fit" | "created";
 
 const statusTabs: Array<{ value: StatusFilter; label: string }> = [
   { value: "all", label: "전체" },
-  { value: "not_started", label: "시작 전" },
   { value: "preparing", label: "준비 중" },
   { value: "submitted", label: "제출 완료" },
 ];
