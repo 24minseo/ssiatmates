@@ -1156,7 +1156,7 @@ function CalendarPage() {
               className={cn(
                 "relative flex h-[42px] items-center gap-1 rounded-[12px] border bg-surface px-4 text-[15px] font-semibold text-ink ring-[3.2px]",
                 monthInputError
-                  ? "border-[#B44A4A] ring-[#B44A4A]/15"
+                  ? "border-destructive ring-destructive/20"
                   : "border-brand ring-focus-soft",
               )}
             >
@@ -1194,7 +1194,7 @@ function CalendarPage() {
                 }}
                 className={cn(
                   "h-7 w-7 border-0 bg-transparent px-0 text-center text-[15px] font-semibold outline-none ring-0 selection:bg-pill selection:text-ink focus:ring-0",
-                  monthInputError ? "text-[#B44A4A]" : "text-ink",
+                  monthInputError ? "text-destructive" : "text-ink",
                 )}
               />
               <span>월</span>
