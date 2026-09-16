@@ -269,7 +269,7 @@ function TimeWheel({
   };
 
   return (
-    <div className="relative before:pointer-events-none before:absolute before:inset-x-0 before:top-[73px] before:z-0 before:h-[34px] before:rounded-[8px] before:bg-item-hover-selected before:content-['']">
+    <div className="relative before:pointer-events-none before:absolute before:inset-x-0 before:top-[73px] before:z-0 before:h-[34px] before:rounded-[8px] before:bg-[#F4F6F5] before:content-['']">
       <div
         ref={listRef}
         role="listbox"
@@ -337,7 +337,7 @@ function TimeWheel({
                     "flex h-[34px] w-full items-center justify-center rounded-[8px] text-[14px] transition-colors",
                     selected
                       ? "font-semibold text-brand"
-                      : "font-normal text-ink-muted hover:text-brand",
+                      : "font-normal text-ink-muted hover:bg-[#EDF2F0] hover:text-brand",
                   )}
                 >
                   {option}
