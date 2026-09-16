@@ -217,7 +217,7 @@ function MyProgramsPage() {
         </h1>
       </div>
 
-      <div className="flex items-end justify-between gap-4 border-b border-field-border">
+      <div className="relative h-[48px] w-full border-b border-field-border">
         <StatusTabs
           selected={activeFilter}
           counts={{
@@ -228,7 +228,7 @@ function MyProgramsPage() {
           onChange={setActiveFilter}
         />
 
-        <div className="mb-1 flex items-center gap-[6px]">
+        <div className="absolute right-0 top-[-1px] flex items-center gap-[6px]">
           <Select
             value={sort}
             onValueChange={(value) => setSort(value as SortOption)}
