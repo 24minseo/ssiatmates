@@ -29,7 +29,7 @@ type StatusFilter = StatusTabValue;
 type SortOption = "deadline" | "fit" | "created";
 
 const sortLabels: Record<SortOption, string> = {
-  deadline: "다가오는 일정순",
+  deadline: "마감 임박순",
   fit: "적합도순",
   created: "최신 등록순",
 };
@@ -235,11 +235,11 @@ function MyProgramsPage() {
           >
             <SelectTrigger
               aria-label="지원사업 정렬"
-              className="h-[42px] w-[136px] rounded-[12px] border-field-border bg-surface px-[14px] text-[15px] font-semibold text-ink shadow-none"
+              className="h-[42px] w-[136px] rounded-[12px] border-field-border bg-surface px-[14px] text-[15px] font-semibold text-ink shadow-none [&>svg]:transition-transform data-[state=open]:[&>svg]:rotate-180"
             >
               <SelectValue />
             </SelectTrigger>
-            <SelectContent className="rounded-[12px]">
+            <SelectContent className="rounded-[12px] border-0 shadow-dropdown">
               <SelectItem value="deadline">{sortLabels.deadline}</SelectItem>
               <SelectItem value="fit">{sortLabels.fit}</SelectItem>
               <SelectItem value="created">{sortLabels.created}</SelectItem>
