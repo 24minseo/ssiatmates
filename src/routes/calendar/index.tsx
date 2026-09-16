@@ -154,8 +154,8 @@ function buildCalendarPeriodSegments(events: CalendarEvent[], days: CalendarDay[
 
   for (let weekIndex = 0; weekIndex < weekCount; weekIndex += 1) {
     const weekDays = days.slice(weekIndex * 7, weekIndex * 7 + 7);
-    const weekStart = weekDays[0].key;
-    const weekEnd = weekDays[6].key;
+    const weekStart = weekDays[0]!.key;
+    const weekEnd = weekDays[6]!.key;
     const lanes: Array<Array<{ start: number; end: number }>> = [];
     const weekEvents = events
       .filter((event) => {
@@ -185,7 +185,7 @@ function buildCalendarPeriodSegments(events: CalendarEvent[], days: CalendarDay[
       if (lane === -1) {
         lanes.push([{ start: startColumn, end: endColumn }]);
       } else {
-        lanes[lane].push({ start: startColumn, end: endColumn });
+        lanes[lane]!.push({ start: startColumn, end: endColumn });
       }
 
       segments.push({
@@ -274,7 +274,9 @@ function DateRangePicker({
 
   const commitRange = (candidateEnd: string) => {
     if (!draftStart) return;
-    const [start, end] = [draftStart, candidateEnd].sort();
+    const sorted = [draftStart, candidateEnd].sort();
+    const start = sorted[0] ?? draftStart;
+    const end = sorted[1] ?? candidateEnd;
     setDraftStart(start);
     setDraftEnd(end);
     onChange(start, end === start ? undefined : end);
@@ -428,8 +430,8 @@ function DateRangePicker({
             const hasRange = Boolean(mode === "range" && rangeStart && rangeEnd);
             const inRange =
               hasRange &&
-              day.key >= rangeStart &&
-              day.key <= rangeEnd;
+              day.key >= rangeStart! &&
+              day.key <= rangeEnd!;
             const startsRowSegment = inRange && (selectedStart || index % 7 === 0);
             const endsRowSegment = inRange && (selectedEnd || index % 7 === 6);
 
@@ -594,7 +596,9 @@ function CalendarPage() {
   );
   const calendarDragSegments = useMemo(() => {
     if (!calendarDragStart || !calendarDragEnd) return [];
-    const [startDate, endDate] = [calendarDragStart, calendarDragEnd].sort();
+    const sortedDrag = [calendarDragStart, calendarDragEnd].sort();
+    const startDate = sortedDrag[0] ?? calendarDragStart;
+    const endDate = sortedDrag[1] ?? calendarDragEnd;
     return buildCalendarPeriodSegments(
       [{
         id: -1,
@@ -960,6 +964,8 @@ function CalendarPage() {
     });
     const [eventYear, eventMonth] = eventDate.split("-").map(Number);
     if (
+      eventYear !== undefined &&
+      eventMonth !== undefined &&
       Number.isInteger(eventYear) &&
       Number.isInteger(eventMonth) &&
       (eventYear !== year || eventMonth - 1 !== month)
@@ -1265,7 +1271,7 @@ function CalendarPage() {
                         className="mt-1.5 flex min-w-0 flex-col gap-0.5"
                         style={
                           periodLaneCountByDate[day.key]
-                            ? { paddingTop: String(periodLaneCountByDate[day.key] * 24) + "px" }
+                            ? { paddingTop: String(periodLaneCountByDate[day.key]! * 24) + "px" }
                             : undefined
                         }
                       >
@@ -1746,7 +1752,7 @@ function CalendarPage() {
                                       currentIndex === -1
                                         ? 0
                                         : (currentIndex + 1) % availableReminderUnits.length;
-                                    setCustomReminderUnit(availableReminderUnits[nextIndex].label);
+                                    setCustomReminderUnit(availableReminderUnits[nextIndex]!.label);
                                     dismissReminderUnitHint();
                                   }}
                                   className="h-full w-[72px] shrink-0 cursor-pointer border-0 bg-surface px-2 text-center text-[14px] text-ink outline-none disabled:cursor-default"
