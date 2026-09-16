@@ -19,7 +19,7 @@ import {
 const statusPillClass: Record<ProgramStatus, string> = {
   not_started: "bg-[#f5f5f5] text-[#9a9d9b]",
   preparing: "bg-pill text-pill-foreground",
-  submitted: "bg-menu-badge text-ink",
+  submitted: "bg-menu-badge text-brand",
 };
 
 function startOfToday() {
