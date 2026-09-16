@@ -66,6 +66,14 @@ function toTimeValue(parts: TimeParts) {
 function formatTimeLabel(value: string) {
   if (!value) return "";
   const parts = getTimeParts(value);
+
+  if (parts.meridiem === "오전" && parts.hour === "12") {
+    return `자정 00:${parts.minute}`;
+  }
+  if (parts.meridiem === "오후" && parts.hour === "12") {
+    return `정오 12:${parts.minute}`;
+  }
+
   return `${parts.meridiem} ${parts.hour}:${parts.minute}`;
 }
 
