@@ -212,7 +212,7 @@ function MyProgramsPage() {
   return (
     <section className="space-y-[18px]">
       <div className="flex items-center">
-        <h1 className="text-[28px] font-extrabold leading-tight text-ink">
+        <h1 className="text-[28px] font-bold leading-tight text-ink">
           내 지원사업
         </h1>
       </div>
