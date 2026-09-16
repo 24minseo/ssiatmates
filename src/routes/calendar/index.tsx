@@ -439,7 +439,7 @@ function DateRangePicker({
                 className={cn(
                   "relative flex h-10 items-center justify-center",
                   inRange &&
-                    "before:absolute before:inset-x-0 before:top-1.5 before:h-8 before:bg-pill before:content-['']",
+                    "before:absolute before:inset-x-0 before:top-1 before:h-8 before:bg-pill before:content-['']",
                   startsRowSegment && "before:rounded-l-[10px]",
                   endsRowSegment && "before:rounded-r-[10px]",
                 )}
