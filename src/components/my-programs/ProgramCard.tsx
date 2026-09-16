@@ -86,7 +86,7 @@ export function ProgramCard({
               {deadline.label}
             </span>
           </div>
-          <p className="mt-8 truncate text-[14px] font-medium text-ink-muted">
+          <p className="mt-6 truncate text-[14px] font-medium text-ink-muted">
             {[program.organization, program.category, program.stage, program.region]
               .filter(Boolean)
               .join(" · ")}
