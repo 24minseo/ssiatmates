@@ -25,6 +25,7 @@ type TimeWheelProps = {
   open: boolean;
   onChange: (value: string) => void;
   loop?: boolean;
+  inputKind?: "hour" | "minute";
 };
 
 const WHEEL_ITEM_HEIGHT = 36;
@@ -87,6 +88,7 @@ function TimeWheel({
   open,
   onChange,
   loop = true,
+  inputKind,
 }: TimeWheelProps) {
   const listRef = useRef<HTMLDivElement>(null);
   const frameRef = useRef<number | null>(null);
@@ -96,6 +98,8 @@ function TimeWheel({
   latestValueRef.current = value;
   const loopCopies = loop ? TIME_WHEEL_LOOP_COPIES : 1;
   const loopCenterCopy = loop ? TIME_WHEEL_CENTER_COPY : 0;
+  const [isEditing, setIsEditing] = useState(false);
+  const [inputValue, setInputValue] = useState(value);
 
   const scrollToValue = (nextValue: string, behavior: ScrollBehavior = "smooth") => {
     const index = options.indexOf(nextValue);
@@ -127,6 +131,32 @@ function TimeWheel({
     },
     [],
   );
+
+  const beginNumericInput = () => {
+    if (!inputKind) return;
+    setInputValue(value);
+    setIsEditing(true);
+  };
+
+  const commitNumericInput = () => {
+    if (!inputKind) return;
+    const digits = inputValue.replace(/\D/g, "").slice(0, 2);
+    if (!digits) {
+      setInputValue(value);
+      setIsEditing(false);
+      return;
+    }
+
+    const parsed = Number(digits);
+    const min = inputKind === "hour" ? 1 : 0;
+    const max = inputKind === "hour" ? 12 : 59;
+    const bounded = Math.min(max, Math.max(min, parsed));
+    const nextValue = String(bounded).padStart(2, "0");
+    setInputValue(nextValue);
+    setIsEditing(false);
+    if (nextValue !== value) onChange(nextValue);
+    requestAnimationFrame(() => scrollToValue(nextValue, "auto"));
+  };
 
   const selectIndex = (index: number) => {
     const nextIndex = loop
@@ -203,24 +233,56 @@ function TimeWheel({
 
             return (
               <div key={`${copyIndex}-${option}`} className="flex h-9 snap-center items-center">
-              <button
-                type="button"
-                role="option"
-                aria-selected={selected}
-                tabIndex={-1}
-                onClick={() => {
-                  onChange(option);
-                  scrollToValue(option);
-                }}
-                className={cn(
-                  "flex h-[34px] w-full items-center justify-center rounded-[8px] text-[14px] transition-colors",
-                  selected
-                    ? "bg-item-hover-selected font-semibold text-brand"
-                    : "font-normal text-ink-muted hover:bg-item-hover",
-                )}
-              >
-                {option}
-              </button>
+              {selected && inputKind && isEditing ? (
+                <input
+                  autoFocus
+                  type="text"
+                  inputMode="numeric"
+                  role="option"
+                  aria-label={`${label} 숫자 입력`}
+                  aria-selected="true"
+                  value={inputValue}
+                  maxLength={2}
+                  onChange={(event) => setInputValue(event.target.value.replace(/\D/g, "").slice(0, 2))}
+                  onFocus={(event) => event.currentTarget.select()}
+                  onKeyDown={(event) => {
+                    event.stopPropagation();
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      commitNumericInput();
+                    } else if (event.key === "Escape") {
+                      event.preventDefault();
+                      setInputValue(value);
+                      setIsEditing(false);
+                    }
+                  }}
+                  onBlur={commitNumericInput}
+                  className="flex h-[34px] w-full items-center justify-center rounded-[8px] border-0 bg-item-hover-selected text-center text-[14px] font-semibold text-brand outline-none ring-0"
+                />
+              ) : (
+                <button
+                  type="button"
+                  role="option"
+                  aria-selected={selected}
+                  tabIndex={-1}
+                  onClick={() => {
+                    if (selected && inputKind) {
+                      beginNumericInput();
+                      return;
+                    }
+                    onChange(option);
+                    scrollToValue(option);
+                  }}
+                  className={cn(
+                    "flex h-[34px] w-full items-center justify-center rounded-[8px] text-[14px] transition-colors",
+                    selected
+                      ? "bg-item-hover-selected font-semibold text-brand"
+                      : "font-normal text-ink-muted hover:bg-item-hover",
+                  )}
+                >
+                  {option}
+                </button>
+              )}
             </div>
             );
           })}
@@ -300,13 +362,28 @@ export function TimeWheelPicker({
             label="시"
             options={HOURS}
             value={draft.hour}
+            inputKind="hour"
             open={open}
-            onChange={(hour) => updateDraft({ ...draft, hour })}
+            onChange={(hour) => {
+              const crossedBoundary =
+                (draft.hour === "11" && hour === "12") ||
+                (draft.hour === "12" && hour === "11");
+              updateDraft({
+                ...draft,
+                hour,
+                meridiem: crossedBoundary
+                  ? draft.meridiem === "오전"
+                    ? "오후"
+                    : "오전"
+                  : draft.meridiem,
+              });
+            }}
           />
           <TimeWheel
             label="분"
             options={MINUTES}
             value={draft.minute}
+            inputKind="minute"
             open={open}
             onChange={(minute) => updateDraft({ ...draft, minute })}
           />
