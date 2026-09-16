@@ -359,7 +359,7 @@ function DateRangePicker({
       <PopoverContent
         align="start"
         sideOffset={8}
-        className="w-[328px] max-w-[calc(100vw-24px)] rounded-[16px] border-0 bg-surface p-3 shadow-dropdown"
+        className="w-[304px] max-w-[calc(100vw-24px)] rounded-[16px] border-0 bg-surface p-3 shadow-dropdown"
       >
         <div
           role="tablist"
