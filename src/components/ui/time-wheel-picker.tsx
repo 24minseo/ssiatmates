@@ -94,6 +94,7 @@ function TimeWheel({
   const frameRef = useRef<number | null>(null);
   const latestOptionsRef = useRef(options);
   const latestValueRef = useRef(value);
+  const previousFiniteValueRef = useRef(value);
   latestOptionsRef.current = options;
   latestValueRef.current = value;
   const loopCopies = loop ? TIME_WHEEL_LOOP_COPIES : 1;
@@ -136,11 +137,13 @@ function TimeWheel({
     if (!open || loop) return;
     const index = options.indexOf(value);
     if (index < 0) return;
+    const shouldAnimate = previousFiniteValueRef.current !== value;
+    previousFiniteValueRef.current = value;
 
     const frame = window.requestAnimationFrame(() => {
       listRef.current?.scrollTo({
         top: index * WHEEL_ITEM_HEIGHT,
-        behavior: "auto",
+        behavior: shouldAnimate ? "smooth" : "auto",
       });
     });
 
