@@ -355,11 +355,11 @@ function TimeWheel({
       )}
       <span
         aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 top-0 h-8 rounded-t-[8px] bg-gradient-to-b from-surface to-transparent"
+        className="pointer-events-none absolute inset-x-0 top-0 z-20 h-8 rounded-t-[8px] bg-gradient-to-b from-surface to-transparent"
       />
       <span
         aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 bottom-0 h-8 rounded-b-[8px] bg-gradient-to-t from-surface to-transparent"
+        className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-8 rounded-b-[8px] bg-gradient-to-t from-surface to-transparent"
       />
     </div>
   );
