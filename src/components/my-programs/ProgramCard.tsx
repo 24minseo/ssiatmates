@@ -1,4 +1,4 @@
-import { CalendarDays, ChevronRight, MoreHorizontal } from "lucide-react";
+import { ChevronRight, MoreHorizontal } from "lucide-react";
 
 import {
   DropdownMenu,
@@ -143,7 +143,7 @@ export function ProgramCard({
 
       <div className="flex min-w-0 items-center gap-x-5 rounded-bl-[12px] rounded-br-[12px] border-b border-l border-r border-solid border-field-border bg-item-hover px-6 py-[14px] pr-[22px]">
         <span className="flex shrink-0 items-center gap-1 text-[13px] text-ink-muted">
-          <CalendarDays aria-hidden strokeWidth={1.75} className="size-[15px] text-icon-muted" />
+          <img src="/assets/calendar-21.svg" alt="" aria-hidden className="size-[15px]" />
           {remaining > 0 ? `남은 일정 ${remaining}개` : "연결된 일정 없음"}
         </span>
         {nextSchedule ? (
