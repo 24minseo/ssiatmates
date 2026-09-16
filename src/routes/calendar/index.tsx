@@ -1169,7 +1169,6 @@ function CalendarPage() {
                 value={monthInput}
                 aria-label="이동할 월"
                 aria-invalid={monthInputError}
-                aria-describedby={monthInputError ? "calendar-month-error" : undefined}
                 onFocus={(event) => event.currentTarget.select()}
                 onChange={(event) => {
                   const nextValue = event.target.value.replace(/\D/g, "").slice(0, 2);
@@ -1199,15 +1198,6 @@ function CalendarPage() {
                 )}
               />
               <span>월</span>
-              {monthInputError ? (
-                <span
-                  id="calendar-month-error"
-                  role="alert"
-                  className="absolute left-0 top-[46px] z-30 whitespace-nowrap text-[12px] font-normal text-[#B44A4A]"
-                >
-                  1~12 사이로 입력해주세요
-                </span>
-              ) : null}
             </div>
           ) : (
             <button
