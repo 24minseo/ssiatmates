@@ -94,7 +94,7 @@ export function StatusTabs({
         className="pointer-events-none absolute left-0 top-[47px] h-px w-[1208px] bg-field-border"
       />
 
-      <div className="absolute left-[-12px] top-0 flex items-start gap-[6px]">
+      <div className="absolute left-[-12px] top-0 flex items-start gap-[10px]">
         {TAB_DEFINITIONS.map((tab) => {
           const isSelected = selected === tab.value;
 
