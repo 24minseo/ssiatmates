@@ -1152,7 +1152,14 @@ function CalendarPage() {
             <ChevronRight aria-hidden="true" className="size-5" />
           </Button>
           {isMonthEditing ? (
-            <div className="relative flex h-[42px] items-center gap-1 rounded-[12px] border border-field-border bg-surface px-4 text-[15px] font-semibold text-ink">
+            <div
+              className={cn(
+                "relative flex h-[42px] items-center gap-1 rounded-[12px] border bg-surface px-4 text-[15px] font-semibold text-ink ring-[3.2px]",
+                monthInputError
+                  ? "border-[#B44A4A] ring-[#B44A4A]/15"
+                  : "border-brand ring-focus-soft",
+              )}
+            >
               <span>{year}년</span>
               <input
                 ref={monthInputRef}
@@ -1187,10 +1194,8 @@ function CalendarPage() {
                   }
                 }}
                 className={cn(
-                  "h-7 w-7 rounded-[6px] border bg-surface px-0 text-center text-[15px] font-semibold outline-none transition-colors focus:ring-[3.2px]",
-                  monthInputError
-                    ? "border-[#B44A4A] text-[#B44A4A] focus:ring-[#B44A4A]/15"
-                    : "border-brand text-ink focus:ring-focus-soft",
+                  "h-7 w-7 border-0 bg-transparent px-0 text-center text-[15px] font-semibold outline-none ring-0 selection:bg-pill selection:text-ink focus:ring-0",
+                  monthInputError ? "text-[#B44A4A]" : "text-ink",
                 )}
               />
               <span>월</span>
