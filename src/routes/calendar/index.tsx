@@ -1260,7 +1260,7 @@ function CalendarPage() {
                       <Link
                         to="/calendar/growth-journal"
                         onClick={(event) => event.stopPropagation()}
-                        className="group/journal invisible flex h-6 items-center gap-0.5 rounded-[6px] bg-item-hover py-0.5 pl-1.5 pr-2.5 text-[13px] font-medium text-ink-muted group-hover:visible hover:bg-calendar-journal-hover hover:text-brand"
+                        className="group/journal invisible flex h-6 items-center gap-0.5 rounded-[6px] bg-item-hover py-0.5 pl-1.5 pr-2 text-[13px] font-medium text-ink-muted group-hover:visible hover:bg-calendar-journal-hover hover:text-brand"
                       >
                         <img src="/assets/sidebar/journal-edit-default.svg" alt="" aria-hidden="true" className="h-[18px] w-3.5 object-contain group-hover/journal:hidden" />
                         <img src="/assets/sidebar/journal-edit-hover.svg" alt="" aria-hidden="true" className="hidden h-[18px] w-3.5 object-contain group-hover/journal:block" />
