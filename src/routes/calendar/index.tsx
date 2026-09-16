@@ -1361,14 +1361,12 @@ function CalendarPage() {
               {days.map((day, index) => {
                 const isSelected = selectedDate === day.key;
                 const isToday = todayKey === day.key;
-                const dayEvents = day.isCurrentMonth
-                  ? [...(eventsByDate[day.key] ?? [])].sort(
-                      (a, b) =>
-                        getEventDurationDays(b) - getEventDurationDays(a) ||
-                        a.date.localeCompare(b.date) ||
-                        a.id - b.id,
-                    )
-                  : [];
+                const dayEvents = [...(eventsByDate[day.key] ?? [])].sort(
+                  (a, b) =>
+                    getEventDurationDays(b) - getEventDurationDays(a) ||
+                    a.date.localeCompare(b.date) ||
+                    a.id - b.id,
+                );
                 const singleDayEvents = dayEvents.filter(
                   (calendarEvent) =>
                     !calendarEvent.endDate || calendarEvent.endDate === calendarEvent.date,
