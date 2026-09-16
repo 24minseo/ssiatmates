@@ -121,7 +121,7 @@ export function StatusTabs({
                 {tab.label}
                 <span
                   className={cn(
-                    "inline-flex h-6 min-w-6 shrink-0 items-center justify-center overflow-hidden rounded-[13px] px-[7px] py-1 text-[14px] font-semibold",
+                    "inline-flex h-6 min-w-6 shrink-0 items-center justify-center overflow-hidden rounded-[13px] px-[7px] py-1 text-[14px] font-medium",
                     isSelected
                       ? "bg-[#f4f8f5] text-brand"
                       : "bg-item-hover text-ink-muted",
