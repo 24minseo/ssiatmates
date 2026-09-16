@@ -248,9 +248,12 @@ function MyProgramsPage() {
                 >
                   {counts[tab.value]}
                 </span>
-                {selected ? (
-                  <span className="absolute inset-x-2 -bottom-px h-[3px] rounded-full bg-brand transition-all duration-200 ease-out" />
-                ) : null}
+                <span
+                  aria-hidden
+                  className={`absolute inset-x-2 -bottom-px h-[3px] rounded-full bg-brand transition-opacity duration-200 ease-out ${
+                    selected ? "opacity-100" : "opacity-0"
+                  }`}
+                />
               </button>
             );
           })}
