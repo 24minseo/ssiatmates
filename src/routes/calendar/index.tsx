@@ -1521,7 +1521,8 @@ function CalendarPage() {
                           onMouseEnter={() => setHoveredPeriodEventId(segment.event.id)}
                           onMouseLeave={() => setHoveredPeriodEventId(null)}
                           className={cn(
-                            cn("z-10 flex items-center truncate px-2 text-xs font-normal transition-colors", calendarDragStart ? "pointer-events-none" : "pointer-events-auto"),
+                            "z-10 flex items-center truncate px-2 text-xs font-normal transition-colors",
+                            calendarDragStart ? "pointer-events-none" : "pointer-events-auto",
                             !segment.isStart && segment.startColumn === 0 && "pl-4",
                             hoveredPeriodEventId === segment.event.id
                               ? "bg-item-hover-selected"
