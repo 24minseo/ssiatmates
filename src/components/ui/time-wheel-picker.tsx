@@ -316,7 +316,7 @@ function TimeWheel({
                     "flex h-[34px] w-full items-center justify-center rounded-[8px] text-[14px] transition-colors",
                     selected
                       ? "font-semibold text-brand"
-                      : "font-normal text-ink-muted hover:bg-item-hover",
+                      : "font-normal text-ink-muted hover:text-brand",
                   )}
                 >
                   {option}
