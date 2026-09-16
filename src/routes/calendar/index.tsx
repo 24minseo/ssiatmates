@@ -1880,7 +1880,9 @@ function CalendarPage() {
                               autoFocus
                               className="h-full min-w-0 flex-1 rounded-none border-0 px-3 text-[14px] text-ink shadow-none placeholder:text-guide-text focus-visible:border-0 focus-visible:ring-0"
                             />
-                            <span aria-hidden="true" className="h-full w-px shrink-0 bg-field-border" />
+                            {availableReminderUnits.length > 1 ? (
+                              <span aria-hidden="true" className="h-full w-px shrink-0 bg-field-border" />
+                            ) : null}
                             {availableReminderUnits.length <= 1 ? (
                               <span className="flex h-full w-[54px] shrink-0 items-center justify-center bg-item-hover text-[14px] text-icon-muted">
                                 일
