@@ -71,11 +71,11 @@ function formatTimeLabel(value: string) {
   if (!value) return "";
   const parts = getTimeParts(value);
 
-  if (parts.meridiem === "오전" && parts.hour === "12") {
-    return `자정 00:${parts.minute}`;
+  if (parts.minute === "00" && parts.meridiem === "오전" && parts.hour === "12") {
+    return "자정 00:00";
   }
-  if (parts.meridiem === "오후" && parts.hour === "12") {
-    return `정오 12:${parts.minute}`;
+  if (parts.minute === "00" && parts.meridiem === "오후" && parts.hour === "12") {
+    return "정오 12:00";
   }
 
   return `${parts.meridiem} ${parts.hour}:${parts.minute}`;
