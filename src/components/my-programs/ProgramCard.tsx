@@ -1,0 +1,175 @@
+import { CalendarDays, MoreVertical } from "lucide-react";
+
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  PROGRAM_STATUS_LABEL,
+  type Program,
+  type ProgramStatus,
+} from "@/services/mockProgramService";
+
+const statusPillClass: Record<ProgramStatus, string> = {
+  not_started: "bg-item-hover text-ink-muted",
+  preparing: "bg-pill text-pill-foreground",
+  submitted: "bg-menu-badge text-ink",
+};
+
+function startOfToday() {
+  const date = new Date();
+  date.setHours(0, 0, 0, 0);
+  return date;
+}
+
+export function getDeadlineLabel(deadline: string) {
+  const target = new Date(deadline);
+  target.setHours(0, 0, 0, 0);
+  const diff = Math.round(
+    (target.getTime() - startOfToday().getTime()) / 86400000,
+  );
+  if (diff < 0) return { label: "마감", urgent: false };
+  if (diff === 0) return { label: "D-DAY", urgent: true };
+  return { label: `D-${diff}`, urgent: diff <= 7 };
+}
+
+export function getNextSchedule(program: Program) {
+  return [...program.schedules]
+    .filter((schedule) => !schedule.completed)
+    .sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt))[0];
+}
+
+function formatScheduleDate(value: string) {
+  const date = new Date(value);
+  return `${date.getMonth() + 1}/${date.getDate()}`;
+}
+
+type ProgramCardProps = {
+  program: Program;
+  onEdit: (program: Program) => void;
+  onDelete: (program: Program) => void;
+  onStatusChange: (program: Program, status: ProgramStatus) => void;
+  onManageSchedules: (program: Program) => void;
+};
+
+export function ProgramCard({
+  program,
+  onEdit,
+  onDelete,
+  onStatusChange,
+  onManageSchedules,
+}: ProgramCardProps) {
+  const deadline = getDeadlineLabel(program.deadline);
+  const nextSchedule = getNextSchedule(program);
+  const remaining = program.schedules.filter((s) => !s.completed).length;
+
+  return (
+    <article className="overflow-hidden rounded-[12px] border border-field-border bg-surface">
+      <div className="flex flex-wrap items-start gap-3 px-6 pb-4 pt-5">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="min-w-0 break-keep text-[18px] font-bold leading-7 text-ink">
+              {program.title}
+            </h3>
+            <span
+              className={`shrink-0 rounded-[6px] px-1.5 py-0.5 text-[12px] font-semibold ${
+                deadline.urgent
+                  ? "bg-destructive/10 text-destructive"
+                  : "bg-item-hover text-content-disabled"
+              }`}
+            >
+              {deadline.label}
+            </span>
+          </div>
+          <p className="mt-1 truncate text-[14px] text-ink-muted">
+            {[program.organization, program.category, program.stage, program.region]
+              .filter(Boolean)
+              .join(" · ")}
+          </p>
+        </div>
+
+        <div className="flex shrink-0 items-center gap-1">
+          <span
+            className={`inline-flex h-7 items-center gap-1.5 rounded-full px-3 text-[13px] font-semibold ${statusPillClass[program.status]}`}
+          >
+            <span aria-hidden className="size-1.5 rounded-full bg-current" />
+            {PROGRAM_STATUS_LABEL[program.status]}
+          </span>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                aria-label={`${program.title} 더보기 메뉴`}
+                className="flex size-8 items-center justify-center rounded-[8px] text-icon-muted transition-colors hover:bg-item-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+              >
+                <MoreVertical className="size-4" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-44">
+              <DropdownMenuItem onSelect={() => onEdit(program)}>
+                수정하기
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => onManageSchedules(program)}>
+                일정 관리하기
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel>상태 변경</DropdownMenuLabel>
+              <DropdownMenuRadioGroup
+                value={program.status}
+                onValueChange={(value) =>
+                  onStatusChange(program, value as ProgramStatus)
+                }
+              >
+                <DropdownMenuRadioItem value="not_started">
+                  시작 전
+                </DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="preparing">
+                  준비 중
+                </DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="submitted">
+                  제출 완료
+                </DropdownMenuRadioItem>
+              </DropdownMenuRadioGroup>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                className="text-destructive focus:text-destructive"
+                onSelect={() => onDelete(program)}
+              >
+                삭제하기
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-field-border bg-item-hover px-6 py-3">
+        <span className="flex items-center gap-1.5 text-[13px] text-ink-muted">
+          <CalendarDays aria-hidden className="size-4 text-icon-muted" />
+          {remaining > 0 ? `남은 일정 ${remaining}개` : "연결된 일정 없음"}
+        </span>
+        {nextSchedule ? (
+          <span className="min-w-0 truncate text-[13px] text-ink">
+            다음 일정 · {formatScheduleDate(nextSchedule.scheduledAt)}{" "}
+            {nextSchedule.title}
+          </span>
+        ) : null}
+        <button
+          type="button"
+          onClick={() => onManageSchedules(program)}
+          className="ml-auto rounded-[8px] px-1 text-[13px] font-medium text-ink-muted transition-colors hover:text-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+        >
+          {remaining > 0 || program.schedules.length > 0
+            ? "일정 관리하기 →"
+            : "일정 추가하기 →"}
+        </button>
+      </div>
+    </article>
+  );
+}
