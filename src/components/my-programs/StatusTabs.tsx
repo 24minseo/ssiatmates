@@ -53,7 +53,7 @@ export function StatusTabs({
               role="tab"
               aria-selected={isSelected}
               onClick={() => onChange(tab.value)}
-              className="flex h-[48px] shrink-0 flex-col items-start gap-[5px] rounded-[10px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+              className="flex h-[48px] w-max shrink-0 flex-col items-start gap-[5px" rounded-[10px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
             >
               <span
                 className={cn(
