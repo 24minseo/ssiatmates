@@ -60,7 +60,6 @@ type ProgramCardProps = {
 
 export function ProgramCard({
   program,
-  onEdit,
   onDelete,
   onStatusChange,
   onManageSchedules,
@@ -113,13 +112,6 @@ export function ProgramCard({
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-44">
-              <DropdownMenuItem onSelect={() => onEdit(program)}>
-                수정하기
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => onManageSchedules(program)}>
-                일정 관리하기
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
               <DropdownMenuLabel>상태 변경</DropdownMenuLabel>
               <DropdownMenuRadioGroup
                 value={program.status}
