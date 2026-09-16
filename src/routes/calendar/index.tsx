@@ -357,7 +357,7 @@ function DateRangePicker({
       <PopoverContent
         align="start"
         sideOffset={8}
-        className="w-[360px] max-w-[calc(100vw-24px)] rounded-[16px] border-0 bg-surface p-4 shadow-dropdown"
+        className="w-[328px] max-w-[calc(100vw-24px)] rounded-[16px] border-0 bg-surface p-3 shadow-dropdown"
       >
         <div
           role="tablist"
@@ -415,9 +415,9 @@ function DateRangePicker({
             </Button>
           </div>
         </div>
-        <div className="mt-2.5 grid grid-cols-7 text-center text-[13px] font-medium text-ink">
+        <div className="mt-2 grid grid-cols-7 text-center text-[13px] font-medium text-ink">
           {["일", "월", "화", "수", "목", "금", "토"].map((day) => (
-            <span key={day} className="flex h-10 items-center justify-center">{day}</span>
+            <span key={day} className="flex h-8 items-center justify-center">{day}</span>
           ))}
         </div>
         <div className="grid grid-cols-7">
@@ -437,7 +437,7 @@ function DateRangePicker({
               <div
                 key={day.key}
                 className={cn(
-                  "relative flex h-11 items-center justify-center",
+                  "relative flex h-10 items-center justify-center",
                   inRange &&
                     "before:absolute before:inset-x-0 before:top-1.5 before:h-8 before:bg-pill before:content-['']",
                   startsRowSegment && "before:rounded-l-[10px]",
