@@ -1928,7 +1928,7 @@ function CalendarPage() {
                                     setCustomReminderUnit(availableReminderUnits[nextIndex]!.label);
                                     dismissReminderUnitHint();
                                   }}
-                                  className="h-full w-[72px] shrink-0 cursor-pointer border-0 bg-surface px-2 text-center text-[14px] text-ink outline-none disabled:cursor-default"
+                                  className="h-full w-[54px] shrink-0 cursor-pointer border-0 bg-surface px-2 text-center text-[14px] text-ink outline-none disabled:cursor-default"
                                 >
                                   {customReminderUnit}
                                 </button>
@@ -1947,7 +1947,7 @@ function CalendarPage() {
                             <span
                               className={cn(
                                 "flex h-full shrink-0 items-center justify-center bg-item-hover text-[14px] text-icon-muted",
-                                availableReminderUnits.length <= 1 ? "w-[54px]" : "w-9",
+                                "w-[54px]",
                               )}
                             >
                               전
