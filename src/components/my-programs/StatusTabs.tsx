@@ -1,3 +1,5 @@
+import { useLayoutEffect, useRef, useState } from "react";
+
 import { cn } from "@/lib/utils";
 
 export type StatusTabValue = "all" | "preparing" | "submitted";
@@ -31,8 +33,58 @@ export function StatusTabs({
   counts,
   onChange,
 }: StatusTabsProps) {
+  const tabsRootRef = useRef<HTMLDivElement>(null);
+  const tabRefs = useRef<
+    Partial<Record<StatusTabValue, HTMLButtonElement | null>>
+  >({});
+  const [indicator, setIndicator] = useState<{
+    left: number;
+    width: number;
+  } | null>(null);
+
+  useLayoutEffect(() => {
+    const root = tabsRootRef.current;
+
+    function updateIndicator() {
+      const tab = tabRefs.current[selected];
+
+      if (!root || !tab) return;
+
+      const rootRect = root.getBoundingClientRect();
+      const tabRect = tab.getBoundingClientRect();
+      const inset = 12;
+
+      setIndicator({
+        left: tabRect.left - rootRect.left + inset,
+        width: Math.max(0, tabRect.width - inset * 2),
+      });
+    }
+
+    updateIndicator();
+
+    const observer =
+      typeof ResizeObserver === "undefined"
+        ? null
+        : new ResizeObserver(updateIndicator);
+
+    if (observer) {
+      if (root) observer.observe(root);
+      Object.values(tabRefs.current).forEach((tab) => {
+        if (tab) observer.observe(tab);
+      });
+    }
+
+    window.addEventListener("resize", updateIndicator);
+
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener("resize", updateIndicator);
+    };
+  }, [selected, counts.all, counts.preparing, counts.submitted]);
+
   return (
     <div
+      ref={tabsRootRef}
       className="relative h-[48px] w-[1200px] shrink-0"
       role="tablist"
       aria-label="지원사업 상태"
@@ -49,6 +101,9 @@ export function StatusTabs({
           return (
             <button
               key={tab.value}
+              ref={(node) => {
+                tabRefs.current[tab.value] = node;
+              }}
               type="button"
               role="tab"
               aria-selected={isSelected}
@@ -78,22 +133,25 @@ export function StatusTabs({
 
               <span
                 aria-hidden
-                className={cn(
-                  "flex h-[3px] w-full items-start overflow-hidden",
-                  isSelected ? "px-3" : "px-2",
-                )}
-              >
-                <span
-                  className={cn(
-                    "h-[3px] min-w-px flex-1 transition-opacity duration-200",
-                    isSelected ? "bg-brand opacity-100" : "bg-brand opacity-0",
-                  )}
-                />
-              </span>
+                className="flex h-[3px] w-full items-start overflow-hidden px-3 opacity-0"
+              />
             </button>
           );
         })}
       </div>
+
+      <span
+        aria-hidden
+        className={cn(
+          "pointer-events-none absolute top-[45px] h-[3px] rounded-none bg-brand transition-[left,width,opacity] duration-200 ease-out",
+          indicator ? "opacity-100" : "opacity-0",
+        )}
+        style={
+          indicator
+            ? { left: indicator.left, width: indicator.width }
+            : undefined
+        }
+      />
     </div>
   );
 }
