@@ -217,7 +217,7 @@ function MyProgramsPage() {
         </h1>
       </div>
 
-      <div className="relative h-[48px] w-full border-b border-field-border">
+      <div className="relative h-[48px] w-full">
         <StatusTabs
           selected={activeFilter}
           counts={{
