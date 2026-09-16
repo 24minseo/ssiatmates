@@ -95,6 +95,7 @@ function TimeWheel({
   const latestOptionsRef = useRef(options);
   const latestValueRef = useRef(value);
   const previousFiniteValueRef = useRef(value);
+  const cancelInputRef = useRef(false);
   const suppressScrollRef = useRef(false);
   const suppressScrollTimeoutRef = useRef<number | null>(null);
   latestOptionsRef.current = options;
@@ -172,12 +173,26 @@ function TimeWheel({
 
   const beginNumericInput = () => {
     if (!inputKind) return;
+    cancelInputRef.current = false;
     setInputValue(value);
     setIsEditing(true);
   };
 
+  const cancelNumericInput = () => {
+    if (!isEditing) return;
+    cancelInputRef.current = true;
+    setInputValue(value);
+    setIsEditing(false);
+  };
+
   const commitNumericInput = () => {
     if (!inputKind) return;
+    if (cancelInputRef.current) {
+      cancelInputRef.current = false;
+      setInputValue(value);
+      setIsEditing(false);
+      return;
+    }
     const digits = inputValue.replace(/\D/g, "").slice(0, 2);
     if (!digits) {
       setInputValue(value);
@@ -207,6 +222,7 @@ function TimeWheel({
   };
 
   const handleScroll = () => {
+    if (isEditing) cancelNumericInput();
     if (suppressScrollRef.current) return;
     if (frameRef.current !== null) {
       window.cancelAnimationFrame(frameRef.current);
@@ -260,6 +276,11 @@ function TimeWheel({
         aria-label={label}
         tabIndex={0}
         onScroll={handleScroll}
+        onPointerDown={(event) => {
+          if (isEditing && !(event.target instanceof HTMLInputElement)) {
+            cancelNumericInput();
+          }
+        }}
         onKeyDown={handleKeyDown}
         className="relative z-10 h-[180px] snap-y snap-mandatory overflow-y-auto overscroll-contain rounded-[8px] py-[72px] outline-none [scrollbar-width:none] focus-visible:ring-[3.2px] focus-visible:ring-focus-soft [&::-webkit-scrollbar]:hidden"
       >
