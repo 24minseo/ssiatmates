@@ -534,6 +534,7 @@ function CalendarPage() {
   const [monthInput, setMonthInput] = useState("");
   const [monthInputError, setMonthInputError] = useState(false);
   const monthInputRef = useRef<HTMLInputElement>(null);
+  const monthEditOriginRef = useRef<Date | null>(null);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
@@ -704,18 +705,33 @@ function CalendarPage() {
     : REMINDER_UNITS.filter((unit) => unit.label === "일");
 
   const beginMonthInput = () => {
+    monthEditOriginRef.current = new Date(year, month, 1);
     setMonthInput(String(month + 1).padStart(2, "0"));
     setMonthInputError(false);
     setIsMonthEditing(true);
   };
 
   const cancelMonthInput = () => {
-    setMonthInput(String(month + 1).padStart(2, "0"));
+    const originMonth = monthEditOriginRef.current;
+    if (originMonth) {
+      setVisibleMonth(originMonth);
+      setMonthInput(
+        String(originMonth.getMonth() + 1).padStart(2, "0"),
+      );
+    } else {
+      setMonthInput(String(month + 1).padStart(2, "0"));
+    }
+    monthEditOriginRef.current = null;
     setMonthInputError(false);
     setIsMonthEditing(false);
   };
 
   const commitMonthInput = () => {
+    if (monthInput === "") {
+      cancelMonthInput();
+      return true;
+    }
+
     const parsedMonth = Number(monthInput);
     const isValid =
       /^\d{1,2}$/.test(monthInput) &&
@@ -730,6 +746,7 @@ function CalendarPage() {
     }
 
     setVisibleMonth(new Date(year, parsedMonth - 1, 1));
+    monthEditOriginRef.current = null;
     setMonthInputError(false);
     setIsMonthEditing(false);
     return true;
@@ -741,6 +758,7 @@ function CalendarPage() {
   };
 
   const goToToday = () => {
+    monthEditOriginRef.current = null;
     setIsMonthEditing(false);
     setMonthInputError(false);
     setVisibleMonth(new Date(today.getFullYear(), today.getMonth(), 1));
@@ -1204,9 +1222,10 @@ function CalendarPage() {
                   setMonthInput(nextValue);
                   const parsedMonth = Number(nextValue);
                   if (
-                    /^\d{1,2}$/.test(nextValue) &&
-                    parsedMonth >= 1 &&
-                    parsedMonth <= 12
+                    nextValue === "" ||
+                    (/^\d{1,2}$/.test(nextValue) &&
+                      parsedMonth >= 1 &&
+                      parsedMonth <= 12)
                   ) {
                     setMonthInputError(false);
                   }
