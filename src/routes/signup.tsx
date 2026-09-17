@@ -107,11 +107,44 @@ function SignupPage() {
   const passwordValid = hasLetter && hasNumber && hasValidLength;
   const allAgreed = terms && privacy;
   const canSubmit =
-    emailValid && passwordValid && name.trim().length > 0 && allAgreed;
+    emailValid && passwordValid && name.trim().length > 0 && allAgreed && !submitting;
 
   const setAll = (checked: boolean) => {
     setTerms(checked);
     setPrivacy(checked);
+  };
+
+  const handleSignup = async () => {
+    setSubmitting(true);
+    const { error } = await supabase.auth.signUp({
+      email: email.trim(),
+      password,
+      options: {
+        emailRedirectTo: window.location.origin,
+        data: { full_name: name.trim() },
+      },
+    });
+    if (error) {
+      setSubmitting(false);
+      toast.error(
+        error.message.includes("already")
+          ? "이미 가입된 이메일이에요."
+          : "회원가입에 실패했어요. 다시 시도해주세요.",
+      );
+      return;
+    }
+    // 세션이 유지된 채로 AuthGate가 온보딩으로 이동시킴
+  };
+
+  const handleGoogle = async () => {
+    setSubmitting(true);
+    const result = await lovable.auth.signInWithOAuth("google", {
+      redirect_uri: window.location.origin,
+    });
+    if (result?.error) {
+      setSubmitting(false);
+      toast.error("Google 회원가입에 실패했어요. 다시 시도해주세요.");
+    }
   };
 
   return (
@@ -124,10 +157,13 @@ function SignupPage() {
         className="mt-5"
         onSubmit={(event) => {
           event.preventDefault();
-          if (canSubmit) void navigate({ to: "/onboarding" });
+          if (canSubmit) void handleSignup();
         }}
       >
-        <GoogleButton label="Google 계정으로 회원가입" />
+        <GoogleButton
+          label="Google 계정으로 회원가입"
+          onClick={() => void handleGoogle()}
+        />
 
         <div className="mt-3">
           <AuthDivider />
