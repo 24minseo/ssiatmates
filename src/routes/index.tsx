@@ -20,17 +20,42 @@ export const Route = createFileRoute("/")({
 });
 
 function LoginPage() {
-  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [emailTouched, setEmailTouched] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
   const emailError =
     emailTouched && email.length > 0 && !emailValid
       ? "올바른 이메일 형식으로 입력해주세요."
       : undefined;
-  const canSubmit = emailValid && password.length > 0;
+  const canSubmit = emailValid && password.length > 0 && !submitting;
+
+  const handleLogin = async () => {
+    setSubmitting(true);
+    const { error } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password,
+    });
+    if (error) {
+      setSubmitting(false);
+      toast.error("이메일 또는 비밀번호를 확인해주세요.");
+      return;
+    }
+    // 이후 이동은 세션·온보딩 상태에 따라 AuthGate가 처리
+  };
+
+  const handleGoogle = async () => {
+    setSubmitting(true);
+    const result = await lovable.auth.signInWithOAuth("google", {
+      redirect_uri: window.location.origin,
+    });
+    if (result?.error) {
+      setSubmitting(false);
+      toast.error("Google 로그인에 실패했어요. 다시 시도해주세요.");
+    }
+  };
 
   return (
     <AuthLayout>
@@ -42,14 +67,14 @@ function LoginPage() {
         className="mt-5"
         onSubmit={(event) => {
           event.preventDefault();
-          if (canSubmit) void navigate({ to: "/myhome" });
+          if (canSubmit) void handleLogin();
         }}
       >
-        {/* TODO: 임시 연결 — 실제 Google OAuth 연동 후 콜백 라우트로 교체 */}
         <GoogleButton
           label="Google 계정으로 로그인"
-          onClick={() => void navigate({ to: "/myhome" })}
+          onClick={() => void handleGoogle()}
         />
+
 
         <div className="mt-3">
           <AuthDivider />
