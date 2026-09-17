@@ -6,7 +6,6 @@ import { AuthDivider, AuthField, AuthLayout, GoogleButton } from "@/components/a
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
 import {
   Dialog,
   DialogContent,
@@ -156,10 +155,11 @@ function SignupPage() {
 
   const handleGoogle = async () => {
     setSubmitting(true);
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: window.location.origin },
     });
-    if (result?.error) {
+    if (error) {
       setSubmitting(false);
       toast.error("Google 회원가입에 실패했어요. 다시 시도해주세요.");
     }
