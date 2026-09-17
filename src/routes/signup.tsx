@@ -86,8 +86,9 @@ function PasswordRequirement({
 }
 
 function SignupPage() {
-  const navigate = useNavigate();
   const [email, setEmail] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
   const [password, setPassword] = useState("");
   const [emailTouched, setEmailTouched] = useState(false);
   const [name, setName] = useState("");
