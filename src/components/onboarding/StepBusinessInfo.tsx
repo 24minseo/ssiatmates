@@ -13,13 +13,15 @@ interface StepBusinessInfoProps {
   state: OnboardingState;
   update: (patch: Partial<OnboardingState>) => void;
   onPrev: () => void;
-  onComplete: () => void;
+  saving: boolean;
+  onComplete: () => void | Promise<void>;
 }
 
 export function StepBusinessInfo({
   state,
   update,
   onPrev,
+  saving,
   onComplete,
 }: StepBusinessInfoProps) {
   const toggleCategory = (option: string) => {
@@ -65,11 +67,11 @@ export function StepBusinessInfo({
         </Button>
         <Button
           type="button"
-          disabled={state.businessFields.length === 0}
+          disabled={saving || state.businessFields.length === 0}
           onClick={onComplete}
           className="h-12 flex-1 rounded-[12px] bg-brand text-base font-semibold shadow-primary-button text-brand-foreground transition-colors hover:bg-brand/88 active:bg-brand-pressed disabled:bg-brand-disabled disabled:text-brand-foreground disabled:opacity-100"
         >
-          완료
+          {saving ? "저장 중…" : "완료"}
         </Button>
       </div>
     </div>
