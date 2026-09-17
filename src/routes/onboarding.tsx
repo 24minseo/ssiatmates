@@ -43,19 +43,33 @@ function OnboardingPage() {
   const handleComplete = async () => {
     if (saving || !user) return;
     setSaving(true);
+    const { error: onboardingError } = await supabase
+      .from("onboarding_profiles")
+      .upsert(
+        {
+          user_id: user.id,
+          birth_date: state.birthDate || null,
+          startup_stage: state.startupStage,
+          residence: state.residence,
+          business_location: state.sameAsResidence
+            ? state.residence
+            : state.businessLocation,
+          business_fields: state.businessFields,
+          support_categories: state.supportCategories,
+        },
+        { onConflict: "user_id" },
+      );
+
+    if (onboardingError) {
+      console.error("[onboarding] 저장 실패", onboardingError);
+      setSaving(false);
+      toast.error("정보 저장에 실패했어요. 잠시 후 다시 시도해주세요.");
+      return;
+    }
+
     const { error } = await supabase
       .from("profiles")
-      .update({
-        birth_date: state.birthDate || null,
-        startup_stage: state.startupStage,
-        residence: state.residence,
-        business_location: state.sameAsResidence
-          ? state.residence
-          : state.businessLocation,
-        business_fields: state.businessFields,
-        support_categories: state.supportCategories,
-        is_onboarded: true,
-      })
+      .update({ is_onboarded: true })
       .eq("id", user.id);
 
     if (error) {
