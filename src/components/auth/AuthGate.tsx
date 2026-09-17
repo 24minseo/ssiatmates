@@ -4,7 +4,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/useAuth";
 
 const AUTH_PAGES = ["/", "/signup"];
-const MATCHING_ROUTE = "/programs";
+const HOME_ROUTE = "/myhome";
 const ONBOARDING_ROUTE = "/onboarding";
 
 function FullScreenLoader() {
@@ -37,7 +37,7 @@ export function AuthGate({
   if (!loading) {
     if (!session && !isAuthPage) target = "/";
     else if (session && profile) {
-      if (isAuthPage) target = profile.is_onboarded ? MATCHING_ROUTE : ONBOARDING_ROUTE;
+      if (isAuthPage) target = profile.is_onboarded ? HOME_ROUTE : ONBOARDING_ROUTE;
       else if (!profile.is_onboarded && !isOnboarding) target = ONBOARDING_ROUTE;
       else if (profile.is_onboarded && isOnboarding) target = null;
     }
