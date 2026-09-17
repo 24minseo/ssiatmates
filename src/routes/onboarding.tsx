@@ -1,7 +1,9 @@
 import { useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { StepBasicInfo } from "@/components/onboarding/StepBasicInfo";
 import { StepBusinessInfo } from "@/components/onboarding/StepBusinessInfo";
 import {
@@ -31,9 +33,43 @@ export const Route = createFileRoute("/onboarding")({
 function OnboardingPage() {
   const [step, setStep] = useState<1 | 2>(1);
   const [state, setState] = useState<OnboardingState>(initialOnboardingState);
+  const [saving, setSaving] = useState(false);
+  const { user, refreshProfile } = useAuth();
+  const navigate = useNavigate();
 
   const update = (patch: Partial<OnboardingState>) =>
     setState((prev) => ({ ...prev, ...patch }));
+
+  const handleComplete = async () => {
+    if (saving || !user) return;
+    setSaving(true);
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        birth_date: state.birthDate || null,
+        startup_stage: state.startupStage,
+        residence: state.residence,
+        business_location: state.sameAsResidence
+          ? state.residence
+          : state.businessLocation,
+        business_fields: state.businessFields,
+        support_categories: state.supportCategories,
+        is_onboarded: true,
+      })
+      .eq("id", user.id);
+
+    if (error) {
+      console.error("[onboarding] 저장 실패", error);
+      setSaving(false);
+      toast.error("정보 저장에 실패했어요. 잠시 후 다시 시도해주세요.");
+      return;
+    }
+
+    await refreshProfile();
+    toast.success("정보 입력이 완료되었어요.");
+    void navigate({ to: "/programs", replace: true });
+  };
+
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-page px-4 py-12">
