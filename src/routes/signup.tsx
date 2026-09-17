@@ -116,7 +116,7 @@ function SignupPage() {
 
   const handleSignup = async () => {
     setSubmitting(true);
-    const { error } = await supabase.auth.signUp({
+    const { data: signupData, error } = await supabase.auth.signUp({
       email: email.trim(),
       password,
       options: {
@@ -132,6 +132,24 @@ function SignupPage() {
           : "회원가입에 실패했어요. 다시 시도해주세요.",
       );
       return;
+    }
+    // 세션이 즉시 발급되는 환경에서는 가입 직후 프로필을 보장한다.
+    // 이메일 확인이 필요한 환경에서는 DB 트리거가 동일한 역할을 수행한다.
+    if (signupData.user && signupData.session) {
+      const { error: profileError } = await supabase.from("profiles").upsert(
+        {
+          id: signupData.user.id,
+          username: name.trim(),
+          is_onboarded: false,
+        },
+        { onConflict: "id" },
+      );
+      if (profileError) {
+        console.error("[signup] profile 생성 실패", profileError);
+        setSubmitting(false);
+        toast.error("계정은 생성됐지만 프로필 저장에 실패했어요.");
+        return;
+      }
     }
     // 세션이 유지된 채로 AuthGate가 온보딩으로 이동시킴
   };
