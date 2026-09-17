@@ -17,6 +17,8 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
+import { AuthProvider } from "@/hooks/useAuth";
+import { AuthGate } from "@/components/auth/AuthGate";
 
 function NotFoundComponent() {
   return (
@@ -141,14 +143,18 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <AppSidebarProvider>
-          <Toaster position="bottom-right" />
-        {activeNavigation ? (
-          <AppShell active={activeNavigation}>{routeContent}</AppShell>
-        ) : (
-          routeContent
-        )}
-        </AppSidebarProvider>
+        <AuthProvider>
+          <AppSidebarProvider>
+            <Toaster position="bottom-right" />
+            <AuthGate pathname={pathname}>
+              {activeNavigation ? (
+                <AppShell active={activeNavigation}>{routeContent}</AppShell>
+              ) : (
+                routeContent
+              )}
+            </AuthGate>
+          </AppSidebarProvider>
+        </AuthProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );
