@@ -1884,8 +1884,8 @@ function CalendarPage() {
                               <span aria-hidden="true" className="h-full w-px shrink-0 bg-field-border" />
                             ) : null}
                             {availableReminderUnits.length <= 1 ? (
-                              <span className="flex h-full w-[54px] shrink-0 items-center justify-center bg-item-hover text-[14px] text-icon-muted">
-                                일
+                              <span className="flex h-full w-[72px] shrink-0 items-center justify-center bg-item-hover text-[14px] text-icon-muted">
+                                일 전
                               </span>
                             ) : (
                             <Tooltip
@@ -1949,14 +1949,11 @@ function CalendarPage() {
                               ) : null}
                             </Tooltip>
                             )}
-                            <span
-                              className={cn(
-                                "flex h-full shrink-0 items-center justify-center bg-item-hover text-[14px] text-icon-muted",
-                                "w-[54px]",
-                              )}
-                            >
-                              전
-                            </span>
+                            {availableReminderUnits.length > 1 ? (
+                              <span className="flex h-full w-[54px] shrink-0 items-center justify-center bg-item-hover text-[14px] text-icon-muted">
+                                전
+                              </span>
+                            ) : null}
                             </div>
                             <Button
                               type="button"
