@@ -72,7 +72,7 @@ function OnboardingPage() {
       p_birth_date: state.birthDate ? state.birthDate.replace(/\./g, "-") : null,
       p_founding_stage: stageCode,
       p_residence_region: residenceCode,
-      p_business_region: businessCode,
+      p_business_region: stageCode === "pre_founder" ? null : businessCode,
       p_industries: state.businessFields,
       p_personal_statuses: state.personalStatuses ?? [],
       p_support_interests: state.supportCategories,
