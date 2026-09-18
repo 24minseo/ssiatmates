@@ -121,7 +121,7 @@ export function RegionCombobox({
             placeholder="지역 검색"
             className="h-11 text-[15px] placeholder:text-guide-text"
           />
-          <CommandList className="max-h-[220px]">
+          <CommandList className="max-h-[180px]">
             <CommandEmpty>검색 결과가 없습니다.</CommandEmpty>
             <CommandGroup>
               {regions.map((region) => (
