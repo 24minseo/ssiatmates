@@ -87,6 +87,7 @@ export function StepBasicInfo({ state, update, onNext }: StepBasicInfoProps) {
 
   const canProceed =
     birth.valid &&
+    state.personalStatuses.length > 0 &&
     !!state.startupStage &&
     !!state.residence &&
     (isPreFounder || !!state.businessLocation);
