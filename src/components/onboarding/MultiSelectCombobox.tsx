@@ -29,12 +29,17 @@ export function MultiSelectCombobox({
 }: MultiSelectComboboxProps) {
   const [open, setOpen] = useState(false);
   const toggleValue = (option: string) => {
-    if (!value.includes(option) && value.length >= maxSelected) return;
-    onChange(
-      value.includes(option)
-        ? value.filter((selected) => selected !== option)
-        : [...value, option],
-    );
+    const alreadySelected = value.includes(option);
+    if (!alreadySelected && value.length >= maxSelected) return;
+
+    const nextValue = alreadySelected
+      ? value.filter((selected) => selected !== option)
+      : [...value, option];
+
+    onChange(nextValue);
+    if (!alreadySelected && nextValue.length >= maxSelected) {
+      setOpen(false);
+    }
   };
 
   const summary =
