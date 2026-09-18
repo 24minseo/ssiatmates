@@ -170,8 +170,8 @@ function RootComponent() {
         <AuthProvider>
           <AppSidebarProvider>
             <Toaster position="bottom-right" />
+            <AuthBackgroundOverlay pathname={pathname} />
             <AuthGate pathname={pathname}>
-              <AuthBackgroundOverlay pathname={pathname} />
               {activeNavigation ? (
                 <AppShell active={activeNavigation}>{routeContent}</AppShell>
               ) : (
