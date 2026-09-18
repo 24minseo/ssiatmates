@@ -294,3 +294,13 @@
     animation-delay: 0ms;
   }
 }
+
+
+/* Keep the bottom outer margin capped at the tall-laptop reference height.
+   Extra height is absorbed by the dialog's internal flex content area. */
+@media (min-height: 1117px) {
+  .calendar-task-dialog {
+    height: calc(100vh - 181px);
+    max-height: none;
+  }
+}
