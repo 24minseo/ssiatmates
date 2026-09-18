@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, ChevronDown } from "lucide-react";
+import { Check, ChevronDown, X } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Command,
@@ -62,9 +62,39 @@ export function MultiSelectCombobox({
             "focus:outline-none focus-visible:border-[1.5px] focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft",
           )}
         >
-          <span className={cn("truncate", value.length === 0 && "text-guide-text")}>
-            {summary}
-          </span>
+          {value.length === 0 ? (
+            <span className="truncate text-guide-text">{summary}</span>
+          ) : (
+            <span className="flex min-w-0 flex-1 flex-wrap gap-2">
+              {value.map((selected) => (
+                <span
+                  key={selected}
+                  className="inline-flex max-w-full items-center gap-1 rounded-full bg-field-border/35 px-3 py-1 text-[14px] text-ink"
+                >
+                  <span className="truncate">{selected}</span>
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`${selected} 선택 해제`}
+                    className="shrink-0 cursor-pointer text-ink-muted hover:text-ink"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      toggleValue(selected);
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        toggleValue(selected);
+                      }
+                    }}
+                  >
+                    <X className="size-4" />
+                  </span>
+                </span>
+              ))}
+            </span>
+          )}
           <ChevronDown
             className={cn(
               "ml-2 size-4 shrink-0 text-ink-muted transition-transform duration-200",
