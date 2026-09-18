@@ -16,6 +16,7 @@ interface MultiSelectDropdownProps {
   onChange: (value: string[]) => void;
   placeholder?: string | undefined;
   id?: string | undefined;
+  maxSelected?: number | undefined;
 }
 
 export function MultiSelectDropdown({
@@ -24,6 +25,7 @@ export function MultiSelectDropdown({
   onChange,
   placeholder = "선택해주세요",
   id,
+  maxSelected,
 }: MultiSelectDropdownProps) {
   const [open, setOpen] = useState(false);
   const [activeValue, setActiveValue] = useState("");
@@ -43,11 +45,23 @@ export function MultiSelectDropdown({
   }, [open]);
 
   const toggle = (option: string) => {
-    onChange(
-      value.includes(option)
-        ? value.filter((item) => item !== option)
-        : [...value, option],
-    );
+    const alreadySelected = value.includes(option);
+    if (!alreadySelected && maxSelected !== undefined && value.length >= maxSelected) {
+      return;
+    }
+
+    const nextValue = alreadySelected
+      ? value.filter((item) => item !== option)
+      : [...value, option];
+
+    onChange(nextValue);
+    if (
+      !alreadySelected &&
+      maxSelected !== undefined &&
+      nextValue.length >= maxSelected
+    ) {
+      setOpen(false);
+    }
   };
 
   const remove = (option: string) => {
