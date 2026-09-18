@@ -121,6 +121,16 @@ export function StepBasicInfo({ state, update, onNext }: StepBasicInfoProps) {
 
       </FormField>
 
+      <FormField label="신분" required htmlFor="personalStatus">
+        <MultiSelectCombobox
+          id="personalStatus"
+          options={PERSONAL_STATUS_OPTIONS}
+          value={personalStatuses}
+          onChange={(nextStatuses) => update({ personalStatuses: nextStatuses })}
+          placeholder="신분을 선택해주세요"
+        />
+      </FormField>
+
       <FormField label="창업단계" required>
         <OptionCards
           options={STARTUP_STAGES}
