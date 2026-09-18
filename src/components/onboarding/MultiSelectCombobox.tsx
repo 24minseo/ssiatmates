@@ -16,6 +16,7 @@ interface MultiSelectComboboxProps {
   onChange: (value: string[]) => void;
   placeholder?: string;
   id?: string;
+  maxSelected?: number;
 }
 
 export function MultiSelectCombobox({
@@ -24,9 +25,11 @@ export function MultiSelectCombobox({
   onChange,
   placeholder = "선택해주세요",
   id,
+  maxSelected = 2,
 }: MultiSelectComboboxProps) {
   const [open, setOpen] = useState(false);
   const toggleValue = (option: string) => {
+    if (!value.includes(option) && value.length >= maxSelected) return;
     onChange(
       value.includes(option)
         ? value.filter((selected) => selected !== option)
