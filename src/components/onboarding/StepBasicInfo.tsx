@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { FormField } from "./FormField";
 import { OptionCards } from "./OptionCards";
 import { RegionCombobox } from "./RegionCombobox";
-import { MultiSelectCombobox } from "./MultiSelectCombobox";
+import { MultiSelectDropdown } from "./MultiSelectDropdown";
 import {
   PERSONAL_STATUS_OPTIONS,
   PRE_FOUNDER,
@@ -122,11 +122,12 @@ export function StepBasicInfo({ state, update, onNext }: StepBasicInfoProps) {
       </FormField>
 
       <FormField label="신분" required htmlFor="personalStatus">
-        <MultiSelectCombobox
+        <MultiSelectDropdown
           id="personalStatus"
           options={PERSONAL_STATUS_OPTIONS}
           value={personalStatuses}
           onChange={(nextStatuses) => update({ personalStatuses: nextStatuses })}
+          maxSelected={2}
           placeholder="신분을 선택해주세요 (최대 2개)"
         />
       </FormField>
