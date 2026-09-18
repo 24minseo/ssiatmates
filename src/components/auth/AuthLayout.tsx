@@ -9,18 +9,6 @@ interface AuthLayoutProps {
 export function AuthLayout({ children }: AuthLayoutProps) {
   return (
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#F6F8F7] px-4 py-12">
-      <div aria-hidden className="absolute inset-0 blur-[4px]">
-        <aside className="absolute inset-y-0 left-0 w-60 bg-white/80 px-4 py-7">
-          <div className="ml-4 h-5 w-24 rounded bg-brand/25" />
-          <div className="mt-8 h-20 rounded-[10px] bg-white shadow-sm" />
-          <div className="mt-7 space-y-3">
-            {Array.from({ length: 5 }).map((_, index) => (
-              <div key={index} className="h-11 rounded-[8px] bg-white/55" />
-            ))}
-          </div>
-        </aside>
-        <div className="absolute left-72 right-10 top-12 h-9 rounded bg-white/50" />
-      </div>
       <section className="auth-card relative z-10 w-full max-w-[542px] rounded-[20px] bg-surface px-6 py-[38px] shadow-surface-card sm:px-12">
         {children}
       </section>
