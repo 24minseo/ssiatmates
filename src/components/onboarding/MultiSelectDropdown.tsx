@@ -73,7 +73,7 @@ export function MultiSelectDropdown({
       open={open}
       onOpenChange={(next) => {
         if (next) {
-          setActiveValue(value.at(-1) ?? options.at(0) ?? "");
+          setActiveValue(value[0] ?? options.at(0) ?? "");
         }
         setOpen(next);
       }}
