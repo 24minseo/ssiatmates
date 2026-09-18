@@ -1,11 +1,10 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Check, ChevronDown } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Command,
   CommandEmpty,
   CommandGroup,
-  CommandInput,
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
@@ -27,13 +26,6 @@ export function MultiSelectCombobox({
   id,
 }: MultiSelectComboboxProps) {
   const [open, setOpen] = useState(false);
-  const [activeValue, setActiveValue] = useState("");
-
-  useEffect(() => {
-    if (!open) return;
-    setActiveValue(value[0] ?? options[0] ?? "");
-  }, [open, options, value]);
-
   const toggleValue = (option: string) => {
     onChange(
       value.includes(option)
@@ -80,15 +72,7 @@ export function MultiSelectCombobox({
         sideOffset={4}
         avoidCollisions={false}
       >
-        <Command
-          value={activeValue}
-          onValueChange={setActiveValue}
-          className="rounded-[12px] [&_[cmdk-input-wrapper]]:px-4 [&_[cmdk-input-wrapper]_svg]:size-5 [&_[cmdk-input-wrapper]_svg]:-translate-x-0.5"
-        >
-          <CommandInput
-            placeholder="항목 검색"
-            className="h-11 text-[15px] placeholder:text-guide-text"
-          />
+        <Command className="rounded-[12px]">
           <CommandList className="max-h-[260px]">
             <CommandEmpty>검색 결과가 없습니다.</CommandEmpty>
             <CommandGroup>
