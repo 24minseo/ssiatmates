@@ -103,7 +103,7 @@ export function MultiSelectDropdown({
                     role="button"
                     tabIndex={0}
                     aria-label={`${item} 선택 해제`}
-                    className="inline-flex size-6 items-center justify-center rounded-full text-ink hover:bg-[#ECEFED]"
+                    className="inline-flex size-[18px] items-center justify-center rounded-full text-ink hover:bg-[#ECEFED]"
                     onPointerDown={(event) => {
                       event.preventDefault();
                       event.stopPropagation();
