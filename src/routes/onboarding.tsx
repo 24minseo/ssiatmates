@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { StepBasicInfo } from "@/components/onboarding/StepBasicInfo";
 import { StepBusinessInfo } from "@/components/onboarding/StepBusinessInfo";
 import {
+  STARTUP_STAGE_CODES,
   initialOnboardingState,
   type OnboardingState,
 } from "@/components/onboarding/constants";
@@ -73,7 +74,7 @@ function OnboardingPage() {
       p_residence_region: residenceCode,
       p_business_region: businessCode,
       p_industries: state.businessFields,
-      p_personal_statuses: [],
+      p_personal_statuses: state.personalStatuses,
       p_support_interests: state.supportCategories,
     });
 
