@@ -6,7 +6,27 @@ export const STARTUP_STAGES = [
   "7년 이상",
 ] as const;
 
+export const STARTUP_STAGE_CODES: Record<string, string> = {
+  예비창업자: "pre_founder",
+  "1년 미만": "under_1_year",
+  "1년 이상 ~ 3년 미만": "1_to_3_years",
+  "3년 이상 ~ 7년 미만": "3_to_7_years",
+  "7년 이상": "over_7_years",
+};
+
 export const PRE_FOUNDER = STARTUP_STAGES[0];
+
+export const PERSONAL_STATUS_OPTIONS = [
+  "대학생·대학원생",
+  "고등학생 이하",
+  "직장인",
+  "프리랜서",
+  "자영업자·기업 대표",
+  "미취업·구직 중",
+  "교수·교원",
+  "연구원",
+  "기타",
+] as const;
 
 export const BUSINESS_FIELDS = [
   "AI·데이터",
@@ -41,6 +61,7 @@ export const SUPPORT_CATEGORIES = [
 
 export interface OnboardingState {
   birthDate: string;
+  personalStatuses: string[];
   startupStage: string | null;
   residence: string | null;
   businessLocation: string | null;
@@ -51,6 +72,7 @@ export interface OnboardingState {
 
 export const initialOnboardingState: OnboardingState = {
   birthDate: "",
+  personalStatuses: [],
   startupStage: null,
   residence: null,
   businessLocation: null,
