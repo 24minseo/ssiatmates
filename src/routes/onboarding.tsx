@@ -68,7 +68,7 @@ function OnboardingPage() {
     const businessCode = businessName ? regionCodes.get(businessName) ?? businessName : null;
 
     const { error } = await supabase.rpc("complete_onboarding", {
-      p_birth_date: state.birthDate || null,
+      p_birth_date: state.birthDate ? state.birthDate.replace(/\./g, "-") : null,
       p_founding_stage: stageCode,
       p_residence_region: residenceCode,
       p_business_region: businessCode,
