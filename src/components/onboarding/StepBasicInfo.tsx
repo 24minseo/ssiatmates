@@ -122,6 +122,7 @@ export function StepBasicInfo({ state, update, onNext }: StepBasicInfoProps) {
       </FormField>
 
       <FormField label="신분" required htmlFor="personalStatus">
+        <p className="text-xs text-ink-muted">최대 2개까지 선택할 수 있어요.</p>
         <MultiSelectCombobox
           id="personalStatus"
           options={PERSONAL_STATUS_OPTIONS}
