@@ -6,7 +6,9 @@ import { cn } from "@/lib/utils";
 import { FormField } from "./FormField";
 import { OptionCards } from "./OptionCards";
 import { RegionCombobox } from "./RegionCombobox";
+import { MultiSelectCombobox } from "./MultiSelectCombobox";
 import {
+  PERSONAL_STATUS_OPTIONS,
   PRE_FOUNDER,
   STARTUP_STAGES,
   formatBirthDate,
