@@ -43,13 +43,35 @@ function OnboardingPage() {
   const handleComplete = async () => {
     if (saving || !user) return;
     setSaving(true);
+    const stageCode = state.startupStage
+      ? STARTUP_STAGE_CODES[state.startupStage] ?? state.startupStage
+      : null;
+    const residenceName = state.residence;
+    const businessName = state.sameAsResidence
+      ? state.residence
+      : state.businessLocation;
+    const { data: regionRows, error: regionError } = await supabase
+      .from("onboarding_regions")
+      .select("region_code, region_name")
+      .in("region_name", [residenceName, businessName].filter(Boolean) as string[]);
+
+    if (regionError) {
+      console.error("[onboarding] 지역 조회 실패", regionError);
+      setSaving(false);
+      toast.error("지역 정보를 확인하지 못했어요.");
+      return;
+    }
+    const regionCodes = new Map(
+      (regionRows ?? []).map((row) => [row.region_name, row.region_code]),
+    );
+    const residenceCode = residenceName ? regionCodes.get(residenceName) ?? residenceName : null;
+    const businessCode = businessName ? regionCodes.get(businessName) ?? businessName : null;
+
     const { error } = await supabase.rpc("complete_onboarding", {
       p_birth_date: state.birthDate || null,
-      p_founding_stage: state.startupStage,
-      p_residence_region: state.residence,
-      p_business_region: state.sameAsResidence
-        ? state.residence
-        : state.businessLocation,
+      p_founding_stage: stageCode,
+      p_residence_region: residenceCode,
+      p_business_region: businessCode,
       p_industries: state.businessFields,
       p_personal_statuses: [],
       p_support_interests: state.supportCategories,
