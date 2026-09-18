@@ -43,20 +43,17 @@ function OnboardingPage() {
   const handleComplete = async () => {
     if (saving || !user) return;
     setSaving(true);
-    const { error } = await supabase
-      .from("profiles")
-      .update({
-        birth_date: state.birthDate || null,
-        startup_stage: state.startupStage,
-        residence: state.residence,
-        business_location: state.sameAsResidence
-          ? state.residence
-          : state.businessLocation,
-        business_fields: state.businessFields,
-        support_categories: state.supportCategories,
-        is_onboarded: true,
-      })
-      .eq("id", user.id);
+    const { error } = await supabase.rpc("complete_onboarding", {
+      p_birth_date: state.birthDate || null,
+      p_founding_stage: state.startupStage,
+      p_residence_region: state.residence,
+      p_business_region: state.sameAsResidence
+        ? state.residence
+        : state.businessLocation,
+      p_industries: state.businessFields,
+      p_personal_statuses: [],
+      p_support_interests: state.supportCategories,
+    });
 
     if (error) {
       console.error("[onboarding] 저장 실패", error);
