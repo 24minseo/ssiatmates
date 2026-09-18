@@ -58,7 +58,7 @@ export function MultiSelectCombobox({
           role="combobox"
           aria-expanded={open}
           className={cn(
-            "flex h-12 w-full items-center justify-between rounded-[12px] border border-field-border bg-surface px-4 text-left text-[15px] text-ink transition-colors",
+            "flex min-h-12 h-auto w-full items-center justify-between rounded-[12px] border border-field-border bg-surface px-4 py-2 text-left text-[15px] text-ink transition-colors",
             "focus:outline-none focus-visible:border-[1.5px] focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft",
           )}
         >
