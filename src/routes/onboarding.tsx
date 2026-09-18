@@ -74,7 +74,7 @@ function OnboardingPage() {
       p_residence_region: residenceCode,
       p_business_region: businessCode,
       p_industries: state.businessFields,
-      p_personal_statuses: state.personalStatuses,
+      p_personal_statuses: state.personalStatuses ?? [],
       p_support_interests: state.supportCategories,
     });
 
