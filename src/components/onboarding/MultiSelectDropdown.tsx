@@ -121,7 +121,7 @@ export function MultiSelectDropdown({
                       }
                     }}
                   >
-                    <X aria-hidden className="size-3.5" strokeWidth={1.5} />
+                    <X aria-hidden className="size-3.5" strokeWidth={2} />
                   </span>
                 </span>
               ))}
