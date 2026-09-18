@@ -9,7 +9,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { regions } from "@/data/regions";
+import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
 interface RegionComboboxProps {
@@ -28,12 +28,33 @@ export function RegionCombobox({
   id,
 }: RegionComboboxProps) {
   const [open, setOpen] = useState(false);
+  const [regions, setRegions] = useState<Array<{ label: string }>>([]);
   const [activeValue, setActiveValue] = useState("");
   const selectedItemRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (disabled) setOpen(false);
   }, [disabled]);
+
+  useEffect(() => {
+    let active = true;
+    void supabase
+      .from("onboarding_regions")
+      .select("region_name")
+      .order("region_name")
+      .then(({ data, error }) => {
+        if (error) {
+          console.error("[onboarding] 지역 목록 조회 실패", error);
+          return;
+        }
+        if (active) {
+          setRegions((data ?? []).map((row) => ({ label: row.region_name })));
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (!open || !value) return;
