@@ -36,6 +36,7 @@ export function StepBasicInfo({ state, update, onNext }: StepBasicInfoProps) {
     : null;
   const hasBirthError = !!birthError;
   const isPreFounder = state.startupStage === PRE_FOUNDER;
+  const personalStatuses = state.personalStatuses ?? [];
 
   useLayoutEffect(() => {
     const caret = pendingBirthCaretRef.current;
@@ -87,7 +88,7 @@ export function StepBasicInfo({ state, update, onNext }: StepBasicInfoProps) {
 
   const canProceed =
     birth.valid &&
-    state.personalStatuses.length > 0 &&
+    personalStatuses.length > 0 &&
     !!state.startupStage &&
     !!state.residence &&
     (isPreFounder || !!state.businessLocation);
