@@ -49,14 +49,17 @@ export const SUPPORT_ALL = "전체";
 export const SUPPORT_CATEGORIES = [
   SUPPORT_ALL,
   "사업화",
-  "기술개발(R&D)",
+  "기술개발(R&D)·기술",
   "시설·공간·보육",
-  "교육·멘토링·컨설팅",
-  "판로",
-  "글로벌",
-  "인력",
-  "융자·보증·정책자금",
+  "멘토링·컨설팅·교육",
   "행사·네트워크",
+  "금융·융자",
+  "인력",
+  "글로벌·수출",
+  "내수",
+  "창업",
+  "경영",
+  "기타",
 ] as const;
 
 export interface OnboardingState {
