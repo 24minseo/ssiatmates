@@ -8,7 +8,7 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import { AppSidebarProvider } from "../components/app/AppSidebarState";
 import { AppShell } from "../components/app/AppShell";
@@ -132,6 +132,30 @@ function getAppNavigationKey(pathname: string): AppNavigationKey | null {
   return null;
 }
 
+function AuthBackgroundOverlay({ pathname }: { pathname: string }) {
+  const isAuthPage = pathname === "/" || pathname === "/signup";
+  const [rendered, setRendered] = useState(isAuthPage);
+
+  useEffect(() => {
+    if (isAuthPage) {
+      setRendered(true);
+      return;
+    }
+
+    const timer = window.setTimeout(() => setRendered(false), 200);
+    return () => window.clearTimeout(timer);
+  }, [isAuthPage]);
+
+  if (!rendered) return null;
+
+  return (
+    <div
+      aria-hidden
+      className={`pointer-events-none fixed inset-0 z-[5] bg-overlay backdrop-blur-[4px] transition-opacity duration-200 ease-out ${isAuthPage ? "opacity-100" : "opacity-0"}`}
+    />
+  );
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const pathname = useRouterState({
@@ -147,6 +171,7 @@ function RootComponent() {
           <AppSidebarProvider>
             <Toaster position="bottom-right" />
             <AuthGate pathname={pathname}>
+              <AuthBackgroundOverlay pathname={pathname} />
               {activeNavigation ? (
                 <AppShell active={activeNavigation}>{routeContent}</AppShell>
               ) : (
