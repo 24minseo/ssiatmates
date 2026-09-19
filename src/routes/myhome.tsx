@@ -48,26 +48,68 @@ function MyHomePage() {
         {summaryCards.map((card) => (
           <article
             key={card.label}
-            className={`min-h-[146px] rounded-[12px] p-5 shadow-surface-card ${
-              card.featured
-                ? "bg-gradient-to-br from-[#30BF98] to-[#168563] text-white"
-                : "bg-white text-ink"
+            className={`relative overflow-hidden rounded-[12px] p-5 shadow-surface-card ${
+              card.featured ? "h-[158px] text-white" : "min-h-[146px] bg-white text-ink"
             }`}
           >
-            <h2
-              className={`text-sm font-medium ${card.featured ? "text-white" : "text-[#84968E]"}`}
-            >
-              {card.label}
-            </h2>
-            <p className="mt-5 text-[34px] font-medium leading-none">
-              {card.value}
-              <span className="ml-1 text-base">건</span>
-            </p>
-            <p
-              className={`mt-3 text-xs font-medium ${card.featured ? "text-white/80" : "text-[#84968E]"}`}
-            >
-              {card.description}
-            </p>
+            ${card.featured ? (
+              <>
+                <div
+                  aria-hidden
+                  className="absolute inset-0 rounded-[12px] bg-white shadow-[inset_0px_0px_1px_0px_#d7ffe2,inset_0px_0px_2px_0px_#a2dece]"
+                />
+                <div
+                  aria-hidden
+                  className="absolute inset-0 rounded-[12px] shadow-[inset_0px_0px_33.4px_-7px_#1f8064,inset_0px_0px_1px_0px_#d7ffe2,inset_0px_0px_2px_0px_#a2dece]"
+                  style={{
+                    backgroundImage:
+                      "linear-gradient(270deg, #1f8064 0%, #005d44 5.7692%, #1f8064 94.231%, rgba(0, 255, 174, 0) 100%)",
+                  }}
+                />
+                <div
+                  aria-hidden
+                  className="absolute inset-0 rounded-[12px] bg-[rgba(100,255,199,0.2)] backdrop-blur-[25px] shadow-[inset_0px_2px_6px_0px_rgba(149,255,236,0.25),inset_0px_0px_1px_0px_#d7ffe2,inset_0px_0px_2px_0px_#a2dece]"
+                />
+              </>
+            ) : null}
+            <div className="relative z-10">
+              <h2
+                className={`${
+                  card.featured
+                    ? "text-[16px] font-bold leading-[1.16] text-[#d7f5ea]"
+                    : "text-sm font-medium text-[#84968E]"
+                }`}
+              >
+                {card.label}
+              </h2>
+              <p
+                className={`${
+                  card.featured
+                    ? "mt-5 text-[48px] font-semibold leading-[1.16] text-[#d7f5ea]"
+                    : "mt-5 text-[34px] font-medium leading-none"
+                }`}
+              >
+                {card.value}
+                <span
+                  className={`${
+                    card.featured
+                      ? "ml-1 inline-block pb-1 text-[24px] font-semibold leading-[1.16]"
+                      : "ml-1 text-base"
+                  }`}
+                >
+                  건
+                </span>
+              </p>
+              <p
+                className={`${
+                  card.featured
+                    ? "mt-2 text-[13px] font-normal leading-[1.16] text-[#d7f5ea]"
+                    : "mt-3 text-xs font-medium text-[#84968E]"
+                }`}
+              >
+                {card.description}
+              </p>
+            </div>
           </article>
         ))}
       </section>
