@@ -72,7 +72,7 @@ function MyHomePage() {
                 />
               </>
             ) : null}
-            <div className={`${card.featured ? "absolute inset-0 z-10" : "relative z-10"}`}>
+            <div className="absolute inset-0 z-10">
               <h2
                 className={`${
                   card.featured
