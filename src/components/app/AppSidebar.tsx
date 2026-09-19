@@ -187,7 +187,7 @@ function MenuItem({
               className="mt-[3px] h-[22px] w-[2px] shrink-0 rounded-full bg-field-border"
             />
             <span
-              className={`ml-[5px] flex h-7 w-[154px] shrink-0 items-center overflow-hidden whitespace-nowrap rounded-[7px] px-[10px] text-sm ${
+              className={`ml-[5px] flex h-7 w-[154px] shrink-0 items-center overflow-hidden whitespace-nowrap rounded-[7px] px-[10px] text-[13px] ${
                 childSelected
                   ? "bg-item-hover-selected font-semibold text-brand"
                   : "font-normal text-submenu-text group-hover/submenu:bg-menu-hover group-hover/submenu:shadow-menu-hover"
@@ -228,7 +228,7 @@ function MenuItem({
                   setFlyoutHoveredKey(null);
                   setFlyoutOpen(false);
                 }}
-                className={childSelected && (flyoutHoveredKey === null || flyoutHoveredKey === child.key) ? "flex h-9 items-center rounded-[7px] bg-[#F5F8F5] px-2 text-sm font-semibold text-brand hover:bg-[#F6F8F7]" : childSelected ? "flex h-9 items-center rounded-[7px] px-2 text-sm font-semibold text-brand" : "flex h-9 items-center rounded-[7px] px-2 text-sm font-normal text-submenu-text hover:bg-[#F6F8F7] hover:shadow-menu-hover"}
+                className={childSelected && (flyoutHoveredKey === null || flyoutHoveredKey === child.key) ? "flex h-9 items-center rounded-[7px] bg-[#F5F8F5] px-2 text-[13px] font-semibold text-brand hover:bg-[#F6F8F7]" : childSelected ? "flex h-9 items-center rounded-[7px] px-2 text-[13px] font-semibold text-brand" : "flex h-9 items-center rounded-[7px] px-2 text-[13px] font-normal text-submenu-text hover:bg-[#F6F8F7] hover:shadow-menu-hover"}
                 onMouseEnter={() => setFlyoutHoveredKey(child.key)}
               >
                 {child.label}
