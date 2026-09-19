@@ -117,7 +117,7 @@ export function ProgramCard({
               <button
                 type="button"
                 aria-label={`${program.title} 더보기 메뉴`}
-                className="flex size-6 items-center justify-center rounded-[8px] text-icon-muted transition-colors hover:bg-item-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                className="flex size-8 items-center justify-center rounded-[8px] text-icon-muted transition-colors hover:bg-item-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
               >
                 <MoreVertical className="size-4" />
               </button>
