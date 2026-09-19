@@ -25,7 +25,7 @@ export function AppHeader() {
   return (
     <header
       aria-label="앱 헤더"
-      className="flex h-[74px] min-w-0 w-full flex-none grow-0 flex-row items-center justify-end self-stretch bg-surface py-4 pl-8 pr-16"
+      className="app-header-soft-edge absolute inset-x-0 top-0 z-20 flex h-[74px] min-w-0 w-full flex-none flex-row items-center justify-end self-stretch py-4 pl-8 pr-16"
       data-figma-node="903:284"
     >
       <div className="flex h-9 items-center gap-4">
