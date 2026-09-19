@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 
 import { useAppSidebar } from "./AppSidebarState";
 
@@ -111,6 +111,17 @@ function MenuItem({
   const [childrenCanEnter, setChildrenCanEnter] = useState(false);
   const [flyoutOpen, setFlyoutOpen] = useState(false);
   const [flyoutHoveredKey, setFlyoutHoveredKey] = useState<AppNavigationKey | null>(null);
+  const flyoutCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const openFlyout = () => {
+    if (flyoutCloseTimer.current) clearTimeout(flyoutCloseTimer.current);
+    setFlyoutOpen(true);
+  };
+  const scheduleFlyoutClose = () => {
+    flyoutCloseTimer.current = setTimeout(() => {
+      setFlyoutHoveredKey(null);
+      setFlyoutOpen(false);
+    }, 80);
+  };
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => {
@@ -125,8 +136,8 @@ function MenuItem({
   return (
     <li
       className="relative"
-      onMouseEnter={() => setFlyoutOpen(true)}
-      onMouseLeave={() => setFlyoutOpen(false)}
+      onMouseEnter={openFlyout}
+      onMouseLeave={scheduleFlyoutClose}
     >
       <Link
         to={item.to}
@@ -192,7 +203,9 @@ function MenuItem({
       })}
 
       {!expanded && flyoutOpen && item.children ? (
-        <div onMouseLeave={() => { setFlyoutHoveredKey(null); setFlyoutOpen(false); }} className="before:absolute before:-left-2 before:top-0 before:h-9 before:w-2 before:content-[''] relative absolute left-[56px] -top-[49px] z-50 w-[100px] rounded-[12px] bg-white p-1 shadow-dropdown">
+        <div onMouseEnter={openFlyout}
+          onMouseLeave={scheduleFlyoutClose}
+          className="before:absolute before:-left-2 before:top-0 before:h-9 before:w-2 before:content-[''] relative absolute left-[56px] -top-[49px] z-50 w-[100px] rounded-[12px] bg-white p-1 shadow-dropdown">
           <Link
             to={item.to}
             aria-current={isCurrent ? "page" : undefined}
