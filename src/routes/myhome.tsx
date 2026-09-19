@@ -82,7 +82,7 @@ function MyHomePage() {
               >
                 {card.label}
               </h2>
-              <p
+              <div
                 className={`${
                   card.featured
                     ? "absolute left-5 top-[66px] flex items-end gap-1 text-[48px] font-medium leading-[1.16] text-[#d7f5ea]"
@@ -99,7 +99,7 @@ function MyHomePage() {
                 >
                   건
                 </span>
-              </p>
+              </div>
               <p
                 className={`${
                   card.featured
