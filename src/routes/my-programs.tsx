@@ -245,7 +245,7 @@ function MyProgramsPage() {
                 <ChevronDown className="size-4 text-icon-muted transition-transform group-data-[state=open]:rotate-180" />
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-[136px] rounded-[12px] border-0 shadow-dropdown">
+            <DropdownMenuContent side="bottom" align="start" className="w-[136px] rounded-[12px] border-0 shadow-dropdown">
               <div className="space-y-1">
                 {(Object.keys(sortLabels) as SortOption[]).map((option) => (
                   <DropdownMenuItem
