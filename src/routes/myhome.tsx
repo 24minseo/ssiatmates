@@ -85,7 +85,7 @@ function MyHomePage() {
               <p
                 className={`${
                   card.featured
-                    ? "mt-5 text-[48px] font-medium leading-[1.16] text-[#d7f5ea]"
+                    ? "mt-7 flex items-end gap-1 text-[48px] font-medium leading-[1.16] text-[#d7f5ea]"
                     : "mt-5 text-[34px] font-medium leading-none"
                 }`}
               >
@@ -93,7 +93,7 @@ function MyHomePage() {
                 <span
                   className={`${
                     card.featured
-                      ? "relative -top-[2px] ml-1 inline-block align-baseline text-[24px] font-medium leading-[1.16]"
+                      ? "inline-block pb-2 text-[24px] font-medium leading-[1.16]"
                       : "ml-1 text-base"
                   }`}
                 >
@@ -103,7 +103,7 @@ function MyHomePage() {
               <p
                 className={`${
                   card.featured
-                    ? "mt-2 text-[13px] font-normal leading-[1.16] text-[#d7f5ea]"
+                    ? "mt-0 text-[13px] font-normal leading-[1.16] text-[#d7f5ea]"
                     : "mt-3 text-xs font-medium text-[#84968E]"
                 }`}
               >
