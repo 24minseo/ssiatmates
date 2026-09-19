@@ -110,6 +110,7 @@ function MenuItem({
   const activeBranch = isCurrent || hasActiveChild;
   const [childrenCanEnter, setChildrenCanEnter] = useState(false);
   const [flyoutOpen, setFlyoutOpen] = useState(false);
+  const [flyoutHoveredKey, setFlyoutHoveredKey] = useState<AppNavigationKey | null>(null);
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => {
@@ -191,11 +192,12 @@ function MenuItem({
       })}
 
       {!expanded && flyoutOpen && item.children ? (
-        <div className="before:absolute before:-left-2 before:top-0 before:h-full before:w-2 before:content-[''] relative absolute left-[56px] -top-[40px] z-50 w-[148px] rounded-[12px] bg-white p-1 shadow-dropdown">
+        <div onMouseLeave={() => setFlyoutHoveredKey(null)} className="before:absolute before:-left-2 before:top-0 before:h-full before:w-2 before:content-[''] relative absolute left-[56px] -top-[40px] z-50 w-[148px] rounded-[12px] bg-white p-1 shadow-dropdown">
           <Link
             to={item.to}
             aria-current={isCurrent ? "page" : undefined}
-            className={isCurrent ? "flex h-9 items-center rounded-[7px] bg-[#F5F8F5] px-2 text-sm font-semibold text-brand" : "flex h-9 items-center rounded-[7px] px-2 text-sm font-normal text-submenu-text hover:bg-[#F6F8F7] hover:shadow-menu-hover"}
+            className={isCurrent && (flyoutHoveredKey === null || flyoutHoveredKey === item.key) ? "flex h-9 items-center rounded-[7px] bg-[#F5F8F5] px-2 text-sm font-semibold text-brand hover:bg-[#F6F8F7]" : isCurrent ? "flex h-9 items-center rounded-[7px] px-2 text-sm font-semibold text-brand" : "flex h-9 items-center rounded-[7px] px-2 text-sm font-normal text-submenu-text hover:bg-[#F6F8F7] hover:shadow-menu-hover"}
+            onMouseEnter={() => setFlyoutHoveredKey(item.key)}
           >
             {item.label}
           </Link>
@@ -207,7 +209,8 @@ function MenuItem({
                 key={child.key}
                 to={child.to}
                 aria-current={childSelected ? "page" : undefined}
-                className={childSelected ? "flex h-9 items-center rounded-[7px] bg-[#F5F8F5] px-2 text-sm font-semibold text-brand" : "flex h-9 items-center rounded-[7px] px-2 text-sm font-normal text-submenu-text hover:bg-[#F6F8F7] hover:shadow-menu-hover"}
+                className={childSelected && (flyoutHoveredKey === null || flyoutHoveredKey === child.key) ? "flex h-9 items-center rounded-[7px] bg-[#F5F8F5] px-2 text-sm font-semibold text-brand hover:bg-[#F6F8F7]" : childSelected ? "flex h-9 items-center rounded-[7px] px-2 text-sm font-semibold text-brand" : "flex h-9 items-center rounded-[7px] px-2 text-sm font-normal text-submenu-text hover:bg-[#F6F8F7] hover:shadow-menu-hover"}
+                onMouseEnter={() => setFlyoutHoveredKey(child.key)}
               >
                 {child.label}
               </Link>
