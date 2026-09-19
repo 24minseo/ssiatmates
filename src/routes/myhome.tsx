@@ -77,7 +77,7 @@ function MyHomePage() {
                 className={`${
                   card.featured
                     ? "absolute left-5 top-[19px] text-[18px] font-medium leading-[1.16] text-[#d7f5ea]"
-                    : "text-sm font-medium text-[#84968E]"
+                    : "absolute left-5 top-[19px] text-[18px] font-medium leading-[1.16] text-[#84968E]"
                 }`}
               >
                 {card.label}
@@ -86,7 +86,7 @@ function MyHomePage() {
                 className={`${
                   card.featured
                     ? "absolute left-5 top-[66px] flex items-end gap-1 text-[48px] font-medium leading-[1.16] text-[#d7f5ea]"
-                    : "mt-5 text-[34px] font-medium leading-none"
+                    : "absolute left-5 top-[66px] flex items-end gap-1 text-[48px] font-medium leading-[1.16] text-ink"
                 }`}
               >
                 {card.value}
@@ -94,7 +94,7 @@ function MyHomePage() {
                   className={`${
                     card.featured
                       ? "relative top-[1px] inline-block pb-2 text-[24px] font-medium leading-[1.16]"
-                      : "ml-1 text-base"
+                      : "relative top-[1px] inline-block pb-2 text-[24px] font-medium leading-[1.16]"
                   }`}
                 >
                   건
@@ -104,7 +104,7 @@ function MyHomePage() {
                 className={`${
                   card.featured
                     ? "absolute left-5 top-[122px] text-[13px] font-normal leading-[1.16] text-[#d7f5ea]"
-                    : "mt-3 text-xs font-medium text-[#84968E]"
+                    : "absolute left-5 top-[122px] text-[13px] font-normal leading-[1.16] text-[#84968E]"
                 }`}
               >
                 {card.description}
