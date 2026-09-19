@@ -147,11 +147,11 @@ function MenuItem({
           expanded ? "pr-[19px]" : "pr-3"
         } ${
           isCurrent
-            ? "bg-item-hover-selected font-semibold text-brand"
+            ? "bg-item-hover-selected font-semibold text-brand hover:bg-menu-hover hover:shadow-menu-hover"
             : hasActiveChild
               ? expanded
-                ? "font-semibold text-brand"
-                : "bg-item-hover-selected font-semibold text-brand"
+                ? "font-semibold text-brand hover:bg-menu-hover hover:shadow-menu-hover"
+                : "bg-item-hover-selected font-semibold text-brand hover:bg-menu-hover hover:shadow-menu-hover"
               : "font-normal text-icon-muted hover:bg-menu-hover hover:shadow-menu-hover"
         }`}
       >
