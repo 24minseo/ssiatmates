@@ -54,12 +54,12 @@ export function ProgramSortDropdown({
         side="bottom"
         sideOffset={4}
         avoidCollisions={false}
-        className="w-[136px] rounded-[12px] border-0 p-1 shadow-[8px_8px_30px_0_rgba(0,13,59,0.1)]"
+        className="w-[136px] rounded-[12px] border-0 p-0 shadow-[8px_8px_30px_0_rgba(0,13,59,0.1)]"
       >
         <Command
           value={activeValue}
           onValueChange={setActiveValue}
-          className="rounded-[8px]"
+          className="rounded-[12px]"
         >
           <CommandList>
             <CommandGroup>
