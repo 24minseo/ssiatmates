@@ -117,6 +117,7 @@ function MenuItem({
     setFlyoutOpen(true);
   };
   const scheduleFlyoutClose = () => {
+    if (flyoutCloseTimer.current) clearTimeout(flyoutCloseTimer.current);
     flyoutCloseTimer.current = setTimeout(() => {
       setFlyoutHoveredKey(null);
       setFlyoutOpen(false);
@@ -134,16 +135,14 @@ function MenuItem({
   const childrenVisible = expanded && activeBranch && childrenCanEnter;
 
   return (
-    <li
-      className="relative"
-      onMouseEnter={openFlyout}
-      onMouseLeave={scheduleFlyoutClose}
-    >
+    <li className="relative">
       <Link
         to={item.to}
         aria-current={isCurrent ? "page" : undefined}
         aria-label={expanded ? undefined : item.label}
         title={expanded ? undefined : item.label}
+        onMouseEnter={openFlyout}
+        onMouseLeave={scheduleFlyoutClose}
         className={`flex h-[46px] items-center gap-[10px] overflow-hidden rounded-lg pl-3 transition-[padding,background-color,color,box-shadow] duration-200 ease-out motion-reduce:transition-none ${
           expanded ? "pr-[19px]" : "pr-3"
         } ${
@@ -203,7 +202,8 @@ function MenuItem({
       })}
 
       {!expanded && flyoutOpen && item.children ? (
-        <div onMouseEnter={openFlyout}
+        <div
+          onMouseEnter={openFlyout}
           onMouseLeave={scheduleFlyoutClose}
           className="before:absolute before:-left-2 before:top-0 before:h-9 before:w-2 before:content-[''] relative absolute left-[56px] -top-[49px] z-50 w-[100px] rounded-[12px] bg-white p-1 shadow-dropdown">
           <Link
