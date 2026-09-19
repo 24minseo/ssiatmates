@@ -76,7 +76,7 @@ function MyHomePage() {
               <h2
                 className={`${
                   card.featured
-                    ? "text-[16px] font-semibold leading-[1.16] text-[#d7f5ea]"
+                    ? "text-[18px] font-semibold leading-[1.16] text-[#d7f5ea]"
                     : "text-sm font-medium text-[#84968E]"
                 }`}
               >
