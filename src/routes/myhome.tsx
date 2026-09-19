@@ -52,7 +52,7 @@ function MyHomePage() {
               card.featured ? "h-[158px] text-white" : "min-h-[146px] bg-white text-ink"
             }`}
           >
-            ${card.featured ? (
+            {card.featured ? (
               <>
                 <div
                   aria-hidden
