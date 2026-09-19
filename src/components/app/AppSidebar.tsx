@@ -195,7 +195,7 @@ function MenuItem({
           <Link
             to={item.to}
             aria-current={isCurrent ? "page" : undefined}
-            className={isCurrent ? "flex h-11 items-center rounded-[7px] bg-item-hover-selected px-3 text-base font-semibold text-brand" : "flex h-11 items-center rounded-[7px] px-3 text-base font-normal text-submenu-text hover:bg-menu-hover hover:shadow-menu-hover"}
+            className={isCurrent ? "flex h-11 items-center rounded-[7px] bg-item-hover-selected px-3 text-base font-semibold text-brand" : "flex h-11 items-center rounded-[7px] px-3 text-sm font-normal text-submenu-text hover:bg-menu-hover hover:shadow-menu-hover"}
           >
             {item.label}
           </Link>
@@ -207,7 +207,7 @@ function MenuItem({
                 key={child.key}
                 to={child.to}
                 aria-current={childSelected ? "page" : undefined}
-                className={childSelected ? "flex h-11 items-center rounded-[7px] bg-item-hover-selected px-3 text-base font-semibold text-brand" : "flex h-11 items-center rounded-[7px] px-3 text-base font-normal text-submenu-text hover:bg-menu-hover hover:shadow-menu-hover"}
+                className={childSelected ? "flex h-11 items-center rounded-[7px] bg-item-hover-selected px-3 text-base font-semibold text-brand" : "flex h-11 items-center rounded-[7px] px-3 text-sm font-normal text-submenu-text hover:bg-menu-hover hover:shadow-menu-hover"}
               >
                 {child.label}
               </Link>
