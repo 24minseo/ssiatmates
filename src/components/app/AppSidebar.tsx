@@ -191,7 +191,7 @@ function MenuItem({
       })}
 
       {!expanded && flyoutOpen && item.children ? (
-        <div className="before:absolute before:-left-2 before:top-0 before:h-full before:w-2 before:content-[''] relative absolute left-[56px] -top-[40px] z-50 w-[220px] rounded-[12px] bg-white p-2 shadow-dropdown">
+        <div className="before:absolute before:-left-2 before:top-0 before:h-full before:w-2 before:content-[''] relative absolute left-[56px] -top-[40px] z-50 w-[148px] rounded-[12px] bg-white p-2 shadow-dropdown">
           <Link
             to={item.to}
             aria-current={isCurrent ? "page" : undefined}
