@@ -192,7 +192,7 @@ function MenuItem({
       })}
 
       {!expanded && flyoutOpen && item.children ? (
-        <div onMouseLeave={() => setFlyoutHoveredKey(null)} className="before:absolute before:-left-2 before:top-0 before:h-9 before:w-2 before:content-[''] relative absolute left-[56px] -top-[49px] z-50 w-[100px] rounded-[12px] bg-white p-1 shadow-dropdown">
+        <div onMouseLeave={() => { setFlyoutHoveredKey(null); setFlyoutOpen(false); }} className="before:absolute before:-left-2 before:top-0 before:h-9 before:w-2 before:content-[''] relative absolute left-[56px] -top-[49px] z-50 w-[100px] rounded-[12px] bg-white p-1 shadow-dropdown">
           <Link
             to={item.to}
             aria-current={isCurrent ? "page" : undefined}
