@@ -1,11 +1,9 @@
+import { useState } from "react";
 import { Check, ChevronDown } from "lucide-react";
 
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Command, CommandGroup, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 
 export type ProgramSortOption = "deadline" | "fit" | "created";
 
@@ -24,41 +22,74 @@ export function ProgramSortDropdown({
   value,
   onChange,
 }: ProgramSortDropdownProps) {
+  const [open, setOpen] = useState(false);
+  const [activeValue, setActiveValue] = useState(value);
+
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
+    <Popover
+      open={open}
+      onOpenChange={(next) => {
+        if (next) setActiveValue(value);
+        setOpen(next);
+      }}
+    >
+      <PopoverTrigger asChild>
         <button
           type="button"
           aria-label="지원사업 정렬"
+          aria-expanded={open}
           className="group flex h-[42px] w-[136px] items-center justify-between rounded-[12px] border border-field-border bg-surface px-[14px] text-[15px] font-semibold text-ink shadow-none transition-colors hover:bg-item-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
         >
           <span>{sortLabels[value]}</span>
-          <ChevronDown className="size-4 text-icon-muted transition-transform group-data-[state=open]:rotate-180" />
+          <ChevronDown
+            className={cn(
+              "size-4 text-icon-muted transition-transform",
+              open && "rotate-180",
+            )}
+          />
         </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent
-        side="bottom"
+      </PopoverTrigger>
+      <PopoverContent
         align="start"
-        className="w-[136px] rounded-[12px] border-0 shadow-[8px_8px_30px_0_rgba(0,13,59,0.1)]"
+        side="bottom"
+        sideOffset={4}
+        avoidCollisions={false}
+        className="w-[136px] rounded-[12px] border-0 p-1 shadow-[8px_8px_30px_0_rgba(0,13,59,0.1)]"
       >
-        <div className="space-y-1">
-          {(Object.keys(sortLabels) as ProgramSortOption[]).map((option) => (
-            <DropdownMenuItem
-              key={option}
-              onSelect={() => onChange(option)}
-              className={`h-11 rounded-[8px] px-4 py-0 text-[15px] font-normal outline-none transition-colors hover:bg-item-hover focus:bg-item-hover focus:text-ink ${value === option ? "bg-item-hover text-brand" : "text-ink"}`}
-            >
-              <span>{sortLabels[option]}</span>
-              {value === option ? (
-                <Check
-                  className="ml-auto size-5 text-brand"
-                  strokeWidth={2}
-                />
-              ) : null}
-            </DropdownMenuItem>
-          ))}
-        </div>
-      </DropdownMenuContent>
-    </DropdownMenu>
+        <Command
+          value={activeValue}
+          onValueChange={setActiveValue}
+          className="rounded-[8px]"
+        >
+          <CommandList>
+            <CommandGroup>
+              {(Object.keys(sortLabels) as ProgramSortOption[]).map((option) => {
+                const selected = value === option;
+                return (
+                  <CommandItem
+                    key={option}
+                    value={option}
+                    onSelect={() => {
+                      onChange(option);
+                      setOpen(false);
+                    }}
+                    className={cn(
+                      "min-h-10 scroll-mt-1 rounded-[8px] text-ink data-[selected=true]:bg-dropdown-hover data-[selected=true]:text-ink",
+                      selected &&
+                        "font-bold text-brand data-[selected=true]:bg-dropdown-selected-hover data-[selected=true]:text-brand",
+                    )}
+                  >
+                    <span className="flex-1">{sortLabels[option]}</span>
+                    {selected ? (
+                      <Check className="size-[18px] text-brand" />
+                    ) : null}
+                  </CommandItem>
+                );
+              })}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
   );
 }
