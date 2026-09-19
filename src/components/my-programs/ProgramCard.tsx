@@ -74,7 +74,7 @@ export function ProgramCard({
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4 rounded-tl-[12px] rounded-tr-[12px] border-l border-r border-t border-solid border-field-border pl-6 pr-4 py-6">
         <div className="min-w-0">
           <div className="flex min-w-0 items-center gap-2">
-            <h3 className="min-w-0 truncate break-keep text-[20px] font-semibold leading-7 text-ink">
+            <h3 className="min-w-0 truncate break-keep text-[20px] font-semibold leading-6 text-ink">
               {program.title}
             </h3>
             <span
@@ -87,7 +87,7 @@ export function ProgramCard({
               {deadline.label}
             </span>
           </div>
-          <div className="mt-6 flex min-w-0 items-center text-[14px] font-medium text-ink-muted">
+          <div className="mt-2 flex min-w-0 items-center text-[14px] font-medium text-ink-muted">
             {[program.organization, program.category, program.stage, program.region]
               .filter(Boolean)
               .map((item, index) => (
