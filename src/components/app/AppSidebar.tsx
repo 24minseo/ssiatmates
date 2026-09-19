@@ -149,9 +149,7 @@ function MenuItem({
           isCurrent
             ? "bg-item-hover-selected font-semibold text-brand"
             : hasActiveChild
-              ? expanded
-                ? "font-semibold text-brand"
-                : "bg-item-hover-selected font-semibold text-brand"
+              ? "font-semibold text-brand"
               : "font-normal text-icon-muted hover:bg-menu-hover hover:shadow-menu-hover"
         }`}
       >
@@ -213,7 +211,7 @@ function MenuItem({
               setFlyoutHoveredKey(null);
               setFlyoutOpen(false);
             }}
-            className={isCurrent && (flyoutHoveredKey === null || flyoutHoveredKey === item.key) ? "flex h-9 items-center rounded-[7px] bg-[#F5F8F5] px-2 text-sm font-semibold text-brand hover:bg-[#F6F8F7]" : isCurrent ? "flex h-9 items-center rounded-[7px] px-2 text-sm font-semibold text-brand" : "flex h-9 items-center rounded-[7px] px-2 text-sm font-normal text-submenu-text hover:bg-[#F6F8F7] hover:shadow-menu-hover"}
+            className={isCurrent && (flyoutHoveredKey === null || flyoutHoveredKey === item.key) ? "flex h-9 items-center rounded-[7px] bg-[#F5F8F5] px-2 text-sm font-semibold text-brand hover:bg-[#F6F8F7]" : isCurrent ? "flex h-9 items-center rounded-[7px] px-2 text-sm font-semibold text-brand" : hasActiveChild ? "flex h-9 items-center rounded-[7px] px-2 text-sm font-semibold text-brand" : "flex h-9 items-center rounded-[7px] px-2 text-sm font-normal text-submenu-text hover:bg-[#F6F8F7] hover:shadow-menu-hover"}
             onMouseEnter={() => setFlyoutHoveredKey(item.key)}
           >
             {item.label}
