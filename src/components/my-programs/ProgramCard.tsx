@@ -87,7 +87,7 @@ export function ProgramCard({
               {deadline.label}
             </span>
           </div>
-          <div className="mt-2 flex min-w-0 items-center text-[14px] font-normal text-ink-muted">
+          <div className="mt-1 flex min-w-0 items-center text-[14px] font-normal text-ink-muted">
             {[program.organization, program.category, program.stage, program.region]
               .filter(Boolean)
               .map((item, index) => (
