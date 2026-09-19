@@ -269,13 +269,13 @@
     to bottom,
     black 0%,
     black 65%,
-    transparent 100%
+    rgba(0, 0, 0, 0.12) 100%
   );
   mask-image: linear-gradient(
     to bottom,
     black 0%,
     black 65%,
-    transparent 100%
+    rgba(0, 0, 0, 0.12) 100%
   );
 }
 
