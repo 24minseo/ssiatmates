@@ -147,7 +147,7 @@ function MenuItem({
           expanded ? "pr-[19px]" : "pr-3"
         } ${
           isCurrent
-            ? "bg-item-hover-selected font-semibold text-brand hover:bg-menu-hover hover:shadow-menu-hover"
+            ? "bg-item-hover-selected font-semibold text-brand"
             : hasActiveChild
               ? expanded
                 ? "font-semibold text-brand hover:bg-menu-hover hover:shadow-menu-hover"
