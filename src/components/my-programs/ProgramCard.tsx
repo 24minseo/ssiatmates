@@ -153,12 +153,12 @@ export function ProgramCard({
       </div>
 
       <div className={`flex min-w-0 items-center gap-x-5 rounded-bl-[12px] rounded-br-[12px] border-b border-l border-r border-solid border-field-border bg-item-hover px-6 pr-[22px] ${program.schedules.length > 0 ? "h-[47px] py-[14px]" : "h-[46px] py-[13px]"}`}>
-        <span className={`flex shrink-0 items-center gap-1 text-[13px] ${program.schedules.length > 0 ? "text-ink-muted" : "text-[#b4c1bd]"}`}>
+        <span className={`flex shrink-0 items-center gap-1 text-[14px] ${program.schedules.length > 0 ? "text-ink-muted" : "text-[#b4c1bd]"}`}>
           <img src={program.schedules.length > 0 ? "/assets/calendar-21-connected.svg" : "/assets/calendar-21.svg"} alt="" aria-hidden className="size-[15px]" />
           {program.schedules.length > 0 ? `남은 일정 ${remaining}개` : "연결된 일정 없음"}
         </span>
         {nextSchedule ? (
-          <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-ink">
+          <span className="min-w-0 flex-1 truncate text-[14px] font-medium text-ink">
             다음 일정 · {formatScheduleDate(nextSchedule.scheduledAt)}{" "}
             {nextSchedule.title}
           </span>
@@ -166,7 +166,7 @@ export function ProgramCard({
         <button
           type="button"
           onClick={() => onManageSchedules(program)}
-          className="ml-auto inline-flex shrink-0 items-center gap-0.5 rounded-[8px] px-1 text-[13px] font-semibold text-[#9a9d9b] transition-colors hover:text-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+          className="ml-auto inline-flex shrink-0 items-center gap-0.5 rounded-[8px] px-1 text-[14px] font-semibold text-[#9a9d9b] transition-colors hover:text-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
         >
           {remaining > 0 || program.schedules.length > 0
             ? "일정 관리하기"
