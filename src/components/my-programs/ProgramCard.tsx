@@ -166,7 +166,7 @@ export function ProgramCard({
         <button
           type="button"
           onClick={() => onManageSchedules(program)}
-          className={`ml-auto inline-flex shrink-0 items-center gap-0.5 rounded-[8px] px-1 text-[13px] font-semibold transition-colors hover:text-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand ${program.schedules.length > 0 ? "text-ink-muted" : "text-[#9a9d9b]"}`}
+          className="ml-auto inline-flex shrink-0 items-center gap-0.5 rounded-[8px] px-1 text-[13px] font-semibold text-[#9a9d9b] transition-colors hover:text-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
         >
           {remaining > 0 || program.schedules.length > 0
             ? "일정 관리하기"
