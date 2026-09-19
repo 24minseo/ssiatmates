@@ -76,8 +76,8 @@ function MyHomePage() {
               <h2
                 className={`${
                   card.featured
-                    ? "absolute left-5 top-[21px] text-[18px] font-medium leading-[1.16] text-[#d7f5ea]"
-                    : "absolute left-5 top-[21px] text-[18px] font-normal leading-[1.16] text-[#84968E]"
+                    ? "absolute left-[22px] top-[21px] text-[18px] font-medium leading-[1.16] text-[#d7f5ea]"
+                    : "absolute left-[22px] top-[21px] text-[18px] font-normal leading-[1.16] text-[#84968E]"
                 }`}
               >
                 {card.label}
@@ -85,8 +85,8 @@ function MyHomePage() {
               <div
                 className={`${
                   card.featured
-                    ? "absolute left-5 top-[66px] flex items-end gap-1 text-[48px] font-medium leading-[1.16] text-[#d7f5ea]"
-                    : "absolute left-5 top-[66px] flex items-end gap-1 text-[48px] font-medium leading-[1.16] text-[#1f8064]"
+                    ? "absolute left-[22px] top-[66px] flex items-end gap-1 text-[48px] font-medium leading-[1.16] text-[#d7f5ea]"
+                    : "absolute left-[22px] top-[66px] flex items-end gap-1 text-[48px] font-medium leading-[1.16] text-[#1f8064]"
                 }`}
               >
                 {card.value}
@@ -103,8 +103,8 @@ function MyHomePage() {
               <p
                 className={`${
                   card.featured
-                    ? "absolute left-5 top-[122px] text-[13px] font-normal leading-[1.16] text-[#d7f5ea]"
-                    : "absolute left-5 top-[122px] text-[13px] font-normal leading-[1.16] text-[#84968E]"
+                    ? "absolute left-[22px] top-[122px] text-[13px] font-normal leading-[1.16] text-[#d7f5ea]"
+                    : "absolute left-[22px] top-[122px] text-[13px] font-normal leading-[1.16] text-[#84968E]"
                 }`}
               >
                 {card.description}
