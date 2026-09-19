@@ -1,16 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
-import { Check, ChevronDown, Loader2, Plus } from "lucide-react";
+import { Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { ProgramCard } from "@/components/my-programs/ProgramCard";
+import {
+  ProgramSortDropdown,
+  type ProgramSortOption,
+} from "@/components/my-programs/ProgramSortDropdown";
 import { ProgramFormDialog } from "@/components/my-programs/ProgramFormDialog";
 import { ProgramScheduleDialog } from "@/components/my-programs/ProgramScheduleDialog";
 import {
@@ -31,13 +29,7 @@ export const Route = createFileRoute("/my-programs")({
 });
 
 type StatusFilter = StatusTabValue;
-type SortOption = "deadline" | "fit" | "created";
-
-const sortLabels: Record<SortOption, string> = {
-  deadline: "마감 임박순",
-  fit: "적합도순",
-  created: "최신 등록순",
-};
+type SortOption = ProgramSortOption;
 
 function MyProgramsPage() {
   const [programs, setPrograms] = useState<Program[]>([]);
@@ -234,34 +226,7 @@ function MyProgramsPage() {
         />
 
         <div className="absolute right-0 top-[-1px] flex items-center gap-[6px]">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                type="button"
-                aria-label="지원사업 정렬"
-                className="group flex h-[42px] w-[136px] items-center justify-between rounded-[12px] border border-field-border bg-surface px-[14px] text-[15px] font-semibold text-ink shadow-none transition-colors hover:bg-item-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-              >
-                <span>{sortLabels[sort]}</span>
-                <ChevronDown className="size-4 text-icon-muted transition-transform group-data-[state=open]:rotate-180" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent side="bottom" align="start" className="w-[136px] rounded-[12px] border-0 shadow-dropdown">
-              <div className="space-y-1">
-                {(Object.keys(sortLabels) as SortOption[]).map((option) => (
-                  <DropdownMenuItem
-                    key={option}
-                    onSelect={() => setSort(option)}
-                    className={`h-11 rounded-[8px] px-4 py-0 text-[15px] font-normal outline-none transition-colors hover:bg-item-hover focus:bg-item-hover focus:text-ink ${sort === option ? "bg-item-hover text-brand" : "text-ink"}`}
-                  >
-                    <span>{sortLabels[option]}</span>
-                    {sort === option ? (
-                      <Check className="ml-auto size-5 text-ink" strokeWidth={2} />
-                    ) : null}
-                  </DropdownMenuItem>
-                ))}
-              </div>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <ProgramSortDropdown value={sort} onChange={setSort} />
           <Button
             type="button"
             aria-label="지원사업 추가"
