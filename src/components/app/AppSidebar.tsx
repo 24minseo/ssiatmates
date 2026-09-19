@@ -191,11 +191,11 @@ function MenuItem({
       })}
 
       {!expanded && flyoutOpen && item.children ? (
-        <div className="before:absolute before:-left-2 before:top-0 before:h-full before:w-2 before:content-[''] relative absolute left-[56px] -top-[40px] z-50 w-[148px] rounded-[12px] bg-white p-2 shadow-dropdown">
+        <div className="before:absolute before:-left-2 before:top-0 before:h-full before:w-2 before:content-[''] relative absolute left-[56px] -top-[40px] z-50 w-[148px] rounded-[12px] bg-white p-1 shadow-dropdown">
           <Link
             to={item.to}
             aria-current={isCurrent ? "page" : undefined}
-            className={isCurrent ? "flex h-11 items-center rounded-[7px] bg-[#F5F8F5] px-3 text-sm font-semibold text-brand" : "flex h-11 items-center rounded-[7px] px-3 text-sm font-normal text-submenu-text hover:bg-[#F6F8F7] hover:shadow-menu-hover"}
+            className={isCurrent ? "flex h-9 items-center rounded-[7px] bg-[#F5F8F5] px-2 text-sm font-semibold text-brand" : "flex h-9 items-center rounded-[7px] px-2 text-sm font-normal text-submenu-text hover:bg-[#F6F8F7] hover:shadow-menu-hover"}
           >
             {item.label}
           </Link>
@@ -207,7 +207,7 @@ function MenuItem({
                 key={child.key}
                 to={child.to}
                 aria-current={childSelected ? "page" : undefined}
-                className={childSelected ? "flex h-11 items-center rounded-[7px] bg-[#F5F8F5] px-3 text-sm font-semibold text-brand" : "flex h-11 items-center rounded-[7px] px-3 text-sm font-normal text-submenu-text hover:bg-[#F6F8F7] hover:shadow-menu-hover"}
+                className={childSelected ? "flex h-9 items-center rounded-[7px] bg-[#F5F8F5] px-2 text-sm font-semibold text-brand" : "flex h-9 items-center rounded-[7px] px-2 text-sm font-normal text-submenu-text hover:bg-[#F6F8F7] hover:shadow-menu-hover"}
               >
                 {child.label}
               </Link>
