@@ -252,31 +252,6 @@
 }
 
 
-.app-header-edge-fade {
-  position: relative;
-  z-index: 10;
-}
-
-.app-header-edge-fade::after {
-  content: "";
-  position: absolute;
-  z-index: -1;
-  left: 0;
-  right: 0;
-  bottom: -32px;
-  height: 32px;
-  pointer-events: none;
-  background: linear-gradient(
-    to bottom,
-    rgb(255 255 255 / 1) 0%,
-    rgb(255 255 255 / 0.92) 65%,
-    rgb(255 255 255 / 0.55) 82%,
-    rgb(255 255 255 / 0) 100%
-  );
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-}
-
 .google-auth-button {
   letter-spacing: normal !important;
 }
