@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import { ChevronRight, MoreVertical } from "lucide-react";
 
 import {
@@ -86,11 +87,21 @@ export function ProgramCard({
               {deadline.label}
             </span>
           </div>
-          <p className="mt-6 truncate text-[14px] font-medium text-ink-muted">
+          <div className="mt-6 flex min-w-0 items-center text-[14px] font-medium text-ink-muted">
             {[program.organization, program.category, program.stage, program.region]
               .filter(Boolean)
-              .join(" · ")}
-          </p>
+              .map((item, index) => (
+                <Fragment key={item}>
+                  {index > 0 ? (
+                    <span
+                      aria-hidden
+                      className="mx-1.5 h-2 w-px shrink-0 bg-field-border"
+                    />
+                  ) : null}
+                  <span className="truncate">{item}</span>
+                </Fragment>
+              ))}
+          </div>
         </div>
 
         <div className="flex shrink-0 items-center gap-2">
