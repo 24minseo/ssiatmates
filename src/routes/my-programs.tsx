@@ -1,10 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
-import { Loader2, Plus } from "lucide-react";
+import { ChevronDown, Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { ProgramCard } from "@/components/my-programs/ProgramCard";
 import { ProgramFormDialog } from "@/components/my-programs/ProgramFormDialog";
 import { ProgramScheduleDialog } from "@/components/my-programs/ProgramScheduleDialog";
@@ -229,22 +235,34 @@ function MyProgramsPage() {
         />
 
         <div className="absolute right-0 top-[-1px] flex items-center gap-[6px]">
-          <Select
-            value={sort}
-            onValueChange={(value) => setSort(value as SortOption)}
-          >
-            <SelectTrigger
-              aria-label="지원사업 정렬"
-              className="h-[42px] w-[136px] rounded-[12px] border-field-border bg-surface px-[14px] text-[15px] font-semibold text-ink shadow-none [&>svg]:transition-transform data-[state=open]:[&>svg]:rotate-180"
-            >
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="rounded-[12px] border-0 shadow-dropdown">
-              <SelectItem value="deadline">{sortLabels.deadline}</SelectItem>
-              <SelectItem value="fit">{sortLabels.fit}</SelectItem>
-              <SelectItem value="created">{sortLabels.created}</SelectItem>
-            </SelectContent>
-          </Select>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                aria-label="지원사업 정렬"
+                className="flex h-[42px] w-[136px] items-center justify-between rounded-[12px] border border-field-border bg-surface px-[14px] text-[15px] font-semibold text-ink shadow-none transition-colors hover:bg-item-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+              >
+                <span>{sortLabels[sort]}</span>
+                <ChevronDown className="size-4 text-icon-muted transition-transform data-[state=open]:rotate-180" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-[136px] rounded-[12px] border-0 shadow-dropdown">
+              <DropdownMenuRadioGroup
+                value={sort}
+                onValueChange={(value) => setSort(value as SortOption)}
+              >
+                <DropdownMenuRadioItem value="deadline">
+                  {sortLabels.deadline}
+                </DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="fit">
+                  {sortLabels.fit}
+                </DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="created">
+                  {sortLabels.created}
+                </DropdownMenuRadioItem>
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button
             type="button"
             aria-label="지원사업 추가"
