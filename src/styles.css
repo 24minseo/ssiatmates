@@ -99,7 +99,7 @@
   --color-field-border: var(--field-border);
   --color-content-disabled: var(--content-disabled);
   --shadow-surface-card: 0 0 30px 0 rgba(64, 72, 66, 0.1);
-  --shadow-dropdown: 8px 8px 30px 0 rgba(0, 13, 59, 0.1);
+  --shadow-dropdown: 0 4px 16px 0 rgba(0, 13, 59, 0.1);
   --shadow-menu-hover: inset -1px -1px 1px #ffffff,
     inset 1px 1px 1px rgba(255, 255, 255, 0.5);
   --shadow-primary-button: inset 0 2px 2px 0 rgba(255, 255, 255, 0.25),
