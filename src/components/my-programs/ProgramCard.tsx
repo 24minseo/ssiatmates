@@ -95,7 +95,7 @@ export function ProgramCard({
                   {index > 0 ? (
                     <span
                       aria-hidden
-                      className="mx-1.5 h-2 w-[2px] shrink-0 bg-field-border"
+                      className="mx-1.5 h-2 w-[1.5px] shrink-0 bg-field-border"
                     />
                   ) : null}
                   <span className="truncate">{item}</span>
