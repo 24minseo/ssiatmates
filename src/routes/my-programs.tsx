@@ -251,7 +251,7 @@ function MyProgramsPage() {
                   <DropdownMenuItem
                     key={option}
                     onSelect={() => setSort(option)}
-                    className={`h-11 rounded-[8px] px-4 py-0 text-[15px] font-normal text-ink outline-none transition-colors hover:bg-item-hover focus:bg-item-hover focus:text-ink ${sort === option ? "bg-item-hover" : ""}`}
+                    className={`h-11 rounded-[8px] px-4 py-0 text-[15px] font-normal outline-none transition-colors hover:bg-item-hover focus:bg-item-hover focus:text-ink ${sort === option ? "bg-item-hover text-brand" : "text-ink"}`}
                   >
                     <span>{sortLabels[option]}</span>
                     {sort === option ? (
