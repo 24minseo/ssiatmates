@@ -243,6 +243,10 @@ export const programService = {
       program.id === programId
         ? {
             ...program,
+            status:
+              program.status === "not_started" && program.schedules.length === 0
+                ? "preparing"
+                : program.status,
             schedules: [
               ...program.schedules,
               { ...input, id: uid("sch"), programId, completed: false },
