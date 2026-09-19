@@ -196,6 +196,10 @@ function MenuItem({
           <Link
             to={item.to}
             aria-current={isCurrent ? "page" : undefined}
+            onClick={() => {
+              setFlyoutHoveredKey(null);
+              setFlyoutOpen(false);
+            }}
             className={isCurrent && (flyoutHoveredKey === null || flyoutHoveredKey === item.key) ? "flex h-9 items-center rounded-[7px] bg-[#F5F8F5] px-2 text-sm font-semibold text-brand hover:bg-[#F6F8F7]" : isCurrent ? "flex h-9 items-center rounded-[7px] px-2 text-sm font-semibold text-brand" : "flex h-9 items-center rounded-[7px] px-2 text-sm font-normal text-submenu-text hover:bg-[#F6F8F7] hover:shadow-menu-hover"}
             onMouseEnter={() => setFlyoutHoveredKey(item.key)}
           >
@@ -209,6 +213,10 @@ function MenuItem({
                 key={child.key}
                 to={child.to}
                 aria-current={childSelected ? "page" : undefined}
+                onClick={() => {
+                  setFlyoutHoveredKey(null);
+                  setFlyoutOpen(false);
+                }}
                 className={childSelected && (flyoutHoveredKey === null || flyoutHoveredKey === child.key) ? "flex h-9 items-center rounded-[7px] bg-[#F5F8F5] px-2 text-sm font-semibold text-brand hover:bg-[#F6F8F7]" : childSelected ? "flex h-9 items-center rounded-[7px] px-2 text-sm font-semibold text-brand" : "flex h-9 items-center rounded-[7px] px-2 text-sm font-normal text-submenu-text hover:bg-[#F6F8F7] hover:shadow-menu-hover"}
                 onMouseEnter={() => setFlyoutHoveredKey(child.key)}
               >
