@@ -1,5 +1,5 @@
 import { Fragment } from "react";
-import { ArrowRight, MoreVertical } from "lucide-react";
+import { MoreVertical } from "lucide-react";
 
 import {
   DropdownMenu,
@@ -171,7 +171,7 @@ export function ProgramCard({
           {remaining > 0 || program.schedules.length > 0
             ? "일정 관리하기"
             : "일정 추가하기"}
-          <ArrowRight aria-hidden className="size-[18px]" strokeWidth={1.8} />
+          <img src="/assets/chevron-right-17.svg" alt="" aria-hidden className="size-[18px]" />
         </button>
       </div>
     </article>
