@@ -93,7 +93,7 @@ function MyHomePage() {
                 <span
                   className={`${
                     card.featured
-                      ? "ml-1 inline-block align-baseline text-[20px] font-medium leading-[1.16]"
+                      ? "relative -top-[2px] ml-1 inline-block align-baseline text-[20px] font-medium leading-[1.16]"
                       : "ml-1 text-base"
                   }`}
                 >
