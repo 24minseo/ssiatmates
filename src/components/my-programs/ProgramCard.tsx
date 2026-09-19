@@ -1,5 +1,5 @@
 import { Fragment } from "react";
-import { ChevronRight, MoreVertical } from "lucide-react";
+import { ArrowRight, MoreVertical } from "lucide-react";
 
 import {
   DropdownMenu,
@@ -171,7 +171,7 @@ export function ProgramCard({
           {remaining > 0 || program.schedules.length > 0
             ? "일정 관리하기"
             : "일정 추가하기"}
-          <ChevronRight aria-hidden className="size-[18px]" />
+          <ArrowRight aria-hidden className="size-[18px]" strokeWidth={1.8} />
         </button>
       </div>
     </article>
