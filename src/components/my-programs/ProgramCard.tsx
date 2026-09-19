@@ -158,7 +158,7 @@ export function ProgramCard({
           {program.schedules.length > 0 ? `남은 일정 ${remaining}개` : "연결된 일정 없음"}
         </span>
         {nextSchedule ? (
-          <span className="min-w-0 flex-1 truncate text-[13px] font-semibold text-ink">
+          <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-ink">
             다음 일정 · {formatScheduleDate(nextSchedule.scheduledAt)}{" "}
             {nextSchedule.title}
           </span>
