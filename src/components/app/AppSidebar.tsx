@@ -228,7 +228,7 @@ function MenuItem({
                   setFlyoutHoveredKey(null);
                   setFlyoutOpen(false);
                 }}
-                className={childSelected && (flyoutHoveredKey === null || flyoutHoveredKey === child.key) ? "relative flex h-9 items-center rounded-[7px] bg-[#F5F8F5] pl-4 pr-2 text-sm font-semibold text-brand before:absolute before:left-2 before:top-0 before:h-9 before:w-px before:bg-field-border before:content-[''] hover:bg-[#F6F8F7]" : childSelected ? "relative flex h-9 items-center rounded-[7px] pl-4 pr-2 text-sm font-semibold text-brand before:absolute before:left-2 before:top-0 before:h-9 before:w-px before:bg-field-border before:content-['']" : "relative flex h-9 items-center rounded-[7px] pl-4 pr-2 text-sm font-normal text-submenu-text before:absolute before:left-2 before:top-0 before:h-9 before:w-px before:bg-field-border before:content-[''] hover:bg-[#F6F8F7] hover:shadow-menu-hover"}
+                className={childSelected && (flyoutHoveredKey === null || flyoutHoveredKey === child.key) ? "flex h-9 items-center rounded-[7px] bg-[#F5F8F5] px-2 text-sm font-semibold text-brand hover:bg-[#F6F8F7]" : childSelected ? "flex h-9 items-center rounded-[7px] px-2 text-sm font-semibold text-brand" : "flex h-9 items-center rounded-[7px] px-2 text-sm font-normal text-submenu-text hover:bg-[#F6F8F7] hover:shadow-menu-hover"}
                 onMouseEnter={() => setFlyoutHoveredKey(child.key)}
               >
                 {child.label}
