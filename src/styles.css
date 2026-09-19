@@ -253,9 +253,30 @@
 
 
 .app-header-soft-edge {
+  isolation: isolate;
+}
+
+.app-header-soft-edge::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  pointer-events: none;
   background: rgb(255 255 255 / 0.78);
   -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    black 0%,
+    black 65%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    black 0%,
+    black 65%,
+    transparent 100%
+  );
 }
 
 .google-auth-button {
