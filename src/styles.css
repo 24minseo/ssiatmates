@@ -260,10 +260,7 @@
   content: "";
   position: absolute;
   z-index: -1;
-  top: 0;
-  right: 0;
-  left: 0;
-  height: 24px;
+  inset: 0;
   pointer-events: none;
   background: rgb(255 255 255 / 0.78);
   -webkit-backdrop-filter: blur(12px);
@@ -271,13 +268,13 @@
   -webkit-mask-image: linear-gradient(
     to bottom,
     black 0%,
-    black 25%,
+    black 65%,
     transparent 100%
   );
   mask-image: linear-gradient(
     to bottom,
     black 0%,
-    black 25%,
+    black 65%,
     transparent 100%
   );
 }
