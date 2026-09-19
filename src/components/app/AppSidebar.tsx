@@ -109,6 +109,7 @@ function MenuItem({
   const hasActiveChild = item.children?.some((child) => child.key === active) ?? false;
   const activeBranch = isCurrent || hasActiveChild;
   const [childrenCanEnter, setChildrenCanEnter] = useState(false);
+  const [flyoutOpen, setFlyoutOpen] = useState(false);
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => {
@@ -121,7 +122,11 @@ function MenuItem({
   const childrenVisible = expanded && activeBranch && childrenCanEnter;
 
   return (
-    <li>
+    <li
+      className="relative"
+      onMouseEnter={() => setFlyoutOpen(true)}
+      onMouseLeave={() => setFlyoutOpen(false)}
+    >
       <Link
         to={item.to}
         aria-current={isCurrent ? "page" : undefined}
@@ -184,6 +189,32 @@ function MenuItem({
           </Link>
         );
       })}
+
+      {!expanded && flyoutOpen && item.children ? (
+        <div className="absolute left-[56px] top-0 z-50 w-[220px] rounded-[12px] bg-white p-2 shadow-dropdown">
+          <Link
+            to={item.to}
+            aria-current={isCurrent ? "page" : undefined}
+            className={isCurrent ? "flex h-11 items-center rounded-[7px] bg-item-hover-selected px-3 text-base font-semibold text-brand" : "flex h-11 items-center rounded-[7px] px-3 text-base font-normal text-submenu-text hover:bg-menu-hover hover:shadow-menu-hover"}
+          >
+            {item.label}
+          </Link>
+          {item.children.map((child) => {
+            const childSelected = child.key === active;
+
+            return (
+              <Link
+                key={child.key}
+                to={child.to}
+                aria-current={childSelected ? "page" : undefined}
+                className={childSelected ? "flex h-11 items-center rounded-[7px] bg-item-hover-selected px-3 text-base font-semibold text-brand" : "flex h-11 items-center rounded-[7px] px-3 text-base font-normal text-submenu-text hover:bg-menu-hover hover:shadow-menu-hover"}
+              >
+                {child.label}
+              </Link>
+            );
+          })}
+        </div>
+      ) : null}
     </li>
   );
 }
