@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ChevronDown, Loader2, Plus } from "lucide-react";
+import { Check, ChevronDown, Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -7,8 +7,7 @@ import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
+  DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ProgramCard } from "@/components/my-programs/ProgramCard";
@@ -247,20 +246,20 @@ function MyProgramsPage() {
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-[136px] rounded-[12px] border-0 shadow-dropdown">
-              <DropdownMenuRadioGroup
-                value={sort}
-                onValueChange={(value) => setSort(value as SortOption)}
-              >
-                <DropdownMenuRadioItem value="deadline">
-                  {sortLabels.deadline}
-                </DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="fit">
-                  {sortLabels.fit}
-                </DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="created">
-                  {sortLabels.created}
-                </DropdownMenuRadioItem>
-              </DropdownMenuRadioGroup>
+              <div className="space-y-1">
+                {(Object.keys(sortLabels) as SortOption[]).map((option) => (
+                  <DropdownMenuItem
+                    key={option}
+                    onSelect={() => setSort(option)}
+                    className="h-11 rounded-[8px] px-4 py-0 text-[15px] font-normal text-ink outline-none transition-colors focus:bg-item-hover focus:text-ink"
+                  >
+                    <span>{sortLabels[option]}</span>
+                    {sort === option ? (
+                      <Check className="ml-auto size-5 text-ink" strokeWidth={2} />
+                    ) : null}
+                  </DropdownMenuItem>
+                ))}
+              </div>
             </DropdownMenuContent>
           </DropdownMenu>
           <Button
