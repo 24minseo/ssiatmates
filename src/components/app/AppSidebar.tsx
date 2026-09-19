@@ -151,7 +151,7 @@ function MenuItem({
             : hasActiveChild
               ? expanded
                 ? "font-semibold text-brand hover:bg-menu-hover hover:shadow-menu-hover"
-                : "bg-item-hover-selected font-semibold text-brand hover:bg-menu-hover hover:shadow-menu-hover"
+                : "bg-item-hover-selected font-semibold text-brand"
               : "font-normal text-icon-muted hover:bg-menu-hover hover:shadow-menu-hover"
         }`}
       >
