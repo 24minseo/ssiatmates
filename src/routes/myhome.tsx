@@ -86,7 +86,7 @@ function MyHomePage() {
                 className={`${
                   card.featured
                     ? "absolute left-5 top-[66px] flex items-end gap-1 text-[48px] font-medium leading-[1.16] text-[#d7f5ea]"
-                    : "absolute left-5 top-[66px] flex items-end gap-1 text-[48px] font-medium leading-[1.16] text-ink"
+                    : "absolute left-5 top-[66px] flex items-end gap-1 text-[48px] font-medium leading-[1.16] text-[#1f8064]"
                 }`}
               >
                 {card.value}
