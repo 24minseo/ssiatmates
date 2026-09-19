@@ -155,7 +155,7 @@ export function ProgramCard({
       <div className={`flex min-w-0 items-center gap-x-5 rounded-bl-[12px] rounded-br-[12px] border-b border-l border-r border-solid border-field-border bg-item-hover px-6 pr-[22px] ${program.schedules.length > 0 ? "h-[47px] py-[14px]" : "h-[46px] py-[13px]"}`}>
         <span className={`flex shrink-0 items-center gap-1 text-[13px] ${program.schedules.length > 0 ? "text-ink-muted" : "text-[#b4c1bd]"}`}>
           <img src={program.schedules.length > 0 ? "/assets/calendar-21-connected.svg" : "/assets/calendar-21.svg"} alt="" aria-hidden className="size-[15px]" />
-          {program.schedules.length > 0 ? `남은 일정 ${remaining}개` : "일정 추가하기"}
+          {program.schedules.length > 0 ? `남은 일정 ${remaining}개` : "연결된 일정 없음"}
         </span>
         {nextSchedule ? (
           <span className="min-w-0 flex-1 truncate text-[13px] text-ink">
