@@ -72,11 +72,11 @@ function MyHomePage() {
                 />
               </>
             ) : null}
-            <div className="relative z-10">
+            <div className={`${card.featured ? "absolute inset-0 z-10" : "relative z-10"}`}>
               <h2
                 className={`${
                   card.featured
-                    ? "text-[18px] font-medium leading-[1.16] text-[#d7f5ea]"
+                    ? "absolute left-5 top-[19px] text-[18px] font-medium leading-[1.16] text-[#d7f5ea]"
                     : "text-sm font-medium text-[#84968E]"
                 }`}
               >
@@ -85,7 +85,7 @@ function MyHomePage() {
               <p
                 className={`${
                   card.featured
-                    ? "mt-7 flex items-end gap-1 text-[48px] font-medium leading-[1.16] text-[#d7f5ea]"
+                    ? "absolute left-5 top-[66px] flex items-end gap-1 text-[48px] font-medium leading-[1.16] text-[#d7f5ea]"
                     : "mt-5 text-[34px] font-medium leading-none"
                 }`}
               >
@@ -103,7 +103,7 @@ function MyHomePage() {
               <p
                 className={`${
                   card.featured
-                    ? "mt-0 text-[13px] font-normal leading-[1.16] text-[#d7f5ea]"
+                    ? "absolute left-5 top-[122px] text-[13px] font-normal leading-[1.16] text-[#d7f5ea]"
                     : "mt-3 text-xs font-medium text-[#84968E]"
                 }`}
               >
