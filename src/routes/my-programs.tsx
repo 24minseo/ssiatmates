@@ -240,10 +240,10 @@ function MyProgramsPage() {
               <button
                 type="button"
                 aria-label="지원사업 정렬"
-                className="flex h-[42px] w-[136px] items-center justify-between rounded-[12px] border border-field-border bg-surface px-[14px] text-[15px] font-semibold text-ink shadow-none transition-colors hover:bg-item-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                className="group flex h-[42px] w-[136px] items-center justify-between rounded-[12px] border border-field-border bg-surface px-[14px] text-[15px] font-semibold text-ink shadow-none transition-colors hover:bg-item-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
               >
                 <span>{sortLabels[sort]}</span>
-                <ChevronDown className="size-4 text-icon-muted transition-transform data-[state=open]:rotate-180" />
+                <ChevronDown className="size-4 text-icon-muted transition-transform group-data-[state=open]:rotate-180" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-[136px] rounded-[12px] border-0 shadow-dropdown">
