@@ -71,7 +71,7 @@ export function ProgramCard({
 
   return (
     <article className="overflow-hidden rounded-[12px] bg-surface">
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4 rounded-tl-[12px] rounded-tr-[12px] border-l border-r border-t border-solid border-field-border pl-6 pr-4 py-6">
+      <div className="grid h-[100px] grid-cols-[minmax(0,1fr)_auto] items-start gap-4 rounded-tl-[12px] rounded-tr-[12px] border-l border-r border-t border-solid border-field-border pl-6 pr-4 py-6">
         <div className="min-w-0">
           <div className="flex min-w-0 items-center gap-2">
             <h3 className="min-w-0 truncate break-keep text-[20px] font-semibold leading-6 text-ink">
@@ -152,7 +152,7 @@ export function ProgramCard({
         </div>
       </div>
 
-      <div className="flex min-w-0 items-center gap-x-5 rounded-bl-[12px] rounded-br-[12px] border-b border-l border-r border-solid border-field-border bg-item-hover px-6 py-[14px] pr-[22px]">
+      <div className={`flex min-w-0 items-center gap-x-5 rounded-bl-[12px] rounded-br-[12px] border-b border-l border-r border-solid border-field-border bg-item-hover px-6 pr-[22px] ${program.schedules.length > 0 ? "h-[47px] py-[14px]" : "h-[46px] py-[13px]"}`}>
         <span className="flex shrink-0 items-center gap-1 text-[13px] text-ink-muted">
           <img src="/assets/calendar-21.svg" alt="" aria-hidden className="size-[15px]" />
           {remaining > 0 ? `남은 일정 ${remaining}개` : "연결된 일정 없음"}
