@@ -119,7 +119,7 @@ export function ProgramCard({
                 aria-label={`${program.title} 더보기 메뉴`}
                 className="flex size-8 items-center justify-center rounded-[8px] text-icon-muted transition-colors hover:bg-item-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
               >
-                <MoreVertical className="size-4" strokeWidth={1.5} />
+                <img src="/assets/more-vertical.svg" alt="" aria-hidden className="size-4" draggable={false} />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-44">
