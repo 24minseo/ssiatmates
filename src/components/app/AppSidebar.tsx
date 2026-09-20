@@ -140,7 +140,6 @@ function MenuItem({
         to={item.to}
         aria-current={isCurrent ? "page" : undefined}
         aria-label={expanded ? undefined : item.label}
-        title={expanded ? undefined : item.label}
         onMouseEnter={openFlyout}
         onMouseLeave={scheduleFlyoutClose}
         className={`flex h-[46px] items-center gap-[10px] overflow-hidden rounded-lg pl-3 transition-[padding,background-color,color,box-shadow] duration-200 ease-out motion-reduce:transition-none ${
