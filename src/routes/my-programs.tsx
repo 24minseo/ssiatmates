@@ -82,7 +82,7 @@ function MyProgramsPage() {
         : programs.filter((program) => program.status === activeFilter);
 
     return filtered.sort((a, b) => {
-      if (sort === "fit") return b.fitScore - a.fitScore;
+      if (sort === "fit") {\n        const statusOrder: Record<ProgramStatus, number> = {\n          not_started: 0,\n          preparing: 1,\n          submitted: 2,\n        };\n        return statusOrder[a.status] - statusOrder[b.status];\n      }
       if (sort === "created") {
         return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
       }
