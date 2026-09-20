@@ -16,7 +16,7 @@ function ProgramsPage() {
     const filtered = programSearchMock.filter((item) =>
       [item.title, item.organization, ...item.categories].join(" ").toLowerCase().includes(query.toLowerCase()),
     );
-    return [...filtered].sort((a, b) => sort === "deadline" ? a.dDay.localeCompare(b.dDay, undefined, { numeric: true }) : Number(b.recommended) - Number(a.recommended));
+    return [...filtered].sort((a, b) => sort === "deadline" ? a.dDay.localeCompare(b.dDay, undefined, { numeric: true }) : Number(b.type === "recommended") - Number(a.type === "recommended"));
   }, [query, sort]);
 
   return (
