@@ -110,21 +110,21 @@ export function ProgramCard({
                 <span aria-hidden className="flex size-6 flex-col items-center justify-center gap-[3px]"><span className="size-[2px] rounded-full bg-[#84968E] transition-colors group-hover/more:bg-ink" /><span className="size-[2px] rounded-full bg-[#84968E] transition-colors group-hover/more:bg-ink" /><span className="size-[2px] rounded-full bg-[#84968E] transition-colors group-hover/more:bg-ink" /></span>
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-44">
-              <DropdownMenuLabel>상태 변경</DropdownMenuLabel>
+            <DropdownMenuContent align="end" className="w-36 rounded-xl border-0 bg-surface p-1 shadow-none" style={{ boxShadow: "var(--shadow-dropdown)" }}>
+              <DropdownMenuLabel className="text-ink">상태 변경</DropdownMenuLabel>
               <DropdownMenuRadioGroup
                 value={program.status}
                 onValueChange={(value) =>
                   onStatusChange(program, value as ProgramStatus)
                 }
               >
-                <DropdownMenuRadioItem value="not_started">
+                <DropdownMenuRadioItem value="not_started" className="hover:bg-dropdown-hover data-[highlighted]:bg-dropdown-hover focus:bg-dropdown-hover">
                   시작 전
                 </DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="preparing">
+                <DropdownMenuRadioItem value="preparing" className="hover:bg-dropdown-hover data-[highlighted]:bg-dropdown-hover focus:bg-dropdown-hover">
                   준비 중
                 </DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="submitted">
+                <DropdownMenuRadioItem value="submitted" className="hover:bg-dropdown-hover data-[highlighted]:bg-dropdown-hover focus:bg-dropdown-hover">
                   제출 완료
                 </DropdownMenuRadioItem>
               </DropdownMenuRadioGroup>
