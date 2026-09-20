@@ -1,15 +1,21 @@
 import type { ProgramSearchItem } from "@/mocks/programSearchMock";
 
-export function ProgramResultRow({ program }: { program: ProgramSearchItem }) {
+type ProgramResultRowProps = {
+  program: ProgramSearchItem;
+};
+
+export function ProgramResultRow({ program }: ProgramResultRowProps) {
+  const isRecommended = program.type === "recommended";
+
   return (
-    <article className="flex min-h-[108px] items-center gap-[30px] border-b border-[#e9e9e9] bg-white px-8 py-[14px]">
-      <div className="flex min-w-0 flex-1 flex-col justify-center gap-2">
+    <article className={`flex items-center gap-[30px] border-b border-[#e9e9e9] bg-white px-8 pb-[18px] pt-[14px] ${isRecommended ? "h-[112px]" : "h-[108px]"}`}>
+      <div className={`flex h-[75px] flex-col justify-center gap-2 ${isRecommended ? "w-[722px]" : "min-w-0 flex-1"}`}>
         <div className="flex min-w-0 flex-col gap-0.5">
           <p className="text-[13px] leading-[21px] text-ink-muted">{program.organization}</p>
           <h2 className="truncate text-[20px] font-bold leading-6 tracking-[-0.22px] text-ink">{program.title}</h2>
         </div>
         <div className="flex items-center gap-2">
-          {program.recommended && <span className="rounded bg-[#e2f8f0] px-[7px] py-1 text-xs font-semibold text-brand">선호조건 충족</span>}
+          {isRecommended && <span className="rounded bg-[#e2f8f0] px-[7px] py-1 text-xs font-semibold text-brand">선호조건 충족</span>}
           {program.categories.map((category) => <span key={category} className="rounded bg-[#f5f5f5] px-[7px] py-1 text-xs font-semibold text-ink-muted">{category}</span>)}
         </div>
       </div>
