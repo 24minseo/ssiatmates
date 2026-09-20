@@ -70,7 +70,7 @@ function seedPrograms(): Program[] {
     }
   > = [
     {
-      title: "[제2서울핀테크랩] 서울 핀테크 위크 2026 데모데이 with 네이버클라우드",
+      title: "[제2서울핀테크랩] 서울 핀테크 위크 2026 데모데이 및 글로벌 기술창업 지원 연계 프로그램 참가기업 모집 공고",
       organization: "서울핀테크랩",
       category: "판로·마케팅",
       stage: "초기창업",
