@@ -82,13 +82,26 @@ function MyProgramsPage() {
         : programs.filter((program) => program.status === activeFilter);
 
     return filtered.sort((a, b) => {
-      if (sort === "fit") {\n        const statusOrder: Record<ProgramStatus, number> = {\n          not_started: 0,\n          preparing: 1,\n          submitted: 2,\n        };\n        return statusOrder[a.status] - statusOrder[b.status];\n      }
+      const now = Date.now();
+      const aExpired = new Date(a.deadline).getTime() < now;
+      const bExpired = new Date(b.deadline).getTime() < now;
+
+      if (sort !== "created" && aExpired !== bExpired) {
+        return aExpired ? 1 : -1;
+      }
+
+      if (sort === "fit") {
+        const statusOrder: Record<ProgramStatus, number> = {
+          not_started: 0,
+          preparing: 1,
+          submitted: 2,
+        };
+        return statusOrder[a.status] - statusOrder[b.status];
+      }
       if (sort === "created") {
         return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
       }
-      return (
-        new Date(a.deadline).getTime() - new Date(b.deadline).getTime()
-      );
+      return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
     });
   }, [activeFilter, programs, sort]);
 
