@@ -239,7 +239,7 @@ function MyProgramsPage() {
         />
 
         <div className="absolute right-0 top-[-1px] flex items-center gap-[6px]">
-          <ProgramSortDropdown value={sort} onChange={setSort} />
+          <ProgramSortDropdown value={sort} onChange={setSort} variant="myPrograms" />
           <Button
             type="button"
             aria-label="지원사업 추가"
