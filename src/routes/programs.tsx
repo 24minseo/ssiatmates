@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { Pagination } from "@/components/ui/Pagination";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ProgramResultRow } from "@/components/programs/ProgramResultRow";
 import { ProgramResultsTabs, type ProgramResultsTab } from "@/components/programs/ProgramResultsTabs";
 import { SupportCategorySelect } from "@/components/programs/SupportCategorySelect";
@@ -47,7 +48,10 @@ function ProgramsPage() {
     <div className="pt-[48px]">
       <div className="flex items-end justify-between">
         <ProgramResultsTabs selected={tab} counts={{ recommended: results.length, review: 0 }} onChange={setTab} />
-        <select value={sort} onChange={(event) => setSort(event.target.value as "deadline" | "match")} className="h-[42px] w-[136px] rounded-xl border border-border bg-white px-3 text-[15px] font-semibold text-ink"><option value="deadline">마감 임박순</option><option value="match">추천순</option></select>
+        <Select value={sort} onValueChange={(value) => setSort(value as "deadline" | "match")}>
+          <SelectTrigger className="h-[42px] w-[136px] rounded-xl border-border bg-white px-3 text-[15px] font-semibold text-ink"><SelectValue /></SelectTrigger>
+          <SelectContent><SelectItem value="deadline">마감 임박순</SelectItem><SelectItem value="match">추천순</SelectItem></SelectContent>
+        </Select>
       </div>
       <div className="mt-4 overflow-hidden rounded-sm">{visibleResults.length ? visibleResults.map((program) => <ProgramResultRow key={program.id} program={program} />) : <p className="bg-white px-8 py-16 text-center text-ink-muted">조건에 맞는 지원사업이 없습니다.</p>}</div>
       <Pagination page={page} pageCount={pageCount} onChange={setPage} />
