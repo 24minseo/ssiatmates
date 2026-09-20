@@ -35,9 +35,9 @@ export function getDeadlineLabel(deadline: string) {
   const diff = Math.round(
     (target.getTime() - startOfToday().getTime()) / 86400000,
   );
-  if (diff < 0) return { label: "마감", urgent: false };
-  if (diff === 0) return { label: "D-DAY", urgent: true };
-  return { label: `D-${diff}`, urgent: diff <= 7 };
+  if (diff < 0) return { label: "마감", urgent: false, expired: true };
+  if (diff === 0) return { label: "D-DAY", urgent: true, expired: false };
+  return { label: `D-${diff}`, urgent: diff <= 7, expired: false };
 }
 
 export function getNextSchedule(program: Program) {
@@ -81,7 +81,9 @@ export function ProgramCard({
               className={`shrink-0 rounded-[6px] px-1.5 py-0.5 text-[12px] font-semibold ${
                 deadline.urgent
                   ? "bg-deadline-surface text-deadline"
-                  : "bg-item-hover text-content-disabled"
+                  : deadline.expired
+                    ? "bg-item-hover text-content-disabled"
+                    : "bg-item-hover text-[#596963]"
               }`}
             >
               {deadline.label}
