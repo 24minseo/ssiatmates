@@ -9,8 +9,8 @@ import { cn } from "@/lib/utils";
 export type ProgramSortOption = "deadline" | "fit" | "created";
 
 const sortLabelsByVariant = {
-  explore: { deadline: "마감 임박순", fit: "추천순", created: "최근 추가순" },
-  myPrograms: { deadline: "마감 임박순", fit: "진행 상태순", created: "최근 등록순" },
+  explore: { deadline: "마감 임박순", fit: "추천순", created: "최근 등록순" },
+  myPrograms: { deadline: "마감 임박순", fit: "진행 상태순", created: "최근 추가순" },
 } satisfies Record<string, Record<ProgramSortOption, string>>;
 
 type ProgramSortDropdownProps = {
