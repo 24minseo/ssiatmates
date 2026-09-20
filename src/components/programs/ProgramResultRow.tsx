@@ -8,7 +8,7 @@ export function ProgramResultRow({ program }: ProgramResultRowProps) {
   const isRecommended = program.type === "recommended";
 
   return (
-    <article className={`flex items-center gap-[30px] border-b border-[#e9e9e9] bg-white px-8 pb-[18px] pt-[14px] h-[108px]`}>
+    <article className={`flex items-center gap-[30px] border-b border-[#e9e9e9] bg-white px-8 pb-[18px] pt-[14px] h-[112px]`}>
       <div className="flex h-[75px] w-[722px] shrink-0 flex-col justify-center gap-2">
         <div className="flex min-w-0 flex-col gap-0.5">
           <p className="text-[13px] leading-[21px] text-ink-muted">{program.organization}</p>
