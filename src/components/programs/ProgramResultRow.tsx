@@ -12,7 +12,7 @@ export function ProgramResultRow({ program }: ProgramResultRowProps) {
       <div className="flex h-[75px] w-[722px] shrink-0 flex-col justify-center gap-2">
         <div className="flex min-w-0 flex-col gap-0.5">
           <p className="text-[13px] leading-[21px] text-ink-muted">{program.organization}</p>
-          <h2 className="truncate text-[20px] font-bold leading-6 tracking-[-0.22px] text-ink">{program.title}</h2>
+          <h2 className="truncate text-[20px] font-semibold leading-6 tracking-[-0.22px] text-ink">{program.title}</h2>
         </div>
         <div className="flex items-center gap-2">
           {isRecommended && <span className="rounded bg-[#e2f8f0] px-[7px] py-1 text-xs font-semibold text-brand">선호조건 충족</span>}
