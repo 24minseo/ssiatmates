@@ -38,12 +38,12 @@ export function ProgramSortDropdown({
           type="button"
           aria-label="지원사업 정렬"
           aria-expanded={open}
-          className="group flex h-[42px] w-[136px] items-center justify-between rounded-[12px] border border-field-border bg-surface px-[14px] text-[15px] font-medium text-ink shadow-none transition-colors hover:bg-item-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+          className="group flex h-[42px] w-[136px] shrink-0 items-center justify-between rounded-[12px] border border-field-border bg-surface px-[14px] text-[15px] font-medium text-ink shadow-none transition-colors hover:bg-item-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
         >
-          <span>{sortLabels[value]}</span>
+          <span className="whitespace-nowrap">{sortLabels[value]}</span>
           <ChevronDown
             className={cn(
-              "size-4 text-icon-muted transition-transform",
+              "size-4 shrink-0 text-icon-muted transition-transform",
               open && "rotate-180",
             )}
           />
