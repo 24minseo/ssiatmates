@@ -64,7 +64,7 @@ export function AppHeader() {
               </span>
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" sideOffset={8} className="min-w-[152px] rounded-xl border-0 bg-surface p-1 shadow-none" style={{ boxShadow: "var(--shadow-dropdown)" }}>
+          <DropdownMenuContent align="end" sideOffset={8} className="min-w-[128px] rounded-xl border-0 bg-surface p-1 shadow-none" style={{ boxShadow: "var(--shadow-dropdown)" }}>
             <DropdownMenuItem className="cursor-default text-ink hover:bg-dropdown-hover data-[highlighted]:bg-dropdown-hover focus:bg-dropdown-hover focus:text-ink">
               계정 정보
             </DropdownMenuItem>
