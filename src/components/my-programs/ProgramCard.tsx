@@ -71,7 +71,8 @@ export function ProgramCard({
 
   return (
     <article className="overflow-hidden rounded-[12px] bg-surface">
-      <div className="grid h-[100px] grid-cols-[minmax(0,1fr)_auto] items-start gap-4 rounded-tl-[12px] rounded-tr-[12px] border-l border-r border-t border-solid border-field-border pl-6 pr-4 py-6">
+      <div className="flex h-[100px] flex-col rounded-tl-[12px] rounded-tr-[12px] border-l border-r border-t border-solid border-field-border px-6 py-6">
+        <div className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
         <div className="min-w-0 w-fit max-w-[1038px]">
           <div className="flex min-w-0 items-center gap-2">
             <h3 className="min-w-0 flex-1 truncate break-keep text-[20px] font-semibold leading-6 text-ink">
@@ -88,21 +89,6 @@ export function ProgramCard({
             >
               {deadline.label}
             </span>
-          </div>
-          <div className="mt-1 flex min-w-0 items-center text-[14px] font-normal text-ink-muted">
-            {[program.organization, program.category, program.stage, program.region]
-              .filter(Boolean)
-              .map((item, index) => (
-                <Fragment key={item}>
-                  {index > 0 ? (
-                    <span
-                      aria-hidden
-                      className="mx-2 h-[8px] w-[1.2px] shrink-0 bg-field-border"
-                    />
-                  ) : null}
-                  <span className="truncate">{item}</span>
-                </Fragment>
-              ))}
           </div>
         </div>
 
@@ -153,7 +139,21 @@ export function ProgramCard({
           </DropdownMenu>
         </div>
       </div>
-
+          <div className="mt-1 flex min-w-0 items-center text-[14px] font-normal text-ink-muted">
+            {[program.organization, program.category, program.stage, program.region]
+              .filter(Boolean)
+              .map((item, index) => (
+                <Fragment key={item}>
+                  {index > 0 ? (
+                    <span
+                      aria-hidden
+                      className="mx-2 h-[8px] w-[1.2px] shrink-0 bg-field-border"
+                    />
+                  ) : null}
+                  <span className="truncate">{item}</span>
+                </Fragment>
+              ))}
+          </div>
       <div className={`flex min-w-0 items-center gap-x-5 rounded-bl-[12px] rounded-br-[12px] border-b border-l border-r border-solid border-field-border bg-item-hover px-6 pr-[22px] ${program.schedules.length > 0 ? "h-[47px] py-[14px]" : "h-[46px] py-[13px]"}`}>
         <span className={`flex shrink-0 items-center gap-1 text-[14px] ${remaining > 0 ? "text-[#7a8883]" : "text-[#b4c1bd]"}`}>
           <img src={remaining > 0 ? "/assets/calendar-21-remaining.svg" : "/assets/calendar-21.svg"} alt="" aria-hidden className="size-[15px]" />
