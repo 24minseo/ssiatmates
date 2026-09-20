@@ -1,10 +1,12 @@
 // Vercel Preview deployment trigger; mock-only screen remains backend-independent.
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { ProgramResultRow } from "@/components/programs/ProgramResultRow";
 import { ProgramResultsTabs, type ProgramResultsTab } from "@/components/programs/ProgramResultsTabs";
 import { SupportCategorySelect } from "@/components/programs/SupportCategorySelect";
 import { programSearchMock } from "@/mocks/programSearchMock";
+
+const PAGE_SIZE = 10;
 
 export const Route = createFileRoute("/programs")({ component: ProgramsPage });
 
@@ -12,12 +14,25 @@ function ProgramsPage() {
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<"deadline" | "match">("deadline");
   const [tab, setTab] = useState<ProgramResultsTab>("recommended");
+  const [page, setPage] = useState(1);
+
   const results = useMemo(() => {
     const filtered = programSearchMock.filter((item) =>
       [item.title, item.organization, ...item.categories].join(" ").toLowerCase().includes(query.toLowerCase()),
     );
-    return [...filtered].sort((a, b) => sort === "deadline" ? a.dDay.localeCompare(b.dDay, undefined, { numeric: true }) : Number(b.type === "recommended") - Number(a.type === "recommended"));
+    return [...filtered].sort((a, b) =>
+      sort === "deadline"
+        ? a.dDay.localeCompare(b.dDay, undefined, { numeric: true })
+        : Number(b.type === "recommended") - Number(a.type === "recommended"),
+    );
   }, [query, sort]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [query, sort, tab]);
+
+  const pageCount = Math.max(1, Math.ceil(results.length / PAGE_SIZE));
+  const visibleResults = results.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   return (
     <section className="space-y-[18px]">
@@ -32,11 +47,11 @@ function ProgramsPage() {
       </div>
       <div className="pt-[48px]">
         <div className="flex items-end justify-between">
-          <ProgramResultsTabs selected={tab} counts={{ recommended: 10, review: 0 }} onChange={setTab} />
+          <ProgramResultsTabs selected={tab} counts={{ recommended: results.length, review: 0 }} onChange={setTab} />
           <select value={sort} onChange={(event) => setSort(event.target.value as "deadline" | "match")} className="h-[42px] w-[136px] rounded-xl border border-border bg-white px-3 text-[15px] font-semibold text-ink"><option value="deadline">마감 임박순</option><option value="match">추천순</option></select>
         </div>
-        <div className="mt-4 overflow-hidden rounded-sm">{results.length ? results.map((program) => <ProgramResultRow key={program.id} program={program} />) : <p className="bg-white px-8 py-16 text-center text-ink-muted">조건에 맞는 지원사업이 없습니다.</p>}</div>
-        <div className="flex justify-center gap-2 py-6 text-sm text-ink-muted"><button type="button" className="rounded-lg bg-brand px-3 py-2 text-white">1</button><button type="button" className="rounded-lg px-3 py-2 hover:bg-item-hover">2</button></div>
+        <div className="mt-4 overflow-hidden rounded-sm">{visibleResults.length ? visibleResults.map((program) => <ProgramResultRow key={program.id} program={program} />) : <p className="bg-white px-8 py-16 text-center text-ink-muted">조건에 맞는 지원사업이 없습니다.</p>}</div>
+        {pageCount > 1 && <div className="flex justify-center gap-2 py-6 text-sm text-ink-muted">{Array.from({ length: pageCount }, (_, index) => index + 1).map((pageNumber) => <button key={pageNumber} type="button" onClick={() => setPage(pageNumber)} className={pageNumber === page ? "rounded-lg bg-brand px-3 py-2 text-white" : "rounded-lg px-3 py-2 hover:bg-item-hover"}>{pageNumber}</button>)}</div>}
       </div>
     </section>
   );
