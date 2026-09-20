@@ -15,8 +15,8 @@ export function ProgramResultRow({ program }: ProgramResultRowProps) {
           <h2 className="truncate text-[20px] font-semibold leading-6 tracking-[-0.22px] text-ink">{program.title}</h2>
         </div>
         <div className="flex items-center gap-2">
-          {isRecommended && <span className="rounded bg-[#e2f8f0] px-[7px] py-1 text-xs font-semibold text-brand">선호조건 충족</span>}
-          {program.categories.map((category) => <span key={category} className="rounded bg-[#f5f5f5] px-[7px] py-1 text-xs font-semibold text-ink-muted">{category}</span>)}
+          {isRecommended && <span className="rounded bg-[#e2f8f0] px-[7px] py-1 text-xs font-medium text-brand">선호조건 충족</span>}
+          {program.categories.map((category) => <span key={category} className="rounded bg-[#f5f5f5] px-[7px] py-1 text-xs font-medium text-ink-muted">{category}</span>)}
         </div>
       </div>
       <span className="shrink-0 text-sm font-medium text-ink">{program.matchLabel}</span>
