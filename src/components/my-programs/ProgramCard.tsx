@@ -72,7 +72,7 @@ export function ProgramCard({
   return (
     <article className="overflow-hidden rounded-[12px] bg-surface">
       <div className="flex h-[100px] flex-col rounded-tl-[12px] rounded-tr-[12px] border-l border-r border-t border-solid border-field-border px-6 py-6">
-        <div className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
+        <div className="grid h-8 w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
         <div className="min-w-0 w-fit max-w-[1038px]">
           <div className="flex min-w-0 items-center gap-2">
             <h3 className="min-w-0 flex-1 truncate break-keep text-[20px] font-semibold leading-6 text-ink">
