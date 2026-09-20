@@ -52,6 +52,7 @@
   --color-destructive: var(--destructive);
   --color-deadline: var(--deadline);
   --color-deadline-surface: var(--deadline-surface);
+  --color-destructive-surface: var(--destructive-surface);
   --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
@@ -131,6 +132,7 @@
   --destructive-foreground: oklch(0.984 0.003 247.858);
   --deadline: oklch(0.6226 0.1959 27);
   --deadline-surface: oklch(0.9735 0.0129 17.38);
+  --destructive-surface: oklch(0.9735 0.0129 17.38);
   --border: oklch(0.929 0.013 255.508);
   --input: oklch(0.929 0.013 255.508);
   --ring: oklch(0.704 0.04 256.788);
