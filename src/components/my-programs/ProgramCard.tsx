@@ -111,6 +111,10 @@ export function ProgramCard({
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-36 rounded-xl border-0 bg-surface p-1 shadow-none" style={{ boxShadow: "var(--shadow-dropdown)" }}>
+              <DropdownMenuItem className="cursor-pointer text-ink hover:bg-dropdown-hover data-[highlighted]:bg-dropdown-hover focus:bg-dropdown-hover focus:text-ink">
+                리포트 보기
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuLabel className="text-ink">상태 변경</DropdownMenuLabel>
               <DropdownMenuRadioGroup
                 value={program.status}
