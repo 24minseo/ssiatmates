@@ -24,7 +24,7 @@ export function ProgramResultRow({ program }: ProgramResultRowProps) {
         <p className="text-xl font-bold leading-[26px] text-ink">{program.dDay}</p>
         <p className="text-[13px] leading-5 text-ink-muted">{program.deadline}</p>
       </div>
-      <button type="button" aria-label="관심 공고 저장" className="shrink-0"><img src="/assets/programs/favorite-outline.svg" alt="" className="h-[17px] w-5" /></button>
+      <button type="button" aria-label="관심 공고 저장" className="shrink-0"><img draggable={false} src="/assets/programs/favorite-outline.svg" alt="" className="pointer-events-none select-none h-[17px] w-5" /></button>
     </article>
   );
 }
