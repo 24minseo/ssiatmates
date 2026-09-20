@@ -1,4 +1,10 @@
-import { programService } from "./mockProgramService";
+export {
+  programService as programRepository,
+  type Program,
+  type ProgramInput,
+  type ProgramStatus,
+  type ScheduleInput,
+} from "./mockProgramService";
 
 /**
  * Data access boundary for saved support programs.
@@ -7,4 +13,3 @@ import { programService } from "./mockProgramService";
  * When Supabase is ready, add a Supabase-backed implementation with the same
  * methods and switch this export without changing the page components.
  */
-export const programRepository = programService;
