@@ -31,7 +31,7 @@ function ProgramsPage() {
         </div>
       </div>
       <div className="pt-[48px]">
-        <div className="flex items-end justify-between border-b border-[#d8e1dd]">
+        <div className="flex items-end justify-between">
           <ProgramResultsTabs selected={tab} counts={{ recommended: 10, review: 0 }} onChange={setTab} />
           <select value={sort} onChange={(event) => setSort(event.target.value as "deadline" | "match")} className="h-[42px] w-[136px] rounded-xl border border-border bg-white px-3 text-[15px] font-semibold text-ink"><option value="deadline">마감 임박순</option><option value="match">추천순</option></select>
         </div>
