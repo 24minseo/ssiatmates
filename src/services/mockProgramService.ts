@@ -180,7 +180,7 @@ function read(): Program[] {
     const parsed = JSON.parse(raw) as Program[];
     if (!Array.isArray(parsed)) throw new Error("invalid");
     const migrated = parsed.map((program) =>
-      program.title === "[제2서울핀테크랩] 서울 핀테크 위크 2026 데모데이 with 네이버클라우드"
+      (program.title === "[제2서울핀테크랩] 서울 핀테크 위크 2026 데모데이 with 네이버클라우드" ||\n        program.title === "[제2서울핀테크랩] 서울 핀테크 위크 2026 데모데이 및 글로벌 기술창업 지원 연계 프로그램 참가기업 모집 공고")
         ? {
             ...program,
             title: "[제2서울핀테크랩] 서울 핀테크 위크 2026 데모데이 및 글로벌 기술창업 지원 연계 프로그램 참가기업 모집과 사업화 후속 지원 대상자 선정 공고",
