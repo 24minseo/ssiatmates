@@ -18,7 +18,7 @@ export function SupportCategorySelect({ value, onChange }: SupportCategorySelect
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild><button type="button" aria-expanded={open} className="flex h-12 w-full items-center justify-between rounded-xl border border-border bg-white px-6 text-left text-[15px] font-medium text-ink"><span>{visible}</span><ChevronDown className={"size-4 transition-transform " + (open ? "rotate-180" : "")} /></button></PopoverTrigger>
-      <PopoverContent align="start" sideOffset={6} className="w-[420px] rounded-xl border-0 bg-white p-4 shadow-dropdown"><PillGroup options={SUPPORT_CATEGORIES} value={value} onToggle={toggle} /></PopoverContent>
+      <PopoverContent align="start" sideOffset={6} className="w-[560px] rounded-xl border-0 bg-white p-6 shadow-dropdown"><PillGroup options={SUPPORT_CATEGORIES} value={value} onToggle={toggle} /></PopoverContent>
     </Popover>
   );
 }
