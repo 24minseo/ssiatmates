@@ -87,12 +87,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "씨앗" },
       { name: "description", content: "지원사업 탐색부터 일정 관리까지, 사업의 다음 단계를 준비하세요." },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { name: "author", content: "씨앗" },
+      { property: "og:title", content: "씨앗 | 지원사업 관리 서비스" },
+      { property: "og:description", content: "지원사업 탐색부터 일정 관리까지, 사업의 다음 단계를 준비하세요." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:site", content: "@ssiatmates" },
     ],
     links: [
       {
