@@ -49,9 +49,9 @@ export function AppHeader() {
               aria-label="사용자 메뉴 열기"
               className="group relative -mr-1.5 flex h-9 w-auto min-w-[103px] shrink-0 items-center justify-center text-sm font-normal text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
             >
-              <span aria-hidden="true" className="pointer-events-none absolute inset-0 rounded-lg bg-item-hover opacity-0 transition-opacity duration-150 ease-out group-hover:opacity-100 group-focus-visible:opacity-100 motion-reduce:transition-none" />
+              <span aria-hidden="true" className="pointer-events-none absolute inset-0 rounded-lg bg-item-hover opacity-0 transition-opacity duration-150 ease-out group-hover:opacity-100 group-focus-visible:opacity-100 group-data-[state=open]:opacity-100 motion-reduce:transition-none" />
               <span className="relative flex h-9 items-center gap-[5px] px-px">
-                <span className="flex shrink-0 items-center justify-center text-icon-muted transition-colors duration-150 ease-out group-hover:text-ink-muted group-focus-visible:text-ink-muted motion-reduce:transition-none">
+                <span className="flex shrink-0 items-center justify-center text-icon-muted transition-colors duration-150 ease-out group-hover:text-ink-muted group-focus-visible:text-ink-muted group-data-[state=open]:text-ink-muted motion-reduce:transition-none">
                   <span className="relative size-6 overflow-hidden">
                     <svg aria-hidden="true" className="absolute left-1/2 top-1/2 h-[27px] w-7 max-w-none -translate-x-1/2 -translate-y-1/2" viewBox="0 0 28 27" fill="none">
                       <path d="M6.40605 18.8184C7.19127 16.104 9.89941 14.625 12.7251 14.625H15.2749C18.1006 14.625 20.8087 16.104 21.594 18.8184C21.8369 19.6583 22.033 20.5704 22.1192 21.5013C22.1702 22.0513 21.719 22.5 21.1667 22.5H6.83333C6.28105 22.5 5.82985 22.0513 5.88077 21.5013C5.96697 20.5704 6.16307 19.6583 6.40605 18.8184Z" fill="currentColor" />
@@ -64,8 +64,8 @@ export function AppHeader() {
               </span>
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" sideOffset={8} className="min-w-[152px] rounded-xl border-0 bg-surface p-1 shadow-dropdown">
-            <DropdownMenuItem className="cursor-default text-ink">
+          <DropdownMenuContent align="end" sideOffset={8} className="min-w-[152px] rounded-xl border-0 bg-surface p-1 shadow-none" style={{ boxShadow: "var(--shadow-dropdown)" }}>
+            <DropdownMenuItem className="cursor-default text-ink hover:bg-dropdown-hover data-[highlighted]:bg-dropdown-hover focus:bg-dropdown-hover focus:text-ink">
               계정 정보
             </DropdownMenuItem>
             <DropdownMenuSeparator />
