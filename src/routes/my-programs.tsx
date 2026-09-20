@@ -233,7 +233,7 @@ function MyProgramsPage() {
             onClick={openCreateDialog}
             className="size-[42px] shrink-0 rounded-[12px] border border-field-border bg-surface p-0 text-ink shadow-none hover:bg-item-hover"
           >
-            <Plus className="size-5" />
+            <Plus className="size-5 stroke-[2]" />
           </Button>
         </div>
       </div>
