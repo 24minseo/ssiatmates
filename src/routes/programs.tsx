@@ -33,11 +33,11 @@ function ProgramsPage() {
     <section className="space-y-[18px]">
       <h1 className="text-[28px] font-extrabold leading-normal text-ink">지원사업 탐색</h1>
       <div className="grid grid-cols-[290px_290px_minmax(0,1fr)] gap-4">
-        <div className="flex h-12 items-center justify-between rounded-xl bg-[#f6f8f7] px-6 text-[15px] font-medium text-ink">기본 프로필 적용 중<img src="https://www.figma.com/api/mcp/asset/48acbe0f-3dba-466a-8ff5-8b35b3bdfb0c/6ace8.svg" alt="" className="size-6" /></div>
+        <div className="flex h-12 items-center justify-between rounded-xl bg-[#f6f8f7] pl-6 pr-4 text-[15px] font-medium text-ink">기본 프로필 적용 중<img src="https://www.figma.com/api/mcp/asset/48acbe0f-3dba-466a-8ff5-8b35b3bdfb0c/6ace8.svg" alt="" className="size-6" /></div>
         <SupportCategorySelect />
-        <div className="flex h-12 items-center gap-2 rounded-xl border border-border px-6">
+        <div className="flex h-12 items-center gap-2 rounded-xl border border-border pl-6 pr-1.5">
           <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="선호하는 조건을 입력해 보세요" className="min-w-0 flex-1 bg-transparent text-[15px] outline-none placeholder:text-placeholder" />
-          <button type="button" aria-label="조건 검색" className="flex size-9 items-center justify-center rounded-lg bg-[#a1ddc8] text-ink"><img src="/assets/programs/ai-search.svg" alt="" className="size-6" /></button>
+          <button type="button" aria-label="조건 검색" className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#a1ddc8] text-ink"><img src="/assets/programs/ai-search.svg" alt="" className="size-6" /></button>
         </div>
       </div>
       <div className="pt-[48px]">
