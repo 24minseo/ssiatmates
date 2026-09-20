@@ -8,21 +8,23 @@ import { cn } from "@/lib/utils";
 
 export type ProgramSortOption = "deadline" | "fit" | "created";
 
-const sortLabels: Record<ProgramSortOption, string> = {
-  deadline: "마감 임박순",
-  fit: "진행 상태순",
-  created: "최근 추가순",
-};
+const sortLabelsByVariant = {
+  explore: { deadline: "마감 임박순", fit: "추천순", created: "최근 추가순" },
+  myPrograms: { deadline: "마감 임박순", fit: "진행 상태순", created: "최근 추가순" },
+} satisfies Record<string, Record<ProgramSortOption, string>>;
 
 type ProgramSortDropdownProps = {
   value: ProgramSortOption;
   onChange: (value: ProgramSortOption) => void;
+  variant?: "explore" | "myPrograms";
 };
 
 export function ProgramSortDropdown({
   value,
   onChange,
+  variant = "explore",
 }: ProgramSortDropdownProps) {
+  const sortLabels = sortLabelsByVariant[variant];
   const [open, setOpen] = useState(false);
   const [activeValue, setActiveValue] = useState(value);
 
