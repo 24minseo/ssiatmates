@@ -1,6 +1,6 @@
 // Vercel Preview deployment trigger; mock-only screen remains backend-independent.
 import { useMemo, useState } from "react";
-import { ChevronDown, MoreHorizontal } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { createFileRoute } from "@tanstack/react-router";
 import { ProgramResultRow } from "@/components/programs/ProgramResultRow";
 import { ProgramResultsTabs, type ProgramResultsTab } from "@/components/programs/ProgramResultsTabs";
@@ -23,7 +23,7 @@ function ProgramsPage() {
     <section className="space-y-[18px]">
       <h1 className="text-[28px] font-extrabold leading-normal text-ink">지원사업 탐색</h1>
       <div className="grid grid-cols-[290px_290px_minmax(0,1fr)] gap-4">
-        <div className="flex h-12 items-center justify-between rounded-xl bg-[#f6f8f7] px-6 text-[15px] font-medium text-ink">기본 프로필 적용 중<MoreHorizontal className="size-6" /></div>
+        <div className="flex h-12 items-center justify-between rounded-xl bg-[#f6f8f7] px-6 text-[15px] font-medium text-ink">기본 프로필 적용 중<img src="https://www.figma.com/api/mcp/asset/48acbe0f-3dba-466a-8ff5-8b35b3bdfb0c/6ace8.svg" alt="" className="size-6" /></div>
         <button type="button" className="flex h-12 items-center justify-between rounded-xl border border-border px-6 text-left text-[15px] font-medium text-ink">모든 지원 분야<ChevronDown className="size-4" /></button>
         <div className="flex h-12 items-center gap-2 rounded-xl border border-border px-6">
           <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="선호하는 조건을 입력해 보세요" className="min-w-0 flex-1 bg-transparent text-[15px] outline-none placeholder:text-placeholder" />
