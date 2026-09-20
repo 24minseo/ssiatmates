@@ -85,8 +85,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
+      { title: "씨앗" },
+      { name: "description", content: "지원사업 탐색부터 일정 관리까지, 사업의 다음 단계를 준비하세요." },
       { name: "author", content: "Lovable" },
       { property: "og:title", content: "Lovable App" },
       { property: "og:description", content: "Lovable Generated Project" },
