@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Loader2, Plus } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -233,7 +233,7 @@ function MyProgramsPage() {
             onClick={openCreateDialog}
             className="size-[42px] shrink-0 rounded-[12px] border border-field-border bg-surface p-0 text-ink shadow-none hover:bg-item-hover"
           >
-            <Plus className="size-5 stroke-[2]" />
+            <img src="/assets/my-programs/plus-20.svg" alt="" aria-hidden className="size-5" draggable={false} />
           </Button>
         </div>
       </div>
