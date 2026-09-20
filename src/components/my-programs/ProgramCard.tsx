@@ -80,7 +80,7 @@ export function ProgramCard({
             <span
               className={`shrink-0 rounded-[6px] px-1.5 py-0.5 text-[12px] font-semibold ${
                 deadline.urgent
-                  ? "bg-destructive/10 text-destructive"
+                  ? "bg-deadline-surface text-deadline"
                   : "bg-item-hover text-content-disabled"
               }`}
             >
