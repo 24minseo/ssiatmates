@@ -1,5 +1,7 @@
+import { programService } from "./mockProgramService";
+
 export {
-  programService as programRepository,
+  programService,
   type Program,
   type ProgramInput,
   type ProgramStatus,
@@ -13,3 +15,4 @@ export {
  * When Supabase is ready, add a Supabase-backed implementation with the same
  * methods and switch this export without changing the page components.
  */
+export const programRepository = programService;
