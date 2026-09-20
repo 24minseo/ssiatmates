@@ -8,10 +8,10 @@ export function SupportCategorySelect() {
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<string[]>([SUPPORT_ALL]);
   const visible = selected.includes(SUPPORT_ALL)
-    ? SUPPORT_ALL
+    ? "모든 지원 분야"
     : selected.length > 0
       ? selected[0] + (selected.length > 1 ? " 외 " + (selected.length - 1) + "개" : "")
-      : SUPPORT_ALL;
+      : "모든 지원 분야";
 
   const toggle = (option: string) => {
     if (option === SUPPORT_ALL) {
