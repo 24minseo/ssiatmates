@@ -64,13 +64,13 @@ export function AppHeader() {
               </span>
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" sideOffset={8} className="min-w-[152px] rounded-xl border-border bg-surface p-2">
-            <DropdownMenuItem className="cursor-default rounded-lg px-3 py-2.5 text-sm text-ink">
+          <DropdownMenuContent align="end" sideOffset={8} className="min-w-[152px] rounded-xl border-0 bg-surface p-1 shadow-dropdown">
+            <DropdownMenuItem className="cursor-default text-ink">
               계정 정보
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
-              className="cursor-pointer rounded-lg px-3 py-2.5 text-sm text-destructive hover:bg-destructive-surface data-[highlighted]:bg-destructive-surface focus:bg-destructive-surface focus:text-destructive"
+              className="cursor-pointer text-destructive hover:bg-destructive-surface data-[highlighted]:bg-destructive-surface focus:bg-destructive-surface focus:text-destructive"
               onSelect={() => void signOut()}
             >
               로그아웃
