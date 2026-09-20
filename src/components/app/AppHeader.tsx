@@ -70,7 +70,7 @@ export function AppHeader() {
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
-              className="cursor-pointer rounded-lg px-3 py-2.5 text-sm text-destructive focus:text-destructive"
+              className="cursor-pointer rounded-lg px-3 py-2.5 text-sm text-destructive hover:bg-destructive-surface data-[highlighted]:bg-destructive-surface focus:bg-destructive-surface focus:text-destructive"
               onSelect={() => void signOut()}
             >
               로그아웃
