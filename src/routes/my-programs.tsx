@@ -21,7 +21,7 @@ import {
   type ProgramInput,
   type ProgramStatus,
   type ScheduleInput,
-} from "@/services/mockProgramService";
+} from "@/services/programRepository";
 import { createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/my-programs")({
