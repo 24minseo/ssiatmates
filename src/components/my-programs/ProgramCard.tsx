@@ -176,6 +176,7 @@ export function ProgramCard({
           <img src="/assets/chevron-right-17.svg" alt="" aria-hidden className="size-[18px]" />
         </button>
       </div>
+      </div>
     </article>
   );
 }
