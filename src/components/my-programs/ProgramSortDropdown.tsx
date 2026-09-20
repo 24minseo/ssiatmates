@@ -10,8 +10,8 @@ export type ProgramSortOption = "deadline" | "fit" | "created";
 
 const sortLabels: Record<ProgramSortOption, string> = {
   deadline: "마감 임박순",
-  fit: "추천순",
-  created: "최신 등록순",
+  fit: "진행 단계순",
+  created: "최근 추가순",
 };
 
 type ProgramSortDropdownProps = {
