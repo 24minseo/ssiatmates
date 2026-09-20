@@ -5,7 +5,7 @@ export type ProgramResultsTab = "recommended" | "review";
 
 type ProgramResultsTabsProps = {
   selected: ProgramResultsTab;
-  count: number;
+  counts: Record<ProgramResultsTab, number>;
   onChange: (value: ProgramResultsTab) => void;
 };
 
@@ -14,7 +14,7 @@ const tabs: Array<{ value: ProgramResultsTab; label: string }> = [
   { value: "review", label: "추가 검토 필요" },
 ];
 
-export function ProgramResultsTabs({ selected, count, onChange }: ProgramResultsTabsProps) {
+export function ProgramResultsTabs({ selected, counts, onChange }: ProgramResultsTabsProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const refs = useRef<Partial<Record<ProgramResultsTab, HTMLButtonElement | null>>>({});
   const [indicator, setIndicator] = useState<{ left: number; width: number } | null>(null);
@@ -31,7 +31,7 @@ export function ProgramResultsTabs({ selected, count, onChange }: ProgramResults
     update();
     window.addEventListener("resize", update);
     return () => window.removeEventListener("resize", update);
-  }, [selected, count]);
+  }, [selected, counts.recommended, counts.review]);
 
   return (
     <div ref={rootRef} className="relative h-[48px] w-[1200px] shrink-0" role="tablist" aria-label="지원사업 결과">
@@ -43,7 +43,7 @@ export function ProgramResultsTabs({ selected, count, onChange }: ProgramResults
             <button key={tab.value} ref={(node) => { refs.current[tab.value] = node; }} type="button" role="tab" aria-selected={isSelected} onClick={() => onChange(tab.value)} className="flex h-[48px] w-max shrink-0 flex-col items-start gap-[5px] rounded-[10px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
               <span className={cn("inline-flex items-center justify-center gap-[6px] overflow-hidden rounded-[10px] pl-3 pr-1.5 py-2 text-[18px] whitespace-nowrap", isSelected ? "font-semibold text-brand hover:bg-[rgba(234,241,236,0.5)]" : "font-normal text-ink-muted hover:bg-item-hover")}>
                 {tab.label}
-                {tab.value === "recommended" && <span className={cn("inline-flex h-6 min-w-6 items-center justify-center rounded-[13px] px-[7px] py-1 text-[14px] font-medium", isSelected ? "bg-[#f4f8f5] text-brand" : "bg-item-hover text-ink-muted")}>{count}</span>}
+                <span className={cn("inline-flex h-6 min-w-6 items-center justify-center rounded-[13px] px-[7px] py-1 text-[14px] font-medium", isSelected ? "bg-[#f4f8f5] text-brand" : "bg-item-hover text-ink-muted")}>{counts[tab.value]}</span>
               </span>
               <span aria-hidden className="flex h-[3px] w-full px-3 opacity-0" />
             </button>
