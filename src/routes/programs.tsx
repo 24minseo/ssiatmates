@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { ChevronDown, MoreHorizontal } from "lucide-react";
 import { createFileRoute } from "@tanstack/react-router";
 import { ProgramResultRow } from "@/components/programs/ProgramResultRow";
-import { ProgramResultsTabs } from "@/components/programs/ProgramResultsTabs";
+import { ProgramResultsTabs, type ProgramResultsTab } from "@/components/programs/ProgramResultsTabs";
 import { programSearchMock } from "@/mocks/programSearchMock";
 
 export const Route = createFileRoute("/programs")({ component: ProgramsPage });
@@ -11,7 +11,7 @@ export const Route = createFileRoute("/programs")({ component: ProgramsPage });
 function ProgramsPage() {
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<"deadline" | "match">("deadline");
-  const [tab, setTab] = useState<"recommended" | "review">("recommended");
+  const [tab, setTab] = useState<ProgramResultsTab>("recommended");
   const results = useMemo(() => {
     const filtered = programSearchMock.filter((item) =>
       [item.title, item.organization, ...item.categories].join(" ").toLowerCase().includes(query.toLowerCase()),
@@ -32,7 +32,7 @@ function ProgramsPage() {
       </div>
       <div className="pt-[48px]">
         <div className="flex items-end justify-between border-b border-[#d8e1dd]">
-          <ProgramResultsTabs selected={tab} count={10} onChange={setTab} />
+          <ProgramResultsTabs selected={tab} counts={{ recommended: 10, review: 0 }} onChange={setTab} />
           <select value={sort} onChange={(event) => setSort(event.target.value as "deadline" | "match")} className="h-[42px] w-[136px] rounded-xl border border-border bg-white px-3 text-[15px] font-semibold text-ink"><option value="deadline">마감 임박순</option><option value="match">추천순</option></select>
         </div>
         <div className="mt-4 overflow-hidden rounded-sm">{results.length ? results.map((program) => <ProgramResultRow key={program.id} program={program} />) : <p className="bg-white px-8 py-16 text-center text-ink-muted">조건에 맞는 지원사업이 없습니다.</p>}</div>
