@@ -130,7 +130,7 @@ export function ProgramCard({
               </DropdownMenuRadioGroup>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                className="text-destructive focus:text-destructive"
+                className="text-destructive hover:bg-destructive-surface data-[highlighted]:bg-destructive-surface focus:bg-destructive-surface focus:text-destructive"
                 onSelect={() => onDelete(program)}
               >
                 삭제하기
