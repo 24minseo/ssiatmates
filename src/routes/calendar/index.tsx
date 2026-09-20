@@ -1381,9 +1381,9 @@ function CalendarPage() {
                 const visibleRowLimit = hasOverflow
                   ? calendarVisibleEventRows - 1
                   : calendarVisibleEventRows;
-                const visibleSingleCount = Math.min(
-                  2,
-                  Math.max(0, visibleRowLimit - periodLaneCount),
+                const visibleSingleCount = Math.max(
+                  0,
+                  visibleRowLimit - periodLaneCount,
                 );
                 const hiddenSingleCount =
                   hiddenPeriodCount +
