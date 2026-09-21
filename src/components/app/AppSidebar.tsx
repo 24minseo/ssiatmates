@@ -320,7 +320,7 @@ export function AppSidebar({ active }: AppSidebarProps) {
         <button
           type="button"
           aria-label="현재 프로젝트 정보 수정"
-          className={`absolute left-4 top-[79px] overflow-hidden rounded-[10px] bg-[#FEFEFE] shadow-[1px_1px_0_1px_rgba(185,201,194,0.25)] transition-[width,height] duration-200 ease-out motion-reduce:transition-none ${
+          className={`group/profile absolute left-4 top-[79px] ${expanded ? "!cursor-default" : "cursor-pointer"} overflow-visible rounded-[10px] bg-[#FEFEFE] shadow-[1px_1px_0_1px_rgba(185,201,194,0.25)] transition-[width,height] duration-200 ease-out motion-reduce:transition-none ${
             expanded ? "h-[65px] w-[208px]" : "size-12"
           }`}
         >
@@ -354,11 +354,11 @@ export function AppSidebar({ active }: AppSidebarProps) {
             }`}
           >
             <span
-              className={`relative h-6 w-full shrink-0 transition-opacity duration-200 ease-out motion-reduce:transition-none ${
-                expanded ? "opacity-100" : "opacity-0"
+              className={`relative h-6 w-full shrink-0 transition-opacity ease-out motion-reduce:transition-none ${
+                expanded ? "opacity-100 duration-200" : "opacity-0 duration-100"
               }`}
             >
-              <span className="group/edit absolute right-0 top-[2px] size-5">
+              <span className="group/edit absolute right-0 top-[2px] size-5 cursor-pointer">
                 <img
                   src="/assets/sidebar/profile-edit-default.svg"
                   alt=""
@@ -380,6 +380,20 @@ export function AppSidebar({ active }: AppSidebarProps) {
             >
               {profileCardStatus}
             </span>
+          </span>
+
+          <span
+            aria-hidden={expanded}
+            className={`pointer-events-none absolute left-[24px] top-[4px] z-50 flex size-5 items-center justify-center rounded-[3.7px] border border-white bg-white text-ink shadow-dropdown transition-opacity duration-100 ease-out group-hover/profile:duration-150 group-focus-visible/profile:duration-150 group-hover/profile:opacity-100 group-focus-visible/profile:opacity-100 motion-reduce:transition-none ${
+              expanded ? "hidden" : "flex opacity-0"
+            }`}
+          >
+            <img
+              src="/assets/sidebar/profile-edit-tooltip.svg?v=2"
+              alt=""
+              aria-hidden="true"
+              className="size-5 shrink-0 scale-[1.15]"
+            />
           </span>
         </button>
 

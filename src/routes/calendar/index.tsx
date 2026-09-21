@@ -39,12 +39,12 @@ export const Route = createFileRoute("/calendar/")({
       },
     ],
     meta: [
-      { title: "전체 캘린더 — SSIAT" },
+      { title: "전체 캘린더" },
       {
         name: "description",
         content: "지원사업 일정과 할 일을 월별 또는 공고별로 관리하는 SSIAT 전체 캘린더입니다.",
       },
-      { property: "og:title", content: "전체 캘린더 — SSIAT" },
+      { property: "og:title", content: "전체 캘린더" },
       {
         property: "og:description",
         content: "지원사업 일정과 할 일을 한눈에 확인하고 관리하세요.",

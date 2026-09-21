@@ -25,6 +25,7 @@ import {
 import { createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/my-programs")({
+  head: () => ({ meta: [{ title: "내 지원사업" }] }),
   component: MyProgramsPage,
 });
 
@@ -34,7 +35,7 @@ type SortOption = ProgramSortOption;
 function MyProgramsPage() {
   const [programs, setPrograms] = useState<Program[]>([]);
   const [activeFilter, setActiveFilter] = useState<StatusFilter>("all");
-  const [sort, setSort] = useState<SortOption>("deadline");
+  const [sort, setSort] = useState<SortOption>("created");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -86,7 +87,7 @@ function MyProgramsPage() {
       const aExpired = new Date(a.deadline).getTime() < now;
       const bExpired = new Date(b.deadline).getTime() < now;
 
-      if (sort !== "created" && aExpired !== bExpired) {
+      if (aExpired !== bExpired) {
         return aExpired ? 1 : -1;
       }
 

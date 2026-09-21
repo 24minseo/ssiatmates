@@ -160,7 +160,7 @@
   --control-inactive: #9a9d9b;
   --pill: #E2F8F0;
   --pill-foreground: #1f8064;
-  --overlay: rgb(147 159 164 / 0.5);
+  --overlay: rgb(160 167 172 / 0.5);
   --page: var(--overlay);
   --surface: #ffffff;
   --field-border: #d8e1dd;
@@ -257,6 +257,18 @@
   }
 }
 
+@keyframes heart-pop {
+  0% { transform: scale(0.85); }
+  45% { transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
+
+.animate-heart-pop { animation: heart-pop 220ms ease-out both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-heart-pop { animation: none; }
+}
+
 
 .app-header-soft-edge {
   isolation: isolate;
@@ -332,4 +344,9 @@
     animation-duration: 1ms;
     animation-delay: 0ms;
   }
+}
+
+button:not(:disabled),
+a[href] {
+  cursor: pointer;
 }

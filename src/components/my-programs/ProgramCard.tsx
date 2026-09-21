@@ -93,11 +93,13 @@ export function ProgramCard({
         </div>
 
         <div className="flex shrink-0 items-center gap-2">
-          <span
-            className={`inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-[14px] font-semibold ${statusPillClass[program.status]}`}
-          >
-            <span aria-hidden className="size-1.5 rounded-full bg-current" />
-            {PROGRAM_STATUS_LABEL[program.status]}
+          <span className="flex h-8 w-[92px] shrink-0 items-center justify-end">
+            <span
+              className={`inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-[14px] font-semibold ${statusPillClass[program.status]}`}
+            >
+              <span aria-hidden className="size-1.5 rounded-full bg-current" />
+              {PROGRAM_STATUS_LABEL[program.status]}
+            </span>
           </span>
 
           <DropdownMenu>
@@ -111,30 +113,30 @@ export function ProgramCard({
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-36 rounded-xl border-0 bg-surface p-1 shadow-none" style={{ boxShadow: "var(--shadow-dropdown)" }}>
-              <DropdownMenuItem className="cursor-pointer text-ink hover:bg-dropdown-hover data-[highlighted]:bg-dropdown-hover focus:bg-dropdown-hover focus:text-ink">
+              <DropdownMenuItem className="cursor-pointer px-[10px] text-ink hover:bg-dropdown-hover data-[highlighted]:bg-dropdown-hover focus:bg-dropdown-hover focus:text-ink">
                 리포트 보기
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuLabel className="text-ink">상태 변경</DropdownMenuLabel>
+              <DropdownMenuLabel className="px-[10px] text-ink">상태 변경</DropdownMenuLabel>
               <DropdownMenuRadioGroup
                 value={program.status}
                 onValueChange={(value) =>
                   onStatusChange(program, value as ProgramStatus)
                 }
               >
-                <DropdownMenuRadioItem value="not_started" className="hover:bg-dropdown-hover data-[highlighted]:bg-dropdown-hover focus:bg-dropdown-hover">
+                <DropdownMenuRadioItem value="not_started" className="pl-8 pr-[10px] hover:bg-dropdown-hover data-[highlighted]:bg-dropdown-hover focus:bg-dropdown-hover">
                   시작 전
                 </DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="preparing" className="hover:bg-dropdown-hover data-[highlighted]:bg-dropdown-hover focus:bg-dropdown-hover">
+                <DropdownMenuRadioItem value="preparing" className="pl-8 pr-[10px] hover:bg-dropdown-hover data-[highlighted]:bg-dropdown-hover focus:bg-dropdown-hover">
                   준비 중
                 </DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="submitted" className="hover:bg-dropdown-hover data-[highlighted]:bg-dropdown-hover focus:bg-dropdown-hover">
+                <DropdownMenuRadioItem value="submitted" className="pl-8 pr-[10px] hover:bg-dropdown-hover data-[highlighted]:bg-dropdown-hover focus:bg-dropdown-hover">
                   제출 완료
                 </DropdownMenuRadioItem>
               </DropdownMenuRadioGroup>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                className="text-destructive hover:bg-destructive-surface data-[highlighted]:bg-destructive-surface focus:bg-destructive-surface focus:text-destructive"
+                className="px-[10px] text-destructive hover:bg-destructive-surface data-[highlighted]:bg-destructive-surface focus:bg-destructive-surface focus:text-destructive"
                 onSelect={() => onDelete(program)}
               >
                 삭제하기

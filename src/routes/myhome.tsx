@@ -1,25 +1,27 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/myhome")({
+  head: () => ({ meta: [{ title: "MY홈" }] }),
   component: MyHomePage,
 });
 
 const summaryCards = [
   {
     label: "오늘의 새 소식",
-    value: 2,
+    value: 122,
     description: "신규 매칭 1건 · 내 지원사업 변동 1건",
     featured: true,
   },
   {
     label: "맞춤 공고",
-    value: 8,
+    value: 12,
     description: "지원할 공고를 선택해보세요.",
     featured: false,
   },
   {
     label: "추가 검토 필요",
-    value: 1,
+    value: 0,
     description: "조건 확인이 필요한 공고가 있어요.",
     featured: false,
   },
@@ -31,7 +33,55 @@ const summaryCards = [
   },
 ] as const;
 
+function RollingNumber({ value }: { value: number }) {
+  const [started, setStarted] = useState(false);
+  const [compactOnes, setCompactOnes] = useState(false);
+  const digits = String(value).split("").map(Number);
+
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setStarted(true);
+      setCompactOnes(true);
+      return;
+    }
+    const frameId = requestAnimationFrame(() => {
+      setStarted(true);
+      setCompactOnes(true);
+    });
+    return () => {
+      cancelAnimationFrame(frameId);
+    };
+  }, []);
+
+  return (
+    <span className="inline-flex h-[1.16em] overflow-hidden align-baseline leading-[1.16] tabular-nums" aria-label={String(value)}>
+            {digits.map((digit, digitIndex) => (
+            <span
+              key={`${digitIndex}-${digit}`}
+              className={`inline-flex h-[1.16em] justify-center overflow-hidden transition-[width] duration-500 ease-in-out motion-reduce:transition-none ${digit === 1 && compactOnes ? "w-6" : "w-7"}`}
+            >
+          <span
+            aria-hidden="true"
+            className="flex flex-col leading-[1.16] transition-transform duration-500 ease-in-out motion-reduce:transition-none"
+            style={{
+              transform: `translateY(${started ? `-${digit * 1.16}em` : "0em"})`,
+              transitionDelay: digits.length > 1 ? `${digitIndex * 20}ms` : "0ms",
+            }}
+          >
+            {Array.from({ length: 10 }, (_, index) => (
+              <span key={index} className="flex h-[1.16em] shrink-0 items-center leading-[1.16]">
+                {index}
+              </span>
+            ))}
+          </span>
+        </span>
+      ))}
+    </span>
+  );
+}
+
 function MyHomePage() {
+
   return (
     <>
       <header>
@@ -89,7 +139,7 @@ function MyHomePage() {
                     : "absolute left-[22px] top-[66px] flex items-end gap-1 text-[48px] font-medium leading-[1.16] text-[#1f8064]"
                 }`}
               >
-                {card.value}
+                <RollingNumber value={card.value} />
                 <span
                   className={`${
                     card.featured
