@@ -89,20 +89,19 @@ export function AppHeader({ notifications = notificationExamples }: AppHeaderPro
             className="group relative flex size-9 shrink-0 items-center justify-center text-icon-muted transition-colors duration-150 ease-out hover:text-ink-muted focus-visible:text-ink-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand motion-reduce:transition-none"
           >
             <span aria-hidden="true" className="pointer-events-none absolute inset-0 rounded-lg bg-item-hover opacity-0 transition-opacity duration-150 ease-out group-hover:opacity-100 group-focus-visible:opacity-100 group-aria-expanded:opacity-100 motion-reduce:transition-none" />
-            <img aria-hidden="true" src={hasUnreadNotifications ? "/assets/header/notification.svg" : "/assets/header/notification-button.svg"} className="relative size-6" alt="" />
-            {false && <svg aria-hidden="true" className="relative size-6" viewBox="0 0 24 24" fill="none">
+            <svg aria-hidden="true" className="relative size-6" viewBox="0 0 24 24" fill="none">
             <path d="M6.66662 9.33335C6.66662 6.38782 9.05444 4 12 4C14.9455 4 17.3333 6.38782 17.3333 9.33335V10.7548C17.3333 12.0048 17.6802 13.2303 18.3353 14.2949L18.8228 15.0871C19.0299 15.4236 19.1335 15.5919 19.1712 15.7228C19.3255 16.2572 19.0139 16.8148 18.4779 16.9636C18.3466 17 18.1491 17 17.7539 17H6.24611C5.85093 17 5.65334 17 5.5221 16.9636C4.98611 16.8148 4.67454 16.2572 4.82874 15.7228C4.8665 15.5919 4.97006 15.4236 5.17716 15.0871L5.66463 14.2949C6.31976 13.2303 6.66662 12.0048 6.66662 10.7548V9.33335Z" fill="currentColor" stroke="currentColor" strokeWidth="2" />
-            <circle cx="17.5" cy="6.5" r="4" fill="var(--brand)" stroke="var(--surface)" />
+            {hasUnreadNotifications ? <circle cx="17.5" cy="6.5" r="4" fill="var(--brand)" stroke="var(--surface)" /> : null}
             <rect x="9" y="19" width="6" height="2" rx="1" fill="currentColor" />
-            </svg>}
+            </svg>
           </button>
           {notificationsOpen ? createPortal(
             <>
               <div aria-hidden="true" className="fixed inset-0 z-40 bg-overlay animate-in fade-in duration-150" onClick={() => setNotificationsOpen(false)} />
               <aside data-notification-panel className="fixed bottom-4 right-4 top-4 z-50 flex w-[400px] max-w-[calc(100vw-32px)] flex-col overflow-hidden rounded-[16px] bg-surface shadow-dropdown animate-in slide-in-from-right duration-200 ease-out">
               <div className="flex items-center justify-between px-5 py-5">
-                <h2 className="text-[16px] font-semibold text-ink">알림</h2>
-                <div className="flex items-center gap-3"><button type="button" onClick={() => setHasUnreadNotifications(false)} className="text-[13px] font-medium text-brand hover:underline">모두 읽음</button><button type="button" aria-label="알림 닫기" onClick={() => setNotificationsOpen(false)} className="flex size-8 items-center justify-center rounded-lg text-icon-muted hover:bg-item-hover"><X className="size-5" /></button></div>
+                <h2 className="text-[20px] font-semibold text-ink">알림</h2>
+                <div className="flex items-center gap-3"><button type="button" onClick={() => setHasUnreadNotifications(false)} className="text-[13px] font-medium text-brand hover:underline">모두 읽음</button><button type="button" aria-label="알림 닫기" onClick={() => setNotificationsOpen(false)} className="flex size-8 items-center justify-center rounded-lg text-icon-muted hover:bg-item-hover hover:text-ink-muted"><X className="size-5" /></button></div>
               </div>
               <div role="tablist" aria-label="알림 종류" className="flex border-b border-black/5 px-4">
                 {['전체', '마감', '일정', '새 소식'].map((tab) => (

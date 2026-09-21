@@ -1621,7 +1621,7 @@ function CalendarPage() {
       >
         <DialogContent
           overlayClassName="bg-page"
-          closeClassName="right-8 top-10 flex size-6 items-center justify-center rounded-none text-ink opacity-100 hover:opacity-100 focus:ring-0 focus:ring-offset-0 [&_svg]:size-6"
+          closeClassName="right-8 top-8 flex size-9 items-center justify-center rounded-lg text-icon-muted opacity-100 transition-colors hover:bg-item-hover hover:text-ink hover:opacity-100 focus:ring-0 focus:ring-offset-0 [&_svg]:size-6"
           className="!left-auto !right-5 !top-5 !translate-x-0 !translate-y-0 flex h-[min(1060px,calc(100dvh-40px))] max-h-[1060px] w-[592px] max-w-[calc(100vw-40px)] flex-col gap-0 rounded-[20px] border-0 bg-surface p-8 text-ink shadow-surface-card"
         >
           <form
