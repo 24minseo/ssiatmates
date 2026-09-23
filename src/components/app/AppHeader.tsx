@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { X } from "lucide-react";
+import { AlertTriangle, CalendarClock, Sparkles, X } from "lucide-react";
 
 import {
   DropdownMenu,
@@ -9,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useAuth } from "@/hooks/useAuth";
+import { getDisplayName, useAuth } from "@/hooks/useAuth";
 
 export type NotificationType = "deadline" | "schedule" | "news";
 export type AppNotification = {
@@ -35,7 +35,7 @@ type AppHeaderProps = {
 export function AppHeader({ notifications = notificationExamples }: AppHeaderProps) {
   const { user, profile, signOut } = useAuth();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [hasUnreadNotifications, setHasUnreadNotifications] = useState(true);
+  const [readNotificationIds, setReadNotificationIds] = useState<Set<string>>(() => new Set());
   const [notificationTab, setNotificationTab] = useState("전체");
   const notificationsRef = useRef<HTMLDivElement>(null);
 
@@ -50,16 +50,7 @@ export function AppHeader({ notifications = notificationExamples }: AppHeaderPro
     document.addEventListener("pointerdown", handlePointerDown);
     return () => document.removeEventListener("pointerdown", handlePointerDown);
   }, [notificationsOpen]);
-  const displayName = useMemo(() => {
-    const metadata = user?.user_metadata as Record<string, unknown> | undefined;
-    const name =
-      profile?.username ??
-      (typeof metadata?.full_name === "string" ? metadata.full_name : null) ??
-      (typeof metadata?.name === "string" ? metadata.name : null) ??
-      user?.email?.split("@")[0] ??
-      "사용자";
-    return name.endsWith("님") ? name : `${name}님`;
-  }, [profile?.username, user]);
+  const displayName = useMemo(() => getDisplayName(user, profile), [profile, user]);
 
   const visibleNotifications = useMemo(() => {
     const typeByTab: Record<string, NotificationType | undefined> = {
@@ -72,6 +63,25 @@ export function AppHeader({ notifications = notificationExamples }: AppHeaderPro
       ? notifications.filter((notification) => notification.type === selectedType)
       : notifications;
   }, [notificationTab, notifications]);
+
+  const groupedNotifications = useMemo(() => {
+    const groups = new Map<string, AppNotification[]>();
+    visibleNotifications.forEach((notification) => {
+      const group = /방금|분 전|시간 전/.test(notification.timeLabel)
+        ? "오늘"
+        : notification.timeLabel === "어제"
+          ? "어제"
+          : "이전 알림";
+      groups.set(group, [...(groups.get(group) ?? []), notification]);
+    });
+    return Array.from(groups, ([label, items]) => ({ label, items }));
+  }, [visibleNotifications]);
+
+  const isNotificationRead = (notification: AppNotification) => notification.read || readNotificationIds.has(notification.id);
+  const unreadNotifications = notifications.filter((notification) => !isNotificationRead(notification));
+  const unreadCountLabel = unreadNotifications.length > 99 ? "99+" : String(unreadNotifications.length);
+  const markNotificationRead = (id: string) => setReadNotificationIds((current) => new Set(current).add(id));
+  const markAllNotificationsRead = () => setReadNotificationIds((current) => new Set([...current, ...notifications.map((notification) => notification.id)]));
 
   return (
     <header
@@ -91,40 +101,57 @@ export function AppHeader({ notifications = notificationExamples }: AppHeaderPro
             <span aria-hidden="true" className="pointer-events-none absolute inset-0 rounded-lg bg-item-hover opacity-0 transition-opacity duration-150 ease-out group-hover:opacity-100 group-focus-visible:opacity-100 group-aria-expanded:opacity-100 motion-reduce:transition-none" />
             <svg aria-hidden="true" className="relative size-6" viewBox="0 0 24 24" fill="none">
             <path d="M6.66662 9.33335C6.66662 6.38782 9.05444 4 12 4C14.9455 4 17.3333 6.38782 17.3333 9.33335V10.7548C17.3333 12.0048 17.6802 13.2303 18.3353 14.2949L18.8228 15.0871C19.0299 15.4236 19.1335 15.5919 19.1712 15.7228C19.3255 16.2572 19.0139 16.8148 18.4779 16.9636C18.3466 17 18.1491 17 17.7539 17H6.24611C5.85093 17 5.65334 17 5.5221 16.9636C4.98611 16.8148 4.67454 16.2572 4.82874 15.7228C4.8665 15.5919 4.97006 15.4236 5.17716 15.0871L5.66463 14.2949C6.31976 13.2303 6.66662 12.0048 6.66662 10.7548V9.33335Z" fill="currentColor" stroke="currentColor" strokeWidth="2" />
-            {hasUnreadNotifications ? <circle cx="17.5" cy="6.5" r="4" fill="var(--brand)" stroke="var(--surface)" /> : null}
+            <circle cx="17.5" cy="6.5" r="4" fill="var(--brand)" stroke="var(--surface)" />
             <rect x="9" y="19" width="6" height="2" rx="1" fill="currentColor" />
             </svg>
           </button>
           {notificationsOpen ? createPortal(
             <>
-              <div aria-hidden="true" className="fixed inset-0 z-40 bg-overlay animate-in fade-in duration-150" onClick={() => setNotificationsOpen(false)} />
-              <aside data-notification-panel className="fixed bottom-4 right-4 top-4 z-50 flex w-[400px] max-w-[calc(100vw-32px)] flex-col overflow-hidden rounded-[16px] bg-surface shadow-dropdown animate-in slide-in-from-right duration-200 ease-out">
-              <div className="flex items-center justify-between px-5 py-5">
-                <h2 className="text-[20px] font-semibold text-ink">알림</h2>
-                <div className="flex items-center gap-3"><button type="button" onClick={() => setHasUnreadNotifications(false)} className="text-[13px] font-medium text-brand hover:underline">모두 읽음</button><button type="button" aria-label="알림 닫기" onClick={() => setNotificationsOpen(false)} className="flex size-8 items-center justify-center rounded-lg text-icon-muted hover:bg-item-hover hover:text-ink-muted"><X className="size-5" /></button></div>
+              <div aria-hidden="true" className="fixed inset-0 z-[100] bg-black/10 backdrop-blur-[0.6px] animate-in fade-in duration-150" onClick={() => setNotificationsOpen(false)} />
+              <aside data-notification-panel className="fixed bottom-4 right-4 top-4 z-[110] flex w-[400px] max-w-[calc(100vw-32px)] flex-col overflow-hidden rounded-[16px] bg-surface shadow-dropdown animate-in slide-in-from-right duration-200 ease-out">
+              <div className="flex items-center justify-between border-b border-border px-6 py-5">
+                <div className="flex items-center gap-2">
+                  <h2 className="text-[20px] font-semibold text-ink">알림</h2>
+                  {unreadNotifications.length > 0 ? (
+                    <span
+                      aria-label={`읽지 않은 알림 ${unreadNotifications.length}개`}
+                      className="inline-flex h-6 min-w-6 items-center justify-center overflow-hidden rounded-[13px] bg-item-hover px-[7px] py-1 text-[14px] font-medium leading-none text-ink-muted"
+                    >
+                      {unreadCountLabel}
+                    </span>
+                  ) : null}
+                </div>
+                <div className="flex items-center gap-3"><button type="button" onClick={markAllNotificationsRead} disabled={!unreadNotifications.length} className="text-[13px] font-medium text-brand transition-opacity hover:underline disabled:pointer-events-none disabled:opacity-40">모두 읽음</button><button type="button" aria-label="알림 닫기" onClick={() => setNotificationsOpen(false)} className="flex size-9 items-center justify-center rounded-lg text-icon-muted opacity-100 transition-colors hover:bg-item-hover hover:text-ink focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-focus-soft"><X className="size-6" /></button></div>
               </div>
               <div role="tablist" aria-label="알림 종류" className="flex border-b border-black/5 px-4">
-                {['전체', '마감', '일정', '새 소식'].map((tab) => (
+                {[{ label: "전체" }, { label: "마감", type: "deadline" as NotificationType }, { label: "일정", type: "schedule" as NotificationType }, { label: "새 소식", type: "news" as NotificationType }].map((tab) => (
                   <button
-                    key={tab}
+                    key={tab.label}
                     type="button"
                     role="tab"
-                    aria-selected={notificationTab === tab}
-                    onClick={() => setNotificationTab(tab)}
-                    className={`relative h-10 flex-1 px-2 text-[13px] font-medium transition-colors ${notificationTab === tab ? 'text-brand' : 'text-ink-muted hover:text-ink'} after:absolute after:inset-x-2 after:bottom-0 after:h-0.5 after:rounded-full after:bg-brand after:transition-opacity ${notificationTab === tab ? 'after:opacity-100' : 'after:opacity-0'}`}
+                    aria-selected={notificationTab === tab.label}
+                    onClick={() => setNotificationTab(tab.label)}
+                    className={`relative flex h-10 flex-1 items-center justify-center gap-1.5 px-1 text-[13px] font-medium transition-colors ${notificationTab === tab.label ? 'text-brand' : 'text-ink-muted hover:text-ink'} after:absolute after:inset-x-2 after:bottom-0 after:h-0.5 after:rounded-full after:bg-brand after:transition-opacity ${notificationTab === tab.label ? 'after:opacity-100' : 'after:opacity-0'}`}
                   >
-                    {tab}
+                    {tab.label}
                   </button>
                 ))}
               </div>
-              <div className="flex-1 overflow-y-auto">
-                {visibleNotifications.map((notification) => (
-                  <button key={notification.id} type="button" className={`flex w-full gap-3 px-5 py-4 text-left hover:bg-item-hover ${!notification.read ? "bg-item-hover/40" : ""}`}>
-                    <span className={`mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full ${notification.type === "deadline" ? "bg-deadline-surface text-deadline" : notification.type === "schedule" ? "bg-item-hover text-brand" : "bg-pill text-brand"}`}>{notification.type === "deadline" ? "!" : notification.type === "schedule" ? "◷" : "＋"}</span>
-                    <span className="min-w-0 flex-1"><span className="block truncate text-[14px] font-semibold text-ink">{notification.title}</span><span className="mt-1 block text-[13px] text-ink-muted">{notification.description}</span></span>
-                    {!notification.read ? <span className="mt-1 size-2 shrink-0 rounded-full bg-brand" /> : null}
-                  </button>
-                ))}
+              <div className="flex-1 overflow-y-auto px-2 pb-4">
+                {groupedNotifications.length ? groupedNotifications.map((group) => (
+                  <section key={group.label} aria-labelledby={`notification-group-${group.label}`}>
+                    <h3 id={`notification-group-${group.label}`} className="px-3 pb-2 pt-4 text-[12px] font-semibold text-ink-muted">{group.label}</h3>
+                    <div className="overflow-hidden rounded-[12px] border border-border/60 bg-surface">
+                      {group.items.map((notification) => (
+                        <button key={notification.id} type="button" onClick={() => markNotificationRead(notification.id)} className={`flex w-full gap-3 border-b border-border/60 px-4 py-4 text-left transition-colors last:border-b-0 hover:bg-item-hover ${!isNotificationRead(notification) ? "bg-item-hover/40" : ""}`}>
+                          <span className={`mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full ${notification.type === "deadline" ? "bg-deadline-surface text-deadline" : notification.type === "schedule" ? "bg-item-hover text-brand" : "bg-pill text-brand"}`}>{notification.type === "deadline" ? <AlertTriangle className="size-4" /> : notification.type === "schedule" ? <CalendarClock className="size-4" /> : <Sparkles className="size-4" />}</span>
+                          <span className="min-w-0 flex-1"><span className="block truncate text-[14px] font-semibold text-ink">{notification.title}</span><span className="mt-1 block truncate text-[13px] text-ink-muted">{notification.description}</span></span>
+                          {!isNotificationRead(notification) ? <span className="mt-1 size-2 shrink-0 rounded-full bg-brand" /> : null}
+                        </button>
+                      ))}
+                    </div>
+                  </section>
+                )) : <div className="flex min-h-[220px] items-center justify-center px-6 text-center text-[14px] text-ink-muted">이 유형의 알림이 없어요.</div>}
               </div>
               </aside>
             </>,
@@ -137,10 +164,10 @@ export function AppHeader({ notifications = notificationExamples }: AppHeaderPro
             <button
               type="button"
               aria-label="사용자 메뉴 열기"
-              className="group relative -mr-1.5 flex h-9 w-auto min-w-[103px] shrink-0 items-center justify-center text-sm font-normal text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+              className="group relative -mr-1.5 flex h-9 w-fit min-w-[103px] shrink-0 items-center justify-center text-sm font-normal text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
             >
               <span aria-hidden="true" className="pointer-events-none absolute inset-0 rounded-lg bg-item-hover opacity-0 transition-opacity duration-150 ease-out group-hover:opacity-100 group-focus-visible:opacity-100 group-data-[state=open]:opacity-100 motion-reduce:transition-none" />
-              <span className="relative flex h-9 items-center gap-[5px] px-px">
+              <span className="relative flex h-9 w-fit shrink-0 items-center gap-[5px] px-px">
                 <span className="flex shrink-0 items-center justify-center text-icon-muted transition-colors duration-150 ease-out group-hover:text-ink-muted group-focus-visible:text-ink-muted group-data-[state=open]:text-ink-muted motion-reduce:transition-none">
                   <span className="relative size-6 overflow-hidden">
                     <svg aria-hidden="true" className="absolute left-1/2 top-1/2 h-[27px] w-7 max-w-none -translate-x-1/2 -translate-y-1/2" viewBox="0 0 28 27" fill="none">
