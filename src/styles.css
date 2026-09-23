@@ -160,7 +160,7 @@
   --control-inactive: #9a9d9b;
   --pill: #E2F8F0;
   --pill-foreground: #1f8064;
-  --overlay: rgb(160 167 172 / 0.5);
+  --overlay: rgb(148 155 162 / 0.4);
   --page: var(--overlay);
   --surface: #ffffff;
   --field-border: #d8e1dd;
@@ -181,6 +181,13 @@
   --secondary-btn-text-hover: #405b52;
 }
 
+
+#matching-business-name:-webkit-autofill,
+#matching-business-name:-webkit-autofill:hover,
+#matching-business-name:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px var(--surface) inset;
+  -webkit-text-fill-color: var(--ink);
+}
 
 .dark {
   --background: oklch(0.129 0.042 264.695);
@@ -261,6 +268,156 @@
   0% { transform: scale(0.85); }
   45% { transform: scale(1.12); }
   100% { transform: scale(1); }
+}
+
+@keyframes ai-search-gradient-spin {
+  to { transform: rotate(360deg); }
+}
+
+.today-news-card {
+  isolation: isolate;
+  overflow: visible;
+  z-index: 1;
+  transition: transform 150ms ease-out;
+}
+
+.today-news-card:hover,
+.today-news-card:focus-visible {
+  z-index: 2;
+  transform: translateY(-1px);
+}
+
+@property --today-news-shadow-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes today-news-shadow-flow {
+  to { --today-news-shadow-angle: 360deg; }
+}
+
+@keyframes today-news-background-sweep {
+  0% {
+    background-position: -130% 50%;
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  78% {
+    opacity: 1;
+  }
+  100% {
+    background-position: 160% 50%;
+    opacity: 0;
+  }
+}
+
+.today-news-shadow-motion {
+  position: absolute;
+  inset: -4px;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: 16px;
+  background: conic-gradient(
+    from var(--today-news-shadow-angle),
+    rgb(120 217 192 / 0.35) 0deg,
+    rgb(120 217 192 / 0.65) 80deg,
+    rgb(100 255 199 / 0.85) 160deg,
+    rgb(100 255 199 / 0.45) 240deg,
+    rgb(120 217 192 / 0.35) 360deg
+  );
+  filter: blur(12px);
+  opacity: 0;
+}
+
+.today-news-card:hover .today-news-shadow-motion,
+.today-news-card:focus-visible .today-news-shadow-motion {
+  opacity: 0.5;
+  animation: today-news-shadow-flow 3.5s linear infinite;
+}
+
+.today-news-background-glow {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  border-radius: 12px;
+  background: radial-gradient(
+    ellipse 42% 85% at 0% 50%,
+    rgb(100 255 199 / 0.2),
+    transparent 72%
+  );
+  background-size: 220% 100%;
+  background-repeat: no-repeat;
+  background-position: -130% 50%;
+  filter: blur(12px);
+  opacity: 0;
+  transition: opacity 180ms ease-out;
+}
+
+.today-news-card:hover .today-news-background-glow,
+.today-news-card:focus-visible .today-news-background-glow {
+  opacity: 1;
+  animation: today-news-background-sweep 850ms ease-out both;
+  animation-iteration-count: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .today-news-card {
+    transition: none;
+  }
+
+  .today-news-card:hover,
+  .today-news-card:focus-visible {
+    transform: none;
+  }
+
+  .today-news-shadow-motion {
+    animation: none;
+  }
+
+  .today-news-background-glow {
+    animation: none;
+    transition: none;
+  }
+}
+
+.ai-search-shimmer {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  box-shadow: inset 0 0 12px -4px #1f8064, inset 0 0 1px #d7ffe2, inset 0 0 2px #a2dece;
+}
+
+.ai-search-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: -70%;
+  z-index: 0;
+  background: conic-gradient(from 45deg, transparent 0deg, transparent 63deg, rgb(100 255 199 / 0.12) 70deg, rgb(100 255 199 / 0.08) 80deg, transparent 87deg, transparent 140deg, rgb(0 93 68 / 0.1) 180deg, transparent 220deg, transparent 283deg, rgb(100 255 199 / 0.12) 290deg, rgb(100 255 199 / 0.08) 300deg, transparent 307deg, transparent 360deg);
+  filter: blur(4px);
+  opacity: 1;
+  animation: ai-search-gradient-spin 7s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.ai-search-shimmer > * {
+  position: relative;
+  z-index: 1;
+}
+
+.ai-search-shimmer:disabled {
+  box-shadow: none;
+}
+
+.ai-search-shimmer:disabled::after {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ai-search-shimmer::after { animation: none; }
 }
 
 .animate-heart-pop { animation: heart-pop 220ms ease-out both; }
@@ -349,4 +506,9 @@
 button:not(:disabled),
 a[href] {
   cursor: pointer;
+}
+
+.bg-overlay {
+  -webkit-backdrop-filter: blur(0.6px) !important;
+  backdrop-filter: blur(0.6px) !important;
 }
