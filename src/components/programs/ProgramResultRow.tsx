@@ -1,8 +1,8 @@
 import { useState } from "react";
-import type { ProgramSearchItem } from "@/mocks/programSearchMock";
+import type { MatchedProgram } from "@/mocks/programSearchMock";
 
 type ProgramResultRowProps = {
-  program: ProgramSearchItem;
+  program: MatchedProgram;
 };
 
 export function ProgramResultRow({ program }: ProgramResultRowProps) {
@@ -29,7 +29,7 @@ export function ProgramResultRow({ program }: ProgramResultRowProps) {
         </div>
       </div>
       <span className="shrink-0 text-sm font-medium text-ink">{program.matchLabel}</span>
-      <div className="w-[90px] shrink-0">
+      <div className="w-[90px] shrink-0 translate-y-[4.5px]">
         <p className="text-xl font-bold leading-[26px] text-ink">{program.dDay}</p>
         <p className="text-[13px] leading-5 text-ink-muted">{program.deadline}</p>
       </div>

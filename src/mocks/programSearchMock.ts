@@ -1,4 +1,4 @@
-export type ProgramSearchItem = {
+export type MatchedProgram = {
   id: string;
   organization: string;
   title: string;
@@ -9,7 +9,12 @@ export type ProgramSearchItem = {
   type: "default" | "recommended";
 };
 
-export const programSearchMock: ProgramSearchItem[] = [
+export type MatchedProgramResults = {
+  recommended: MatchedProgram[];
+  review: MatchedProgram[];
+};
+
+export const matchedProgramResults: MatchedProgram[] = [
   { id: "p-1", organization: "서울핀테크랩", title: "[제2서울핀테크랩] 서울 핀테크 위크 2026 데모데이 및 글로벌 기술창업 지원 연계 프로그램 참가기업 모집과 사업화 후속 지원 대상자 선정 공고", categories: ["판로·마케팅", "초기창업", "서울"], dDay: "D-12", deadline: "~09.03(목)", matchLabel: "리포트 보기 〉", type: "recommended" },
   { id: "p-2", organization: "창업진흥원", title: "2026년 초기창업패키지 예비창업자 모집 공고", categories: ["사업화", "예비창업", "전국"], dDay: "D-18", deadline: "~09.09(수)", matchLabel: "리포트 보기 〉", type: "default" },
   { id: "p-3", organization: "중소벤처기업진흥공단", title: "청년창업사관학교 15기 입교생 모집", categories: ["사업화", "초기창업", "경기"], dDay: "D-24", deadline: "~09.15(화)", matchLabel: "리포트 보기 〉", type: "default" },
@@ -23,3 +28,9 @@ export const programSearchMock: ProgramSearchItem[] = [
   { id: "p-11", organization: "부산창조경제혁신센터", title: "지역혁신 스타트업 보육·공간 지원", categories: ["시설·공간·보육", "부산"], dDay: "D-81", deadline: "~11.11(수)", matchLabel: "리포트 보기 〉", type: "default" },
   { id: "p-12", organization: "중소벤처기업부", title: "소상공인 디지털 전환 바우처 모집", categories: ["내수", "경영", "전국"], dDay: "D-90", deadline: "~11.20(금)", matchLabel: "리포트 보기 〉", type: "default" },
 ];
+
+/** Mirrors the backend response shape. Replace each collection with its API result when connected. */
+export const matchedProgramResultsByTab: MatchedProgramResults = {
+  recommended: matchedProgramResults,
+  review: [],
+};

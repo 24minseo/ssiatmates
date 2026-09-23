@@ -1,44 +1,66 @@
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { Check, MoreVertical, X } from "lucide-react";
 import { createFileRoute } from "@tanstack/react-router";
-import { Pagination } from "@/components/ui/Pagination";
+import { Pagination } from "@/components/ui/pagination";
 import { ProgramSortDropdown, type ProgramSortOption } from "@/components/my-programs/ProgramSortDropdown";
 import { ProgramResultRow } from "@/components/programs/ProgramResultRow";
 import { ProgramResultsTabs, type ProgramResultsTab } from "@/components/programs/ProgramResultsTabs";
 import { SupportCategorySelect } from "@/components/programs/SupportCategorySelect";
 import { SUPPORT_ALL } from "@/components/onboarding/constants";
-import { programSearchMock } from "@/mocks/programSearchMock";
+import { matchedProgramResultsByTab, type MatchedProgram } from "@/mocks/programSearchMock";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 const PAGE_SIZE = 10;
 export const Route = createFileRoute("/programs")({
   head: () => ({ meta: [{ title: "지원사업 탐색" }] }),
+  validateSearch: (search: Record<string, unknown>): { tab?: ProgramResultsTab } =>
+    search["tab"] === "review" ? { tab: "review" } : {},
   component: ProgramsPage,
 });
 
+function ExcludedProgramRow({ program }: { program: MatchedProgram }) {
+  return <article className="flex min-h-[118px] items-center gap-6 border-b border-[#e9e9e9] bg-white px-8 py-[14px] last:border-b-0"><div className="min-w-0 flex-1"><p className="text-[13px] leading-[21px] text-ink-muted">{program.organization}</p><h3 className="truncate text-[20px] font-semibold leading-6 tracking-[-0.22px] text-ink">{program.title}</h3><div className="mt-2 flex flex-wrap items-center gap-2">{program.categories.map((category) => <span key={category} className="rounded bg-[#f5f5f5] px-[7px] py-1 text-xs font-medium text-ink-muted">{category}</span>)}</div></div><div className="w-[90px] shrink-0 translate-y-[4.5px]"><p className="text-xl font-bold leading-[26px] text-ink">{program.dDay}</p><p className="text-[13px] leading-5 text-ink-muted">{program.deadline}</p></div><button type="button" className="shrink-0 rounded-[10px] px-3 py-2 text-[13px] font-medium text-ink-muted transition-colors hover:bg-item-hover">복원</button></article>;
+}
+
 function ProgramsPage() {
+  const search = Route.useSearch();
+  const navigate = Route.useNavigate();
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<ProgramSortOption>("deadline");
-  const [tab, setTab] = useState<ProgramResultsTab>("recommended");
+  const [tab, setTab] = useState<ProgramResultsTab>(search["tab"] ?? "recommended");
   const [page, setPage] = useState(1);
   const [supportCategories, setSupportCategories] = useState<string[]>([SUPPORT_ALL]);
   const [excludeClosed, setExcludeClosed] = useState(false);
   const [excludedOpen, setExcludedOpen] = useState(false);
-  const results = useMemo(() => {
+  const resultsByTab = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
-    const filtered = programSearchMock.filter((item) => {
-      const matchesQuery = !normalizedQuery || [item.title, item.organization, ...item.categories].join(" ").toLowerCase().includes(normalizedQuery);
-      const matchesCategory = supportCategories.includes(SUPPORT_ALL) || item.categories.some((category) => supportCategories.includes(category));
-      return matchesQuery && matchesCategory;
-    });
-    return [...filtered].sort((a, b) => sort === "deadline" ? a.dDay.localeCompare(b.dDay, undefined, { numeric: true }) : sort === "fit" ? Number(b.type === "recommended") - Number(a.type === "recommended") : 0);
+    const filterAndSort = (items: MatchedProgram[]) => {
+      const filtered = items.filter((item) => {
+        const matchesQuery = !normalizedQuery || [item.title, item.organization, ...item.categories].join(" ").toLowerCase().includes(normalizedQuery);
+        const matchesCategory = supportCategories.includes(SUPPORT_ALL) || item.categories.some((category) => supportCategories.includes(category));
+        return matchesQuery && matchesCategory;
+      });
+      return [...filtered].sort((a, b) => sort === "deadline" ? a.dDay.localeCompare(b.dDay, undefined, { numeric: true }) : sort === "fit" ? Number(b.type === "recommended") - Number(a.type === "recommended") : 0);
+    };
+
+    return {
+      recommended: filterAndSort(matchedProgramResultsByTab.recommended),
+      review: filterAndSort(matchedProgramResultsByTab.review),
+    };
   }, [query, sort, supportCategories]);
   useEffect(() => { setPage(1); }, [query, sort, tab, supportCategories]);
+  useEffect(() => { setTab(search["tab"] ?? "recommended"); }, [search]);
+  const results = resultsByTab[tab];
   const pageCount = Math.max(1, Math.ceil(results.length / PAGE_SIZE));
   const excludedCount = results.filter((program) => ["p-2", "p-4"].includes(program.id)).length;
   const sourceResults = excludeClosed
     ? results.filter((program) => ["p-2", "p-4"].includes(program.id))
     : results;
   const visibleResults = sourceResults.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-  return <section className="space-y-[18px]"><h1 className="text-[28px] font-bold leading-normal text-ink">지원사업 탐색</h1><div className="grid grid-cols-[290px_290px_minmax(0,1fr)] gap-4"><div className="flex h-12 items-center justify-between rounded-xl bg-[#f6f8f7] pl-6 pr-4 text-[15px] font-medium text-ink">기본 프로필 적용 중<span aria-hidden className="flex size-6 flex-col items-center justify-center gap-[3px]"><span className="size-[2px] rounded-full bg-[#84968E] transition-colors group-hover/more:bg-ink" /><span className="size-[2px] rounded-full bg-[#84968E] transition-colors group-hover/more:bg-ink" /><span className="size-[2px] rounded-full bg-[#84968E] transition-colors group-hover/more:bg-ink" /></span></div><SupportCategorySelect value={supportCategories} onChange={setSupportCategories} /><div className="flex h-12 items-center gap-2 rounded-xl border border-border pl-6 pr-1.5"><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="선호하는 조건을 입력해 보세요" className="min-w-0 flex-1 bg-transparent text-[15px] outline-none placeholder:text-guide-text" /><button type="button" aria-label="조건 검색" disabled={!query.trim()} className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand text-brand-foreground transition-colors hover:bg-brand/88 disabled:cursor-not-allowed disabled:bg-brand-disabled disabled:text-brand-foreground"><img draggable={false} src="/assets/programs/ai-search.svg" alt="" className="pointer-events-none select-none size-6" /></button></div></div><div className="pt-[48px]"><div className="relative h-[48px] w-full"><ProgramResultsTabs selected={tab} counts={{ recommended: results.length, review: 0 }} onChange={setTab} /><div className="absolute right-0 top-[-1px] flex items-center gap-[6px]"><ProgramSortDropdown value={sort} onChange={setSort} /><DropdownMenu modal={false}><DropdownMenuTrigger asChild><button type="button" aria-label="지원사업 더보기" className="flex size-[42px] shrink-0 items-center justify-center rounded-[12px] border border-field-border bg-surface p-0 text-ink shadow-none transition-colors hover:bg-item-hover"><MoreVertical className="size-5 stroke-[1.5]" /></button></DropdownMenuTrigger><DropdownMenuContent align="end" sideOffset={6} className="min-w-0 w-fit rounded-[12px] border-0 bg-surface p-1 shadow-none" style={{ boxShadow: "var(--shadow-dropdown)" }}><DropdownMenuItem onSelect={() => setExcludedOpen(true)} className={`min-h-10 w-auto cursor-pointer rounded-[8px] px-[14px] hover:bg-dropdown-hover data-[highlighted]:bg-dropdown-hover focus:bg-dropdown-hover focus:text-ink ${excludeClosed ? "bg-dropdown-selected-hover font-bold text-brand" : "text-ink"}`}><span className="flex items-center gap-2 whitespace-nowrap">제외한 공고 보기<span className="rounded-full bg-item-hover px-2 py-1 text-[12px] font-semibold leading-none text-ink-muted">{excludedCount}</span></span>{excludeClosed ? <Check className="size-[18px] text-brand" /> : null}</DropdownMenuItem></DropdownMenuContent></DropdownMenu></div></div><div className="mt-1 overflow-hidden rounded-sm">{visibleResults.length ? visibleResults.map((program) => <ProgramResultRow key={program.id} program={program} />) : <p className="bg-white px-8 py-16 text-center text-ink-muted">조건에 맞는 지원사업이 없습니다.</p>}</div>{excludedOpen && <div className="fixed inset-0 z-50 flex items-center justify-center bg-overlay" onClick={() => setExcludedOpen(false)}><div className="w-[760px] max-w-[calc(100vw-32px)] rounded-[16px] bg-surface p-6 shadow-dropdown" onClick={(event) => event.stopPropagation()}><div className="mb-5 flex items-center justify-between"><h2 className="text-[20px] font-semibold text-ink">제외한 공고</h2><button type="button" aria-label="제외한 공고 닫기" onClick={() => setExcludedOpen(false)} className="flex size-9 items-center justify-center rounded-lg text-ink-muted hover:bg-item-hover hover:text-ink"><X className="size-5" /></button></div><div className="rounded-xl bg-item-hover px-4 py-3"><p className="text-[12px] text-ink-muted">창업진흥원</p><div className="mt-1 flex items-center justify-between gap-3"><p className="truncate text-[15px] font-semibold text-ink">2026년 초기창업패키지 예비창업자 모집 공고</p><button type="button" className="shrink-0 rounded-lg bg-surface px-3 py-1.5 text-[13px] font-medium text-brand hover:bg-brand/10">복원</button></div><div className="mt-2 flex items-center gap-2 text-[12px] text-ink-muted"><span>사업화</span><span>·</span><span>예비창업</span><span>전국</span><span className="ml-auto font-medium text-ink">D-18</span></div></div></div></div>}<Pagination page={page} pageCount={pageCount} onChange={setPage} /></div></section>;
+  const handleTabChange = (nextTab: ProgramResultsTab) => {
+    setTab(nextTab);
+    void navigate({ search: nextTab === "review" ? { tab: "review" } : {} });
+  };
+  return <section className="space-y-[18px]"><h1 className="text-[28px] font-bold leading-normal text-ink">지원사업 탐색</h1><div className="grid grid-cols-[290px_290px_minmax(0,1fr)] gap-4"><div className="flex h-12 items-center justify-between rounded-xl bg-[#f6f8f7] pl-6 pr-4 text-[15px] font-medium text-ink">기본 프로필 적용 중<span aria-hidden className="flex size-6 flex-col items-center justify-center gap-[3px]"><span className="size-[2px] rounded-full bg-[#84968E] transition-colors group-hover/more:bg-ink" /><span className="size-[2px] rounded-full bg-[#84968E] transition-colors group-hover/more:bg-ink" /><span className="size-[2px] rounded-full bg-[#84968E] transition-colors group-hover/more:bg-ink" /></span></div><SupportCategorySelect value={supportCategories} onChange={setSupportCategories} /><div className="flex h-12 items-center gap-2 rounded-xl border border-border pl-6 pr-1.5"><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="선호하는 조건을 입력해 보세요" className="min-w-0 flex-1 bg-transparent text-[15px] outline-none placeholder:text-guide-text" /><button type="button" aria-label="조건 검색" disabled={!query.trim()} className="ai-search-shimmer flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand text-brand-foreground transition-[box-shadow,transform,background-color] duration-150 hover:bg-[#3A8F77] active:translate-y-px active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-brand-disabled disabled:text-brand-foreground"><img draggable={false} src="/assets/programs/ai-search.svg" alt="" className="pointer-events-none select-none size-6" /></button></div></div><div className="pt-[48px]"><div className="relative h-[48px] w-full"><ProgramResultsTabs selected={tab} counts={{ recommended: resultsByTab.recommended.length, review: resultsByTab.review.length }} onChange={handleTabChange} /><div className="absolute right-0 top-[-1px] flex items-center gap-[6px]"><ProgramSortDropdown value={sort} onChange={setSort} /><DropdownMenu modal={false}><DropdownMenuTrigger asChild><button type="button" aria-label="지원사업 더보기" className="flex size-[42px] shrink-0 items-center justify-center rounded-[12px] border border-field-border bg-surface p-0 text-ink shadow-none transition-colors hover:bg-item-hover"><MoreVertical className="size-5 stroke-[1.5]" /></button></DropdownMenuTrigger><DropdownMenuContent align="end" sideOffset={6} className="min-w-0 w-fit rounded-[12px] border-0 bg-surface p-1 shadow-none" style={{ boxShadow: "var(--shadow-dropdown)" }}><DropdownMenuItem onSelect={() => setExcludedOpen(true)} className={`min-h-10 w-auto cursor-pointer rounded-[8px] px-[14px] hover:bg-dropdown-hover data-[highlighted]:bg-dropdown-hover focus:bg-dropdown-hover focus:text-ink ${excludeClosed ? "bg-dropdown-selected-hover font-bold text-brand" : "text-ink"}`}><span className="flex items-center gap-2 whitespace-nowrap">제외한 공고 보기<span className="rounded-full bg-item-hover px-2 py-1 text-[12px] font-semibold leading-none text-ink-muted">{excludedCount}</span></span>{excludeClosed ? <Check className="size-[18px] text-brand" /> : null}</DropdownMenuItem></DropdownMenuContent></DropdownMenu></div></div><div className="mt-1 overflow-hidden rounded-sm">{visibleResults.length ? visibleResults.map((program) => <ProgramResultRow key={program.id} program={program} />) : <p className="bg-white px-8 py-16 text-center text-ink-muted">조건에 맞는 지원사업이 없습니다.</p>}</div>{excludedOpen && createPortal(<div className="fixed inset-0 z-[100] flex items-center justify-center bg-overlay backdrop-blur-[0.6px] p-4" onClick={() => setExcludedOpen(false)}><div className="flex max-h-[calc(100vh-32px)] w-[900px] max-w-full flex-col overflow-hidden rounded-[16px] bg-surface shadow-dropdown" onClick={(event) => event.stopPropagation()}><div className="flex h-[72px] shrink-0 items-center justify-between border-b border-border px-8"><div className="flex items-center gap-2"><h2 className="text-[18px] font-semibold text-ink">제외한 공고</h2><span className="flex size-6 items-center justify-center rounded-full bg-item-hover text-[14px] font-semibold leading-none text-ink-muted">{excludedCount}</span></div><button type="button" aria-label="제외한 공고 닫기" onClick={() => setExcludedOpen(false)} className="flex size-9 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-item-hover hover:text-ink"><X className="size-6" /></button></div><div className="min-h-0 overflow-y-auto pb-[10px]">{results.filter((program) => ["p-2", "p-4"].includes(program.id)).length ? results.filter((program) => ["p-2", "p-4"].includes(program.id)).map((program) => <ExcludedProgramRow key={program.id} program={program} />) : <p className="px-8 py-16 text-center text-ink-muted">제외한 공고가 없습니다.</p>}</div></div></div>, document.body)}<Pagination page={page} pageCount={pageCount} onChange={setPage} /></div></section>;
 }
