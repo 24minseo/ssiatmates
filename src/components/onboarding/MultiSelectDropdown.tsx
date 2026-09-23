@@ -17,6 +17,11 @@ interface MultiSelectDropdownProps {
   placeholder?: string | undefined;
   id?: string | undefined;
   maxSelected?: number | undefined;
+  listHeight?: number | undefined;
+  alwaysShowScrollbar?: boolean | undefined;
+  avoidCollisions?: boolean | undefined;
+  scrollSelectedToTop?: boolean | undefined;
+  popoverSideOffset?: number | undefined;
 }
 
 export function MultiSelectDropdown({
@@ -26,6 +31,11 @@ export function MultiSelectDropdown({
   placeholder = "선택해주세요",
   id,
   maxSelected,
+  listHeight = 220,
+  alwaysShowScrollbar = false,
+  avoidCollisions = false,
+  scrollSelectedToTop = false,
+  popoverSideOffset = 4,
 }: MultiSelectDropdownProps) {
   const [open, setOpen] = useState(false);
   const [activeValue, setActiveValue] = useState("");
@@ -42,7 +52,7 @@ export function MultiSelectDropdown({
     });
 
     return () => cancelAnimationFrame(frame);
-  }, [open]);
+  }, [open, scrollSelectedToTop]);
 
   const toggle = (option: string) => {
     const alreadySelected = value.includes(option);
@@ -70,10 +80,14 @@ export function MultiSelectDropdown({
 
   return (
     <Popover
+      modal={false}
       open={open}
       onOpenChange={(next) => {
         if (next) {
-          setActiveValue(value[0] ?? options.at(0) ?? "");
+          const firstSelectedInList = scrollSelectedToTop
+            ? options.find((option) => value.includes(option))
+            : undefined;
+          setActiveValue(firstSelectedInList ?? value[0] ?? options.at(0) ?? "");
         }
         setOpen(next);
       }}
@@ -139,11 +153,20 @@ export function MultiSelectDropdown({
         className="w-[var(--radix-popover-trigger-width)] rounded-[12px] border-0 p-0 shadow-dropdown"
         align="start"
         side="bottom"
-        sideOffset={4}
-        avoidCollisions={false}
+        sideOffset={popoverSideOffset}
+        avoidCollisions={avoidCollisions}
       >
         <Command value={activeValue} onValueChange={setActiveValue} className="rounded-[12px]">
-          <CommandList className="max-h-[220px]">
+          <CommandList
+            className="overscroll-contain touch-pan-y"
+            style={{
+              height: listHeight,
+              maxHeight: listHeight,
+              overflowY: alwaysShowScrollbar ? "scroll" : "auto",
+            }}
+            onWheelCapture={(event) => event.stopPropagation()}
+            onTouchMoveCapture={(event) => event.stopPropagation()}
+          >
             <CommandEmpty>항목이 없습니다.</CommandEmpty>
             <CommandGroup>
               {options.map((option) => {

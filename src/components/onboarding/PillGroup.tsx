@@ -19,7 +19,7 @@ export function PillGroup({ options, value, onToggle }: PillGroupProps) {
             aria-pressed={selected}
             onClick={() => onToggle(option)}
             className={cn(
-              "inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-sm transition-colors",
+              "inline-flex h-8 items-center gap-[4px] rounded-full px-3 text-sm transition-colors",
               selected
                 ? "bg-pill font-semibold text-pill-foreground"
                 : "bg-item-hover text-ink-muted hover:bg-[#F1F3F2] hover:text-ink-muted",

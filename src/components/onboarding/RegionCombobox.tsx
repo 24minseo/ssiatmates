@@ -18,6 +18,10 @@ interface RegionComboboxProps {
   placeholder?: string | undefined;
   disabled?: boolean | undefined;
   id?: string | undefined;
+  listHeight?: number | undefined;
+  avoidCollisions?: boolean | undefined;
+  popoverSideOffset?: number | undefined;
+  alwaysShowScrollbar?: boolean | undefined;
 }
 
 export function RegionCombobox({
@@ -26,6 +30,10 @@ export function RegionCombobox({
   placeholder = "지역을 선택해주세요",
   disabled = false,
   id,
+  listHeight = 180,
+  avoidCollisions = false,
+  popoverSideOffset = 4,
+  alwaysShowScrollbar = false,
 }: RegionComboboxProps) {
   const [open, setOpen] = useState(false);
   const [regions, setRegions] = useState<Array<{ label: string }>>([]);
@@ -71,6 +79,7 @@ export function RegionCombobox({
 
   return (
     <Popover
+      modal={false}
       open={open}
       onOpenChange={(next) => {
         if (next && !disabled) {
@@ -113,15 +122,24 @@ export function RegionCombobox({
         className="w-[var(--radix-popover-trigger-width)] rounded-[12px] border-0 p-0 shadow-dropdown"
         align="start"
         side="bottom"
-        sideOffset={4}
-        avoidCollisions={false}
+        sideOffset={popoverSideOffset}
+        avoidCollisions={avoidCollisions}
       >
         <Command value={activeValue} onValueChange={setActiveValue} className="rounded-[12px] [&_[cmdk-input-wrapper]]:px-4 [&_[cmdk-input-wrapper]_svg]:size-5 [&_[cmdk-input-wrapper]_svg]:-translate-x-0.5">
           <CommandInput
             placeholder="지역 검색"
             className="h-11 text-[15px] placeholder:text-guide-text"
           />
-          <CommandList className="max-h-[180px]">
+          <CommandList
+            className="overscroll-contain touch-pan-y"
+            style={{
+              height: listHeight,
+              maxHeight: listHeight,
+              overflowY: alwaysShowScrollbar ? "scroll" : "auto",
+            }}
+            onWheelCapture={(event) => event.stopPropagation()}
+            onTouchMoveCapture={(event) => event.stopPropagation()}
+          >
             <CommandEmpty>검색 결과가 없습니다.</CommandEmpty>
             <CommandGroup>
               {regions.map((region) => (

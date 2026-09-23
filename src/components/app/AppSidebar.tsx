@@ -1,7 +1,9 @@
 import { Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 
+import { getProfileTitle, useAuth } from "@/hooks/useAuth";
 import { useAppSidebar } from "./AppSidebarState";
+import { MatchingProfileSheet } from "./MatchingProfileSheet";
 
 export type AppNavigationKey =
   | "home"
@@ -244,13 +246,48 @@ function MenuItem({
 
 export function AppSidebar({ active }: AppSidebarProps) {
   const { expanded, toggleSidebar } = useAppSidebar();
-  const projectName = "지역농산물간편식연구개발협동조합";
+  const { profile, user, refreshProfile } = useAuth();
+  const sidebarRef = useRef<HTMLElement>(null);
+  const [useSafariLogo] = useState(() => {
+    if (typeof navigator === "undefined") return false;
+
+    const userAgent = navigator.userAgent;
+    const isIOSWebKit =
+      /iPhone|iPad|iPod/i.test(userAgent) ||
+      (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    const isDesktopSafari =
+      /Macintosh/i.test(userAgent) &&
+      /Safari/i.test(userAgent) &&
+      !/(Chrome|CriOS|Edg|OPR|Firefox)/i.test(userAgent);
+
+    return isIOSWebKit || isDesktopSafari;
+  });
+  const projectName = getProfileTitle(user, profile);
   const profileCardStatus = "기본 매칭 프로필";
+  const [matchingProfileOpen, setMatchingProfileOpen] = useState(false);
   const [projectInitial = "", ...projectNameRest] = Array.from(projectName);
+
+  useEffect(() => {
+    const sidebar = sidebarRef.current;
+    if (!sidebar) return;
+
+    const handleWheel = (event: WheelEvent) => {
+      const target = event.target;
+      const isScrollableSidebarArea = target instanceof Element && target.closest("[data-sidebar-scroll]");
+      if (!isScrollableSidebarArea) {
+        event.preventDefault();
+      }
+      event.stopPropagation();
+    };
+
+    sidebar.addEventListener("wheel", handleWheel, { capture: true, passive: false });
+    return () => sidebar.removeEventListener("wheel", handleWheel, true);
+  }, []);
 
   return (
     <aside
-      className={`sticky top-0 z-30 h-screen shrink-0 bg-[#F6F8F7] transition-[width] duration-200 ease-out motion-reduce:transition-none ${
+      ref={sidebarRef}
+      className={`sticky top-0 z-50 h-screen shrink-0 overflow-visible bg-[#F6F8F7] transition-[width] duration-200 ease-out motion-reduce:transition-none ${
         expanded ? "w-[240px]" : "w-20"
       }`}
     >
@@ -265,7 +302,11 @@ export function AppSidebar({ active }: AppSidebarProps) {
             }`}
           />
           <img
-            src="/assets/sidebar/ssiat-symbol.svg"
+            src={
+              useSafariLogo
+                ? "/assets/sidebar/ssiat-symbol-safari-provided.png"
+                : "/assets/sidebar/ssiat-symbol.svg"
+            }
             alt="SSIAT"
             aria-hidden={expanded}
             className={`absolute left-2 top-[3px] h-[26px] w-8 object-contain ${
@@ -279,7 +320,7 @@ export function AppSidebar({ active }: AppSidebarProps) {
           aria-label={expanded ? "사이드바 접기" : "사이드바 펼치기"}
           aria-expanded={expanded}
           onClick={toggleSidebar}
-          className={`group/toggle absolute top-5 flex size-8 items-center justify-center transition-[right] duration-200 ease-out focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand motion-reduce:transition-none ${
+          className={`group/toggle absolute top-5 z-40 flex size-8 items-center justify-center transition-[right] duration-200 ease-out focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand motion-reduce:transition-none ${
             expanded ? "right-[14px]" : "-right-[15px]"
           }`}
         >
@@ -317,9 +358,19 @@ export function AppSidebar({ active }: AppSidebarProps) {
           />
         </button>
 
+        <div className="absolute inset-0 z-10 overflow-visible">
         <button
           type="button"
-          aria-label="현재 프로젝트 정보 수정"
+          aria-label="매칭 프로필 수정"
+          onClick={(event) => {
+            if (
+              expanded &&
+              !(event.target as HTMLElement).closest("[data-profile-edit]")
+            ) {
+              return;
+            }
+            setMatchingProfileOpen(true);
+          }}
           className={`group/profile absolute left-4 top-[79px] ${expanded ? "!cursor-default" : "cursor-pointer"} overflow-visible rounded-[10px] bg-[#FEFEFE] shadow-[1px_1px_0_1px_rgba(185,201,194,0.25)] transition-[width,height] duration-200 ease-out motion-reduce:transition-none ${
             expanded ? "h-[65px] w-[208px]" : "size-12"
           }`}
@@ -358,7 +409,10 @@ export function AppSidebar({ active }: AppSidebarProps) {
                 expanded ? "opacity-100 duration-200" : "opacity-0 duration-100"
               }`}
             >
-              <span className="group/edit absolute right-0 top-[2px] size-5 cursor-pointer">
+                <span
+                  data-profile-edit
+                  className="group/edit absolute right-0 top-[2px] size-5 cursor-pointer"
+                >
                 <img
                   src="/assets/sidebar/profile-edit-default.svg"
                   alt=""
@@ -397,13 +451,20 @@ export function AppSidebar({ active }: AppSidebarProps) {
           </span>
         </button>
 
+        <MatchingProfileSheet
+          open={matchingProfileOpen}
+          onOpenChange={setMatchingProfileOpen}
+          profile={profile}
+          onSaved={refreshProfile}
+        />
+
         <nav
           aria-label="주요 메뉴"
           className={`absolute left-4 top-[178px] transition-[width] duration-200 ease-out motion-reduce:transition-none ${
             expanded ? "w-[208px]" : "w-12"
           }`}
         >
-          <ul>
+          <ul className="min-h-[calc(100%+1px)]">
             {navigation.map((item) => (
               <MenuItem
                 key={item.key}
@@ -414,6 +475,7 @@ export function AppSidebar({ active }: AppSidebarProps) {
             ))}
           </ul>
         </nav>
+        </div>
       </div>
     </aside>
   );
