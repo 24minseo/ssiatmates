@@ -56,7 +56,7 @@ export function ProgramSortDropdown({
       >
         <Command
           value={activeValue}
-          onValueChange={setActiveValue}
+          onValueChange={(next) => setActiveValue(next as ProgramSortOption)}
           className="rounded-[12px]"
         >
           <CommandList>

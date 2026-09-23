@@ -32,6 +32,21 @@ export const Route = createFileRoute("/my-programs")({
 type StatusFilter = StatusTabValue;
 type SortOption = ProgramSortOption;
 
+function SquareAlertIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      fill="none"
+      className={className}
+    >
+      <rect x="3" y="3" width="18" height="18" rx="4" fill="currentColor" />
+      <path d="M12 7.5V12.75" stroke="var(--surface)" strokeWidth="2.5" strokeLinecap="round" />
+      <circle cx="12" cy="16.75" r="1.4" fill="var(--surface)" />
+    </svg>
+  );
+}
+
 function MyProgramsPage() {
   const [programs, setPrograms] = useState<Program[]>([]);
   const [activeFilter, setActiveFilter] = useState<StatusFilter>("all");
@@ -320,24 +335,59 @@ function MyProgramsPage() {
           if (!open && !saving) setDeleteTarget(null);
         }}
       >
-        <AlertDialogContent className="rounded-[20px] border-0 bg-surface">
-          <AlertDialogHeader>
-            <AlertDialogTitle>지원사업을 삭제할까요?</AlertDialogTitle>
-            <AlertDialogDescription>
-              {deleteTarget?.title}와 연결된 일정도 함께 삭제됩니다.
-            </AlertDialogDescription>
+        <AlertDialogContent
+          className="w-[calc(100vw-32px)] max-w-[560px] overflow-hidden rounded-[20px] border-0 bg-surface"
+          onOverlayClick={() => {
+            if (saving) {
+              return;
+            }
+            setDeleteTarget(null);
+          }}
+        >
+          <AlertDialogHeader className="min-w-0 w-full max-w-full">
+            <AlertDialogTitle className="mb-4 text-[20px] font-bold leading-7 text-ink">
+              내 지원사업에서 삭제할까요?
+            </AlertDialogTitle>
+            <div className="min-h-10">
+              <AlertDialogDescription className="flex h-12 min-w-0 w-full max-w-full items-center gap-2 overflow-hidden rounded-[8px] bg-item-hover px-3 py-2 text-left text-[14px] font-medium leading-5 text-ink-muted">
+                <SquareAlertIcon className="size-4 shrink-0 text-icon-muted" />
+                <span className="min-w-0 truncate">
+                  {deleteTarget && deleteTarget.schedules.length > 0
+                    ? `연결된 일정 ${deleteTarget.schedules.length}개도 함께 삭제됩니다.`
+                    : "연결된 일정 없이 공고만 삭제됩니다."}
+                </span>
+              </AlertDialogDescription>
+            </div>
+            <div className="mt-2 min-h-12 min-w-0 w-full max-w-full text-left">
+              <p className="px-1 text-[14px] font-medium leading-5 text-submenu-text">
+                삭제할 공고
+              </p>
+              <p
+                className="mt-2 flex h-12 w-full min-w-0 max-w-full items-center overflow-hidden rounded-[8px] border border-field-border px-3 text-[16px] font-semibold leading-6 text-ink"
+                title={deleteTarget?.title}
+              >
+                <span className="block min-w-0 truncate">
+                  {deleteTarget?.title}
+                </span>
+              </p>
+            </div>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={saving}>취소</AlertDialogCancel>
+          <AlertDialogFooter className="mt-4">
+            <AlertDialogCancel
+              disabled={saving}
+              className="h-11 rounded-[12px] border-0 bg-secondary-btn px-5 text-[15px] font-semibold text-secondary-btn-text shadow-none hover:bg-secondary-btn-hover hover:text-secondary-btn-text-hover focus-visible:ring-1 focus-visible:ring-focus-soft"
+            >
+              취소
+            </AlertDialogCancel>
             <AlertDialogAction
               disabled={saving}
               onClick={(event) => {
                 event.preventDefault();
                 void handleDelete();
               }}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="h-11 rounded-[12px] border-0 bg-[#E95152] px-5 text-[15px] font-semibold text-white shadow-none hover:bg-[#E95152]/90 focus-visible:ring-1 focus-visible:ring-focus-soft"
             >
-              {saving ? "삭제 중…" : "삭제하기"}
+              {saving ? "삭제 중…" : "내 지원사업에서 삭제"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
