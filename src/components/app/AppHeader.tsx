@@ -164,10 +164,10 @@ export function AppHeader({ notifications = notificationExamples }: AppHeaderPro
             <button
               type="button"
               aria-label="사용자 메뉴 열기"
-              className="group relative -mr-1.5 flex h-9 w-max min-w-[103px] shrink-0 items-center justify-center text-sm font-normal text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+              className="group relative -mr-1.5 flex h-9 w-max min-w-0 shrink-0 items-center justify-center text-sm font-normal text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
             >
               <span aria-hidden="true" className="pointer-events-none absolute inset-0 rounded-lg bg-item-hover opacity-0 transition-opacity duration-150 ease-out group-hover:opacity-100 group-focus-visible:opacity-100 group-data-[state=open]:opacity-100 motion-reduce:transition-none" />
-              <span className="relative flex h-9 w-max shrink-0 items-center gap-[5px] px-px">
+              <span className="relative flex h-9 w-max shrink-0 items-center gap-[5px] px-4">
                 <span className="flex shrink-0 items-center justify-center text-icon-muted transition-colors duration-150 ease-out group-hover:text-ink-muted group-focus-visible:text-ink-muted group-data-[state=open]:text-ink-muted motion-reduce:transition-none">
                   <span className="relative size-6 overflow-hidden">
                     <svg aria-hidden="true" className="absolute left-1/2 top-1/2 h-[27px] w-7 max-w-none -translate-x-1/2 -translate-y-1/2" viewBox="0 0 28 27" fill="none">
