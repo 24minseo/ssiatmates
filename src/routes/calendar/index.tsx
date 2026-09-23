@@ -1838,7 +1838,7 @@ function CalendarPage() {
                         </>
                       ) : (
                         <>
-                          <div className="flex items-start gap-0">
+                          <div className="flex items-start gap-1">
                             <Button
                               type="button"
                               variant="ghost"
@@ -1848,9 +1848,9 @@ function CalendarPage() {
                                 setReminderError("");
                                 setReminderPickerMode("quick");
                               }}
-                              className="-ml-1 h-6 w-5 shrink-0 rounded-[5px] p-0 text-ink-muted hover:bg-item-hover hover:text-ink focus-visible:outline-none focus-visible:ring-[3.2px] focus-visible:ring-focus-soft"
+                              className="-ml-1 h-5 w-5 shrink-0 rounded-[5px] p-0 text-ink-muted hover:bg-item-hover hover:text-ink focus-visible:outline-none focus-visible:ring-[3.2px] focus-visible:ring-focus-soft"
                             >
-                              <ChevronLeft aria-hidden="true" className="size-4 -translate-y-1.5" />
+                              <ChevronLeft aria-hidden="true" className="size-4" />
                             </Button>
                             <p className="text-[14px] font-semibold text-ink">직접 알림 설정</p>
                           </div>
