@@ -76,6 +76,7 @@ function OnboardingPage() {
       p_industries: state.businessFields,
       p_personal_statuses: state.personalStatuses ?? [],
       p_support_interests: state.supportCategories,
+      p_business_name: null,
     });
 
     if (error) {

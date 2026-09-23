@@ -14,6 +14,69 @@ export type Database = {
   }
   public: {
     Tables: {
+      onboarding_profiles: {
+        Row: {
+          user_id: string
+          birth_date: string
+          business_name: string | null
+          founding_stage: string
+          residence_region: string
+          business_region: string | null
+          industries: string[]
+          personal_statuses: string[]
+          support_interests: string[]
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          user_id: string
+          birth_date: string
+          business_name?: string | null
+          founding_stage: string
+          residence_region: string
+          business_region?: string | null
+          industries: string[]
+          personal_statuses: string[]
+          support_interests?: string[]
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          user_id?: string
+          birth_date?: string
+          business_name?: string | null
+          founding_stage?: string
+          residence_region?: string
+          business_region?: string | null
+          industries?: string[]
+          personal_statuses?: string[]
+          support_interests?: string[]
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      onboarding_regions: {
+        Row: {
+          region_code: string
+          region_name: string
+          province_name: string
+          district_name: string
+        }
+        Insert: {
+          region_code: string
+          region_name: string
+          province_name: string
+          district_name: string
+        }
+        Update: {
+          region_code?: string
+          region_name?: string
+          province_name?: string
+          district_name?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           birth_date: string | null
@@ -61,7 +124,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      complete_onboarding: {
+        Args: {
+          p_birth_date: string | null
+          p_founding_stage: string | null
+          p_residence_region: string | null
+          p_business_region: string | null
+          p_industries: string[]
+          p_personal_statuses: string[]
+          p_support_interests?: string[]
+          p_business_name?: string | null
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
