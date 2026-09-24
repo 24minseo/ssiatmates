@@ -269,7 +269,7 @@ function TimeWheel({
   };
 
   return (
-    <div className="relative before:pointer-events-none before:absolute before:inset-x-0 before:top-[73px] before:z-0 before:h-[34px] before:rounded-[8px] before:bg-[#F4F6F5] before:content-['']">
+    <div className="relative before:pointer-events-none before:absolute before:inset-x-0 before:top-[73px] before:z-0 before:h-[34px] before:rounded-[8px] before:bg-[#F5F8F5] before:content-['']">
       <div
         ref={listRef}
         role="listbox"
@@ -423,18 +423,18 @@ function TimeWheelPickerPanel({
           onChange={(minute) => onChange({ ...draft, minute })}
         />
       </div>
-      <div className="mt-2 flex items-center justify-between border-t border-field-border px-2 pt-2">
+      <div className="mt-2.5 flex items-center justify-between border-t border-field-border px-1 pt-2.5">
         <button
           type="button"
           onClick={onClear}
-          className="h-8 rounded-[8px] px-2 text-[13px] font-normal text-ink-muted hover:bg-item-hover"
+          className="inline-flex h-8 items-center px-1 text-[13px] text-ink-muted hover:text-ink hover:underline hover:underline-offset-2"
         >
           시간 없음
         </button>
         <button
           type="button"
           onClick={onComplete}
-          className="px-2 text-[13px] font-semibold text-brand hover:underline"
+          className="inline-flex h-8 items-center px-1 text-[13px] font-semibold text-brand hover:underline hover:underline-offset-2"
         >
           완료
         </button>

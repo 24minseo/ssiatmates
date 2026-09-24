@@ -603,7 +603,7 @@ function DateRangePicker({
                 setDraftEnd("");
               }
             }}
-            className="h-8 px-1 text-[13px] font-semibold text-brand hover:underline"
+            className="h-8 px-1 text-[13px] font-semibold text-brand hover:underline hover:underline-offset-2"
           >
             오늘
           </button>
@@ -2048,7 +2048,7 @@ function CalendarPage() {
                                 <TooltipContent
                                   side="bottom"
                                   sideOffset={6}
-                                  className="rounded-[6px] bg-[#434343] px-2 py-1.5 text-[12px] font-medium leading-[18px] text-white shadow-none"
+                                  className="rounded-[6px] bg-tooltip px-2 py-1.5 text-[12px] font-medium leading-[18px] text-tooltip-foreground shadow-none"
                                 >
                                   클릭으로 전환
                                 </TooltipContent>

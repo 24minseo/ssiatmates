@@ -54,6 +54,8 @@
   --color-deadline-surface: var(--deadline-surface);
   --color-destructive-surface: var(--destructive-surface);
   --color-destructive-foreground: var(--destructive-foreground);
+  --color-tooltip: var(--tooltip);
+  --color-tooltip-foreground: var(--tooltip-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -134,6 +136,8 @@
   --deadline: oklch(0.6226 0.1959 27);
   --deadline-surface: oklch(0.9735 0.0129 17.38);
   --destructive-surface: oklch(0.9735 0.0129 17.38);
+  --tooltip: #434343;
+  --tooltip-foreground: #ffffff;
   --border: oklch(0.929 0.013 255.508);
   --input: oklch(0.929 0.013 255.508);
   --ring: oklch(0.704 0.04 256.788);
@@ -209,6 +213,8 @@
   --accent-foreground: oklch(0.984 0.003 247.858);
   --destructive: oklch(0.704 0.191 22.216);
   --destructive-foreground: oklch(0.984 0.003 247.858);
+  --tooltip: #434343;
+  --tooltip-foreground: #ffffff;
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.551 0.027 264.364);
@@ -365,7 +371,7 @@
 .today-news-card:hover .today-news-background-glow,
 .today-news-card:focus-visible .today-news-background-glow {
   opacity: 0.5;
-  animation: today-news-background-sweep 900ms cubic-bezier(0.3, 0.1, 0.5, 1) both;
+  animation: today-news-background-sweep 850ms cubic-bezier(0.3, 0.1, 0.5, 1) both;
   animation-iteration-count: 1;
 }
 

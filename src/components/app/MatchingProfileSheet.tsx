@@ -385,7 +385,7 @@ export function MatchingProfileSheet({ open, onOpenChange, onSaved, profile }: M
             <button
               type="button"
               onClick={() => onOpenChange(false)}
-              className="h-11 rounded-[10px] px-5 text-sm font-semibold text-ink-muted transition-colors hover:bg-item-hover hover:text-ink"
+              className="h-11 rounded-[12px] bg-secondary-btn px-5 text-[15px] font-semibold text-secondary-btn-text shadow-none transition-colors hover:bg-secondary-btn-hover hover:text-secondary-btn-text-hover"
             >
               취소
             </button>
@@ -393,7 +393,7 @@ export function MatchingProfileSheet({ open, onOpenChange, onSaved, profile }: M
               type="submit"
               form="matching-profile-form"
               disabled={!dirty}
-              className="h-11 rounded-[10px] bg-brand px-5 text-sm font-semibold text-brand-foreground transition-colors hover:bg-brand/90 disabled:cursor-not-allowed disabled:bg-brand-disabled disabled:text-brand-foreground"
+              className="h-11 rounded-[10px] bg-brand px-5 text-[15px] font-semibold text-brand-foreground transition-colors hover:bg-brand/90 disabled:cursor-not-allowed disabled:bg-brand-disabled disabled:text-brand-foreground"
             >
               변경사항 저장
             </button>

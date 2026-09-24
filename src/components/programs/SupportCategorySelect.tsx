@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { RotateCcw } from "lucide-react";
+import { RotateCcw, X } from "lucide-react";
 import { DropdownChevron } from "@/components/ui/DropdownChevron";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { PillGroup } from "@/components/onboarding/PillGroup";
@@ -15,9 +15,42 @@ function normalizedValue(value: string[]) {
   return value.length > 0 ? value : [SUPPORT_ALL];
 }
 
+function SquareAlertIcon({
+  className,
+  variant = "fill",
+}: {
+  className?: string;
+  variant?: "fill" | "line";
+}) {
+  const isLine = variant === "line";
+
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" className={className}>
+      <rect
+        x="3"
+        y="3"
+        width="18"
+        height="18"
+        rx="4"
+        fill={isLine ? "none" : "currentColor"}
+        stroke={isLine ? "currentColor" : "none"}
+        strokeWidth={isLine ? "1.75" : undefined}
+      />
+      <path
+        d="M12 7.5V12.75"
+        stroke={isLine ? "currentColor" : "var(--surface)"}
+        strokeWidth={isLine ? "2" : "2.5"}
+        strokeLinecap="round"
+      />
+      <circle cx="12" cy="16.75" r={isLine ? "1.15" : "1.4"} fill={isLine ? "currentColor" : "var(--surface)"} />
+    </svg>
+  );
+}
+
 export function SupportCategorySelect({ value, onChange }: SupportCategorySelectProps) {
   const { profile } = useAuth();
   const [open, setOpen] = useState(false);
+  const [showNotice, setShowNotice] = useState(true);
   const [draftValue, setDraftValue] = useState(normalizedValue(value));
   const profileSelection = normalizedValue(profile?.support_categories ?? []);
   const visible = value.includes(SUPPORT_ALL)
@@ -68,10 +101,28 @@ export function SupportCategorySelect({ value, onChange }: SupportCategorySelect
       <PopoverContent
         align="start"
         sideOffset={6}
+        onOpenAutoFocus={(event) => event.preventDefault()}
         className="w-[560px] max-w-[calc(100vw-32px)] rounded-xl border-0 bg-white p-6 shadow-dropdown"
       >
-        <div className="mb-3">
-          <p className="text-[15px] font-semibold leading-5 text-ink">지원 분야 선택</p>
+        {showNotice ? (
+          <div className="mb-4 flex items-center gap-2 rounded-[8px] bg-item-hover px-3 py-2.5 text-[14px] font-normal leading-5 text-ink-muted">
+            <SquareAlertIcon variant="fill" className="size-4 shrink-0 text-icon-muted" />
+            <span className="min-w-0 flex-1 break-keep">
+              이번 탐색에만 적용되며, MY홈 추천 기준은 변하지 않습니다.
+            </span>
+            <button
+              type="button"
+              aria-label="안내 닫기"
+              onClick={() => setShowNotice(false)}
+              className="inline-flex size-5 shrink-0 items-center justify-center rounded-[4px] text-icon-muted transition-colors hover:bg-transparent hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+            >
+              <X aria-hidden className="size-4" />
+            </button>
+          </div>
+        ) : null}
+
+        <div className="mb-3 flex items-center">
+          <p className="text-[16px] font-semibold leading-5 text-ink">지원 분야 필터</p>
         </div>
 
         <PillGroup options={SUPPORT_CATEGORIES} value={draftValue} onToggle={toggle} />
