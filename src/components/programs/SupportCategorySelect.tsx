@@ -92,7 +92,7 @@ export function SupportCategorySelect({ value, onChange }: SupportCategorySelect
         <button
           type="button"
           aria-expanded={open}
-          className="flex h-12 w-full items-center justify-between rounded-xl border border-border bg-white px-6 text-left text-[15px] font-medium text-ink transition-colors hover:bg-item-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+          className="flex h-12 w-full items-center justify-between rounded-xl border border-field-border bg-white px-6 text-left text-[15px] font-medium text-ink transition-colors hover:bg-item-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
         >
           <span>{visible}</span>
           <DropdownChevron open={open} variant="default" />
