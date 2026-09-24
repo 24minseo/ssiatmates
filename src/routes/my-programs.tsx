@@ -349,7 +349,7 @@ function MyProgramsPage() {
               내 지원사업에서 삭제할까요?
             </AlertDialogTitle>
             <div className="min-h-10">
-              <AlertDialogDescription className="flex h-12 min-w-0 w-full max-w-full items-center gap-2 overflow-hidden rounded-[8px] bg-item-hover px-3 py-2 text-left text-[14px] font-medium leading-5 text-ink-muted">
+              <AlertDialogDescription className="flex h-11 min-w-0 w-full max-w-full items-center gap-1 overflow-hidden rounded-[12px] bg-item-hover px-3 py-2 text-left text-[14px] font-medium leading-5 text-ink-muted">
                 <SquareAlertIcon className="size-4 shrink-0 text-icon-muted" />
                 <span className="min-w-0 truncate">
                   {deleteTarget && deleteTarget.schedules.length > 0
@@ -363,7 +363,7 @@ function MyProgramsPage() {
                 삭제할 공고
               </p>
               <p
-                className="mt-2 flex h-12 w-full min-w-0 max-w-full items-center overflow-hidden rounded-[8px] border border-field-border px-3 text-[16px] font-semibold leading-6 text-ink"
+                className="mt-2 flex h-11 w-full min-w-0 max-w-full items-center overflow-hidden rounded-[12px] border border-field-border px-3 text-[16px] font-semibold leading-6 text-ink"
                 title={deleteTarget?.title}
               >
                 <span className="block min-w-0 truncate">
