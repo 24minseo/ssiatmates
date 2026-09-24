@@ -132,7 +132,7 @@ function MyHomePage() {
       >
         {summaryCards(myHomeSummary).map((card) => {
           const cardClassName = `relative overflow-hidden rounded-[12px] p-5 ${
-            card.featured ? "today-news-card h-[158px] text-white" : "min-h-[146px] cursor-pointer bg-item-hover text-ink shadow-none transition-[background-color,box-shadow,transform] duration-150 ease-out hover:-translate-y-px hover:bg-surface hover:ring-1 hover:ring-item-hover hover:shadow-[0_8px_30px_0_rgba(0,13,59,0.1)] motion-reduce:transition-none"
+            card.featured ? "today-news-card h-[158px] cursor-pointer text-white" : "min-h-[146px] cursor-pointer bg-item-hover text-ink shadow-none transition-[background-color,box-shadow,transform] duration-150 ease-out hover:-translate-y-px hover:bg-surface hover:ring-1 hover:ring-item-hover hover:shadow-[0_8px_30px_0_rgba(0,13,59,0.1)] motion-reduce:transition-none"
           }`;
           const cardContent = (
             <>

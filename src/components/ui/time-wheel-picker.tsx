@@ -355,12 +355,90 @@ function TimeWheel({
       )}
       <span
         aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 top-0 z-20 h-8 rounded-t-[8px] bg-gradient-to-b from-surface to-transparent"
+        className="pointer-events-none absolute inset-x-0 top-0 z-20 h-8 rounded-t-[8px] bg-gradient-to-b from-canvas to-transparent"
       />
       <span
         aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-8 rounded-b-[8px] bg-gradient-to-t from-surface to-transparent"
+        className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-8 rounded-b-[8px] bg-gradient-to-t from-canvas to-transparent"
       />
+    </div>
+  );
+}
+
+type TimeWheelPickerPanelProps = {
+  draft: TimeParts;
+  open: boolean;
+  onChange: (draft: TimeParts) => void;
+  onClear: () => void;
+  onComplete: () => void;
+};
+
+function TimeWheelPickerPanel({
+  draft,
+  open,
+  onChange,
+  onClear,
+  onComplete,
+}: TimeWheelPickerPanelProps) {
+  return (
+    <div className="bg-canvas">
+      <div className="grid grid-cols-[64px_64px_64px] justify-center gap-4">
+        <TimeWheel
+          label="오전 또는 오후"
+          options={MERIDIEMS}
+          value={draft.meridiem}
+          loop={false}
+          open={open}
+          onChange={(meridiem) =>
+            onChange({ ...draft, meridiem: meridiem as Meridiem })
+          }
+        />
+        <TimeWheel
+          label="시"
+          options={HOURS}
+          value={draft.hour}
+          inputKind="hour"
+          open={open}
+          onChange={(hour) => {
+            const crossedBoundary =
+              (draft.hour === "11" && hour === "12") ||
+              (draft.hour === "12" && hour === "11");
+            onChange({
+              ...draft,
+              hour,
+              meridiem: crossedBoundary
+                ? draft.meridiem === "오전"
+                  ? "오후"
+                  : "오전"
+                : draft.meridiem,
+            });
+          }}
+        />
+        <TimeWheel
+          label="분"
+          options={MINUTES}
+          value={draft.minute}
+          inputKind="minute"
+          open={open}
+          onChange={(minute) => onChange({ ...draft, minute })}
+        />
+      </div>
+      <div className="mt-2 flex items-center justify-between border-t border-field-border px-2 pt-2">
+        <button
+          type="button"
+          onClick={onClear}
+          className="h-8 rounded-[8px] px-2 text-[13px] font-normal text-ink-muted hover:bg-item-hover"
+        >
+          시간 없음
+        </button>
+        <button
+          type="button"
+          onClick={onComplete}
+          className="px-2 text-[13px] font-semibold text-brand hover:underline"
+        >
+          완료
+        </button>
+      </div>
     </div>
   );
 }
@@ -411,68 +489,18 @@ export function TimeWheelPicker({
         side="bottom"
         sideOffset={8}
         onOpenAutoFocus={(event) => event.preventDefault()}
-        className="w-[252px] rounded-[12px] border-0 bg-surface p-2 shadow-dropdown"
+        className="w-[252px] rounded-[12px] border-0 bg-canvas p-2 shadow-dropdown"
       >
-        <div className="grid grid-cols-[64px_64px_64px] justify-center gap-4">
-          <TimeWheel
-            label="오전 또는 오후"
-            options={MERIDIEMS}
-            value={draft.meridiem}
-            loop={false}
-            open={open}
-            onChange={(meridiem) =>
-              updateDraft({ ...draft, meridiem: meridiem as Meridiem })
-            }
-          />
-          <TimeWheel
-            label="시"
-            options={HOURS}
-            value={draft.hour}
-            inputKind="hour"
-            open={open}
-            onChange={(hour) => {
-              const crossedBoundary =
-                (draft.hour === "11" && hour === "12") ||
-                (draft.hour === "12" && hour === "11");
-              updateDraft({
-                ...draft,
-                hour,
-                meridiem: crossedBoundary
-                  ? draft.meridiem === "오전"
-                    ? "오후"
-                    : "오전"
-                  : draft.meridiem,
-              });
-            }}
-          />
-          <TimeWheel
-            label="분"
-            options={MINUTES}
-            value={draft.minute}
-            inputKind="minute"
-            open={open}
-            onChange={(minute) => updateDraft({ ...draft, minute })}
-          />
-        </div>
-        <div className="mt-2 flex items-center justify-between border-t border-field-border px-2 pt-2">
-          <button
-            type="button"
-            onClick={() => {
-              onChange("");
-              setOpen(false);
-            }}
-            className="h-8 rounded-[8px] px-2 text-[13px] font-normal text-ink-muted hover:bg-item-hover"
-          >
-            시간 없음
-          </button>
-          <button
-            type="button"
-            onClick={() => setOpen(false)}
-            className="px-2 text-[13px] font-semibold text-brand hover:underline"
-          >
-            완료
-          </button>
-        </div>
+        <TimeWheelPickerPanel
+          draft={draft}
+          open={open}
+          onChange={updateDraft}
+          onClear={() => {
+            onChange("");
+            setOpen(false);
+          }}
+          onComplete={() => setOpen(false)}
+        />
       </PopoverContent>
     </Popover>
   );

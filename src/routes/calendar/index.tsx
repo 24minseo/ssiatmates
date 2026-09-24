@@ -6,6 +6,7 @@ import {
   ChevronRight,
   Pencil,
   Plus,
+  RotateCcw,
   Trash2,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
@@ -253,23 +254,63 @@ function DateRangePicker({
   const [draftStart, setDraftStart] = useState(startDate);
   const [draftEnd, setDraftEnd] = useState(endDate);
   const [isDragging, setIsDragging] = useState(false);
+  const [monthTransition, setMonthTransition] = useState<{
+    from: Date;
+    to: Date;
+    direction: "next" | "previous";
+    phase: "start" | "end";
+  } | null>(null);
   const dragMovedRef = useRef(false);
-
-  const days = useMemo(
-    () => buildCalendarDays(visibleMonth.getFullYear(), visibleMonth.getMonth()),
-    [visibleMonth],
-  );
+  const monthTransitionTimeoutRef = useRef<number | null>(null);
+  const monthTransitionRafRef = useRef<number | null>(null);
 
   const syncDraft = () => {
     setDraftStart(startDate);
     setDraftEnd(endDate);
+    setMonthTransition(null);
     const base = startDate ? new Date(`${startDate}T00:00:00`) : new Date();
     setVisibleMonth(new Date(base.getFullYear(), base.getMonth(), 1));
   };
 
+  useEffect(() => {
+    return () => {
+      if (monthTransitionTimeoutRef.current !== null) {
+        window.clearTimeout(monthTransitionTimeoutRef.current);
+      }
+      if (monthTransitionRafRef.current !== null) {
+        window.cancelAnimationFrame(monthTransitionRafRef.current);
+      }
+    };
+  }, []);
+
   const closePicker = () => {
     setIsDragging(false);
     setOpen(false);
+  };
+
+  const movePickerMonth = (offset: number) => {
+    const direction = offset > 0 ? "next" : "previous";
+    const nextMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() + offset, 1);
+    setMonthTransition({ from: visibleMonth, to: nextMonth, direction, phase: "start" });
+    setVisibleMonth(nextMonth);
+    if (monthTransitionTimeoutRef.current !== null) {
+      window.clearTimeout(monthTransitionTimeoutRef.current);
+    }
+    if (monthTransitionRafRef.current !== null) {
+      window.cancelAnimationFrame(monthTransitionRafRef.current);
+    }
+    monthTransitionRafRef.current = window.requestAnimationFrame(() => {
+      setMonthTransition((current) =>
+        current?.to.getTime() === nextMonth.getTime()
+          ? { ...current, phase: "end" }
+          : current,
+      );
+      monthTransitionRafRef.current = null;
+    });
+    monthTransitionTimeoutRef.current = window.setTimeout(() => {
+      setMonthTransition(null);
+      monthTransitionTimeoutRef.current = null;
+    }, 220);
   };
 
   const commitRange = (candidateEnd: string) => {
@@ -338,6 +379,66 @@ function DateRangePicker({
   const rangeStart = draftStart && draftEnd ? [draftStart, draftEnd].sort()[0] : draftStart;
   const rangeEnd = draftStart && draftEnd ? [draftStart, draftEnd].sort()[1] : draftEnd;
 
+  const renderCalendarDays = (monthDate: Date) => {
+    const monthDays = buildCalendarDays(monthDate.getFullYear(), monthDate.getMonth());
+    return monthDays.map((day, index) => {
+      const selectedStart = rangeStart === day.key;
+      const selectedEnd = rangeEnd === day.key;
+      const isEndpoint = selectedStart || selectedEnd;
+      const hasRange = Boolean(mode === "range" && rangeStart && rangeEnd);
+      const inRange =
+        hasRange &&
+        day.key >= rangeStart! &&
+        day.key <= rangeEnd!;
+      const startsRowSegment = inRange && (selectedStart || index % 7 === 0);
+      const endsRowSegment = inRange && (selectedEnd || index % 7 === 6);
+
+      return (
+        <div
+          key={day.key}
+          className={cn(
+            "relative flex h-10 items-center justify-center",
+            inRange &&
+              "before:absolute before:top-1 before:h-8 before:bg-pill before:content-['']",
+            inRange && (selectedStart ? "before:left-1" : "before:left-0"),
+            inRange && (selectedEnd ? "before:right-1" : "before:right-0"),
+            startsRowSegment && "before:rounded-l-[10px]",
+            endsRowSegment && "before:rounded-r-[10px]",
+          )}
+        >
+          <button
+            type="button"
+            onPointerDown={(event) => handleDayPointerDown(day.key, event)}
+            onPointerEnter={() => handleDayPointerEnter(day.key)}
+            onPointerUp={() => handleDayPointerUp(day.key)}
+            onClick={() => handleDayClick(day.key)}
+            className={cn(
+              "group relative z-10 flex size-10 items-center justify-center rounded-[10px] text-[14px] font-normal",
+              !day.isCurrentMonth && !isEndpoint && "text-content-disabled",
+              day.isCurrentMonth && !inRange && !isEndpoint && "text-ink-muted",
+              inRange && !isEndpoint && "text-ink-muted",
+              isEndpoint && "text-white",
+            )}
+          >
+            <span
+              className={cn(
+                "flex items-center justify-center transition-colors",
+                day.isCurrentMonth &&
+                  !inRange &&
+                  !isEndpoint &&
+                  "size-8 rounded-[8px] group-hover:bg-pill",
+                isEndpoint &&
+                  "size-8 rounded-[8px] bg-brand text-white",
+              )}
+            >
+              {day.date.getDate()}
+            </span>
+          </button>
+        </div>
+      );
+    });
+  };
+
   return (
     <Popover
       open={open}
@@ -369,7 +470,7 @@ function DateRangePicker({
         <div
           role="tablist"
           aria-label="일정 기간 유형"
-          className="flex items-start gap-4 border-b border-field-border"
+          className="relative flex border-b border-field-border"
         >
           {(["single", "range"] as const).map((option) => (
             <button
@@ -385,15 +486,20 @@ function DateRangePicker({
                 }
               }}
               className={cn(
-                "relative h-[38px] shrink-0 px-3 text-[14px] font-medium transition-colors after:absolute after:inset-x-0 after:-bottom-px after:h-0.5 after:rounded-full after:bg-brand after:content-['']",
+                "relative z-10 flex h-[38px] flex-1 items-center justify-center px-3 text-[14px] font-medium transition-colors",
                 mode === option
-                  ? "font-semibold text-brand after:opacity-100"
-                  : "text-ink-muted after:opacity-0 hover:text-ink",
+                  ? "font-semibold text-brand"
+                  : "text-ink-muted hover:text-ink",
               )}
             >
               {option === "single" ? "하루 일정" : "기간 일정"}
             </button>
           ))}
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute -bottom-px left-0 z-20 h-0.5 w-1/2 bg-brand transition-transform duration-200 ease-out motion-reduce:transition-none"
+            style={{ transform: `translateX(${mode === "range" ? 100 : 0}%)` }}
+          />
         </div>
         <div className="mt-3 flex items-center justify-between px-1">
           <span className="text-left text-[15px] font-semibold text-ink">
@@ -405,7 +511,7 @@ function DateRangePicker({
               variant="ghost"
               size="icon"
               aria-label="이전 달"
-              onClick={() => setVisibleMonth((current) => new Date(current.getFullYear(), current.getMonth() - 1, 1))}
+              onClick={() => movePickerMonth(-1)}
               className="size-8 rounded-[8px] text-ink-muted hover:bg-item-hover hover:text-ink"
             >
               <ChevronLeft aria-hidden="true" className="size-4" />
@@ -415,7 +521,7 @@ function DateRangePicker({
               variant="ghost"
               size="icon"
               aria-label="다음 달"
-              onClick={() => setVisibleMonth((current) => new Date(current.getFullYear(), current.getMonth() + 1, 1))}
+              onClick={() => movePickerMonth(1)}
               className="size-8 rounded-[8px] text-ink-muted hover:bg-item-hover hover:text-ink"
             >
               <ChevronRight aria-hidden="true" className="size-4" />
@@ -427,63 +533,47 @@ function DateRangePicker({
             <span key={day} className="flex h-8 items-center justify-center">{day}</span>
           ))}
         </div>
-        <div className="grid grid-cols-7">
-          {days.map((day, index) => {
-            const selectedStart = rangeStart === day.key;
-            const selectedEnd = rangeEnd === day.key;
-            const isEndpoint = selectedStart || selectedEnd;
-            const hasRange = Boolean(mode === "range" && rangeStart && rangeEnd);
-            const inRange =
-              hasRange &&
-              day.key >= rangeStart! &&
-              day.key <= rangeEnd!;
-            const startsRowSegment = inRange && (selectedStart || index % 7 === 0);
-            const endsRowSegment = inRange && (selectedEnd || index % 7 === 6);
-
-            return (
+        <div className="overflow-hidden">
+          <div
+            className={cn(
+              "flex",
+              monthTransition && "transition-transform duration-200 ease-in-out motion-reduce:transition-none",
+              monthTransition ? "w-[200%]" : "w-full",
+            )}
+            style={
+              monthTransition
+                ? {
+                    transform:
+                      monthTransition.phase === "start"
+                        ? monthTransition.direction === "next"
+                          ? "translateX(0)"
+                          : "translateX(-50%)"
+                        : monthTransition.direction === "next"
+                          ? "translateX(-50%)"
+                          : "translateX(0)",
+                  }
+                : undefined
+            }
+          >
+            {(monthTransition
+              ? monthTransition.direction === "next"
+                ? [monthTransition.from, monthTransition.to]
+                : [monthTransition.to, monthTransition.from]
+              : [visibleMonth]
+            ).map((monthDate) => (
               <div
-                key={day.key}
+                key={`${monthDate.getFullYear()}-${monthDate.getMonth()}`}
                 className={cn(
-                  "relative flex h-10 items-center justify-center",
-                  inRange &&
-                    "before:absolute before:top-1 before:h-8 before:bg-pill before:content-['']",
-                  inRange && (selectedStart ? "before:left-1" : "before:left-0"),
-                  inRange && (selectedEnd ? "before:right-1" : "before:right-0"),
-                  startsRowSegment && "before:rounded-l-[10px]",
-                  endsRowSegment && "before:rounded-r-[10px]",
+                  "shrink-0",
+                  monthTransition ? "w-1/2" : "w-full",
                 )}
               >
-                <button
-                  type="button"
-                  onPointerDown={(event) => handleDayPointerDown(day.key, event)}
-                  onPointerEnter={() => handleDayPointerEnter(day.key)}
-                  onPointerUp={() => handleDayPointerUp(day.key)}
-                  onClick={() => handleDayClick(day.key)}
-                  className={cn(
-                    "group relative z-10 flex size-10 items-center justify-center rounded-[10px] text-[14px] font-normal",
-                    !day.isCurrentMonth && !isEndpoint && "text-content-disabled",
-                    day.isCurrentMonth && !inRange && !isEndpoint && "text-ink-muted",
-                    inRange && !isEndpoint && "text-ink-muted",
-                    isEndpoint && "text-white",
-                  )}
-                >
-                  <span
-                    className={cn(
-                      "flex items-center justify-center transition-colors",
-                      day.isCurrentMonth &&
-                        !inRange &&
-                        !isEndpoint &&
-                        "size-8 rounded-[8px] group-hover:bg-pill",
-                      isEndpoint &&
-                        "size-8 rounded-[8px] bg-brand text-white",
-                    )}
-                  >
-                    {day.date.getDate()}
-                  </span>
-                </button>
+                <div className="grid grid-cols-7">
+                  {renderCalendarDays(monthDate)}
+                </div>
               </div>
-            );
-          })}
+            ))}
+          </div>
         </div>
         <div className="mt-2.5 flex items-center justify-between border-t border-field-border px-1 pt-2.5">
           <button
@@ -495,8 +585,9 @@ function DateRangePicker({
               onChange(initialStartDate, initialEndDate || undefined);
               closePicker();
             }}
-            className="h-8 px-1 text-[13px] text-ink-muted hover:text-ink"
+            className="inline-flex h-8 items-center gap-1 px-1 text-[13px] text-ink-muted hover:text-ink hover:underline hover:underline-offset-2"
           >
+            <RotateCcw aria-hidden className="size-3.5" strokeWidth={2} />
             초기화
           </button>
           <button
@@ -522,6 +613,186 @@ function DateRangePicker({
   );
 }
 
+type MonthFieldProps = {
+  value: Date;
+  onChange: (value: Date) => void;
+};
+
+function MonthField({ value, onChange }: MonthFieldProps) {
+  const year = value.getFullYear();
+  const month = value.getMonth();
+  const [isEditing, setIsEditing] = useState(false);
+  const [inputValue, setInputValue] = useState(String(month + 1).padStart(2, "0"));
+  const [inputError, setInputError] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const originRef = useRef<Date | null>(null);
+
+  useEffect(() => {
+    if (!isEditing) return;
+    const parsedMonth = Number(inputValue);
+    const isValid =
+      /^\d{1,2}$/.test(inputValue) &&
+      Number.isInteger(parsedMonth) &&
+      parsedMonth >= 1 &&
+      parsedMonth <= 12;
+    if (!isValid) return;
+
+    const timeout = window.setTimeout(() => {
+      onChange(new Date(year, parsedMonth - 1, 1));
+    }, 250);
+    return () => window.clearTimeout(timeout);
+  }, [inputValue, isEditing, onChange, year]);
+
+  useEffect(() => {
+    if (!isEditing) return;
+    const frame = window.requestAnimationFrame(() => inputRef.current?.focus());
+    return () => window.cancelAnimationFrame(frame);
+  }, [isEditing]);
+
+  const beginEditing = () => {
+    originRef.current = new Date(year, month, 1);
+    setInputValue(String(month + 1).padStart(2, "0"));
+    setInputError(false);
+    setIsEditing(true);
+  };
+
+  const cancelEditing = () => {
+    const origin = originRef.current;
+    if (origin) {
+      onChange(origin);
+      setInputValue(String(origin.getMonth() + 1).padStart(2, "0"));
+    }
+    originRef.current = null;
+    setInputError(false);
+    setIsEditing(false);
+  };
+
+  const commitEditing = () => {
+    if (inputValue === "") {
+      cancelEditing();
+      return true;
+    }
+
+    const parsedMonth = Number(inputValue);
+    const isValid =
+      /^\d{1,2}$/.test(inputValue) &&
+      Number.isInteger(parsedMonth) &&
+      parsedMonth >= 1 &&
+      parsedMonth <= 12;
+    if (!isValid) {
+      setInputError(true);
+      window.requestAnimationFrame(() => inputRef.current?.focus());
+      return false;
+    }
+
+    onChange(new Date(year, parsedMonth - 1, 1));
+    setInputValue(String(parsedMonth).padStart(2, "0"));
+    originRef.current = null;
+    setInputError(false);
+    setIsEditing(false);
+    return true;
+  };
+
+  return (
+    <div
+      className={cn(
+        "relative h-[42px] shrink-0 transition-[width] duration-100 ease-out will-change-[width] motion-reduce:transition-none",
+        isEditing ? "w-[132px]" : "w-[116px]",
+      )}
+    >
+      <div
+        aria-hidden={!isEditing}
+        className={cn(
+          "absolute inset-0 flex h-full w-full items-center whitespace-nowrap rounded-[12px] border bg-surface px-4 text-[15px] font-semibold text-ink ring-[3.2px]",
+          inputError
+            ? "border-destructive ring-destructive/20"
+            : "border-brand ring-focus-soft",
+          isEditing
+            ? "opacity-100"
+            : "pointer-events-none opacity-0",
+        )}
+      >
+        <div className="flex min-w-0 items-center gap-1">
+          <span className="shrink-0">{year}년</span>
+          <input
+            ref={inputRef}
+            type="text"
+            inputMode="numeric"
+            role="spinbutton"
+            tabIndex={isEditing ? 0 : -1}
+            value={inputValue}
+            aria-label="이동할 월"
+            aria-valuemin={1}
+            aria-valuemax={12}
+            aria-valuenow={
+              Number(inputValue) >= 1 && Number(inputValue) <= 12
+                ? Number(inputValue)
+                : undefined
+            }
+            aria-invalid={inputError}
+            onFocus={(event) => event.currentTarget.select()}
+            onChange={(event) => {
+              const nextValue = event.target.value.replace(/\D/g, "").slice(0, 2);
+              setInputValue(nextValue);
+              const parsedMonth = Number(nextValue);
+              if (
+                nextValue === "" ||
+                (/^\d{1,2}$/.test(nextValue) && parsedMonth >= 1 && parsedMonth <= 12)
+              ) {
+                setInputError(false);
+              }
+            }}
+            onBlur={commitEditing}
+            onKeyDown={(event) => {
+              if (event.key === "ArrowUp" || event.key === "ArrowDown") {
+                event.preventDefault();
+                const currentMonth = Number(inputValue);
+                const baseMonth =
+                  Number.isInteger(currentMonth) && currentMonth >= 1 && currentMonth <= 12
+                    ? currentMonth
+                    : month + 1;
+                const nextMonth =
+                  event.key === "ArrowUp"
+                    ? Math.min(12, baseMonth + 1)
+                    : Math.max(1, baseMonth - 1);
+                setInputValue(String(nextMonth).padStart(2, "0"));
+                setInputError(false);
+                onChange(new Date(year, nextMonth - 1, 1));
+                window.requestAnimationFrame(() => inputRef.current?.select());
+              } else if (event.key === "Enter") {
+                event.preventDefault();
+                commitEditing();
+              } else if (event.key === "Escape") {
+                event.preventDefault();
+                cancelEditing();
+              }
+            }}
+            className={cn(
+              "h-7 w-7 rounded-[4px] border-0 bg-focus-soft px-0 text-center text-[15px] font-semibold outline-none ring-0 selection:bg-transparent selection:text-inherit focus:ring-0",
+              inputError ? "text-destructive" : "text-ink",
+            )}
+          />
+          <span className="shrink-0">월</span>
+        </div>
+      </div>
+      <button
+        type="button"
+        onClick={beginEditing}
+        aria-label={`${year}년 ${month + 1}월, 월 직접 입력`}
+        tabIndex={isEditing ? -1 : 0}
+        className={cn(
+          "absolute inset-0 flex h-full w-full items-center whitespace-nowrap rounded-[12px] border border-field-border bg-surface px-4 text-[15px] font-semibold text-ink hover:bg-item-hover focus-visible:border-brand focus-visible:outline-none focus-visible:ring-[3.2px] focus-visible:ring-focus-soft",
+          isEditing
+            ? "pointer-events-none opacity-0"
+            : "opacity-100",
+        )}
+      >
+        {year}년 {String(month + 1).padStart(2, "0")}월
+      </button>
+    </div>
+  );
+}
+
 
 function CalendarPage() {
   const [visibleMonth, setVisibleMonth] = useState(() => {
@@ -530,11 +801,6 @@ function CalendarPage() {
   });
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [view, setView] = useState<CalendarView>("month");
-  const [isMonthEditing, setIsMonthEditing] = useState(false);
-  const [monthInput, setMonthInput] = useState("");
-  const [monthInputError, setMonthInputError] = useState(false);
-  const monthInputRef = useRef<HTMLInputElement>(null);
-  const monthEditOriginRef = useRef<Date | null>(null);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
@@ -583,26 +849,6 @@ function CalendarPage() {
   const todayKey = toDateKey(today);
   const year = visibleMonth.getFullYear();
   const month = visibleMonth.getMonth();
-
-  useEffect(() => {
-    if (!isMonthEditing) return;
-    const parsedMonth = Number(monthInput);
-    const isValid =
-      /^\d{1,2}$/.test(monthInput) &&
-      Number.isInteger(parsedMonth) &&
-      parsedMonth >= 1 &&
-      parsedMonth <= 12;
-    if (!isValid) return;
-
-    const timeout = window.setTimeout(() => {
-      setVisibleMonth(
-        (current) =>
-          new Date(current.getFullYear(), parsedMonth - 1, 1),
-      );
-    }, 250);
-
-    return () => window.clearTimeout(timeout);
-  }, [isMonthEditing, monthInput]);
 
   const days = useMemo(() => buildCalendarDays(year, month), [year, month]);
   const calendarVisibleEventRows = days.length === 35 ? 4 : 3;
@@ -705,63 +951,11 @@ function CalendarPage() {
     ? REMINDER_UNITS
     : REMINDER_UNITS.filter((unit) => unit.label === "일");
 
-  const beginMonthInput = () => {
-    monthEditOriginRef.current = new Date(year, month, 1);
-    setMonthInput(String(month + 1).padStart(2, "0"));
-    setMonthInputError(false);
-    setIsMonthEditing(true);
-  };
-
-  const cancelMonthInput = () => {
-    const originMonth = monthEditOriginRef.current;
-    if (originMonth) {
-      setVisibleMonth(originMonth);
-      setMonthInput(
-        String(originMonth.getMonth() + 1).padStart(2, "0"),
-      );
-    } else {
-      setMonthInput(String(month + 1).padStart(2, "0"));
-    }
-    monthEditOriginRef.current = null;
-    setMonthInputError(false);
-    setIsMonthEditing(false);
-  };
-
-  const commitMonthInput = () => {
-    if (monthInput === "") {
-      cancelMonthInput();
-      return true;
-    }
-
-    const parsedMonth = Number(monthInput);
-    const isValid =
-      /^\d{1,2}$/.test(monthInput) &&
-      Number.isInteger(parsedMonth) &&
-      parsedMonth >= 1 &&
-      parsedMonth <= 12;
-
-    if (!isValid) {
-      setMonthInputError(true);
-      window.requestAnimationFrame(() => monthInputRef.current?.focus());
-      return false;
-    }
-
-    setVisibleMonth(new Date(year, parsedMonth - 1, 1));
-    monthEditOriginRef.current = null;
-    setMonthInputError(false);
-    setIsMonthEditing(false);
-    return true;
-  };
-
   const moveMonth = (offset: number) => {
-    if (isMonthEditing && !commitMonthInput()) return;
     setVisibleMonth((current) => new Date(current.getFullYear(), current.getMonth() + offset, 1));
   };
 
   const goToToday = () => {
-    monthEditOriginRef.current = null;
-    setIsMonthEditing(false);
-    setMonthInputError(false);
     setVisibleMonth(new Date(today.getFullYear(), today.getMonth(), 1));
     setSelectedDate(todayKey);
   };
@@ -1194,95 +1388,7 @@ function CalendarPage() {
           >
             <ChevronRight aria-hidden="true" className="size-5" />
           </Button>
-          {isMonthEditing ? (
-            <div
-              className={cn(
-                "relative flex h-[42px] items-center gap-1 rounded-[12px] border bg-surface px-4 text-[15px] font-semibold text-ink ring-[3.2px]",
-                monthInputError
-                  ? "border-destructive ring-destructive/20"
-                  : "border-brand ring-focus-soft",
-              )}
-            >
-              <span>{year}년</span>
-              <input
-                ref={monthInputRef}
-                autoFocus
-                type="text"
-                inputMode="numeric"
-                role="spinbutton"
-                value={monthInput}
-                aria-label="이동할 월"
-                aria-valuemin={1}
-                aria-valuemax={12}
-                aria-valuenow={
-                  Number(monthInput) >= 1 && Number(monthInput) <= 12
-                    ? Number(monthInput)
-                    : undefined
-                }
-                aria-invalid={monthInputError}
-                onFocus={(event) => event.currentTarget.select()}
-                onChange={(event) => {
-                  const nextValue = event.target.value.replace(/\D/g, "").slice(0, 2);
-                  setMonthInput(nextValue);
-                  const parsedMonth = Number(nextValue);
-                  if (
-                    nextValue === "" ||
-                    (/^\d{1,2}$/.test(nextValue) &&
-                      parsedMonth >= 1 &&
-                      parsedMonth <= 12)
-                  ) {
-                    setMonthInputError(false);
-                  }
-                }}
-                onBlur={commitMonthInput}
-                onKeyDown={(event) => {
-                  if (event.key === "ArrowUp" || event.key === "ArrowDown") {
-                    event.preventDefault();
-                    const currentMonth = Number(monthInput);
-                    const baseMonth =
-                      Number.isInteger(currentMonth) &&
-                      currentMonth >= 1 &&
-                      currentMonth <= 12
-                        ? currentMonth
-                        : month + 1;
-                    const nextMonth =
-                      event.key === "ArrowUp"
-                        ? Math.min(12, baseMonth + 1)
-                        : Math.max(1, baseMonth - 1);
-                    setMonthInput(String(nextMonth).padStart(2, "0"));
-                    setMonthInputError(false);
-                    setVisibleMonth(
-                      (current) =>
-                        new Date(current.getFullYear(), nextMonth - 1, 1),
-                    );
-                    window.requestAnimationFrame(() =>
-                      monthInputRef.current?.select(),
-                    );
-                  } else if (event.key === "Enter") {
-                    event.preventDefault();
-                    commitMonthInput();
-                  } else if (event.key === "Escape") {
-                    event.preventDefault();
-                    cancelMonthInput();
-                  }
-                }}
-                className={cn(
-                  "h-7 w-7 rounded-[4px] border-0 bg-focus-soft px-0 text-center text-[15px] font-semibold outline-none ring-0 selection:bg-transparent selection:text-inherit focus:ring-0",
-                  monthInputError ? "text-destructive" : "text-ink",
-                )}
-              />
-              <span>월</span>
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={beginMonthInput}
-              aria-label={`${year}년 ${month + 1}월, 월 직접 입력`}
-              className="flex h-[42px] items-center rounded-[12px] border border-field-border bg-surface px-4 text-[15px] font-semibold text-ink transition-colors hover:bg-item-hover focus-visible:border-brand focus-visible:outline-none focus-visible:ring-[3.2px] focus-visible:ring-focus-soft"
-            >
-              {year}년 {String(month + 1).padStart(2, "0")}월
-            </button>
-          )}
+          <MonthField value={visibleMonth} onChange={setVisibleMonth} />
         </div>
 
         <div className="flex items-center gap-3">

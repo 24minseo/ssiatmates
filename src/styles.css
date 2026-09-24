@@ -97,6 +97,7 @@
   --color-pill: var(--pill);
   --color-pill-foreground: var(--pill-foreground);
   --color-page: var(--page);
+  --color-canvas: var(--canvas);
   --color-overlay: var(--overlay);
   --color-surface: var(--surface);
   --color-field-border: var(--field-border);
@@ -160,8 +161,9 @@
   --control-inactive: #9a9d9b;
   --pill: #E2F8F0;
   --pill-foreground: #1f8064;
-  --overlay: rgb(148 155 162 / 0.4);
+  --overlay: rgb(148 155 162 / 0.3);
   --page: var(--overlay);
+  --canvas: var(--background);
   --surface: #ffffff;
   --field-border: #d8e1dd;
   --content-disabled: #b4c1bd;
@@ -191,6 +193,7 @@
 
 .dark {
   --background: oklch(0.129 0.042 264.695);
+  --canvas: var(--background);
   --foreground: oklch(0.984 0.003 247.858);
   --card: oklch(0.208 0.042 265.755);
   --card-foreground: oklch(0.984 0.003 247.858);
@@ -299,7 +302,7 @@
 
 @keyframes today-news-background-sweep {
   0% {
-    background-position: -130% 50%;
+    background-position: -80% 50%;
     opacity: 0;
   }
   12% {
@@ -309,7 +312,7 @@
     opacity: 1;
   }
   100% {
-    background-position: 160% 50%;
+    background-position: 120% 50%;
     opacity: 0;
   }
 }
@@ -344,23 +347,25 @@
   z-index: 1;
   pointer-events: none;
   border-radius: 12px;
-  background: radial-gradient(
-    ellipse 42% 85% at 0% 50%,
-    rgb(100 255 199 / 0.2),
+  background: linear-gradient(
+    90deg,
+    rgb(92 255 188 / 0.06) 0%,
+    rgb(92 255 188 / 0.38) 24%,
     transparent 72%
   );
-  background-size: 220% 100%;
+  background-size: 180% 100%;
   background-repeat: no-repeat;
-  background-position: -130% 50%;
+  background-position: -80% 50%;
   filter: blur(12px);
+  mix-blend-mode: soft-light;
   opacity: 0;
   transition: opacity 180ms ease-out;
 }
 
 .today-news-card:hover .today-news-background-glow,
 .today-news-card:focus-visible .today-news-background-glow {
-  opacity: 1;
-  animation: today-news-background-sweep 850ms ease-out both;
+  opacity: 0.5;
+  animation: today-news-background-sweep 900ms cubic-bezier(0.3, 0.1, 0.5, 1) both;
   animation-iteration-count: 1;
 }
 
@@ -509,6 +514,6 @@ a[href] {
 }
 
 .bg-overlay {
-  -webkit-backdrop-filter: blur(0.6px) !important;
-  backdrop-filter: blur(0.6px) !important;
+  -webkit-backdrop-filter: blur(2px) !important;
+  backdrop-filter: blur(2px) !important;
 }

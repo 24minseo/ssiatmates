@@ -151,7 +151,7 @@ function AuthBackgroundOverlay({ pathname }: { pathname: string }) {
   return (
     <div
       aria-hidden
-      className={`pointer-events-none fixed inset-0 z-[5] bg-overlay backdrop-blur-[0.6px] transition-opacity duration-200 ease-out ${isAuthPage ? "opacity-100" : "opacity-0"}`}
+      className={`pointer-events-none fixed inset-0 z-[5] bg-overlay backdrop-blur-[2px] transition-opacity duration-200 ease-out ${isAuthPage ? "opacity-100" : "opacity-0"}`}
     />
   );
 }
