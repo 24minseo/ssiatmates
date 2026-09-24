@@ -505,7 +505,7 @@ function DateRangePicker({
           <span className="text-left text-[15px] font-semibold text-ink">
             {visibleMonth.getFullYear()}년 {visibleMonth.getMonth() + 1}월
           </span>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-0.5">
             <Button
               type="button"
               variant="ghost"
@@ -1368,26 +1368,28 @@ function CalendarPage() {
           >
             오늘
           </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            aria-label="이전 달"
-            onClick={() => moveMonth(-1)}
-            className="size-[42px] rounded-[12px] text-ink-muted hover:bg-item-hover hover:text-ink"
-          >
-            <ChevronLeft aria-hidden="true" className="size-5" />
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            aria-label="다음 달"
-            onClick={() => moveMonth(1)}
-            className="size-[42px] rounded-[12px] text-ink-muted hover:bg-item-hover hover:text-ink"
-          >
-            <ChevronRight aria-hidden="true" className="size-5" />
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label="이전 달"
+              onClick={() => moveMonth(-1)}
+              className="size-[42px] rounded-[12px] text-ink-muted hover:bg-item-hover hover:text-ink"
+            >
+              <ChevronLeft aria-hidden="true" className="!size-5" />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label="다음 달"
+              onClick={() => moveMonth(1)}
+              className="size-[42px] rounded-[12px] text-ink-muted hover:bg-item-hover hover:text-ink"
+            >
+              <ChevronRight aria-hidden="true" className="!size-5" />
+            </Button>
+          </div>
           <MonthField value={visibleMonth} onChange={setVisibleMonth} />
         </div>
 

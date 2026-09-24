@@ -29,8 +29,8 @@ type TimeWheelProps = {
 };
 
 const WHEEL_ITEM_HEIGHT = 36;
-const TIME_WHEEL_LOOP_COPIES = 5;
-const TIME_WHEEL_CENTER_COPY = Math.floor(TIME_WHEEL_LOOP_COPIES / 2);
+const TIME_WHEEL_VIRTUAL_ITEM_COUNT = 10_000;
+const TIME_WHEEL_VIRTUAL_EDGE_BUFFER = 100;
 const HOURS = [
   "12",
   ...Array.from({ length: 11 }, (_, index) => String(index + 1).padStart(2, "0")),
@@ -100,8 +100,13 @@ function TimeWheel({
   const suppressScrollTimeoutRef = useRef<number | null>(null);
   latestOptionsRef.current = options;
   latestValueRef.current = value;
-  const loopCopies = loop ? TIME_WHEEL_LOOP_COPIES : 1;
-  const loopCenterCopy = loop ? TIME_WHEEL_CENTER_COPY : 0;
+  const virtualCenterIndex = Math.floor(TIME_WHEEL_VIRTUAL_ITEM_COUNT / 2);
+  const [virtualIndex, setVirtualIndex] = useState(() => {
+    if (!loop) return 0;
+    const optionIndex = Math.max(0, options.indexOf(value));
+    const centerRemainder = virtualCenterIndex % options.length;
+    return virtualCenterIndex + optionIndex - centerRemainder;
+  });
   const [isEditing, setIsEditing] = useState(false);
   const [inputValue, setInputValue] = useState(value);
 
@@ -120,13 +125,36 @@ function TimeWheel({
     listRef.current?.scrollTo({ top, behavior });
   };
 
-  const scrollToValue = (nextValue: string, behavior: ScrollBehavior = "smooth") => {
-    const index = options.indexOf(nextValue);
-    if (index < 0) return;
-    scrollToPosition(
-      (loopCenterCopy * options.length + index) * WHEEL_ITEM_HEIGHT,
-      behavior,
+  const getCenteredVirtualIndex = (nextValue: string) => {
+    const optionIndex = options.indexOf(nextValue);
+    if (optionIndex < 0) return virtualCenterIndex;
+    const centerRemainder = virtualCenterIndex % options.length;
+    return virtualCenterIndex + optionIndex - centerRemainder;
+  };
+
+  const getNearestVirtualIndex = (nextValue: string) => {
+    const optionIndex = options.indexOf(nextValue);
+    if (optionIndex < 0) return virtualIndex;
+    const currentIndex = Math.round(
+      (listRef.current?.scrollTop ?? virtualIndex * WHEEL_ITEM_HEIGHT) / WHEEL_ITEM_HEIGHT,
     );
+    const currentRemainder =
+      ((currentIndex % options.length) + options.length) % options.length;
+    let delta = optionIndex - currentRemainder;
+    if (delta > options.length / 2) delta -= options.length;
+    if (delta < -options.length / 2) delta += options.length;
+    return Math.min(
+      TIME_WHEEL_VIRTUAL_ITEM_COUNT - 1,
+      Math.max(0, currentIndex + delta),
+    );
+  };
+
+  const scrollToValue = (nextValue: string, behavior: ScrollBehavior = "smooth") => {
+    const targetIndex = loop
+      ? getNearestVirtualIndex(nextValue)
+      : options.indexOf(nextValue);
+    if (targetIndex < 0) return;
+    scrollToPosition(targetIndex * WHEEL_ITEM_HEIGHT, behavior);
   };
 
   useEffect(() => {
@@ -134,13 +162,38 @@ function TimeWheel({
     const index = latestOptionsRef.current.indexOf(latestValueRef.current);
     if (index < 0) return;
     const frame = window.requestAnimationFrame(() => {
+      const targetIndex = loop
+        ? getCenteredVirtualIndex(latestValueRef.current)
+        : index;
       listRef.current?.scrollTo({
-        top: (loopCenterCopy * latestOptionsRef.current.length + index) * WHEEL_ITEM_HEIGHT,
+        top: targetIndex * WHEEL_ITEM_HEIGHT,
         behavior: "auto",
       });
+      if (loop) setVirtualIndex(targetIndex);
     });
     return () => window.cancelAnimationFrame(frame);
   }, [open]);
+
+  useEffect(() => {
+    if (!open || !loop) return;
+    const list = listRef.current;
+    if (!list) return;
+
+    const handleScrollEnd = () => {
+      const targetIndex = Math.min(
+        TIME_WHEEL_VIRTUAL_ITEM_COUNT - 1,
+        Math.max(0, Math.round(list.scrollTop / WHEEL_ITEM_HEIGHT)),
+      );
+      list.scrollTo({
+        top: targetIndex * WHEEL_ITEM_HEIGHT,
+        behavior: "auto",
+      });
+      setVirtualIndex(targetIndex);
+    };
+
+    list.addEventListener("scrollend", handleScrollEnd);
+    return () => list.removeEventListener("scrollend", handleScrollEnd);
+  }, [open, loop]);
 
   useEffect(
     () => () => {
@@ -223,7 +276,7 @@ function TimeWheel({
 
   const handleScroll = () => {
     if (isEditing) cancelNumericInput();
-    if (suppressScrollRef.current) return;
+    if (!loop && suppressScrollRef.current) return;
     if (frameRef.current !== null) {
       window.cancelAnimationFrame(frameRef.current);
     }
@@ -231,23 +284,31 @@ function TimeWheel({
       const rawIndex = Math.round(
         (listRef.current?.scrollTop ?? 0) / WHEEL_ITEM_HEIGHT,
       );
+      const boundedIndex = Math.min(
+        TIME_WHEEL_VIRTUAL_ITEM_COUNT - 1,
+        Math.max(0, rawIndex),
+      );
       const normalizedIndex =
         ((rawIndex % options.length) + options.length) % options.length;
-      const firstEdge = loopCenterCopy * options.length;
-      const lastEdge = (loopCenterCopy + 1) * options.length;
+      const nextValue = options[normalizedIndex];
+      if (!nextValue) return;
 
       if (
         loop &&
-        (rawIndex < firstEdge || rawIndex >= lastEdge)
+        (boundedIndex < TIME_WHEEL_VIRTUAL_EDGE_BUFFER ||
+          boundedIndex >= TIME_WHEEL_VIRTUAL_ITEM_COUNT - TIME_WHEEL_VIRTUAL_EDGE_BUFFER)
       ) {
+        const targetIndex = getCenteredVirtualIndex(nextValue);
         listRef.current?.scrollTo({
-          top: (loopCenterCopy * options.length + normalizedIndex) * WHEEL_ITEM_HEIGHT,
+          top: targetIndex * WHEEL_ITEM_HEIGHT,
           behavior: "auto",
         });
+        setVirtualIndex(targetIndex);
+      } else {
+        setVirtualIndex(boundedIndex);
       }
 
-      const nextValue = options[normalizedIndex];
-      if (nextValue && nextValue !== value) onChange(nextValue);
+      if (nextValue !== value) onChange(nextValue);
     });
   };
 
@@ -268,6 +329,77 @@ function TimeWheel({
     }
   };
 
+  const renderOption = (option: string, itemIndex: number, selected: boolean) => (
+    <div
+      key={`${itemIndex}-${option}`}
+      className={cn(
+        "flex h-9 snap-center items-center",
+        loop && "absolute inset-x-0",
+      )}
+      style={loop ? { top: itemIndex * WHEEL_ITEM_HEIGHT } : undefined}
+    >
+      {selected && inputKind && isEditing ? (
+        <input
+          autoFocus
+          type="text"
+          inputMode="numeric"
+          role="option"
+          aria-label={`${label} 숫자 입력`}
+          aria-selected="true"
+          value={inputValue}
+          maxLength={2}
+          onChange={(event) => setInputValue(event.target.value.replace(/\D/g, "").slice(0, 2))}
+          onFocus={(event) => event.currentTarget.select()}
+          onKeyDown={(event) => {
+            event.stopPropagation();
+            if (event.key === "Enter") {
+              event.preventDefault();
+              commitNumericInput();
+            } else if (event.key === "Escape") {
+              event.preventDefault();
+              setInputValue(value);
+              setIsEditing(false);
+            }
+          }}
+          onBlur={commitNumericInput}
+          className="flex h-[34px] w-full items-center justify-center rounded-[8px] border border-brand bg-transparent text-center text-[14px] font-semibold text-brand outline-none ring-0 focus-visible:border-brand focus-visible:ring-0"
+        />
+      ) : (
+        <button
+          type="button"
+          role="option"
+          aria-selected={selected}
+          tabIndex={-1}
+          onClick={() => {
+            if (selected && inputKind) {
+              beginNumericInput();
+              return;
+            }
+            onChange(option);
+            if (loop) {
+              scrollToPosition(itemIndex * WHEEL_ITEM_HEIGHT, "smooth");
+            } else {
+              scrollToValue(option);
+            }
+          }}
+          className={cn(
+            "flex h-[34px] w-full items-center justify-center rounded-[8px] text-[14px] transition-colors",
+            selected
+              ? "font-semibold text-brand"
+              : "font-normal text-ink-muted hover:text-brand",
+          )}
+        >
+          {option}
+        </button>
+      )}
+    </div>
+  );
+
+  const virtualStartIndex = Math.max(
+    0,
+    Math.min(TIME_WHEEL_VIRTUAL_ITEM_COUNT - 9, virtualIndex - 4),
+  );
+
   return (
     <div className="relative before:pointer-events-none before:absolute before:inset-x-0 before:top-[73px] before:z-0 before:h-[34px] before:rounded-[8px] before:bg-[#F5F8F5] before:content-['']">
       <div
@@ -282,70 +414,22 @@ function TimeWheel({
           }
         }}
         onKeyDown={handleKeyDown}
-        className="relative z-10 h-[180px] snap-y snap-mandatory overflow-y-auto overscroll-contain rounded-[8px] py-[72px] outline-none [scrollbar-width:none] focus-visible:ring-[3.2px] focus-visible:ring-focus-soft [&::-webkit-scrollbar]:hidden"
+        className="relative z-10 h-[180px] overflow-y-auto overscroll-contain rounded-[8px] py-[72px] outline-none [scrollbar-width:none] focus-visible:ring-[3.2px] focus-visible:ring-focus-soft [&::-webkit-scrollbar]:hidden"
       >
-        {Array.from({ length: loopCopies }, (_, copyIndex) =>
-          options.map((option) => ({ option, copyIndex })),
-        )
-          .flat()
-          .map(({ option, copyIndex }) => {
-            const selected = option === value && copyIndex === loopCenterCopy;
-
-            return (
-              <div key={`${copyIndex}-${option}`} className="flex h-9 snap-center items-center">
-              {selected && inputKind && isEditing ? (
-                <input
-                  autoFocus
-                  type="text"
-                  inputMode="numeric"
-                  role="option"
-                  aria-label={`${label} 숫자 입력`}
-                  aria-selected="true"
-                  value={inputValue}
-                  maxLength={2}
-                  onChange={(event) => setInputValue(event.target.value.replace(/\D/g, "").slice(0, 2))}
-                  onFocus={(event) => event.currentTarget.select()}
-                  onKeyDown={(event) => {
-                    event.stopPropagation();
-                    if (event.key === "Enter") {
-                      event.preventDefault();
-                      commitNumericInput();
-                    } else if (event.key === "Escape") {
-                      event.preventDefault();
-                      setInputValue(value);
-                      setIsEditing(false);
-                    }
-                  }}
-                  onBlur={commitNumericInput}
-                  className="flex h-[34px] w-full items-center justify-center rounded-[8px] border border-brand bg-transparent text-center text-[14px] font-semibold text-brand outline-none ring-0 focus-visible:border-brand focus-visible:ring-0"
-                />
-              ) : (
-                <button
-                  type="button"
-                  role="option"
-                  aria-selected={selected}
-                  tabIndex={-1}
-                  onClick={() => {
-                    if (selected && inputKind) {
-                      beginNumericInput();
-                      return;
-                    }
-                    onChange(option);
-                    scrollToValue(option);
-                  }}
-                  className={cn(
-                    "flex h-[34px] w-full items-center justify-center rounded-[8px] text-[14px] transition-colors",
-                    selected
-                      ? "font-semibold text-brand"
-                      : "font-normal text-ink-muted hover:text-brand",
-                  )}
-                >
-                  {option}
-                </button>
-              )}
-            </div>
-            );
-          })}
+        {loop ? (
+          <div
+            className="relative"
+            style={{ height: TIME_WHEEL_VIRTUAL_ITEM_COUNT * WHEEL_ITEM_HEIGHT }}
+          >
+            {Array.from({ length: 9 }, (_, offset) => {
+              const itemIndex = virtualStartIndex + offset;
+              const option = options[itemIndex % options.length] ?? "";
+              return renderOption(option, itemIndex, itemIndex === virtualIndex && option === value);
+            })}
+          </div>
+        ) : (
+          options.map((option, index) => renderOption(option, index, option === value))
+        )}
       </div>
       {isEditing && (
         <span
