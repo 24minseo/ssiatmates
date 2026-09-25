@@ -86,6 +86,8 @@ function toMatchedProgram(item: NoticeMatchItem): MatchedProgram {
     .filter((value): value is string => Boolean(value?.trim()))
     .map((value) => value.trim())
     .filter((value) => value.length <= 20);
+  const rawDDay = item.deadline_label ?? item.status_label ?? "";
+  const dDay = rawDDay === "일정 확인 필요" ? "-" : rawDDay;
 
   return {
     id: item.notice_id,
@@ -93,8 +95,8 @@ function toMatchedProgram(item: NoticeMatchItem): MatchedProgram {
     organization: item.organization,
     title: item.title,
     categories,
-    dDay: item.deadline_label ?? item.status_label ?? "",
-    deadline: formatDeadline(item.deadline),
+    dDay,
+    deadline: formatDeadline(item.deadline) || (rawDDay === "일정 확인 필요" ? "공고 원문 확인" : ""),
     daysUntilDeadline: item.days_until_deadline,
     // 리포트가 아직 준비되지 않은 공고도 버튼에서 준비 상태를 안내한다.
     matchLabel: "리포트 보기 〉",
@@ -113,7 +115,7 @@ export const Route = createFileRoute("/programs")({
 });
 
 function ExcludedProgramRow({ program }: { program: MatchedProgram }) {
-  return <article className="flex min-h-[118px] items-center gap-6 border-b border-[#e9e9e9] bg-white px-8 py-[14px] last:border-b-0"><div className="min-w-0 flex-1"><p className="text-[13px] leading-[21px] text-ink-muted">{program.organization}</p><h3 className="truncate text-[20px] font-semibold leading-6 tracking-[-0.22px] text-ink">{program.url ? <a href={program.url} target="_blank" rel="noreferrer" className="block truncate hover:underline hover:decoration-[1px] hover:underline-offset-[2px]">{program.title}</a> : program.title}</h3><div className="mt-2 flex flex-wrap items-center gap-2">{program.categories.map((category) => <span key={category} className="rounded bg-[#f5f5f5] px-[7px] py-1 text-xs font-medium text-ink-muted">{category}</span>)}</div></div><div className="w-[90px] shrink-0 translate-y-[4.5px]"><p className="text-xl font-bold leading-[26px] text-ink">{program.dDay}</p><p className="text-[13px] leading-5 text-ink-muted">{program.deadline}</p></div><button type="button" className="shrink-0 rounded-[10px] px-3 py-2 text-[13px] font-medium text-ink-muted transition-colors hover:bg-item-hover">복원</button></article>;
+  return <article className="flex min-h-[118px] items-center gap-6 border-b border-[#e9e9e9] bg-white px-8 py-[14px] last:border-b-0"><div className="min-w-0 flex-1"><p className="text-[13px] leading-[21px] text-ink-muted">{program.organization}</p><h3 className="truncate text-[20px] font-semibold leading-6 tracking-[-0.22px] text-ink">{program.url ? <a href={program.url} target="_blank" rel="noreferrer" className="block truncate hover:underline hover:decoration-[1px] hover:underline-offset-[4px]">{program.title}</a> : program.title}</h3><div className="mt-2 flex flex-wrap items-center gap-2">{program.categories.map((category) => <span key={category} className="rounded bg-[#f5f5f5] px-[7px] py-1 text-xs font-medium text-ink-muted">{category}</span>)}</div></div><div className="w-[110px] shrink-0 translate-y-[4.5px]"><p className="text-[20px] font-bold leading-[26px] text-ink">{program.dDay}</p><p className="text-[13px] leading-5 text-ink-muted">{program.deadline}</p></div><button type="button" className="shrink-0 rounded-[10px] px-3 py-2 text-[13px] font-medium text-ink-muted transition-colors hover:bg-item-hover">복원</button></article>;
 }
 
 function ProgramsPage() {

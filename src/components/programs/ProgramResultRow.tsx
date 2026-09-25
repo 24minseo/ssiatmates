@@ -28,7 +28,7 @@ export function ProgramResultRow({ program, onReportClick }: ProgramResultRowPro
                 href={program.url}
                 target="_blank"
                 rel="noreferrer"
-                className="block truncate hover:underline hover:decoration-[1px] hover:underline-offset-[2px]"
+                className="block truncate hover:underline hover:decoration-[1px] hover:underline-offset-[4px]"
               >
                 {program.title}
               </a>
@@ -47,16 +47,16 @@ export function ProgramResultRow({ program, onReportClick }: ProgramResultRowPro
           <button
             type="button"
             onClick={() => onReportClick(program)}
-            className="shrink-0 text-sm font-medium text-ink hover:underline"
+            className="inline-flex shrink-0 self-center -translate-y-1 items-center rounded-[8px] px-2 py-1 text-sm font-medium text-ink transition-colors hover:bg-item-hover"
           >
             {program.matchLabel}
           </button>
         ) : (
-          <span className="shrink-0 text-sm font-medium text-ink">{program.matchLabel}</span>
+          <span className="self-center -translate-y-1 text-sm font-medium text-ink">{program.matchLabel}</span>
         )
       ) : null}
-      <div className="w-[90px] shrink-0 translate-y-[4.5px]">
-        <p className="text-xl font-bold leading-[26px] text-ink">{program.dDay}</p>
+      <div className="ml-2 w-[110px] shrink-0 translate-y-[4.5px]">
+        <p className="text-[20px] font-bold leading-[26px] text-ink">{program.dDay}</p>
         <p className="text-[13px] leading-5 text-ink-muted">{program.deadline}</p>
       </div>
       <button

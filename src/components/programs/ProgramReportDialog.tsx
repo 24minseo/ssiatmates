@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -131,17 +131,30 @@ function ObligationsGroupView({ section }: { section: ReportGroup["section"] }) 
 
 export function ProgramReportDialog({ open, onOpenChange, noticeId }: ProgramReportDialogProps) {
   const [report, setReport] = useState<NoticeReport | null>(null);
+  const [reportNoticeId, setReportNoticeId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [dialogHeight, setDialogHeight] = useState<number | null>(null);
+  const dialogHeaderRef = useRef<HTMLDivElement>(null);
+  const dialogBodyRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!open || !noticeId) return;
+    if (!open) {
+      setReport(null);
+      setReportNoticeId(null);
+      setLoading(false);
+      setError(null);
+      setDialogHeight(null);
+      return;
+    }
+    if (!noticeId) return;
     let cancelled = false;
 
     async function loadReport() {
       setLoading(true);
       setError(null);
       setReport(null);
+      setReportNoticeId(null);
       const { data, error: rpcError } = await supabase.rpc("get_my_notice_report_v1", {
         p_notice_id: noticeId,
       });
@@ -152,6 +165,7 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId }: ProgramRep
         setError("리포트를 불러오지 못했습니다.");
       } else {
         setReport((data as NoticeReport | null) ?? null);
+        setReportNoticeId(noticeId);
       }
       setLoading(false);
     }
@@ -162,9 +176,11 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId }: ProgramRep
     };
   }, [noticeId, open]);
 
+  const currentReport = reportNoticeId === noticeId ? report : null;
+
   const groups = useMemo<ReportGroup[]>(() => {
-    const sections = report?.report?.sections;
-    const matchingConditions = report?.report?.matching_conditions;
+    const sections = currentReport?.report?.sections;
+    const matchingConditions = currentReport?.report?.matching_conditions;
     return [
       { title: "맞춤 조건", section: matchingConditions, key: "matching_conditions" },
       ...Object.entries(sectionLabels).map(([key, title]) => ({
@@ -173,44 +189,78 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId }: ProgramRep
         key,
       })),
     ];
-  }, [report]);
+  }, [currentReport]);
 
-  const statusMessage = report?.status === "not_found"
+  const statusMessage = currentReport?.status === "not_found"
     ? "이 공고의 맞춤 리포트를 찾을 수 없습니다."
     : "아직 맞춤 리포트가 준비되지 않았습니다.";
+  const reportContentKey = loading
+    ? "loading"
+    : error
+      ? "error"
+      : currentReport?.status === "ready"
+        ? "ready"
+        : `unavailable-${currentReport?.status ?? "unknown"}`;
+
+  useLayoutEffect(() => {
+    if (!open) return;
+
+    const updateDialogHeight = () => {
+      const headerHeight = dialogHeaderRef.current?.offsetHeight ?? 0;
+      const bodyHeight = dialogBodyRef.current?.scrollHeight ?? 0;
+      const maxHeight = Math.max(240, window.innerHeight - 48);
+      setDialogHeight(Math.min(maxHeight, headerHeight + bodyHeight + 16));
+    };
+
+    updateDialogHeight();
+    const observer = new ResizeObserver(updateDialogHeight);
+    if (dialogHeaderRef.current) observer.observe(dialogHeaderRef.current);
+    if (dialogBodyRef.current) observer.observe(dialogBodyRef.current);
+    window.addEventListener("resize", updateDialogHeight);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", updateDialogHeight);
+    };
+  }, [open, reportContentKey]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         closeClassName="right-8 top-8 flex size-9 items-center justify-center rounded-lg opacity-100 text-ink-muted hover:bg-item-hover hover:text-ink focus:outline-none focus:ring-0 focus:ring-offset-0 [&>svg]:size-6"
-        className="flex max-h-[calc(100vh-48px)] w-[760px] max-w-[calc(100vw-32px)] flex-col overflow-hidden rounded-[20px] border-0 bg-surface p-0"
+        className="flex min-h-[240px] max-h-[calc(100vh-48px)] w-[760px] max-w-[calc(100vw-32px)] flex-col overflow-hidden rounded-[20px] border-0 bg-surface p-0 transition-[height] duration-[240ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
+        style={dialogHeight ? { height: `${dialogHeight}px` } : undefined}
       >
-        <DialogHeader className="shrink-0 border-b border-field-border px-8 pb-5 pt-8 pr-16 text-left">
-          <DialogTitle className="text-[24px] font-bold leading-10 text-ink">리포트</DialogTitle>
-          {report?.notice ? (
+        <div ref={dialogHeaderRef} className="shrink-0">
+          <DialogHeader className="border-b border-field-border px-8 pb-5 pt-8 pr-16 text-left">
+            <DialogTitle className="text-[24px] font-bold leading-10 text-ink">리포트</DialogTitle>
+          {currentReport?.notice ? (
             <div className="mt-4 min-w-0">
-              <p className="truncate text-[13px] text-ink-muted">{report.notice.organization}</p>
-              <p className="truncate text-[17px] font-semibold leading-6 text-ink">{report.notice.title}</p>
-            </div>
-          ) : null}
-        </DialogHeader>
+              <p className="truncate text-[13px] text-ink-muted">{currentReport.notice.organization}</p>
+              <p className="truncate text-[17px] font-semibold leading-6 text-ink">{currentReport.notice.title}</p>
+              </div>
+            ) : null}
+          </DialogHeader>
+        </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-7 pb-6">
-          {loading ? (
-            <p className="py-16 text-center text-[14px] text-ink-muted">리포트를 불러오는 중입니다.</p>
-          ) : error ? (
-            <p className="py-16 text-center text-[14px] text-ink-muted">{error}</p>
-          ) : report?.status !== "ready" ? (
-            <p className="py-16 text-center text-[14px] text-ink-muted">{statusMessage}</p>
-          ) : (
-            groups.map((group) =>
-              group.key === "obligations" ? (
-                <ObligationsGroupView key={group.title} section={group.section} />
-              ) : (
-                <ReportGroupView key={group.title} group={group} />
-              ),
-            )
-          )}
+        <div ref={dialogBodyRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-7 pb-6">
+          <div>
+            {loading ? (
+              <p className="py-16 text-center text-[14px] text-ink-muted">리포트를 불러오는 중입니다.</p>
+            ) : error ? (
+              <p className="py-16 text-center text-[14px] text-ink-muted">{error}</p>
+            ) : currentReport?.status !== "ready" ? (
+              <p className="py-16 text-center text-[14px] text-ink-muted">{statusMessage}</p>
+            ) : (
+              groups.map((group) =>
+                group.key === "obligations" ? (
+                  <ObligationsGroupView key={group.title} section={group.section} />
+                ) : (
+                  <ReportGroupView key={group.title} group={group} />
+                ),
+              )
+            )}
+          </div>
         </div>
       </DialogContent>
     </Dialog>
