@@ -3,7 +3,6 @@ import { ChevronDown } from "lucide-react";
 type PaginationProps = { page: number; pageCount: number; onChange: (page: number) => void; };
 
 export function Pagination({ page, pageCount, onChange }: PaginationProps) {
-  if (pageCount <= 1) return null;
   const buttonClass = "inline-flex size-8 items-center justify-center rounded-lg text-sm font-medium transition-colors";
   const disabledClass = "text-content-disabled cursor-not-allowed";
   const idleClass = "text-ink-muted hover:bg-item-hover";
