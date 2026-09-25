@@ -67,9 +67,11 @@ function collectItems(section: ReportSection | Record<string, ReportSection> | u
 function ReportGroupView({
   group,
   itemLabel,
+  showItemLabel = true,
 }: {
   group: ReportGroup;
   itemLabel?: string;
+  showItemLabel?: boolean;
 }) {
   const items = collectItems(group.section).filter((item) => item.detail?.trim());
   if (!items.length) return null;
@@ -79,8 +81,13 @@ function ReportGroupView({
       <h3 className="mb-3 text-[15px] font-semibold text-ink">{group.title}</h3>
       <div className="space-y-3">
         {items.map((item, index) => (
-          <div key={`${item.label ?? group.title}-${index}`} className="grid grid-cols-[150px_minmax(0,1fr)] gap-4 text-[14px] leading-6">
-            <span className="text-ink-muted">{itemLabel ?? item.label ?? group.title}</span>
+          <div
+            key={`${item.label ?? group.title}-${index}`}
+            className={showItemLabel ? "grid grid-cols-[150px_minmax(0,1fr)] gap-4 text-[14px] leading-6" : "text-[14px] leading-6"}
+          >
+            {showItemLabel ? (
+              <span className="text-ink-muted">{itemLabel ?? item.label ?? group.title}</span>
+            ) : null}
             <p className="whitespace-pre-wrap break-keep text-ink">{item.detail}</p>
           </div>
         ))}
@@ -98,17 +105,17 @@ function ObligationsGroupView({ section }: { section: ReportGroup["section"] }) 
     <>
       <ReportGroupView
         group={{
-          title: "참여 의무",
+          title: "중요 확인사항",
           section: { items: participationItems },
         }}
-        itemLabel="참여 의무"
+        showItemLabel={false}
       />
       <ReportGroupView
         group={{
           title: "제외 조건",
           section: { items: exclusionItems },
         }}
-        itemLabel="제외 조건"
+        showItemLabel={false}
       />
     </>
   );
@@ -195,7 +202,7 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId }: ProgramRep
               group.key === "obligations" ? (
                 <ObligationsGroupView key={group.title} section={group.section} />
               ) : (
-                <ReportGroupView key={group.title} group={group} />
+                <ReportGroupView key={group.title} group={group} showItemLabel={group.key === "matching_conditions"} />
               ),
             )
           )}
