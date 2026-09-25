@@ -10,6 +10,7 @@ import {
 import type { Session, User } from "@supabase/supabase-js";
 
 import { supabase } from "@/integrations/supabase/client";
+import { clearSupportFilterSession } from "@/lib/supportFilterSession";
 
 export interface Profile {
   id: string;
@@ -214,10 +215,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOut = useCallback(async () => {
+    clearSupportFilterSession(session?.user.id);
     await supabase.auth.signOut();
     setSession(null);
     setProfile(null);
-  }, []);
+  }, [session?.user.id]);
 
   const value = useMemo<AuthContextValue>(
     () => ({
