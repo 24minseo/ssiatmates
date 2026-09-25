@@ -175,12 +175,12 @@ export function ProgramCard({
         <button
           type="button"
           onClick={() => onManageSchedules(program)}
-          className="group ml-auto inline-flex shrink-0 items-center gap-0.5 rounded-[8px] px-1 text-[14px] font-medium text-[#9a9d9b] transition-colors hover:text-brand focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+          className="group ml-auto inline-flex shrink-0 items-center gap-0.5 rounded-[8px] px-1 text-[14px] font-medium text-[#9a9d9b] transition-colors hover:text-[#596963] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
         >
           {remaining > 0 || program.schedules.length > 0
             ? "일정 관리하기"
             : "일정 추가하기"}
-          <svg aria-hidden="true" className="size-[18px] text-[#9a9d9b] transition-colors group-hover:text-brand" viewBox="0 0 18 18" fill="none">
+          <svg aria-hidden="true" className="size-[18px] text-[#9a9d9b] transition-colors group-hover:text-[#596963]" viewBox="0 0 18 18" fill="none">
             <path d="M10.0787 5.74951L13.1295 9.00006L10.0787 12.2507" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
             <path d="M12.6919 9.01025L4 9.01025" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
           </svg>

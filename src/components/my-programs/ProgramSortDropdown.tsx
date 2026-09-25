@@ -9,9 +9,14 @@ import { cn } from "@/lib/utils";
 export type ProgramSortOption = "deadline" | "fit" | "created";
 
 const sortLabelsByVariant = {
-  explore: { fit: "추천순", deadline: "마감 임박순", created: "최근 등록순" },
+  explore: { deadline: "마감 임박순", created: "최근 등록순", fit: "추천순" },
   myPrograms: { created: "최근 추가순", deadline: "마감 임박순", fit: "진행 상태순" },
 } satisfies Record<string, Record<ProgramSortOption, string>>;
+
+const disabledOptionsByVariant = {
+  explore: ["created", "fit"],
+  myPrograms: [],
+} satisfies Record<"explore" | "myPrograms", ProgramSortOption[]>;
 
 type ProgramSortDropdownProps = {
   value: ProgramSortOption;
@@ -25,6 +30,7 @@ export function ProgramSortDropdown({
   variant = "explore",
 }: ProgramSortDropdownProps) {
   const sortLabels = sortLabelsByVariant[variant];
+  const disabledOptions = disabledOptionsByVariant[variant];
   const [open, setOpen] = useState(false);
   const [activeValue, setActiveValue] = useState(value);
 
@@ -63,16 +69,20 @@ export function ProgramSortDropdown({
             <CommandGroup>
               {(Object.keys(sortLabels) as ProgramSortOption[]).map((option) => {
                 const selected = value === option;
+                const disabled = disabledOptions.includes(option);
                 return (
                   <CommandItem
                     key={option}
                     value={option}
+                    disabled={disabled}
                     onSelect={() => {
+                      if (disabled) return;
                       onChange(option);
                       setOpen(false);
                     }}
                     className={cn(
                       "min-h-10 scroll-mt-1 rounded-[8px] px-[10px] text-ink data-[selected=true]:bg-dropdown-hover data-[selected=true]:text-ink",
+                      "data-[disabled=true]:pointer-events-auto data-[disabled=true]:cursor-not-allowed data-[disabled=true]:text-[#A8B4B0] data-[disabled=true]:opacity-100",
                       selected &&
                         "font-bold text-brand data-[selected=true]:bg-dropdown-selected-hover data-[selected=true]:text-brand",
                     )}

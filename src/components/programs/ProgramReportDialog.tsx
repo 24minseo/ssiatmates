@@ -1,0 +1,164 @@
+import { useEffect, useMemo, useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { supabase } from "@/integrations/supabase/client";
+
+type ReportItem = {
+  label?: string | null;
+  detail?: string | null;
+};
+
+type ReportSection = {
+  items?: ReportItem[];
+  [key: string]: unknown;
+};
+
+type NoticeReport = {
+  status?: "ready" | "report_unavailable" | "not_found" | string;
+  notice?: {
+    title?: string | null;
+    organization?: string | null;
+    url?: string | null;
+    application_url?: string | null;
+  };
+  report?: {
+    matching_conditions?: Record<string, ReportSection>;
+    sections?: Record<string, ReportSection>;
+  } | null;
+};
+
+type ReportGroup = {
+  title: string;
+  section: ReportSection | Record<string, ReportSection> | undefined;
+  nested?: boolean;
+};
+
+type ProgramReportDialogProps = {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  noticeId: string | null;
+};
+
+const sectionLabels: Record<string, string> = {
+  application: "신청방법 및 기간",
+  documents: "제출서류",
+  obligations: "참여 의무 및 제외조건",
+  benefits: "지원혜택",
+  preference: "우대사항",
+};
+
+function collectItems(section: ReportSection | Record<string, ReportSection> | undefined): ReportItem[] {
+  if (!section) return [];
+  if (Array.isArray((section as ReportSection).items)) {
+    return (section as ReportSection).items ?? [];
+  }
+
+  return Object.values(section as Record<string, ReportSection>).flatMap((nested) =>
+    collectItems(nested),
+  );
+}
+
+function ReportGroupView({ group }: { group: ReportGroup }) {
+  const items = collectItems(group.section).filter((item) => item.detail?.trim());
+  if (!items.length) return null;
+
+  return (
+    <section className="border-b border-field-border py-5 last:border-b-0">
+      <h3 className="mb-3 text-[15px] font-semibold text-ink">{group.title}</h3>
+      <div className="space-y-3">
+        {items.map((item, index) => (
+          <div key={`${item.label ?? group.title}-${index}`} className="grid grid-cols-[150px_minmax(0,1fr)] gap-4 text-[14px] leading-6">
+            <span className="text-ink-muted">{item.label ?? group.title}</span>
+            <p className="whitespace-pre-wrap break-keep text-ink">{item.detail}</p>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+export function ProgramReportDialog({ open, onOpenChange, noticeId }: ProgramReportDialogProps) {
+  const [report, setReport] = useState<NoticeReport | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!open || !noticeId) return;
+    let cancelled = false;
+
+    async function loadReport() {
+      setLoading(true);
+      setError(null);
+      setReport(null);
+      const { data, error: rpcError } = await supabase.rpc("get_my_notice_report_v1", {
+        p_notice_id: noticeId,
+      });
+
+      if (cancelled) return;
+      if (rpcError) {
+        console.error("[programs] 맞춤 리포트 조회 실패", rpcError);
+        setError("리포트를 불러오지 못했습니다.");
+      } else {
+        setReport((data as NoticeReport | null) ?? null);
+      }
+      setLoading(false);
+    }
+
+    void loadReport();
+    return () => {
+      cancelled = true;
+    };
+  }, [noticeId, open]);
+
+  const groups = useMemo<ReportGroup[]>(() => {
+    const sections = report?.report?.sections;
+    const matchingConditions = report?.report?.matching_conditions;
+    return [
+      { title: "맞춤 조건", section: matchingConditions, nested: true },
+      ...Object.entries(sectionLabels).map(([key, title]) => ({
+        title,
+        section: sections?.[key],
+      })),
+    ];
+  }, [report]);
+
+  const statusMessage = report?.status === "not_found"
+    ? "이 공고의 맞춤 리포트를 찾을 수 없습니다."
+    : "아직 맞춤 리포트가 준비되지 않았습니다.";
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="flex max-h-[calc(100vh-48px)] w-[760px] max-w-[calc(100vw-32px)] flex-col overflow-hidden rounded-[20px] border-0 bg-surface p-0">
+        <DialogHeader className="shrink-0 border-b border-field-border px-7 pb-5 pt-7 pr-16 text-left">
+          <DialogTitle className="text-[22px] font-bold leading-8 text-ink">맞춤 리포트</DialogTitle>
+          <DialogDescription className="mt-1 text-[14px] leading-5 text-ink-muted">
+            공고 조건과 내 프로필을 바탕으로 정리한 내용입니다.
+          </DialogDescription>
+          {report?.notice ? (
+            <div className="mt-4 min-w-0">
+              <p className="truncate text-[13px] text-ink-muted">{report.notice.organization}</p>
+              <p className="truncate text-[17px] font-semibold leading-6 text-ink">{report.notice.title}</p>
+            </div>
+          ) : null}
+        </DialogHeader>
+
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-7 pb-6">
+          {loading ? (
+            <p className="py-16 text-center text-[14px] text-ink-muted">리포트를 불러오는 중입니다.</p>
+          ) : error ? (
+            <p className="py-16 text-center text-[14px] text-ink-muted">{error}</p>
+          ) : report?.status !== "ready" ? (
+            <p className="py-16 text-center text-[14px] text-ink-muted">{statusMessage}</p>
+          ) : (
+            groups.map((group) => <ReportGroupView key={group.title} group={group} />)
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}

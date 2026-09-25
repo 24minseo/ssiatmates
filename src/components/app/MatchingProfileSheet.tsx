@@ -270,6 +270,10 @@ export function MatchingProfileSheet({ open, onOpenChange, onSaved, profile }: M
                       value={startupStage || null}
                       onChange={(value) => {
                         setStartupStage(value);
+                        if (value === "예비창업자") {
+                          setBusinessLocation("");
+                          setSameAsResidence(false);
+                        }
                         markDirty();
                       }}
                     />

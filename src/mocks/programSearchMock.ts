@@ -1,10 +1,12 @@
 export type MatchedProgram = {
   id: string;
+  url?: string;
   organization: string;
   title: string;
   categories: string[];
   dDay: string;
   deadline: string;
+  daysUntilDeadline?: number | null;
   matchLabel?: string;
   type: "default" | "recommended";
 };
