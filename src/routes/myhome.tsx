@@ -128,7 +128,7 @@ function MyHomePage() {
 
       <section
         aria-label="지원사업 요약"
-        className="mt-14 grid grid-cols-4 gap-4"
+        className="mt-[41px] grid grid-cols-4 gap-4"
       >
         {summaryCards(myHomeSummary).map((card) => {
           const cardClassName = `relative overflow-hidden rounded-[12px] p-5 ${
