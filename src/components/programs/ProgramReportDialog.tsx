@@ -108,14 +108,14 @@ function ObligationsGroupView({ section }: { section: ReportGroup["section"] }) 
           title: "중요 확인사항",
           section: { items: participationItems },
         }}
-        showItemLabel={false}
+        itemLabel="중요 확인사항"
       />
       <ReportGroupView
         group={{
           title: "제외 조건",
           section: { items: exclusionItems },
         }}
-        showItemLabel={false}
+        itemLabel="제외 조건"
       />
     </>
   );
@@ -202,7 +202,7 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId }: ProgramRep
               group.key === "obligations" ? (
                 <ObligationsGroupView key={group.title} section={group.section} />
               ) : (
-                <ReportGroupView key={group.title} group={group} showItemLabel={group.key === "matching_conditions"} />
+                <ReportGroupView key={group.title} group={group} />
               ),
             )
           )}
