@@ -146,7 +146,7 @@ export function ProgramCard({
         </div>
       </div>
           <div className="mt-1 flex min-w-0 items-center text-[14px] font-normal text-ink-muted">
-            {[program.organization, program.category, program.stage, program.region]
+            {[program.organization, program.category, program.region]
               .filter(Boolean)
               .map((item, index) => (
                 <Fragment key={item}>
