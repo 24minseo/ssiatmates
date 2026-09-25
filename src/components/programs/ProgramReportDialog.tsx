@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 type ReportItem = {
   label?: string | null;
   detail?: string | null;
+  condition_kind?: string | null;
 };
 
 type ReportSection = {
@@ -34,8 +35,8 @@ type NoticeReport = {
 
 type ReportGroup = {
   title: string;
+  key?: string;
   section: ReportSection | Record<string, ReportSection> | undefined;
-  nested?: boolean;
 };
 
 type ProgramReportDialogProps = {
@@ -82,6 +83,29 @@ function ReportGroupView({ group }: { group: ReportGroup }) {
   );
 }
 
+function ObligationsGroupView({ section }: { section: ReportGroup["section"] }) {
+  const items = collectItems(section).filter((item) => item.detail?.trim());
+  const participationItems = items.filter((item) => item.condition_kind !== "exclusion");
+  const exclusionItems = items.filter((item) => item.condition_kind === "exclusion");
+
+  return (
+    <>
+      <ReportGroupView
+        group={{
+          title: "참여 의무",
+          section: { items: participationItems },
+        }}
+      />
+      <ReportGroupView
+        group={{
+          title: "제외 조건",
+          section: { items: exclusionItems },
+        }}
+      />
+    </>
+  );
+}
+
 export function ProgramReportDialog({ open, onOpenChange, noticeId }: ProgramReportDialogProps) {
   const [report, setReport] = useState<NoticeReport | null>(null);
   const [loading, setLoading] = useState(false);
@@ -119,10 +143,11 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId }: ProgramRep
     const sections = report?.report?.sections;
     const matchingConditions = report?.report?.matching_conditions;
     return [
-      { title: "맞춤 조건", section: matchingConditions, nested: true },
+      { title: "맞춤 조건", section: matchingConditions, key: "matching_conditions" },
       ...Object.entries(sectionLabels).map(([key, title]) => ({
         title,
         section: sections?.[key],
+        key,
       })),
     ];
   }, [report]);
@@ -133,9 +158,12 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId }: ProgramRep
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[calc(100vh-48px)] w-[760px] max-w-[calc(100vw-32px)] flex-col overflow-hidden rounded-[20px] border-0 bg-surface p-0">
-        <DialogHeader className="shrink-0 border-b border-field-border px-7 pb-5 pt-7 pr-16 text-left">
-          <DialogTitle className="text-[22px] font-bold leading-8 text-ink">맞춤 리포트</DialogTitle>
+      <DialogContent
+        closeClassName="right-8 top-8 flex size-9 items-center justify-center rounded-lg opacity-100 text-ink-muted hover:bg-item-hover hover:text-ink focus:outline-none focus:ring-0 focus:ring-offset-0 [&>svg]:size-6"
+        className="flex max-h-[calc(100vh-48px)] w-[760px] max-w-[calc(100vw-32px)] flex-col overflow-hidden rounded-[20px] border-0 bg-surface p-0"
+      >
+        <DialogHeader className="shrink-0 border-b border-field-border px-8 pb-5 pt-8 pr-16 text-left">
+          <DialogTitle className="text-[24px] font-bold leading-10 text-ink">맞춤 리포트</DialogTitle>
           <DialogDescription className="mt-1 text-[14px] leading-5 text-ink-muted">
             공고 조건과 내 프로필을 바탕으로 정리한 내용입니다.
           </DialogDescription>
@@ -155,7 +183,13 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId }: ProgramRep
           ) : report?.status !== "ready" ? (
             <p className="py-16 text-center text-[14px] text-ink-muted">{statusMessage}</p>
           ) : (
-            groups.map((group) => <ReportGroupView key={group.title} group={group} />)
+            groups.map((group) =>
+              group.key === "obligations" ? (
+                <ObligationsGroupView key={group.title} section={group.section} />
+              ) : (
+                <ReportGroupView key={group.title} group={group} />
+              ),
+            )
           )}
         </div>
       </DialogContent>
