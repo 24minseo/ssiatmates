@@ -171,7 +171,7 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId }: ProgramRep
         className="flex max-h-[calc(100vh-48px)] w-[760px] max-w-[calc(100vw-32px)] flex-col overflow-hidden rounded-[20px] border-0 bg-surface p-0"
       >
         <DialogHeader className="shrink-0 border-b border-field-border px-8 pb-5 pt-8 pr-16 text-left">
-          <DialogTitle className="text-[24px] font-bold leading-10 text-ink">맞춤 리포트</DialogTitle>
+          <DialogTitle className="text-[24px] font-bold leading-10 text-ink">리포트</DialogTitle>
           <DialogDescription className="mt-1 text-[14px] leading-5 text-ink-muted">
             공고 조건과 내 프로필을 바탕으로 정리한 내용입니다.
           </DialogDescription>
