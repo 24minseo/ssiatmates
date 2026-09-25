@@ -64,7 +64,13 @@ function collectItems(section: ReportSection | Record<string, ReportSection> | u
   );
 }
 
-function ReportGroupView({ group }: { group: ReportGroup }) {
+function ReportGroupView({
+  group,
+  itemLabel,
+}: {
+  group: ReportGroup;
+  itemLabel?: string;
+}) {
   const items = collectItems(group.section).filter((item) => item.detail?.trim());
   if (!items.length) return null;
 
@@ -74,7 +80,7 @@ function ReportGroupView({ group }: { group: ReportGroup }) {
       <div className="space-y-3">
         {items.map((item, index) => (
           <div key={`${item.label ?? group.title}-${index}`} className="grid grid-cols-[150px_minmax(0,1fr)] gap-4 text-[14px] leading-6">
-            <span className="text-ink-muted">{item.label ?? group.title}</span>
+            <span className="text-ink-muted">{itemLabel ?? item.label ?? group.title}</span>
             <p className="whitespace-pre-wrap break-keep text-ink">{item.detail}</p>
           </div>
         ))}
@@ -95,12 +101,14 @@ function ObligationsGroupView({ section }: { section: ReportGroup["section"] }) 
           title: "참여 의무",
           section: { items: participationItems },
         }}
+        itemLabel="참여 의무"
       />
       <ReportGroupView
         group={{
           title: "제외 조건",
           section: { items: exclusionItems },
         }}
+        itemLabel="제외 조건"
       />
     </>
   );
