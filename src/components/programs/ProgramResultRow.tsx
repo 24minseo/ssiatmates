@@ -55,9 +55,9 @@ export function ProgramResultRow({ program, onReportClick }: ProgramResultRowPro
           <span className="self-center -translate-y-1 text-sm font-medium text-ink">{program.matchLabel}</span>
         )
       ) : null}
-      <div className="ml-2 w-[110px] shrink-0 translate-y-[4.5px]">
-        <p className="text-[20px] font-bold leading-[26px] text-ink">{program.dDay}</p>
-        <p className="text-[13px] leading-5 text-ink-muted">{program.deadline}</p>
+      <div className="relative ml-2 h-[86px] w-[110px] shrink-0">
+        <p className="absolute left-0 top-[25.5px] text-[20px] font-bold leading-[26px] text-ink">{program.dDay}</p>
+        <p className="absolute left-0 top-[56px] text-[13px] leading-5 text-ink-muted">{program.deadline}</p>
       </div>
       <button
         type="button"
