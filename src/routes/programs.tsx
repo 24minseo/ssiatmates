@@ -65,7 +65,10 @@ function toMatchedProgram(item: NoticeMatchItem): MatchedProgram {
     deadline: formatDeadline(item.deadline),
     daysUntilDeadline: item.days_until_deadline,
     matchLabel: item.report_available ? "리포트 보기 〉" : undefined,
-    type: item.recommendation_only ? "recommended" : "default",
+    // `recommendation_only` only identifies the current-match source. It is
+    // not the profile-condition result, so keep the default row variant until
+    // the dedicated preference-match result is available.
+    type: "default",
   };
 }
 
