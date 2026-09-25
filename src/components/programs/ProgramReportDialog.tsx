@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -48,7 +47,7 @@ type ProgramReportDialogProps = {
 const sectionLabels: Record<string, string> = {
   application: "신청방법 및 기간",
   documents: "제출서류",
-  obligations: "참여 의무 및 제외조건",
+  obligations: "중요 확인사항",
   benefits: "지원혜택",
   preference: "우대사항",
 };
@@ -100,24 +99,33 @@ function ObligationsGroupView({ section }: { section: ReportGroup["section"] }) 
   const items = collectItems(section).filter((item) => item.detail?.trim());
   const participationItems = items.filter((item) => item.condition_kind !== "exclusion");
   const exclusionItems = items.filter((item) => item.condition_kind === "exclusion");
+  if (!items.length) return null;
 
   return (
-    <>
-      <ReportGroupView
-        group={{
-          title: "중요 확인사항",
-          section: { items: participationItems },
-        }}
-        itemLabel="중요 확인사항"
-      />
-      <ReportGroupView
-        group={{
-          title: "제외 조건",
-          section: { items: exclusionItems },
-        }}
-        itemLabel="제외 조건"
-      />
-    </>
+    <section className="border-b border-field-border py-5 last:border-b-0">
+      <h3 className="mb-3 text-[15px] font-semibold text-ink">중요 확인사항</h3>
+      {participationItems.length ? (
+        <div className="space-y-3 text-[14px] leading-6">
+          {participationItems.map((item, index) => (
+            <p key={`important-${index}`} className="whitespace-pre-wrap break-keep text-ink">
+              {item.detail}
+            </p>
+          ))}
+        </div>
+      ) : null}
+      {exclusionItems.length ? (
+        <div className={participationItems.length ? "mt-5" : undefined}>
+          <h4 className="mb-2 text-[14px] font-semibold text-ink">제외 조건</h4>
+          <div className="space-y-3 text-[14px] leading-6">
+            {exclusionItems.map((item, index) => (
+              <p key={`exclusion-${index}`} className="whitespace-pre-wrap break-keep text-ink">
+                {item.detail}
+              </p>
+            ))}
+          </div>
+        </div>
+      ) : null}
+    </section>
   );
 }
 
@@ -179,9 +187,6 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId }: ProgramRep
       >
         <DialogHeader className="shrink-0 border-b border-field-border px-8 pb-5 pt-8 pr-16 text-left">
           <DialogTitle className="text-[24px] font-bold leading-10 text-ink">리포트</DialogTitle>
-          <DialogDescription className="mt-1 text-[14px] leading-5 text-ink-muted">
-            공고 조건과 내 프로필을 바탕으로 정리한 내용입니다.
-          </DialogDescription>
           {report?.notice ? (
             <div className="mt-4 min-w-0">
               <p className="truncate text-[13px] text-ink-muted">{report.notice.organization}</p>

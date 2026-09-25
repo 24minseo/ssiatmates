@@ -64,7 +64,8 @@ function toMatchedProgram(item: NoticeMatchItem): MatchedProgram {
     dDay: item.deadline_label ?? item.status_label ?? "",
     deadline: formatDeadline(item.deadline),
     daysUntilDeadline: item.days_until_deadline,
-    matchLabel: item.report_available ? "리포트 보기 〉" : undefined,
+    // 리포트가 아직 준비되지 않은 공고도 버튼에서 준비 상태를 안내한다.
+    matchLabel: "리포트 보기 〉",
     // `recommendation_only` only identifies the current-match source. It is
     // not the profile-condition result, so keep the default row variant until
     // the dedicated preference-match result is available.
