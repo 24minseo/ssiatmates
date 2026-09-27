@@ -22,6 +22,7 @@ interface RegionComboboxProps {
   avoidCollisions?: boolean | undefined;
   popoverSideOffset?: number | undefined;
   alwaysShowScrollbar?: boolean | undefined;
+  highlighted?: boolean | undefined;
 }
 
 export function RegionCombobox({
@@ -34,6 +35,7 @@ export function RegionCombobox({
   avoidCollisions = false,
   popoverSideOffset = 4,
   alwaysShowScrollbar = false,
+  highlighted = false,
 }: RegionComboboxProps) {
   const [open, setOpen] = useState(false);
   const [regions, setRegions] = useState<Array<{ label: string }>>([]);
@@ -98,6 +100,7 @@ export function RegionCombobox({
           className={cn(
             "flex h-12 w-full items-center justify-between rounded-[12px] border border-field-border bg-surface px-4 text-left text-[15px] text-ink transition-colors",
             "focus:outline-none focus-visible:border-[1.5px] focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft",
+            highlighted && "border-brand ring-[3.2px] ring-focus-soft",
             "disabled:cursor-not-allowed disabled:bg-field-border/25",
           )}
         >

@@ -60,6 +60,7 @@ export function MatchingProfileSheet({ open, onOpenChange, onSaved, profile }: M
   const [businessName, setBusinessName] = useState("");
   const [residence, setResidence] = useState("");
   const [businessLocation, setBusinessLocation] = useState("");
+  const [businessLocationAttention, setBusinessLocationAttention] = useState(false);
   const [sameAsResidence, setSameAsResidence] = useState(false);
   const [businessFields, setBusinessFields] = useState<string[]>([]);
   const [supportCategories, setSupportCategories] = useState<string[]>(["전체"]);
@@ -84,6 +85,7 @@ export function MatchingProfileSheet({ open, onOpenChange, onSaved, profile }: M
     );
     setResidence(profile?.residence ?? "");
     setBusinessLocation(profile?.business_location ?? "");
+    setBusinessLocationAttention(false);
     setSameAsResidence(
       !!profile?.residence && profile.residence === profile.business_location,
     );
@@ -131,6 +133,7 @@ export function MatchingProfileSheet({ open, onOpenChange, onSaved, profile }: M
 
   const markDirty = () => setDirty(true);
   const isPreFounder = startupStage === "예비창업자";
+  const canSave = dirty && (isPreFounder || businessLocation.trim().length > 0);
 
   const toggleSupportCategory = (category: string) => {
     if (category === "전체") {
@@ -264,23 +267,7 @@ export function MatchingProfileSheet({ open, onOpenChange, onSaved, profile }: M
                       }}
                     />
                   </FormField>
-                  <FormField label="창업단계" required labelVariant="muted2">
-                    <OptionCards
-                      options={STARTUP_STAGES}
-                      value={startupStage || null}
-                      onChange={(value) => {
-                        setStartupStage(value);
-                        if (value === "예비창업자") {
-                          setBusinessLocation("");
-                          setSameAsResidence(false);
-                        }
-                        markDirty();
-                      }}
-                    />
-                  </FormField>
-                </div>
-                <div className="mt-4">
-                <FormField label="신분" required labelVariant="muted2">
+                  <FormField label="신분" required labelVariant="muted2">
                     <MultiSelectDropdown
                       options={PERSONAL_STATUS_OPTIONS}
                       value={personalStatuses}
@@ -291,6 +278,26 @@ export function MatchingProfileSheet({ open, onOpenChange, onSaved, profile }: M
                       placeholder="신분을 선택해주세요 (최대 2개)"
                       onChange={(value) => {
                         setPersonalStatuses(value);
+                        markDirty();
+                      }}
+                    />
+                  </FormField>
+                  <FormField label="창업단계" required labelVariant="muted2">
+                    <OptionCards
+                      options={STARTUP_STAGES}
+                      value={startupStage || null}
+                      onChange={(value) => {
+                        setStartupStage(value);
+                        if (value === "예비창업자") {
+                          setBusinessLocation("");
+                          setSameAsResidence(false);
+                          setBusinessLocationAttention(false);
+                        } else if (!businessLocation.trim()) {
+                          setBusinessLocationAttention(true);
+                          requestAnimationFrame(() => {
+                            document.getElementById("matching-business-location")?.focus();
+                          });
+                        }
                         markDirty();
                       }}
                     />
@@ -319,7 +326,10 @@ export function MatchingProfileSheet({ open, onOpenChange, onSaved, profile }: M
                           disabled={isPreFounder}
                           onCheckedChange={(checked) => {
                             setSameAsResidence(checked === true);
-                            if (checked === true) setBusinessLocation(residence);
+                            if (checked === true) {
+                              setBusinessLocation(residence);
+                              setBusinessLocationAttention(false);
+                            }
                             markDirty();
                           }}
                           className="size-[18px] rounded-[5px] border-field-border [&_svg]:size-3 data-[state=checked]:border-brand data-[state=checked]:bg-brand data-[state=checked]:text-brand-foreground"
@@ -329,11 +339,14 @@ export function MatchingProfileSheet({ open, onOpenChange, onSaved, profile }: M
                     }
                   >
                     <RegionCombobox
+                      id="matching-business-location"
                       value={businessLocation || null}
+                      highlighted={businessLocationAttention}
                       listHeight={208}
                       alwaysShowScrollbar
                       onChange={(value) => {
                         setBusinessLocation(value);
+                        setBusinessLocationAttention(false);
                         markDirty();
                       }}
                       disabled={isPreFounder || sameAsResidence}
@@ -396,7 +409,7 @@ export function MatchingProfileSheet({ open, onOpenChange, onSaved, profile }: M
             <button
               type="submit"
               form="matching-profile-form"
-              disabled={!dirty}
+              disabled={!canSave}
               className="h-11 rounded-[10px] bg-brand px-5 text-[15px] font-semibold text-brand-foreground transition-colors hover:bg-brand/90 disabled:cursor-not-allowed disabled:bg-brand-disabled disabled:text-brand-foreground"
             >
               변경사항 저장
