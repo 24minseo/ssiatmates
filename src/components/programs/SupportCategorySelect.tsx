@@ -41,8 +41,15 @@ function SquareAlertIcon({
         stroke={isLine ? "currentColor" : "var(--surface)"}
         strokeWidth={isLine ? "2" : "2.5"}
         strokeLinecap="round"
+        transform="rotate(180 12 12)"
       />
-      <circle cx="12" cy="16.75" r={isLine ? "1.15" : "1.4"} fill={isLine ? "currentColor" : "var(--surface)"} />
+      <circle
+        cx="12"
+        cy="16.75"
+        r={isLine ? "1.15" : "1.4"}
+        fill={isLine ? "currentColor" : "var(--surface)"}
+        transform="rotate(180 12 12)"
+      />
     </svg>
   );
 }

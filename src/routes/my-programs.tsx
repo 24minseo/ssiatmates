@@ -41,8 +41,14 @@ function SquareAlertIcon({ className }: { className?: string }) {
       className={className}
     >
       <rect x="3" y="3" width="18" height="18" rx="4" fill="currentColor" />
-      <path d="M12 7.5V12.75" stroke="var(--surface)" strokeWidth="2.5" strokeLinecap="round" />
-      <circle cx="12" cy="16.75" r="1.4" fill="var(--surface)" />
+      <path
+        d="M12 7.5V12.75"
+        stroke="var(--surface)"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        transform="rotate(180 12 12)"
+      />
+      <circle cx="12" cy="16.75" r="1.4" fill="var(--surface)" transform="rotate(180 12 12)" />
     </svg>
   );
 }
