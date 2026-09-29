@@ -173,6 +173,41 @@ export type Database = {
           evaluated_at: string
         }
       }
+      get_my_excluded_notice_matches_v1: {
+        Args: {
+          p_limit: number
+          p_offset: number
+          p_field: string | null
+        }
+        Returns: {
+          items: Array<{
+            notice_id: string
+            title: string
+            organization: string
+            url: string | null
+            field: string | null
+            region: string | null
+            deadline: string | null
+            deadline_label: string | null
+            recruitment_status: string | null
+            status_label: string | null
+            days_until_deadline: number | null
+            is_closed: boolean
+            recommendation_only: boolean
+            report_available: boolean
+          }>
+          total_count: number
+          excluded_count: number
+          limit: number
+          offset: number
+          has_more: boolean
+          matching_job_status: string
+          support_filter_ready: boolean
+          support_filter: { mode: string; values: string[] }
+          default_support_interests: string[]
+          evaluated_at: string
+        }
+      }
       get_my_notice_report_v1: {
         Args: {
           p_notice_id: string
