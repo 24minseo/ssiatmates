@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Check, MoreVertical, X } from "lucide-react";
 import { toast } from "sonner";
@@ -155,7 +155,6 @@ function ExcludedProgramRow({ program }: { program: MatchedProgram }) {
   return (
     <article className="flex min-h-[118px] items-center gap-6 border-b border-[#e9e9e9] bg-white px-8 py-[14px] last:border-b-0">
       <div className="min-w-0 flex-1">
-        <p className="text-[13px] leading-[21px] text-ink-muted">{program.organization}</p>
         <h3 className="truncate text-[20px] font-semibold leading-6 tracking-[-0.22px] text-ink">
           {program.url ? (
             <a
@@ -170,22 +169,25 @@ function ExcludedProgramRow({ program }: { program: MatchedProgram }) {
             program.title
           )}
         </h3>
-        <div className="mt-2 flex flex-wrap items-center gap-2">
-          {program.categories.map((category) => (
-            <span
-              key={category}
-              className="rounded bg-[#f5f5f5] px-[7px] py-1 text-xs font-medium text-ink-muted"
-            >
-              {category}
-            </span>
+        <div className="mt-2 flex min-w-0 items-center text-[14px] font-normal text-ink-muted">
+          {[program.organization, ...program.categories].map((item, index) => (
+            <Fragment key={`${item}-${index}`}>
+              {index > 0 ? (
+                <span
+                  aria-hidden
+                  className="mx-[6px] h-[10px] w-[1.5px] shrink-0 bg-field-border"
+                />
+              ) : null}
+              <span className="truncate">{item}</span>
+            </Fragment>
           ))}
         </div>
       </div>
-      <div className="relative h-[86px] w-[110px] shrink-0">
-        <p className="absolute left-0 top-[25.5px] text-[20px] font-bold leading-[26px] text-ink">
+      <div className="flex w-[110px] shrink-0 flex-col items-start">
+        <span className="rounded-[6px] bg-item-hover px-1.5 py-0.5 text-[13px] font-semibold text-content-disabled">
           {program.dDay}
-        </p>
-        <p className="absolute left-0 top-[56px] text-[13px] leading-5 text-ink-muted">
+        </span>
+        <p className="mt-3 text-[14px] leading-5 text-ink-muted">
           {program.deadline}
         </p>
       </div>
