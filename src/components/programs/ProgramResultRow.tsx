@@ -4,17 +4,25 @@ import type { MatchedProgram } from "@/mocks/programSearchMock";
 type ProgramResultRowProps = {
   program: MatchedProgram;
   onReportClick?: (program: MatchedProgram) => void;
+  onFavoriteToggle?: (program: MatchedProgram) => void;
+  favoriteSaving?: boolean;
 };
 
-export function ProgramResultRow({ program, onReportClick }: ProgramResultRowProps) {
+export function ProgramResultRow({
+  program,
+  onReportClick,
+  onFavoriteToggle,
+  favoriteSaving = false,
+}: ProgramResultRowProps) {
   const isRecommended = program.type === "recommended";
-  const [isFavorite, setIsFavorite] = useState(false);
   const [isFavoritePopping, setIsFavoritePopping] = useState(false);
+  const isFavorite = program.is_saved === true;
 
   const toggleFavorite = () => {
-    setIsFavorite((current) => !current);
+    if (favoriteSaving || !onFavoriteToggle) return;
     setIsFavoritePopping(true);
     window.setTimeout(() => setIsFavoritePopping(false), 220);
+    onFavoriteToggle(program);
   };
 
   return (
@@ -64,7 +72,8 @@ export function ProgramResultRow({ program, onReportClick }: ProgramResultRowPro
         aria-label={isFavorite ? "관심 공고 저장 해제" : "관심 공고 저장"}
         aria-pressed={isFavorite}
         onClick={toggleFavorite}
-        className="shrink-0"
+        disabled={favoriteSaving || !onFavoriteToggle}
+        className="shrink-0 disabled:cursor-wait disabled:opacity-60"
       >
         <img
           draggable={false}

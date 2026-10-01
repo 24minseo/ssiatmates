@@ -208,6 +208,45 @@ export type Database = {
           evaluated_at: string
         }
       }
+      get_my_saved_notice_ids_v1: {
+        Args: Record<string, never>
+        Returns: {
+          items: Array<{
+            notice_id: string
+          }>
+        }
+      }
+      set_my_notice_saved_v1: {
+        Args: {
+          p_notice_id: string
+          p_saved: boolean
+        }
+        Returns: {
+          notice_id: string
+          is_saved: boolean
+        }
+      }
+      get_my_saved_notices_v1: {
+        Args: Record<string, never>
+        Returns: {
+          items: Array<{
+            notice_id: string
+            title: string
+            organization: string
+            url: string | null
+            field: string | null
+            region: string | null
+            deadline: string | null
+            deadline_label: string | null
+            recruitment_status: string | null
+            status_label: string | null
+            days_until_deadline: number | null
+            is_closed: boolean
+            is_saved: boolean
+          }>
+          total_count: number
+        }
+      }
       get_my_notice_report_v1: {
         Args: {
           p_notice_id: string

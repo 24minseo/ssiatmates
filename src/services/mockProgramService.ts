@@ -10,6 +10,8 @@ export type Schedule = {
 
 export type Program = {
   id: string;
+  source?: "local" | "saved";
+  url?: string;
   title: string;
   organization: string;
   category: string;
@@ -17,6 +19,8 @@ export type Program = {
   region: string;
   status: ProgramStatus;
   deadline: string; // ISO string
+  deadlineLabel?: string | null;
+  isClosed?: boolean;
   createdAt: string; // ISO string
   fitScore: number;
   schedules: Schedule[];

@@ -1,0 +1,90 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
+
+export type SavedNoticeState = {
+  notice_id: string;
+};
+
+export type SavedNotice = {
+  notice_id: string;
+  title: string;
+  organization: string;
+  url: string | null;
+  field: string | null;
+  region: string | null;
+  deadline: string | null;
+  deadline_label: string | null;
+  recruitment_status: string | null;
+  status_label: string | null;
+  days_until_deadline: number | null;
+  is_closed: boolean;
+  is_saved?: boolean;
+};
+
+export type SavedNoticeListResponse = {
+  items: SavedNotice[];
+  total_count: number;
+};
+
+export type SavedNoticeMutationResponse = {
+  notice_id: string;
+  is_saved: boolean;
+};
+
+type SavedNoticesClient = Pick<SupabaseClient<Database>, "rpc">;
+
+export function createSavedNoticesApi(
+  client: SavedNoticesClient = supabase,
+) {
+  async function getSavedStates(): Promise<{ items: SavedNoticeState[] }> {
+    const { data, error } = await client.rpc("get_my_saved_notice_ids_v1", {});
+    if (error) throw error;
+    const response = (data ?? {}) as { items?: SavedNoticeState[] };
+    return { items: Array.isArray(response.items) ? response.items : [] };
+  }
+
+  async function setSaved(
+    noticeId: string,
+    isSaved: boolean,
+  ): Promise<SavedNoticeMutationResponse> {
+    if (!noticeId.trim()) throw new Error("공고 ID가 필요합니다.");
+    if (typeof isSaved !== "boolean") {
+      throw new Error("저장 여부는 true/false여야 합니다.");
+    }
+
+    const { data, error } = await client.rpc("set_my_notice_saved_v1", {
+      p_notice_id: noticeId,
+      p_saved: isSaved,
+    });
+    if (error) throw error;
+    if (!data) throw new Error("저장 상태 응답이 없습니다.");
+    return data as SavedNoticeMutationResponse;
+  }
+
+  async function getMySupportNotices(): Promise<SavedNoticeListResponse> {
+    const { data, error } = await client.rpc("get_my_saved_notices_v1", {});
+    if (error) throw error;
+    const response = (data ?? {}) as Partial<SavedNoticeListResponse>;
+    return {
+      items: Array.isArray(response.items) ? response.items : [],
+      total_count: typeof response.total_count === "number" ? response.total_count : 0,
+    };
+  }
+
+  return { getSavedStates, setSaved, getMySupportNotices };
+}
+
+export const savedNoticesApi = createSavedNoticesApi();
+
+export function applySavedStates<T extends { notice_id: string }>(
+  notices: T[],
+  savedItems: SavedNoticeState[],
+): Array<T & { is_saved: boolean }> {
+  const savedIds = new Set(savedItems.map((item) => item.notice_id));
+  return notices.map((item) => ({
+    ...item,
+    is_saved: savedIds.has(item.notice_id),
+  }));
+}

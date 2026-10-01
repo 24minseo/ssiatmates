@@ -169,7 +169,7 @@ function RootComponent() {
       <TooltipProvider>
         <AuthProvider>
           <AppSidebarProvider>
-            <Toaster position="bottom-right" />
+            <Toaster position="bottom-right" duration={3000} />
             <AuthBackgroundOverlay pathname={pathname} />
             <AuthGate pathname={pathname}>
               {activeNavigation ? (

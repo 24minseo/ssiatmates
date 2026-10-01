@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -11,6 +11,7 @@ import {
 } from "@/components/my-programs/ProgramSortDropdown";
 import { ProgramFormDialog } from "@/components/my-programs/ProgramFormDialog";
 import { ProgramScheduleDialog } from "@/components/my-programs/ProgramScheduleDialog";
+import { ProgramReportDialog } from "@/components/programs/ProgramReportDialog";
 import {
   StatusTabs,
   type StatusTabValue,
@@ -22,6 +23,12 @@ import {
   type ProgramStatus,
   type ScheduleInput,
 } from "@/services/programRepository";
+import {
+  savedNoticesApi,
+  type SavedNotice,
+} from "@/services/savedNoticesApi";
+import { useAuth } from "@/hooks/useAuth";
+import { formatProgramRegion } from "@/lib/programRegion";
 import { createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/my-programs")({
@@ -31,6 +38,72 @@ export const Route = createFileRoute("/my-programs")({
 
 type StatusFilter = StatusTabValue;
 type SortOption = ProgramSortOption;
+
+const NO_DEADLINE = "9999-12-31T23:59:59.000Z";
+const SAVED_STATUS_STORAGE_PREFIX = "ssiat.my-programs.saved-status.v1";
+
+function isProgramStatus(value: unknown): value is ProgramStatus {
+  return value === "not_started" || value === "preparing" || value === "submitted";
+}
+
+function savedStatusStorageKey(userId: string) {
+  return `${SAVED_STATUS_STORAGE_PREFIX}:${userId}`;
+}
+
+function readSavedStatuses(userId: string): Record<string, ProgramStatus> {
+  try {
+    const parsed: unknown = JSON.parse(
+      localStorage.getItem(savedStatusStorageKey(userId)) ?? "{}",
+    );
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return {};
+
+    const statuses: Record<string, ProgramStatus> = {};
+    for (const [noticeId, status] of Object.entries(parsed)) {
+      if (isProgramStatus(status)) statuses[noticeId] = status;
+    }
+    return statuses;
+  } catch {
+    return {};
+  }
+}
+
+function writeSavedStatus(userId: string, noticeId: string, status: ProgramStatus) {
+  const statuses = readSavedStatuses(userId);
+  localStorage.setItem(
+    savedStatusStorageKey(userId),
+    JSON.stringify({ ...statuses, [noticeId]: status }),
+  );
+}
+
+function removeSavedStatus(userId: string, noticeId: string) {
+  try {
+    const statuses = readSavedStatuses(userId);
+    delete statuses[noticeId];
+    localStorage.setItem(savedStatusStorageKey(userId), JSON.stringify(statuses));
+  } catch {
+    // Status cleanup is best effort; unsaving the notice should still succeed.
+  }
+}
+
+function toSavedProgram(item: SavedNotice, index: number): Program {
+  return {
+    id: item.notice_id,
+    source: "saved",
+    ...(item.url ? { url: item.url } : {}),
+    title: item.title,
+    organization: item.organization,
+    category: item.field ?? "지원 분야 확인 필요",
+    stage: "",
+    region: formatProgramRegion(item.region) ?? "",
+    status: "not_started",
+    deadline: item.deadline ?? NO_DEADLINE,
+    deadlineLabel: item.deadline_label ?? (item.is_closed ? "마감" : "일정 확인 필요"),
+    isClosed: item.is_closed,
+    createdAt: new Date(Date.now() - index).toISOString(),
+    fitScore: 0,
+    schedules: [],
+  };
+}
 
 function SquareAlertIcon({ className }: { className?: string }) {
   return (
@@ -54,6 +127,8 @@ function SquareAlertIcon({ className }: { className?: string }) {
 }
 
 function MyProgramsPage() {
+  const navigate = Route.useNavigate();
+  const { loading: authLoading, session } = useAuth();
   const [programs, setPrograms] = useState<Program[]>([]);
   const [activeFilter, setActiveFilter] = useState<StatusFilter>("all");
   const [sort, setSort] = useState<SortOption>("created");
@@ -64,27 +139,59 @@ function MyProgramsPage() {
   const [editingProgram, setEditingProgram] = useState<Program | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Program | null>(null);
   const [scheduleProgram, setScheduleProgram] = useState<Program | null>(null);
+  const [reportTarget, setReportTarget] = useState<Program | null>(null);
+  const savedRequestRef = useRef(0);
 
   useEffect(() => {
     let mounted = true;
-    programService
-      .list()
-      .then((items) => {
-        if (!mounted) return;
-        setPrograms(items);
-        setLoadError(null);
+    const requestId = savedRequestRef.current + 1;
+    savedRequestRef.current = requestId;
+
+    if (authLoading) return () => {
+      mounted = false;
+    };
+
+    if (!session?.user.id) {
+      setPrograms([]);
+      setLoading(false);
+      setLoadError(null);
+      return () => {
+        mounted = false;
+      };
+    }
+
+    const userId = session.user.id;
+    setLoading(true);
+    setLoadError(null);
+    savedNoticesApi
+      .getMySupportNotices()
+      .then(({ items }) => {
+        if (!mounted || savedRequestRef.current !== requestId) return;
+        const savedStatuses = readSavedStatuses(userId);
+        setPrograms(
+          items.map((item, index) => {
+            const program = toSavedProgram(item, index);
+            return {
+              ...program,
+              status: savedStatuses[item.notice_id] ?? program.status,
+            };
+          }),
+        );
       })
-      .catch(() => {
-        if (mounted) setLoadError("지원사업을 불러오지 못했습니다.");
+      .catch((error) => {
+        if (!mounted || savedRequestRef.current !== requestId) return;
+        console.error("[my-programs] 저장 공고 조회 실패", error);
+        setPrograms([]);
+        setLoadError("저장한 지원사업을 불러오지 못했습니다.");
       })
       .finally(() => {
-        if (mounted) setLoading(false);
+        if (mounted && savedRequestRef.current === requestId) setLoading(false);
       });
 
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [authLoading, session?.user.id]);
 
   const counts = useMemo(
     () => ({
@@ -168,11 +275,20 @@ function MyProgramsPage() {
     if (!deleteTarget) return;
     setSaving(true);
     try {
-      await programService.remove(deleteTarget.id);
+      if (deleteTarget.source === "saved") {
+        await savedNoticesApi.setSaved(deleteTarget.id, false);
+        if (session?.user.id) removeSavedStatus(session.user.id, deleteTarget.id);
+      } else {
+        await programService.remove(deleteTarget.id);
+      }
       setPrograms((current) =>
         current.filter((program) => program.id !== deleteTarget.id),
       );
-      toast.success("지원사업을 삭제했습니다.");
+      toast.success(
+        deleteTarget.source === "saved"
+          ? "관심 공고 저장을 해제했습니다."
+          : "지원사업을 삭제했습니다.",
+      );
       setDeleteTarget(null);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "삭제하지 못했습니다.");
@@ -183,6 +299,14 @@ function MyProgramsPage() {
 
   async function handleStatusChange(program: Program, status: ProgramStatus) {
     try {
+      if (program.source === "saved") {
+        if (!session?.user.id) throw new Error("로그인이 필요합니다.");
+        writeSavedStatus(session.user.id, program.id, status);
+        replaceProgram({ ...program, status });
+        toast.success("상태를 변경했습니다.");
+        return;
+      }
+
       const updated = await programService.updateStatus(program.id, status);
       replaceProgram(updated);
       toast.success("상태를 변경했습니다.");
@@ -284,7 +408,7 @@ function MyProgramsPage() {
           <Loader2 className="mr-2 size-5 animate-spin" aria-hidden />
           불러오는 중…
         </div>
-      ) : visiblePrograms.length > 0 ? (
+      ) : loadError ? null : visiblePrograms.length > 0 ? (
         <div className="space-y-[18px]">
           {visiblePrograms.map((program) => (
             <ProgramCard
@@ -292,26 +416,30 @@ function MyProgramsPage() {
               program={program}
               onEdit={openEditDialog}
               onDelete={setDeleteTarget}
+              onReportClick={setReportTarget}
               onStatusChange={handleStatusChange}
               onManageSchedules={setScheduleProgram}
             />
           ))}
         </div>
-      ) : (
+      ) : counts.all === 0 ? (
         <div className="rounded-[12px] bg-item-hover px-6 py-16 text-center">
-          <p className="text-[16px] font-semibold text-ink">
-            표시할 지원사업이 없습니다.
-          </p>
+          <p className="text-[16px] font-semibold text-ink">저장된 지원사업이 없습니다</p>
           <p className="mt-2 text-[14px] text-ink-muted">
-            새 지원사업을 추가하거나 다른 상태를 선택해보세요.
+            지원사업을 탐색하거나 직접 추가해 진행 상황을 관리해 보세요.
           </p>
           <Button
             type="button"
-            onClick={openCreateDialog}
+            onClick={() => void navigate({ to: "/programs" })}
             className="mt-5 h-10 rounded-[10px] bg-brand px-4 text-[14px] font-semibold text-brand-foreground shadow-none hover:bg-brand/88"
           >
-            지원사업 추가
+            지원사업 탐색
           </Button>
+        </div>
+      ) : (
+        <div className="rounded-[12px] bg-item-hover px-6 py-16 text-center">
+          <p className="text-[16px] font-semibold text-ink">표시할 지원사업이 없습니다.</p>
+          <p className="mt-2 text-[14px] text-ink-muted">다른 상태를 선택해보세요.</p>
         </div>
       )}
 
@@ -333,6 +461,15 @@ function MyProgramsPage() {
         onAdd={handleScheduleAdd}
         onToggle={handleScheduleToggle}
         onRemove={handleScheduleRemove}
+      />
+
+      <ProgramReportDialog
+        open={Boolean(reportTarget)}
+        onOpenChange={(open) => {
+          if (!open) setReportTarget(null);
+        }}
+        noticeId={reportTarget?.source === "saved" ? reportTarget.id : null}
+        noticeTitle={reportTarget?.title ?? null}
       />
 
       <AlertDialog

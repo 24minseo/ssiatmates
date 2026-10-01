@@ -283,6 +283,14 @@
   to { transform: rotate(360deg); }
 }
 
+.status-actions-menu:has([data-highlighted]) [data-state="checked"]:not([data-highlighted]) {
+  background-color: transparent;
+}
+
+.status-actions-menu [data-state="checked"][data-highlighted] {
+  background-color: var(--dropdown-hover);
+}
+
 .today-news-card {
   isolation: isolate;
   overflow: visible;
@@ -517,6 +525,12 @@
 button:not(:disabled),
 a[href] {
   cursor: pointer;
+}
+
+/* Sonner adds a 1px border to every styled toast by default. */
+[data-sonner-toast][data-styled="true"] {
+  border: 0 !important;
+  box-shadow: 0 8px 30px 0 rgba(64, 72, 66, 0.2) !important;
 }
 
 .bg-overlay {

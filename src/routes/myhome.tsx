@@ -220,9 +220,9 @@ function MyHomePage() {
         })}
       </section>
 
-      <section className="mt-12 grid min-h-[430px] grid-cols-[minmax(0,3fr)_minmax(220px,1fr)] gap-4">
-        <div className="rounded-[12px] bg-[#F6F8F7]" />
-        <div className="rounded-[12px] bg-[#F6F8F7]" />
+      <section className="mt-12 grid min-h-[430px] grid-cols-4 gap-4">
+        <div className="col-span-3 rounded-[12px] bg-[#F6F8F7]" />
+        <div className="col-span-1 rounded-[12px] bg-[#F6F8F7]" />
       </section>
     </>
   );

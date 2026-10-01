@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Check, MoreVertical, X } from "lucide-react";
+import { toast } from "sonner";
 import { createFileRoute } from "@tanstack/react-router";
 import { Pagination } from "@/components/ui/pagination";
 import { ProgramSortDropdown, type ProgramSortOption } from "@/components/my-programs/ProgramSortDropdown";
@@ -14,32 +15,23 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { ProgramReportDialog } from "@/components/programs/ProgramReportDialog";
 import { getSupportFilterSession, setSupportFilterSession } from "@/lib/supportFilterSession";
+import { applySavedStates, savedNoticesApi } from "@/services/savedNoticesApi";
+import { formatProgramRegion } from "@/lib/programRegion";
 
 const PAGE_SIZE = 20;
+const PREFERENCE_SUGGESTIONS = [
+  "온라인으로 신청하고 싶어요",
+  "사업계획서 없이 신청하고 싶어요",
+  "필수 서류가 3개 이하면 좋겠어요",
+  "면접이 없으면 좋겠어요",
+  "발표 심사가 없으면 좋겠어요",
+  "혼자 참여할 수 있으면 좋겠어요",
+] as const;
 
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"] as const;
-const NATIONWIDE_REGIONS = new Set([
-  "서울",
-  "부산",
-  "대구",
-  "인천",
-  "광주",
-  "대전",
-  "울산",
-  "세종",
-  "경기",
-  "강원",
-  "충북",
-  "충남",
-  "전북",
-  "전남",
-  "경북",
-  "경남",
-  "제주",
-]);
-
 type NoticeMatchItem = {
   notice_id: string;
+  is_saved?: boolean;
   title: string;
   organization: string;
   url: string | null;
@@ -72,21 +64,8 @@ function formatDeadline(deadline: string | null): string {
   return `~${month}.${day}(${WEEKDAYS[date.getDay()]})`;
 }
 
-function formatRegion(region: string | null): string | null {
-  if (!region?.trim()) return null;
-  const regions = region
-    .split(",")
-    .map((value) => value.trim())
-    .flatMap((value) => (value === "전남광주" ? ["전남", "광주"] : [value]));
-  const uniqueRegions = new Set(regions);
-  return uniqueRegions.size === NATIONWIDE_REGIONS.size &&
-    [...NATIONWIDE_REGIONS].every((value) => uniqueRegions.has(value))
-    ? "전국"
-    : region.trim();
-}
-
 function toMatchedProgram(item: NoticeMatchItem): MatchedProgram {
-  const categories = [item.field, formatRegion(item.region)]
+  const categories = [item.field, formatProgramRegion(item.region)]
     .filter((value): value is string => Boolean(value?.trim()))
     .map((value) => value.trim())
     .filter((value) => value.length <= 20);
@@ -95,6 +74,7 @@ function toMatchedProgram(item: NoticeMatchItem): MatchedProgram {
 
   return {
     id: item.notice_id,
+    is_saved: item.is_saved === true,
     ...(item.url ? { url: item.url } : {}),
     organization: item.organization,
     title: item.title,
@@ -209,12 +189,6 @@ function ExcludedProgramRow({ program }: { program: MatchedProgram }) {
           {program.deadline}
         </p>
       </div>
-      <button
-        type="button"
-        className="shrink-0 rounded-[10px] px-3 py-2 text-[13px] font-medium text-ink-muted transition-colors hover:bg-item-hover"
-      >
-        복원
-      </button>
     </article>
   );
 }
@@ -224,6 +198,8 @@ function ProgramsPage() {
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
   const [query, setQuery] = useState("");
+  const [isQueryFocused, setIsQueryFocused] = useState(false);
+  const preferenceInputRef = useRef<HTMLInputElement>(null);
   const [sort, setSort] = useState<ProgramSortOption>("deadline");
   const [tab, setTab] = useState<ProgramResultsTab>(search["tab"] ?? "recommended");
   const [page, setPage] = useState(1);
@@ -241,6 +217,7 @@ function ProgramsPage() {
   const [excludedPrograms, setExcludedPrograms] = useState<MatchedProgram[]>([]);
   const [isLoadingExcluded, setIsLoadingExcluded] = useState(false);
   const [excludedError, setExcludedError] = useState<string | null>(null);
+  const [savingNoticeIds, setSavingNoticeIds] = useState<Set<string>>(new Set());
   const [reportTarget, setReportTarget] = useState<MatchedProgram | null>(null);
 
   useEffect(() => {
@@ -277,9 +254,13 @@ function ProgramsPage() {
       try {
         const fields = getSelectedFields(supportCategories, usesProfileDefault);
         const offset = (page - 1) * PAGE_SIZE;
-        const responses = await Promise.all(
-          fields.map((field) => loadMatchingNotices("active", field, offset)),
-        );
+        const [responses, savedState] = await Promise.all([
+          Promise.all(fields.map((field) => loadMatchingNotices("active", field, offset))),
+          savedNoticesApi.getSavedStates().catch((error) => {
+            console.error("[programs] 저장 상태 조회 실패", error);
+            return { items: [] };
+          }),
+        ]);
 
         if (cancelled || matchingRequestRef.current !== requestId) return;
 
@@ -288,7 +269,11 @@ function ProgramsPage() {
           response.items.forEach((item) => uniqueItems.set(item.notice_id, item));
         });
 
-        setMatchedPrograms(Array.from(uniqueItems.values()).map(toMatchedProgram));
+        const itemsWithSavedState = applySavedStates(
+          Array.from(uniqueItems.values()),
+          savedState.items,
+        );
+        setMatchedPrograms(itemsWithSavedState.map(toMatchedProgram));
         setActiveTotalCount(
           responses.reduce(
             (total, response) => total + (response.total_count ?? response.items.length),
@@ -388,6 +373,39 @@ function ProgramsPage() {
     void loadExcludedNotices();
   };
 
+  const handleFavoriteToggle = async (program: MatchedProgram) => {
+    if (savingNoticeIds.has(program.id)) return;
+
+    setSavingNoticeIds((current) => new Set(current).add(program.id));
+    try {
+      const result = await savedNoticesApi.setSaved(program.id, program.is_saved !== true);
+      setMatchedPrograms((current) =>
+        current.map((item) =>
+          item.id === program.id ? { ...item, is_saved: result.is_saved } : item,
+        ),
+      );
+      setExcludedPrograms((current) =>
+        current.map((item) =>
+          item.id === program.id ? { ...item, is_saved: result.is_saved } : item,
+        ),
+      );
+      toast.success(
+        result.is_saved
+          ? "내 지원사업에 저장되었습니다."
+          : "내 지원사업에서 삭제되었습니다.",
+      );
+    } catch (error) {
+      console.error("[programs] 저장 상태 변경 실패", error);
+      toast.error("관심 공고 저장 상태를 변경하지 못했습니다.");
+    } finally {
+      setSavingNoticeIds((current) => {
+        const next = new Set(current);
+        next.delete(program.id);
+        return next;
+      });
+    }
+  };
+
   const resultsByTab = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
     const filterAndSort = (items: MatchedProgram[]) => {
@@ -457,8 +475,18 @@ function ProgramsPage() {
             if (profile) setSupportFilterSession(profile.id, next);
           }}
         />
-        <div className="flex h-12 items-center gap-2 rounded-xl border border-field-border pl-6 pr-1.5">
+        <div
+          className="relative z-30 flex h-12 items-center gap-2 rounded-xl border border-field-border bg-white pl-6 pr-1.5"
+          onFocus={() => setIsQueryFocused(true)}
+          onBlur={(event) => {
+            const nextFocused = event.relatedTarget as Node | null;
+            if (!nextFocused || !event.currentTarget.contains(nextFocused)) {
+              setIsQueryFocused(false);
+            }
+          }}
+        >
           <input
+            ref={preferenceInputRef}
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="선호하는 조건을 입력해 보세요"
@@ -472,6 +500,29 @@ function ProgramsPage() {
           >
             <img draggable={false} src="/assets/programs/ai-search.svg" alt="" className="pointer-events-none select-none size-6" />
           </button>
+          {isQueryFocused ? (
+            <div className="absolute left-0 top-full z-50 mt-1 w-full rounded-xl border-0 bg-white p-6 shadow-dropdown">
+              <p className="mb-3 text-[16px] font-semibold leading-5 text-ink">
+                이런 조건은 어때요?
+              </p>
+              <div className="flex max-w-full flex-nowrap gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                {PREFERENCE_SUGGESTIONS.map((suggestion) => (
+                  <button
+                    key={suggestion}
+                    type="button"
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={() => {
+                      setQuery(suggestion);
+                      preferenceInputRef.current?.focus();
+                    }}
+                    className="inline-flex h-8 shrink-0 items-center whitespace-nowrap rounded-full bg-item-hover px-3 text-sm font-normal text-ink-muted transition-colors hover:bg-secondary-btn-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                  >
+                    {suggestion}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null}
         </div>
       </div>
 
@@ -523,7 +574,13 @@ function ProgramsPage() {
             <p className="bg-white px-8 py-16 text-center text-ink-muted">{matchError}</p>
           ) : results.length ? (
             results.map((program) => (
-              <ProgramResultRow key={program.id} program={program} onReportClick={setReportTarget} />
+              <ProgramResultRow
+                key={program.id}
+                program={program}
+                onReportClick={setReportTarget}
+                onFavoriteToggle={handleFavoriteToggle}
+                favoriteSaving={savingNoticeIds.has(program.id)}
+              />
             ))
           ) : (
             <p className="bg-white px-8 py-16 text-center text-ink-muted">

@@ -29,7 +29,20 @@ function startOfToday() {
   return date;
 }
 
-export function getDeadlineLabel(deadline: string) {
+export function getDeadlineLabel(
+  deadline: string,
+  presetLabel?: string | null,
+  isClosed = false,
+) {
+  if (presetLabel) {
+    const days = Number(presetLabel.replace("D-", ""));
+    return {
+      label: presetLabel,
+      urgent: presetLabel === "D-DAY" || (!Number.isNaN(days) && days <= 7),
+      expired: isClosed || presetLabel === "마감",
+    };
+  }
+
   const target = new Date(deadline);
   target.setHours(0, 0, 0, 0);
   const diff = Math.round(
@@ -55,6 +68,7 @@ type ProgramCardProps = {
   program: Program;
   onEdit: (program: Program) => void;
   onDelete: (program: Program) => void;
+  onReportClick?: (program: Program) => void;
   onStatusChange: (program: Program, status: ProgramStatus) => void;
   onManageSchedules: (program: Program) => void;
 };
@@ -62,10 +76,13 @@ type ProgramCardProps = {
 export function ProgramCard({
   program,
   onDelete,
+  onReportClick,
   onStatusChange,
   onManageSchedules,
 }: ProgramCardProps) {
-  const deadline = getDeadlineLabel(program.deadline);
+  const isSavedNotice = program.source === "saved";
+  const canOpenReport = isSavedNotice && Boolean(onReportClick);
+  const deadline = getDeadlineLabel(program.deadline, program.deadlineLabel, program.isClosed);
   const nextSchedule = getNextSchedule(program);
   const remaining = program.schedules.filter((s) => !s.completed).length;
 
@@ -76,7 +93,13 @@ export function ProgramCard({
         <div className="w-fit min-w-0 max-w-full">
           <div className="flex min-w-0 items-center gap-2">
             <h3 className="min-w-0 flex-1 truncate break-keep text-[20px] font-semibold leading-6 text-ink">
-              {program.title}
+              {program.url ? (
+                <a href={program.url} target="_blank" rel="noreferrer" className="hover:underline hover:underline-offset-4">
+                  {program.title}
+                </a>
+              ) : (
+                program.title
+              )}
             </h3>
             <span
               className={`shrink-0 rounded-[6px] px-1.5 py-0.5 text-[12px] font-semibold ${
@@ -112,34 +135,42 @@ export function ProgramCard({
                 <span aria-hidden className="flex size-6 flex-col items-center justify-center gap-[3px]"><span className="size-[2px] rounded-full bg-[#84968E] transition-colors group-hover/more:bg-ink" /><span className="size-[2px] rounded-full bg-[#84968E] transition-colors group-hover/more:bg-ink" /><span className="size-[2px] rounded-full bg-[#84968E] transition-colors group-hover/more:bg-ink" /></span>
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-36 rounded-xl border-0 bg-surface p-1 shadow-none" style={{ boxShadow: "var(--shadow-dropdown)" }}>
-              <DropdownMenuItem className="cursor-pointer px-[10px] text-ink hover:bg-dropdown-hover data-[highlighted]:bg-dropdown-hover focus:bg-dropdown-hover focus:text-ink">
+            <DropdownMenuContent align="end" className="status-actions-menu w-36 rounded-xl border-0 bg-surface p-1 shadow-none" style={{ boxShadow: "var(--shadow-dropdown)" }}>
+              <DropdownMenuItem
+                disabled={!canOpenReport}
+                className="cursor-pointer px-[10px] text-ink hover:bg-dropdown-hover data-[highlighted]:bg-dropdown-hover focus:bg-dropdown-hover focus:text-ink"
+                onSelect={() => {
+                  if (canOpenReport) onReportClick?.(program);
+                }}
+              >
                 리포트 보기
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuLabel className="px-[10px] text-ink">상태 변경</DropdownMenuLabel>
+              <DropdownMenuLabel className="px-[10px] text-[12px] font-medium text-ink-muted">
+                상태 변경
+              </DropdownMenuLabel>
               <DropdownMenuRadioGroup
                 value={program.status}
                 onValueChange={(value) =>
                   onStatusChange(program, value as ProgramStatus)
                 }
               >
-                <DropdownMenuRadioItem value="not_started" className="pl-8 pr-[10px] hover:bg-dropdown-hover data-[highlighted]:bg-dropdown-hover focus:bg-dropdown-hover">
-                  시작 전
-                </DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="preparing" className="pl-8 pr-[10px] hover:bg-dropdown-hover data-[highlighted]:bg-dropdown-hover focus:bg-dropdown-hover">
-                  준비 중
-                </DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="submitted" className="pl-8 pr-[10px] hover:bg-dropdown-hover data-[highlighted]:bg-dropdown-hover focus:bg-dropdown-hover">
-                  제출 완료
-                </DropdownMenuRadioItem>
+                {(["not_started", "preparing", "submitted"] as const).map((status) => (
+                  <DropdownMenuRadioItem
+                    key={status}
+                    value={status}
+                    className="pl-8 pr-[10px] text-[14px] text-ink hover:bg-dropdown-hover data-[state=checked]:bg-dropdown-hover data-[state=checked]:font-bold data-[state=checked]:text-ink data-[highlighted]:bg-dropdown-hover focus:bg-dropdown-hover"
+                  >
+                    {PROGRAM_STATUS_LABEL[status]}
+                  </DropdownMenuRadioItem>
+                ))}
               </DropdownMenuRadioGroup>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                className="px-[10px] text-destructive hover:bg-destructive-surface data-[highlighted]:bg-destructive-surface focus:bg-destructive-surface focus:text-destructive"
+                className="cursor-pointer px-[10px] text-destructive hover:bg-destructive-surface data-[highlighted]:bg-destructive-surface focus:bg-destructive-surface focus:text-destructive"
                 onSelect={() => onDelete(program)}
               >
-                삭제하기
+                {isSavedNotice ? "저장 해제" : "삭제하기"}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

@@ -109,7 +109,7 @@ export function SupportCategorySelect({ value, onChange }: SupportCategorySelect
         align="start"
         sideOffset={6}
         onOpenAutoFocus={(event) => event.preventDefault()}
-        className="w-[560px] max-w-[calc(100vw-32px)] rounded-xl border-0 bg-white p-6 shadow-dropdown"
+        className="w-[560px] max-w-[calc(100vw-32px)] rounded-xl border-0 bg-white p-6 shadow-dropdown data-[state=closed]:animate-none data-[state=closed]:opacity-0"
       >
         {showNotice ? (
           <div className="mb-4 flex h-11 items-center gap-1 rounded-[12px] bg-item-hover px-3 py-2 text-[14px] font-medium leading-5 text-ink-muted">
