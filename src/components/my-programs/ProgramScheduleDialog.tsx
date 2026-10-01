@@ -60,7 +60,7 @@ export function ProgramScheduleDialog({
       <DialogContent className="w-[520px] max-w-[calc(100vw-40px)] rounded-[20px] border-0 bg-surface p-8">
         <DialogHeader className="text-left">
           <DialogTitle className="pr-8 text-[20px] font-bold text-ink">
-            일정 관리
+            {schedules.length > 0 ? "공고 일정 관리" : "공고 일정 추가하기"}
           </DialogTitle>
           <DialogDescription className="truncate text-[14px] text-ink-muted">
             {program?.title}

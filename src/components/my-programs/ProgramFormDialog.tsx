@@ -4,24 +4,15 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { FormField } from "@/components/onboarding/FormField";
 import type {
   Program,
   ProgramInput,
-  ProgramStatus,
 } from "@/services/mockProgramService";
 
 type ProgramFormDialogProps = {
@@ -59,10 +50,14 @@ export function ProgramFormDialog({
 }: ProgramFormDialogProps) {
   const [form, setForm] = useState<ProgramInput>(emptyForm);
   const [error, setError] = useState<string | null>(null);
+  const [step, setStep] = useState(1);
+  const [sourceUrl, setSourceUrl] = useState("");
 
   useEffect(() => {
     if (!open) return;
     setError(null);
+    setStep(program ? 2 : 1);
+    setSourceUrl("");
     setForm(
       program
         ? {
@@ -83,23 +78,37 @@ export function ProgramFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[520px] max-w-[calc(100vw-40px)] rounded-[20px] border-0 bg-surface p-8">
-        <DialogHeader className="text-left">
-          <DialogTitle className="text-[20px] font-bold text-ink">
-            {program ? "지원사업 수정" : "지원사업 추가"}
+      <DialogContent
+        className="w-[600px] max-w-[calc(100vw-40px)] gap-0 rounded-[20px] border-0 bg-surface p-6"
+        closeClassName="right-5 top-5 flex size-9 items-center justify-center rounded-lg text-ink-muted opacity-100 transition-colors hover:bg-item-hover hover:text-ink hover:opacity-100 focus:outline-none focus:ring-0 focus:ring-offset-0 [&_svg]:size-6"
+      >
+        <DialogHeader className="space-y-1 text-left">
+          <DialogTitle className="text-[20px] font-bold leading-7 text-ink">
+            {program ? "지원사업 수정" : "수동공고 추가"}
           </DialogTitle>
-          <DialogDescription className="text-[14px] text-ink-muted">
-            지원사업 정보를 입력해주세요.
-          </DialogDescription>
         </DialogHeader>
 
         <form
-          className="mt-2 space-y-4"
+          className="mt-4 space-y-3"
+          noValidate
           onSubmit={(event) => {
             event.preventDefault();
             if (saving) return;
+            if (step === 1) {
+              if (!sourceUrl.trim()) {
+                setError("공고 URL을 입력해주세요.");
+                return;
+              }
+              if (!/^https?:\/\//i.test(sourceUrl.trim())) {
+                setError("http:// 또는 https://로 시작하는 URL을 입력해주세요.");
+                return;
+              }
+              setError(null);
+              setStep(2);
+              return;
+            }
             if (!form.title.trim()) {
-              setError("지원사업명을 입력해주세요.");
+              setError("제목을 입력해주세요.");
               return;
             }
             if (!form.deadline) {
@@ -115,26 +124,47 @@ export function ProgramFormDialog({
             });
           }}
         >
-          <div className="space-y-1.5">
-            <Label htmlFor="program-title" className="text-[14px] text-ink">
-              지원사업명
-            </Label>
+          {step === 1 ? (
+            <FormField
+              label="공고 URL"
+              htmlFor="program-source-url"
+              labelVariant="muted"
+              error={step === 1 ? error ?? undefined : undefined}
+              required
+            >
+              <Input
+                id="program-source-url"
+                type="text"
+                inputMode="url"
+                className={inputClass}
+                value={sourceUrl}
+                placeholder="공고 링크를 붙여넣어주세요."
+                autoFocus
+                onChange={(event) => setSourceUrl(event.target.value)}
+              />
+            </FormField>
+          ) : null}
+
+          {step === 2 ? (
+            <>
+          <FormField
+            label="제목"
+            htmlFor="program-title"
+            labelVariant="muted"
+            required
+          >
             <Input
               id="program-title"
               className={inputClass}
               value={form.title}
-              placeholder="지원사업명을 입력해주세요."
+              placeholder="제목을 입력해주세요."
               onChange={(event) =>
                 setForm((prev) => ({ ...prev, title: event.target.value }))
               }
             />
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label htmlFor="program-org" className="text-[14px] text-ink">
-                기관명
-              </Label>
+          </FormField>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <FormField label="기관명" htmlFor="program-org" labelVariant="muted">
               <Input
                 id="program-org"
                 className={inputClass}
@@ -146,11 +176,8 @@ export function ProgramFormDialog({
                   }))
                 }
               />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="program-category" className="text-[14px] text-ink">
-                카테고리
-              </Label>
+            </FormField>
+            <FormField label="카테고리" htmlFor="program-category" labelVariant="muted">
               <Input
                 id="program-category"
                 className={inputClass}
@@ -159,24 +186,8 @@ export function ProgramFormDialog({
                   setForm((prev) => ({ ...prev, category: event.target.value }))
                 }
               />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="program-stage" className="text-[14px] text-ink">
-                창업단계
-              </Label>
-              <Input
-                id="program-stage"
-                className={inputClass}
-                value={form.stage}
-                onChange={(event) =>
-                  setForm((prev) => ({ ...prev, stage: event.target.value }))
-                }
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="program-region" className="text-[14px] text-ink">
-                지역
-              </Label>
+            </FormField>
+            <FormField label="지역" htmlFor="program-region" labelVariant="muted">
               <Input
                 id="program-region"
                 className={inputClass}
@@ -185,64 +196,58 @@ export function ProgramFormDialog({
                   setForm((prev) => ({ ...prev, region: event.target.value }))
                 }
               />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="program-deadline" className="text-[14px] text-ink">
-                마감일
-              </Label>
+            </FormField>
+            <FormField
+              label="마감일"
+              htmlFor="program-deadline"
+              labelVariant="muted"
+              required
+            >
               <Input
                 id="program-deadline"
                 type="date"
-                className={inputClass}
+                className={`${inputClass} appearance-none [&::-webkit-calendar-picker-indicator]:hidden ${form.deadline ? "text-ink" : "text-guide-text"}`}
                 value={form.deadline}
                 onChange={(event) =>
                   setForm((prev) => ({ ...prev, deadline: event.target.value }))
                 }
               />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-[14px] text-ink">상태</Label>
-              <Select
-                value={form.status}
-                onValueChange={(value) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    status: value as ProgramStatus,
-                  }))
-                }
-              >
-                <SelectTrigger className={inputClass}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="rounded-[12px]">
-                  <SelectItem value="not_started">시작 전</SelectItem>
-                  <SelectItem value="preparing">준비 중</SelectItem>
-                  <SelectItem value="submitted">제출 완료</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            </FormField>
           </div>
+            </>
+          ) : null}
 
-          {error ? (
+          {error && step === 2 ? (
             <p role="alert" className="text-[13px] text-destructive">
               {error}
             </p>
           ) : null}
 
-          <DialogFooter className="mt-2 flex-row justify-end gap-2">
-            <Button
-              type="button"
-              onClick={() => onOpenChange(false)}
-              className="h-11 rounded-[12px] bg-secondary-btn px-5 text-[15px] font-semibold text-secondary-btn-text shadow-none hover:bg-secondary-btn-hover hover:text-secondary-btn-text-hover"
-            >
-              취소
-            </Button>
+          <DialogFooter className="mt-8 flex-row justify-end gap-0">
+            {step === 2 && !program ? (
+              <Button
+                type="button"
+                onClick={() => {
+                  setError(null);
+                  setStep(1);
+                }}
+                className="h-11 rounded-[12px] bg-secondary-btn px-5 text-[15px] font-semibold text-secondary-btn-text shadow-none hover:bg-secondary-btn-hover hover:text-secondary-btn-text-hover"
+              >
+                이전
+              </Button>
+            ) : null}
             <Button
               type="submit"
-              disabled={saving}
+              disabled={saving || (step === 1 && !sourceUrl.trim())}
               className="h-11 rounded-[12px] bg-brand px-5 text-[15px] font-semibold text-brand-foreground shadow-none hover:bg-brand/88 active:bg-brand-pressed disabled:bg-brand-disabled disabled:opacity-100"
             >
-              {saving ? "저장 중…" : "저장하기"}
+              {step === 1
+                ? "다음"
+                : saving
+                  ? "저장 중…"
+                  : program
+                    ? "저장하기"
+                    : "추가하기"}
             </Button>
           </DialogFooter>
         </form>

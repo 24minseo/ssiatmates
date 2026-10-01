@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, CalendarClock, Sparkles } from "lucide-react";
+import { AlertTriangle, CalendarClock, LogOut, Sparkles } from "lucide-react";
 
 import {
   DropdownMenu,
@@ -150,10 +150,11 @@ export function AppHeader({ notifications = notificationExamples }: AppHeaderPro
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
-              className="cursor-pointer px-[10px] text-destructive hover:bg-destructive-surface data-[highlighted]:bg-destructive-surface focus:bg-destructive-surface focus:text-destructive"
+              className="cursor-pointer px-[10px] text-ink hover:bg-dropdown-hover data-[highlighted]:bg-dropdown-hover focus:bg-dropdown-hover focus:text-ink"
               onSelect={() => void signOut()}
             >
               로그아웃
+              <LogOut aria-hidden="true" className="ml-auto size-4 text-icon-muted" />
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
