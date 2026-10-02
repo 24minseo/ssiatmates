@@ -111,7 +111,7 @@ type PreferenceFeedback = {
   icon?: "alert";
 };
 const PREFERENCE_FEEDBACK_BASE_CLASS =
-  "relative flex min-h-6 items-center gap-1 rounded-full border border-transparent px-[10px] py-1 text-[14px] font-semibold";
+  "relative flex min-h-6 items-start gap-1 border border-transparent px-[10px] py-1 text-[14px] font-semibold leading-5";
 
 async function loadMatchingNotices(
   view: MatchingView,
@@ -220,6 +220,16 @@ function ProgramsPage() {
   const [isSearchLoadingVisible, setIsSearchLoadingVisible] = useState(false);
   const [showWaitMessage, setShowWaitMessage] = useState(false);
   const searchLoaderVisible = isSearchLoadingVisible;
+  const feedbackForDisplay =
+    preferenceFeedback ??
+    (import.meta.env.DEV
+      ? {
+          tone: "success" as const,
+          icon: "alert" as const,
+          message:
+            "선호조건을 분석했지만 일부 조건을 확인할 수 없어요. 발표나 피칭 절차도 허용되는지, 또는 면접만 제외하면 되는지 알려주세요.",
+        }
+      : null);
   const preferenceFeedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const searchLoadingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const preferenceStorageKey = session?.user.id ?? null;
@@ -646,19 +656,23 @@ function ProgramsPage() {
             }
           }}
         >
-          {preferenceFeedback ? (
+          {feedbackForDisplay ? (
             <div
               key={preferenceFeedbackVersion}
-              className={`preference-feedback-bubble absolute bottom-[calc(100%-6px)] left-[11px] z-40 overflow-visible ${
+              className={`preference-feedback-bubble absolute bottom-[calc(100%-6px)] left-[11px] z-40 w-max max-w-[calc(100%_-_11px)] overflow-visible ${
+                feedbackForDisplay.message.length > 60 ? "-translate-y-1" : ""
+              } ${
                 preferenceFeedbackVersion > 1 ? "preference-feedback-bubble-refresh" : ""
               } ${preferenceFeedbackExiting ? "preference-feedback-bubble-exit" : ""}
               }`}
               data-layer-name="preference-feedback-bubble"
             >
               <div
-                role={preferenceFeedback.tone === "error" ? "alert" : "status"}
+                role={feedbackForDisplay.tone === "error" ? "alert" : "status"}
                 className={`${PREFERENCE_FEEDBACK_BASE_CLASS} ${
-                preferenceFeedback.tone === "error"
+                feedbackForDisplay.message.length > 60 ? "rounded-[12px]" : "rounded-full"
+              } ${
+                feedbackForDisplay.tone === "error"
                   ? "border border-transparent bg-[#FFF3F3] text-[#D84A4A] after:bg-[#FFF3F3]"
                   : "border border-transparent bg-[#E2F8F0] pl-[12px] pr-[12px] text-[#1F8064] after:bg-[#E2F8F0]"
                 }`}
@@ -667,7 +681,7 @@ function ProgramsPage() {
                   <img
                     aria-hidden
                     src={
-                      preferenceFeedback.tone === "error"
+                      feedbackForDisplay.tone === "error"
                         ? "/assets/programs/preference-tail-group-8684.svg?v=2"
                         : "/assets/programs/preference-tail-success-8684.svg?v=1"
                     }
@@ -675,19 +689,19 @@ function ProgramsPage() {
                     className="absolute inset-0 z-10 h-[8.64px] w-[15.84px]"
                   />
                 </span>
-                {preferenceFeedback.tone === "error" || preferenceFeedback.icon === "alert" ? (
+                {feedbackForDisplay.tone === "error" || feedbackForDisplay.icon === "alert" ? (
                   <span
                     aria-hidden
-                    className="relative z-20 flex size-4 items-center justify-center"
+                    className="relative z-20 mt-0.5 flex size-4 shrink-0 items-center justify-center"
                   >
                     <SquareAlertIcon
                       className={`size-4 ${
-                        preferenceFeedback.tone === "error" ? "text-[#D84A4A]" : "text-[#1F8064]"
+                        feedbackForDisplay.tone === "error" ? "text-[#D84A4A]" : "text-[#1F8064]"
                       }`}
                     />
                   </span>
                 ) : null}
-                <span className="relative z-20">{preferenceFeedback.message}</span>
+                <span className="relative z-20 min-w-0 whitespace-normal">{feedbackForDisplay.message}</span>
               </div>
             </div>
           ) : null}
@@ -728,7 +742,7 @@ function ProgramsPage() {
               aria-live="polite"
               aria-label="검색 중"
             >
-              <span className="preference-search-message mr-2 text-[14px] font-medium">
+              <span className="preference-search-message mr-2 text-[15px] font-medium">
                 {showWaitMessage ? "조금만 더 기다려주세요" : "선호조건 반영 중"}
               </span>
               <span className="preference-search-loader" aria-hidden="true">
