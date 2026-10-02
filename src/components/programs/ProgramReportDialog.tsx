@@ -298,6 +298,7 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle 
       return;
     }
     if (!noticeId) return;
+    const currentNoticeId = noticeId;
     let cancelled = false;
 
     async function loadReport() {
@@ -306,7 +307,7 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle 
       setReport(null);
       setReportNoticeId(null);
       const { data, error: rpcError } = await supabase.rpc("get_my_notice_report_v1", {
-        p_notice_id: noticeId,
+        p_notice_id: currentNoticeId,
       });
 
       if (cancelled) return;
@@ -315,7 +316,7 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle 
         setError("리포트를 불러오지 못했습니다.");
       } else {
         setReport((data as NoticeReport | null) ?? null);
-        setReportNoticeId(noticeId);
+        setReportNoticeId(currentNoticeId);
       }
       setLoading(false);
     }
@@ -333,7 +334,7 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle 
   const groups = useMemo<ReportGroup[]>(() => {
     const sections = currentReport?.report?.sections;
     const matchingConditions = currentReport?.report?.matching_conditions;
-    const applicationItems = collectItems(sections?.application).filter(hasReportDetail);
+    const applicationItems = collectItems(sections?.["application"]).filter(hasReportDetail);
     const applicationLabels = new Set(applicationItems.map((item) => normalizeReportLabel(item.label)));
     const hasApplicationMethod = applicationLabels.has("신청방법");
     const hasApplicationPeriod = applicationLabels.has("신청시작") || applicationLabels.has("신청마감");
@@ -343,7 +344,7 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle 
         ? "신청 방법"
       : hasApplicationPeriod
         ? "신청 기간"
-        : sectionLabels.application;
+        : sectionLabels["application"] ?? "신청방법 및 기간";
 
     return [
       { title: "맞춤 조건", section: matchingConditions, key: "matching_conditions" },
