@@ -754,7 +754,7 @@ function ProgramsPage() {
               searchLoadingTimerRef.current = setTimeout(() => {
                 setIsSearchLoadingVisible(true);
                 searchLoadingTimerRef.current = null;
-              }, 1000);
+              }, 200);
               const selectedField =
                 supportCategories.length === 1 && !supportCategories.includes(SUPPORT_ALL)
                   ? supportCategories[0] ?? null
