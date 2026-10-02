@@ -292,7 +292,7 @@ function ProgramsPage() {
                 setPreferenceFeedbackExiting(false);
                 preferenceFeedbackTimerRef.current = null;
               }, 180);
-            }, 2000);
+            }, 4000);
           }
         },
         onError: (error) => {
