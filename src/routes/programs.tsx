@@ -220,16 +220,7 @@ function ProgramsPage() {
   const [isSearchLoadingVisible, setIsSearchLoadingVisible] = useState(false);
   const [showWaitMessage, setShowWaitMessage] = useState(false);
   const searchLoaderVisible = isSearchLoadingVisible;
-  const feedbackForDisplay =
-    preferenceFeedback ??
-    (import.meta.env.DEV
-      ? {
-          tone: "success" as const,
-          icon: "alert" as const,
-          message:
-            "선호조건을 분석했지만 일부 조건을 확인할 수 없어요. 발표나 피칭 절차도 허용되는지, 또는 면접만 제외하면 되는지 알려주세요.",
-        }
-      : null);
+  const feedbackForDisplay = preferenceFeedback;
   const preferenceFeedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const searchLoadingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const preferenceStorageKey = session?.user.id ?? null;
@@ -670,7 +661,7 @@ function ProgramsPage() {
               <div
                 role={feedbackForDisplay.tone === "error" ? "alert" : "status"}
                 className={`${PREFERENCE_FEEDBACK_BASE_CLASS} ${
-                feedbackForDisplay.message.length > 60 ? "rounded-[12px]" : "rounded-full"
+                feedbackForDisplay.message.length > 60 ? "rounded-[20px]" : "rounded-full"
               } ${
                 feedbackForDisplay.tone === "error"
                   ? "border border-transparent bg-[#FFF3F3] text-[#D84A4A] after:bg-[#FFF3F3]"
