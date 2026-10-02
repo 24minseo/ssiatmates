@@ -104,9 +104,6 @@ export function createPreferenceTags<T extends { id: string }>({
     if (pending?.key === key) return pending.promise;
 
     const current = ++generation;
-    matchedIds = new Set();
-    persist();
-    refresh();
 
     const promise = (async () => {
       try {
