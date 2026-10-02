@@ -14,7 +14,7 @@ export function ProgramResultRow({
   onFavoriteToggle,
   favoriteSaving = false,
 }: ProgramResultRowProps) {
-  const isRecommended = program.type === "recommended";
+  const isRecommended = program.preference_matched === true;
   const [isFavoritePopping, setIsFavoritePopping] = useState(false);
   const isFavorite = program.is_saved === true;
 

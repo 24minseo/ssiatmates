@@ -14,7 +14,7 @@ const sortLabelsByVariant = {
 } satisfies Record<string, Record<ProgramSortOption, string>>;
 
 const disabledOptionsByVariant = {
-  explore: ["created", "fit"],
+  explore: ["created"],
   myPrograms: [],
 } satisfies Record<"explore" | "myPrograms", ProgramSortOption[]>;
 
@@ -22,15 +22,17 @@ type ProgramSortDropdownProps = {
   value: ProgramSortOption;
   onChange: (value: ProgramSortOption) => void;
   variant?: "explore" | "myPrograms";
+  preferenceActive?: boolean;
 };
 
 export function ProgramSortDropdown({
   value,
   onChange,
   variant = "explore",
+  preferenceActive = false,
 }: ProgramSortDropdownProps) {
   const sortLabels = sortLabelsByVariant[variant];
-  const disabledOptions = disabledOptionsByVariant[variant];
+  const disabledOptions = disabledOptionsByVariant[variant] as ProgramSortOption[];
   const [open, setOpen] = useState(false);
   const [activeValue, setActiveValue] = useState(value);
 
@@ -69,7 +71,9 @@ export function ProgramSortDropdown({
             <CommandGroup>
               {(Object.keys(sortLabels) as ProgramSortOption[]).map((option) => {
                 const selected = value === option;
-                const disabled = disabledOptions.includes(option);
+                const disabled =
+                  disabledOptions.includes(option) ||
+                  (variant === "explore" && option === "fit" && !preferenceActive);
                 return (
                   <CommandItem
                     key={option}

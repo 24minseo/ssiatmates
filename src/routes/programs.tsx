@@ -16,9 +16,13 @@ import { useAuth } from "@/hooks/useAuth";
 import { ProgramReportDialog } from "@/components/programs/ProgramReportDialog";
 import { getSupportFilterSession, setSupportFilterSession } from "@/lib/supportFilterSession";
 import { applySavedStates, savedNoticesApi } from "@/services/savedNoticesApi";
+import { createPreferenceTags } from "@/services/preferenceTags";
 import { formatProgramRegion } from "@/lib/programRegion";
+import { SquareAlertIcon } from "@/components/ui/square-alert-icon";
 
 const PAGE_SIZE = 20;
+const PREFERENCE_QUERY_STORAGE_PREFIX = "programs-preference-query:";
+const PREFERENCE_MATCH_STORAGE_PREFIX = "programs-preference-matches:";
 const PREFERENCE_SUGGESTIONS = [
   "온라인으로 신청하고 싶어요",
   "사업계획서 없이 신청하고 싶어요",
@@ -31,6 +35,7 @@ const PREFERENCE_SUGGESTIONS = [
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"] as const;
 type NoticeMatchItem = {
   notice_id: string;
+  preference_matched?: boolean;
   is_saved?: boolean;
   title: string;
   organization: string;
@@ -74,6 +79,7 @@ function toMatchedProgram(item: NoticeMatchItem): MatchedProgram {
 
   return {
     id: item.notice_id,
+    preference_matched: item.preference_matched === true,
     is_saved: item.is_saved === true,
     ...(item.url ? { url: item.url } : {}),
     organization: item.organization,
@@ -99,6 +105,13 @@ export const Route = createFileRoute("/programs")({
 });
 
 type MatchingView = "active" | "excluded";
+type PreferenceFeedback = {
+  tone: "success" | "error";
+  message: string;
+  icon?: "alert";
+};
+const PREFERENCE_FEEDBACK_BASE_CLASS =
+  "relative flex min-h-6 items-center gap-1 rounded-full border border-transparent px-[10px] py-1 text-[14px] font-semibold";
 
 async function loadMatchingNotices(
   view: MatchingView,
@@ -200,6 +213,12 @@ function ProgramsPage() {
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
   const [query, setQuery] = useState("");
+  const [preferenceFeedback, setPreferenceFeedback] = useState<PreferenceFeedback | null>(null);
+  const [preferenceFeedbackExiting, setPreferenceFeedbackExiting] = useState(false);
+  const [preferenceFeedbackVersion, setPreferenceFeedbackVersion] = useState(0);
+  const preferenceFeedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const preferenceStorageKey = session?.user.id ?? null;
+  const previousPreferenceStorageKey = useRef<string | null>(null);
   const [isQueryFocused, setIsQueryFocused] = useState(false);
   const preferenceInputRef = useRef<HTMLInputElement>(null);
   const [sort, setSort] = useState<ProgramSortOption>("deadline");
@@ -221,6 +240,104 @@ function ProgramsPage() {
   const [excludedError, setExcludedError] = useState<string | null>(null);
   const [savingNoticeIds, setSavingNoticeIds] = useState<Set<string>>(new Set());
   const [reportTarget, setReportTarget] = useState<MatchedProgram | null>(null);
+  const matchedProgramsRef = useRef<MatchedProgram[]>([]);
+  const preferenceTags = useMemo(
+    () =>
+      createPreferenceTags<MatchedProgram>({
+        storageKey: preferenceStorageKey
+          ? `${PREFERENCE_MATCH_STORAGE_PREFIX}${preferenceStorageKey}`
+          : undefined,
+        getItems: () => matchedProgramsRef.current,
+        setItems: (items) => {
+          matchedProgramsRef.current = items;
+          setMatchedPrograms(items);
+        },
+        onResult: (result) => {
+          if (preferenceFeedbackTimerRef.current) {
+            clearTimeout(preferenceFeedbackTimerRef.current);
+            preferenceFeedbackTimerRef.current = null;
+          }
+          if (result.status === "cleared" || result.status === "stale") {
+            if (result.status === "cleared") {
+              setPreferenceFeedbackExiting(false);
+              setPreferenceFeedback(null);
+            }
+            return;
+          }
+          const backendMessage = result.clarification_message ?? result.message;
+          const needsClarification =
+            result.status === "clarification" || Boolean(result.clarification_message);
+          const message =
+            backendMessage?.trim() ||
+            (needsClarification
+              ? "선호조건을 분석하지 못했어요. 원하는 조건을 조금 더 구체적으로 입력해 주세요."
+              : result.items.length === 0
+              ? "조건을 완화해볼까요? 선호조건에 맞는 공고가 없어요."
+              : "선호조건을 반영했어요.");
+          setSort(
+            result.items.some((item) => item.preference_matched === true) ? "fit" : "deadline",
+          );
+          setPreferenceFeedbackExiting(false);
+          setPreferenceFeedbackVersion((version) => version + 1);
+          setPreferenceFeedback({
+            tone: "success",
+            message,
+            ...(result.items.length === 0 ? { icon: "alert" as const } : {}),
+          });
+          if (!needsClarification && result.items.length > 0) {
+            preferenceFeedbackTimerRef.current = setTimeout(() => {
+              setPreferenceFeedbackExiting(true);
+              preferenceFeedbackTimerRef.current = setTimeout(() => {
+                setPreferenceFeedback(null);
+                setPreferenceFeedbackExiting(false);
+                preferenceFeedbackTimerRef.current = null;
+              }, 180);
+            }, 2000);
+          }
+        },
+        onError: (error) => {
+          if (preferenceFeedbackTimerRef.current) {
+            clearTimeout(preferenceFeedbackTimerRef.current);
+            preferenceFeedbackTimerRef.current = null;
+          }
+          setPreferenceFeedbackExiting(false);
+          setSort("deadline");
+          setPreferenceFeedbackVersion((version) => version + 1);
+          setPreferenceFeedback({ tone: "error", message: error.message });
+        },
+      }),
+    [preferenceStorageKey],
+  );
+
+  useEffect(() => {
+    matchedProgramsRef.current = matchedPrograms;
+  }, [matchedPrograms]);
+
+  useEffect(
+    () => () => {
+      preferenceTags.cancel();
+      if (preferenceFeedbackTimerRef.current) clearTimeout(preferenceFeedbackTimerRef.current);
+    },
+    [preferenceTags],
+  );
+
+  useEffect(() => {
+    const previousKey = previousPreferenceStorageKey.current;
+    if (previousKey && previousKey !== preferenceStorageKey) {
+      window.sessionStorage.removeItem(`${PREFERENCE_QUERY_STORAGE_PREFIX}${previousKey}`);
+      window.sessionStorage.removeItem(`${PREFERENCE_MATCH_STORAGE_PREFIX}${previousKey}`);
+    }
+    previousPreferenceStorageKey.current = preferenceStorageKey;
+
+    if (!preferenceStorageKey) {
+      setQuery("");
+      return;
+    }
+    setQuery(
+      window.sessionStorage.getItem(`${PREFERENCE_QUERY_STORAGE_PREFIX}${preferenceStorageKey}`) ??
+        "",
+    );
+  }, [preferenceStorageKey]);
 
   useEffect(() => {
     if (!profile || profileFilterInitializedFor.current === profile.id) return;
@@ -239,6 +356,12 @@ function ProgramsPage() {
 
     async function loadMatches() {
       if (!session?.user.id) {
+        preferenceTags.clear();
+        if (preferenceStorageKey) {
+          window.sessionStorage.removeItem(
+            `${PREFERENCE_QUERY_STORAGE_PREFIX}${preferenceStorageKey}`,
+          );
+        }
         setMatchedPrograms([]);
         setActiveTotalCount(0);
         setExcludedCount(0);
@@ -275,7 +398,14 @@ function ProgramsPage() {
           Array.from(uniqueItems.values()),
           savedState.items,
         );
-        setMatchedPrograms(itemsWithSavedState.map(toMatchedProgram));
+        const nextPrograms = itemsWithSavedState.map(toMatchedProgram);
+        const nextProgramsWithPreferences = preferenceTags.apply(nextPrograms);
+        setMatchedPrograms(nextProgramsWithPreferences);
+        setSort(
+          nextProgramsWithPreferences.some((item) => item.preference_matched === true)
+            ? "fit"
+            : "deadline",
+        );
         setActiveTotalCount(
           responses.reduce(
             (total, response) => total + (response.total_count ?? response.items.length),
@@ -328,6 +458,8 @@ function ProgramsPage() {
     supportCategories.join("|"),
     usesProfileDefault,
     page,
+    preferenceStorageKey,
+    preferenceTags,
   ]);
 
   const loadExcludedNotices = async () => {
@@ -409,19 +541,12 @@ function ProgramsPage() {
   };
 
   const resultsByTab = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase();
     const filterAndSort = (items: MatchedProgram[]) => {
       const filtered = items.filter((item) => {
-        const matchesQuery =
-          !normalizedQuery ||
-          [item.title, item.organization, ...item.categories]
-            .join(" ")
-            .toLowerCase()
-            .includes(normalizedQuery);
         const matchesCategory =
           supportCategories.includes(SUPPORT_ALL) ||
           item.categories.some((category) => supportCategories.includes(category));
-        return matchesQuery && matchesCategory;
+        return matchesCategory;
       });
 
       return [...filtered].sort((a, b) => {
@@ -431,7 +556,7 @@ function ProgramsPage() {
           return aDays - bDays;
         }
         return sort === "fit"
-          ? Number(b.type === "recommended") - Number(a.type === "recommended")
+          ? Number(b.preference_matched === true) - Number(a.preference_matched === true)
           : 0;
       });
     };
@@ -440,11 +565,11 @@ function ProgramsPage() {
       recommended: filterAndSort(matchedPrograms),
       review: [],
     };
-  }, [matchedPrograms, query, sort, supportCategories]);
+  }, [matchedPrograms, sort, supportCategories]);
 
   useEffect(() => {
     setPage(1);
-  }, [query, sort, tab, supportCategories]);
+  }, [sort, tab, supportCategories]);
 
   useEffect(() => {
     setTab(search["tab"] ?? "recommended");
@@ -459,7 +584,7 @@ function ProgramsPage() {
 
   return (
     <section className="space-y-[18px]">
-      <h1 className="text-[28px] font-bold leading-normal text-ink">지원사업 탐색</h1>
+      <h1 className="text-[28px] font-bold leading-tight text-ink">지원사업 탐색</h1>
       <div className="grid grid-cols-[290px_290px_minmax(0,1fr)] gap-4">
         <div className="flex h-12 items-center justify-between rounded-xl bg-[#f6f8f7] pl-6 pr-4 text-[15px] font-medium text-ink">
           기본 프로필 적용 중
@@ -472,13 +597,16 @@ function ProgramsPage() {
         <SupportCategorySelect
           value={supportCategories}
           onChange={(next) => {
+            preferenceTags.clear();
+            setPreferenceFeedback(null);
+            setSort("deadline");
             setUsesProfileDefault(false);
             setSupportCategories(next);
             if (profile) setSupportFilterSession(profile.id, next);
           }}
         />
         <div
-          className="relative z-30 flex h-12 items-center gap-2 rounded-xl border border-field-border bg-white pl-6 pr-1.5"
+          className="relative z-30 flex h-12 items-center gap-2 overflow-visible rounded-xl border border-field-border bg-white pl-6 pr-1.5"
           onFocus={() => setIsQueryFocused(true)}
           onBlur={(event) => {
             const nextFocused = event.relatedTarget as Node | null;
@@ -487,10 +615,69 @@ function ProgramsPage() {
             }
           }}
         >
+          {preferenceFeedback ? (
+            <div
+              key={preferenceFeedbackVersion}
+              className={`preference-feedback-bubble absolute bottom-[calc(100%-6px)] left-[11px] z-40 overflow-visible ${
+                preferenceFeedbackVersion > 1 ? "preference-feedback-bubble-refresh" : ""
+              } ${preferenceFeedbackExiting ? "preference-feedback-bubble-exit" : ""}
+              }`}
+              data-layer-name="preference-feedback-bubble"
+            >
+              <div
+                role={preferenceFeedback.tone === "error" ? "alert" : "status"}
+                className={`${PREFERENCE_FEEDBACK_BASE_CLASS} ${
+                preferenceFeedback.tone === "error"
+                  ? "border border-transparent bg-[#FFF3F3] text-[#D84A4A] after:bg-[#FFF3F3]"
+                  : "border border-transparent bg-[#E2F8F0] pl-[12px] pr-[12px] text-[#1F8064] after:bg-[#E2F8F0]"
+                }`}
+              >
+                <span className="pointer-events-none absolute -bottom-[8.64px] left-3 z-10 block h-[8.64px] w-[15.84px]">
+                  <img
+                    aria-hidden
+                    src={
+                      preferenceFeedback.tone === "error"
+                        ? "/assets/programs/preference-tail-group-8684.svg?v=2"
+                        : "/assets/programs/preference-tail-success-8684.svg?v=1"
+                    }
+                    alt=""
+                    className="absolute inset-0 z-10 h-[8.64px] w-[15.84px]"
+                  />
+                </span>
+                {preferenceFeedback.tone === "error" || preferenceFeedback.icon === "alert" ? (
+                  <span
+                    aria-hidden
+                    className="relative z-20 flex size-4 items-center justify-center"
+                  >
+                    <SquareAlertIcon
+                      className={`size-4 ${
+                        preferenceFeedback.tone === "error" ? "text-[#D84A4A]" : "text-[#1F8064]"
+                      }`}
+                    />
+                  </span>
+                ) : null}
+                <span className="relative z-20">{preferenceFeedback.message}</span>
+              </div>
+            </div>
+          ) : null}
           <input
             ref={preferenceInputRef}
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
+          value={query}
+          onChange={(event) => {
+            const next = event.target.value;
+            setQuery(next);
+            setPreferenceFeedback(null);
+              if (preferenceStorageKey) {
+                window.sessionStorage.setItem(
+                  `${PREFERENCE_QUERY_STORAGE_PREFIX}${preferenceStorageKey}`,
+                  next,
+                );
+              }
+              if (!next.trim()) {
+                preferenceTags.clear();
+                setSort("deadline");
+              }
+            }}
             placeholder="선호하는 조건을 입력해 보세요"
             className="min-w-0 flex-1 bg-transparent text-[15px] outline-none placeholder:text-guide-text"
           />
@@ -498,6 +685,14 @@ function ProgramsPage() {
             type="button"
             aria-label="조건 검색"
             disabled={!query.trim()}
+            onClick={() => {
+              setIsQueryFocused(false);
+              const selectedField =
+                supportCategories.length === 1 && !supportCategories.includes(SUPPORT_ALL)
+                  ? supportCategories[0] ?? null
+                  : null;
+              void preferenceTags.search(query, selectedField);
+            }}
             className="ai-search-shimmer flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand text-brand-foreground transition-[box-shadow,transform,background-color] duration-150 hover:bg-[#3A8F77] active:translate-y-px active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-brand-disabled disabled:text-brand-foreground"
           >
             <img draggable={false} src="/assets/programs/ai-search.svg" alt="" className="pointer-events-none select-none size-6" />
@@ -514,7 +709,23 @@ function ProgramsPage() {
                     type="button"
                     onMouseDown={(event) => event.preventDefault()}
                     onClick={() => {
-                      setQuery(suggestion);
+                      const currentQuery = query.trim().replace(/,+\s*$/, "");
+                      const selectedSuggestions = currentQuery
+                        .split(",")
+                        .map((item) => item.trim())
+                        .filter(Boolean);
+                      const nextQuery = selectedSuggestions.includes(suggestion)
+                        ? currentQuery
+                        : currentQuery
+                          ? `${currentQuery}, ${suggestion}`
+                          : suggestion;
+                      setQuery(nextQuery);
+                      if (preferenceStorageKey) {
+                        window.sessionStorage.setItem(
+                          `${PREFERENCE_QUERY_STORAGE_PREFIX}${preferenceStorageKey}`,
+                          nextQuery,
+                        );
+                      }
                       preferenceInputRef.current?.focus();
                     }}
                     className="inline-flex h-8 shrink-0 items-center whitespace-nowrap rounded-full bg-item-hover px-3 text-sm font-normal text-ink-muted transition-colors hover:bg-secondary-btn-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
@@ -536,7 +747,13 @@ function ProgramsPage() {
             onChange={handleTabChange}
           />
           <div className="absolute right-0 top-[-1px] flex items-center gap-[6px]">
-            <ProgramSortDropdown value={sort} onChange={setSort} />
+            <ProgramSortDropdown
+              value={sort}
+              onChange={setSort}
+              preferenceActive={matchedPrograms.some(
+                (item) => item.preference_matched === true,
+              )}
+            />
             <DropdownMenu modal={false}>
               <DropdownMenuTrigger asChild>
                 <button

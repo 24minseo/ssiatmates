@@ -279,6 +279,68 @@
   100% { transform: scale(1); }
 }
 
+@keyframes preference-feedback-in {
+  from {
+    transform: scale(0.78);
+  }
+  55% {
+    transform: scale(1.04);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+.preference-feedback-bubble {
+  animation: preference-feedback-in 180ms ease-out both;
+}
+
+@keyframes preference-feedback-refresh {
+  from {
+    transform: scale(0.88);
+  }
+  55% {
+    transform: scale(1.04);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+.preference-feedback-bubble-refresh {
+  animation-name: preference-feedback-refresh;
+}
+
+@keyframes preference-feedback-out {
+  from {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.04);
+  }
+  to {
+    transform: scale(0.78);
+  }
+}
+
+.preference-feedback-bubble-exit {
+  animation: preference-feedback-out 180ms ease-in both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .preference-feedback-bubble {
+    animation: none;
+  }
+
+  .preference-feedback-bubble-refresh {
+    animation: none;
+  }
+
+  .preference-feedback-bubble-exit {
+    animation: none;
+  }
+}
+
 @keyframes ai-search-gradient-spin {
   to { transform: rotate(360deg); }
 }

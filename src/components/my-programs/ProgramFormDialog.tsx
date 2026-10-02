@@ -75,6 +75,10 @@ export function ProgramFormDialog({
 
   const inputClass =
     "h-11 rounded-[12px] border-field-border px-3.5 text-[15px] shadow-none placeholder:text-guide-text focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft";
+  const canSubmit =
+    step === 1
+      ? sourceUrl.trim().length > 0
+      : form.title.trim().length > 0 && Boolean(form.deadline);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -238,7 +242,7 @@ export function ProgramFormDialog({
             ) : null}
             <Button
               type="submit"
-              disabled={saving || (step === 1 && !sourceUrl.trim())}
+              disabled={saving || !canSubmit}
               className="h-11 rounded-[12px] bg-brand px-5 text-[15px] font-semibold text-brand-foreground shadow-none hover:bg-brand/88 active:bg-brand-pressed disabled:bg-brand-disabled disabled:opacity-100"
             >
               {step === 1
