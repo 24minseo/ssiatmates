@@ -217,9 +217,11 @@ function ProgramsPage() {
   const [preferenceFeedbackExiting, setPreferenceFeedbackExiting] = useState(false);
   const [preferenceFeedbackVersion, setPreferenceFeedbackVersion] = useState(0);
   const [isPreferenceSearching, setIsPreferenceSearching] = useState(false);
+  const [isSearchLoadingVisible, setIsSearchLoadingVisible] = useState(false);
   const [showWaitMessage, setShowWaitMessage] = useState(false);
-  const searchLoaderVisible = isPreferenceSearching;
+  const searchLoaderVisible = isSearchLoadingVisible;
   const preferenceFeedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchLoadingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const preferenceStorageKey = session?.user.id ?? null;
   const previousPreferenceStorageKey = useRef<string | null>(null);
   const [isQueryFocused, setIsQueryFocused] = useState(false);
@@ -270,6 +272,11 @@ function ProgramsPage() {
         },
         onResult: (result) => {
           setIsPreferenceSearching(false);
+          setIsSearchLoadingVisible(false);
+          if (searchLoadingTimerRef.current) {
+            clearTimeout(searchLoadingTimerRef.current);
+            searchLoadingTimerRef.current = null;
+          }
           if (preferenceFeedbackTimerRef.current) {
             clearTimeout(preferenceFeedbackTimerRef.current);
             preferenceFeedbackTimerRef.current = null;
@@ -314,6 +321,11 @@ function ProgramsPage() {
         },
         onError: (error) => {
           setIsPreferenceSearching(false);
+          setIsSearchLoadingVisible(false);
+          if (searchLoadingTimerRef.current) {
+            clearTimeout(searchLoadingTimerRef.current);
+            searchLoadingTimerRef.current = null;
+          }
           if (preferenceFeedbackTimerRef.current) {
             clearTimeout(preferenceFeedbackTimerRef.current);
             preferenceFeedbackTimerRef.current = null;
@@ -335,6 +347,7 @@ function ProgramsPage() {
     () => () => {
       preferenceTags.cancel();
       if (preferenceFeedbackTimerRef.current) clearTimeout(preferenceFeedbackTimerRef.current);
+      if (searchLoadingTimerRef.current) clearTimeout(searchLoadingTimerRef.current);
     },
     [preferenceTags],
   );
@@ -695,6 +708,11 @@ function ProgramsPage() {
               if (!next.trim()) {
                 preferenceTags.clear();
                 setIsPreferenceSearching(false);
+                setIsSearchLoadingVisible(false);
+                if (searchLoadingTimerRef.current) {
+                  clearTimeout(searchLoadingTimerRef.current);
+                  searchLoadingTimerRef.current = null;
+                }
                 setSort("deadline");
               }
           }}
@@ -724,9 +742,19 @@ function ProgramsPage() {
             type="button"
             aria-label="조건 검색"
             disabled={!query.trim() || isPreferenceSearching}
+            onMouseDown={(event) => {
+              event.preventDefault();
+              setIsQueryFocused(false);
+            }}
             onClick={() => {
               setIsQueryFocused(false);
               setIsPreferenceSearching(true);
+              setIsSearchLoadingVisible(false);
+              if (searchLoadingTimerRef.current) clearTimeout(searchLoadingTimerRef.current);
+              searchLoadingTimerRef.current = setTimeout(() => {
+                setIsSearchLoadingVisible(true);
+                searchLoadingTimerRef.current = null;
+              }, 2000);
               const selectedField =
                 supportCategories.length === 1 && !supportCategories.includes(SUPPORT_ALL)
                   ? supportCategories[0] ?? null
