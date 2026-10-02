@@ -216,11 +216,27 @@ function ProgramsPage() {
   const [preferenceFeedback, setPreferenceFeedback] = useState<PreferenceFeedback | null>(null);
   const [preferenceFeedbackExiting, setPreferenceFeedbackExiting] = useState(false);
   const [preferenceFeedbackVersion, setPreferenceFeedbackVersion] = useState(0);
+  const [isPreferenceSearching, setIsPreferenceSearching] = useState(false);
+  const [showWaitMessage, setShowWaitMessage] = useState(false);
+  const searchLoaderVisible = isPreferenceSearching;
   const preferenceFeedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const preferenceStorageKey = session?.user.id ?? null;
   const previousPreferenceStorageKey = useRef<string | null>(null);
   const [isQueryFocused, setIsQueryFocused] = useState(false);
   const preferenceInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!searchLoaderVisible) {
+      setShowWaitMessage(false);
+      return;
+    }
+
+    const interval = window.setInterval(() => {
+      setShowWaitMessage((visible) => !visible);
+    }, 4000);
+
+    return () => window.clearInterval(interval);
+  }, [searchLoaderVisible]);
   const [sort, setSort] = useState<ProgramSortOption>("deadline");
   const [tab, setTab] = useState<ProgramResultsTab>(search["tab"] ?? "recommended");
   const [page, setPage] = useState(1);
@@ -253,6 +269,7 @@ function ProgramsPage() {
           setMatchedPrograms(items);
         },
         onResult: (result) => {
+          setIsPreferenceSearching(false);
           if (preferenceFeedbackTimerRef.current) {
             clearTimeout(preferenceFeedbackTimerRef.current);
             preferenceFeedbackTimerRef.current = null;
@@ -296,6 +313,7 @@ function ProgramsPage() {
           }
         },
         onError: (error) => {
+          setIsPreferenceSearching(false);
           if (preferenceFeedbackTimerRef.current) {
             clearTimeout(preferenceFeedbackTimerRef.current);
             preferenceFeedbackTimerRef.current = null;
@@ -662,7 +680,8 @@ function ProgramsPage() {
           ) : null}
           <input
             ref={preferenceInputRef}
-          value={query}
+            disabled={isPreferenceSearching}
+            value={query}
           onChange={(event) => {
             const next = event.target.value;
             setQuery(next);
@@ -675,18 +694,39 @@ function ProgramsPage() {
               }
               if (!next.trim()) {
                 preferenceTags.clear();
+                setIsPreferenceSearching(false);
                 setSort("deadline");
               }
-            }}
+          }}
             placeholder="선호하는 조건을 입력해 보세요"
-            className="min-w-0 flex-1 bg-transparent text-[15px] outline-none placeholder:text-guide-text"
+            aria-busy={searchLoaderVisible}
+            className={`min-w-0 flex-1 bg-transparent text-[15px] outline-none placeholder:text-guide-text ${
+              searchLoaderVisible ? "text-transparent caret-transparent" : ""
+            }`}
           />
+          {searchLoaderVisible ? (
+            <div
+              className="pointer-events-none absolute inset-y-0 left-6 flex items-center"
+              aria-live="polite"
+              aria-label="검색 중"
+            >
+              <span className="preference-search-message mr-2 text-[14px] font-medium">
+                {showWaitMessage ? "조금만 더 기다려주세요" : "선호조건 반영 중"}
+              </span>
+              <span className="preference-search-loader" aria-hidden="true">
+                <span />
+                <span />
+                <span />
+              </span>
+            </div>
+          ) : null}
           <button
             type="button"
             aria-label="조건 검색"
-            disabled={!query.trim()}
+            disabled={!query.trim() || isPreferenceSearching}
             onClick={() => {
               setIsQueryFocused(false);
+              setIsPreferenceSearching(true);
               const selectedField =
                 supportCategories.length === 1 && !supportCategories.includes(SUPPORT_ALL)
                   ? supportCategories[0] ?? null

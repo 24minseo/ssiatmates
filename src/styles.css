@@ -327,6 +327,72 @@
   animation: preference-feedback-out 180ms ease-in both;
 }
 
+.preference-search-loader {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  height: 20px;
+}
+
+.preference-search-loader > span {
+  width: 4px;
+  height: 4px;
+  border-radius: 9999px;
+  background: #bdbdbd;
+  animation: preference-search-dot 900ms ease-in-out infinite;
+  transform-origin: center;
+}
+
+.preference-search-loader > span:nth-child(2) {
+  animation-delay: 120ms;
+}
+
+.preference-search-loader > span:nth-child(3) {
+  animation-delay: 240ms;
+}
+
+.preference-search-message {
+  color: transparent;
+  background: linear-gradient(
+    105deg,
+    #bdbdbd 0%,
+    #bdbdbd 25%,
+    #b4b6b5 35%,
+    #d7d9d8 50%,
+    #b4b6b5 65%,
+    #bdbdbd 75%,
+    #bdbdbd 100%
+  );
+  background-size: 220% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  animation: preference-search-message-shimmer 1.5s linear infinite;
+}
+
+@keyframes preference-search-message-shimmer {
+  from {
+    background-position: 140% 0;
+  }
+
+  to {
+    background-position: -40% 0;
+  }
+}
+
+@keyframes preference-search-dot {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 0.55;
+  }
+
+  30% {
+    transform: translateY(-3px) scale(1.18);
+    opacity: 1;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .preference-feedback-bubble {
     animation: none;
@@ -337,6 +403,17 @@
   }
 
   .preference-feedback-bubble-exit {
+    animation: none;
+  }
+
+  .preference-search-loader > span {
+    animation: none;
+    opacity: 0.8;
+  }
+
+  .preference-search-message {
+    color: #bdbdbd;
+    background: none;
     animation: none;
   }
 }
