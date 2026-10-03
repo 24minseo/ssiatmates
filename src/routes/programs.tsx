@@ -84,7 +84,9 @@ function toMatchedProgram(item: NoticeMatchItem): MatchedProgram {
     .filter((value): value is string => Boolean(value?.trim()))
     .map((value) => value.trim())
     .filter((value) => value.length <= 20);
-  const deadlineLabel = item.deadline_label?.trim() || "공고 원문 확인";
+  const rawDeadlineLabel = item.deadline_label?.trim() ?? "";
+  const deadlineLabel =
+    !rawDeadlineLabel || rawDeadlineLabel === "공고 원문 확인" ? "-" : rawDeadlineLabel;
   const dDay = deadlineLabel === "일정 확인 필요" ? "-" : deadlineLabel;
 
   return {
@@ -138,7 +140,7 @@ export const Route = createFileRoute("/programs")({
   component: ProgramsPage,
 });
 
-type MatchingView = "active" | "excluded";
+type MatchingView = "active" | "review" | "excluded";
 type PreferenceFeedback = {
   tone: "success" | "error";
   message: string;
@@ -152,7 +154,7 @@ async function loadMatchingNotices(
   selectedField: string | null,
   offset = 0,
 ): Promise<NoticeMatchesResponse> {
-  if (view !== "active" && view !== "excluded") {
+  if (view !== "active" && view !== "review" && view !== "excluded") {
     throw new Error("목록 구분이 잘못됐습니다.");
   }
 
@@ -168,13 +170,19 @@ async function loadMatchingNotices(
   };
   const rpc = view === "excluded"
     ? "get_my_excluded_notice_matches_v1"
-    : "get_my_notice_matches_v1";
+    : view === "review"
+      ? "get_my_notice_review_matches_v1"
+      : "get_my_notice_matches_v1";
 
-  if (view === "active") {
+  if (view !== "excluded") {
     params.p_include_closed = false;
   }
 
-  const { data, error } = await supabase.rpc(rpc, params);
+  const invokeRpc = supabase.rpc as unknown as (
+    name: string,
+    args: typeof params,
+  ) => Promise<{ data: unknown; error: Error | null }>;
+  const { data, error } = await invokeRpc(rpc, params);
   if (error) throw error;
 
   const response = (data ?? {}) as Partial<NoticeMatchesResponse>;
@@ -283,13 +291,18 @@ function ProgramsPage() {
   const [usesProfileDefault, setUsesProfileDefault] = useState(true);
   const profileFilterInitializedFor = useRef<string | null>(null);
   const matchingRequestRef = useRef(0);
+  const reviewRequestRef = useRef(0);
   const excludedRequestRef = useRef(0);
   const [excludedOpen, setExcludedOpen] = useState(false);
   const [matchedPrograms, setMatchedPrograms] = useState<MatchedProgram[]>([]);
+  const [reviewPrograms, setReviewPrograms] = useState<MatchedProgram[]>([]);
   const [activeTotalCount, setActiveTotalCount] = useState(0);
+  const [reviewTotalCount, setReviewTotalCount] = useState(0);
   const [excludedCount, setExcludedCount] = useState(0);
   const [isLoadingMatches, setIsLoadingMatches] = useState(true);
+  const [isLoadingReview, setIsLoadingReview] = useState(false);
   const [matchError, setMatchError] = useState<string | null>(null);
+  const [reviewError, setReviewError] = useState<string | null>(null);
   const [excludedPrograms, setExcludedPrograms] = useState<MatchedProgram[]>([]);
   const [manualPrograms, setManualPrograms] = useState<MatchedProgram[]>([]);
   const [isLoadingExcluded, setIsLoadingExcluded] = useState(false);
@@ -625,6 +638,82 @@ function ProgramsPage() {
     preferenceTags,
   ]);
 
+  useEffect(() => {
+    if (tab !== "review") return;
+    let cancelled = false;
+    const requestId = reviewRequestRef.current + 1;
+    reviewRequestRef.current = requestId;
+
+    if (!session?.user.id || !profileFilterInitializedFor.current) {
+      setReviewPrograms([]);
+      setReviewTotalCount(0);
+      setIsLoadingReview(false);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    setIsLoadingReview(true);
+    setReviewError(null);
+
+    const loadReviewMatches = async () => {
+      try {
+        const fields = getSelectedFields(supportCategories, usesProfileDefault);
+        const offset = (page - 1) * PAGE_SIZE;
+        const [responses, savedState] = await Promise.all([
+          Promise.all(fields.map((field) => loadMatchingNotices("review", field, offset))),
+          savedNoticesApi.getSavedStates().catch((error) => {
+            console.error("[programs] 저장 상태 조회 실패", error);
+            return { items: [] };
+          }),
+        ]);
+
+        if (cancelled || reviewRequestRef.current !== requestId) return;
+
+        const uniqueItems = new Map<string, NoticeMatchItem>();
+        responses.forEach((response) => {
+          response.items.forEach((item) => uniqueItems.set(item.notice_id, item));
+        });
+        const itemsWithSavedState = applySavedStates(
+          Array.from(uniqueItems.values()),
+          savedState.items,
+        );
+        setReviewPrograms(
+          preferenceTags.apply(itemsWithSavedState.map(toMatchedProgram)),
+        );
+        setReviewTotalCount(
+          responses.reduce(
+            (total, response) => total + (response.total_count ?? response.items.length),
+            0,
+          ),
+        );
+      } catch (error) {
+        if (cancelled || reviewRequestRef.current !== requestId) return;
+        console.error("[programs] 추가 검토 공고 조회 실패", error);
+        setReviewError("추가 검토 공고를 불러오지 못했습니다.");
+        setReviewPrograms([]);
+        setReviewTotalCount(0);
+      } finally {
+        if (!cancelled && reviewRequestRef.current === requestId) {
+          setIsLoadingReview(false);
+        }
+      }
+    };
+
+    void loadReviewMatches();
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    tab,
+    page,
+    session?.user.id,
+    profile?.id,
+    supportCategories.join("|"),
+    usesProfileDefault,
+    preferenceTags,
+  ]);
+
   const loadExcludedNotices = async () => {
     if (!session?.user.id) return;
 
@@ -736,10 +825,10 @@ function ProgramsPage() {
 
     return {
       recommended: filterAndSort(matchedPrograms),
-      review: [],
+      review: filterAndSort(reviewPrograms),
       manual: manualResults.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
     };
-  }, [manualPrograms, matchedPrograms, page, sort, supportCategories]);
+  }, [manualPrograms, matchedPrograms, page, reviewPrograms, sort, supportCategories]);
 
   useEffect(() => {
     setPage(1);
@@ -750,12 +839,14 @@ function ProgramsPage() {
   }, [search]);
 
   const results = resultsByTab[tab];
+  const currentLoading = tab === "review" ? isLoadingReview : isLoadingMatches;
+  const currentError = tab === "review" ? reviewError : matchError;
   const tabTotalCount =
     tab === "recommended"
       ? activeTotalCount
       : tab === "manual"
         ? manualPrograms.length
-        : resultsByTab.review.length;
+        : reviewTotalCount;
   const pageCount = Math.max(1, Math.ceil(tabTotalCount / PAGE_SIZE));
   const handleTabChange = (nextTab: ProgramResultsTab) => {
     setTab(nextTab);
@@ -1015,7 +1106,7 @@ function ProgramsPage() {
             selected={tab}
             counts={{
               recommended: activeTotalCount,
-              review: resultsByTab.review.length,
+              review: reviewTotalCount,
               manual: manualPrograms.length,
             }}
             onChange={handleTabChange}
@@ -1061,10 +1152,12 @@ function ProgramsPage() {
         </div>
 
         <div className={`${tab === "manual" ? "mt-[18px]" : "mt-1"} overflow-hidden rounded-sm`}>
-          {isLoadingMatches ? (
-            <p className="bg-white px-8 py-16 text-center text-ink-muted">맞춤 공고를 불러오는 중입니다.</p>
-          ) : matchError ? (
-            <p className="bg-white px-8 py-16 text-center text-ink-muted">{matchError}</p>
+          {currentLoading ? (
+            <p className="bg-white px-8 py-16 text-center text-ink-muted">
+              {tab === "review" ? "추가 검토 공고를 불러오는 중입니다." : "맞춤 공고를 불러오는 중입니다."}
+            </p>
+          ) : currentError ? (
+            <p className="bg-white px-8 py-16 text-center text-ink-muted">{currentError}</p>
           ) : results.length ? (
             results.map((program) => (
               <ProgramResultRow
