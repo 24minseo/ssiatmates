@@ -74,7 +74,22 @@ function formatMatchingConditionDetail(detail: string) {
 }
 
 function formatApplicationDetail(detail: string) {
-  return formatReportDetail(detail).replace(/\b(\d{4})-(\d{2})-(\d{2})\b/g, "$1. $2. $3.");
+  const normalized = formatReportDetail(detail).replace(
+    /\b\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})\b/g,
+    (value) => {
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return value;
+      const kst = new Date(date.getTime() + 9 * 60 * 60 * 1000);
+      const year = kst.getUTCFullYear();
+      const month = String(kst.getUTCMonth() + 1).padStart(2, "0");
+      const day = String(kst.getUTCDate()).padStart(2, "0");
+      const hours = String(kst.getUTCHours()).padStart(2, "0");
+      const minutes = String(kst.getUTCMinutes()).padStart(2, "0");
+      return `${year}. ${month}. ${day}. ${hours}:${minutes}`;
+    },
+  );
+
+  return normalized.replace(/\b(\d{4})-(\d{2})-(\d{2})\b/g, "$1. $2. $3.");
 }
 
 function normalizeReportLabel(label?: string | null) {
