@@ -320,6 +320,7 @@ function ReportGroupView({
   if (!items.length) return null;
   const isMatchingConditions = group.key === "matching_conditions";
   const isFlatList = group.key === "benefits" || group.key === "documents";
+  const isPreferenceGroup = group.key === "preference";
   const isApplicationGroup = group.key === "application";
   const isApplicationMethodOnly =
     isApplicationGroup &&
@@ -428,6 +429,14 @@ function ReportGroupView({
                 className={`${detail.startsWith("※") ? "list-none -ml-5" : ""} whitespace-pre-wrap break-keep`}
               >
                 {detail}
+              </li>
+            ))}
+          </ul>
+        ) : isPreferenceGroup ? (
+          <ul className="list-disc space-y-2 pl-5 text-[15px] leading-6 text-ink marker:text-ink">
+            {items.map((item, index) => (
+              <li key={`${group.title}-${index}`} className="whitespace-pre-wrap break-keep">
+                {formatReportDetail(item.detail ?? "")}
               </li>
             ))}
           </ul>
