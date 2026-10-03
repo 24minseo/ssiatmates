@@ -7,6 +7,7 @@ import {
 } from "@/components/ui/dialog";
 import { ArrowUpRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 type ReportItem = {
   label?: string | null;
@@ -53,6 +54,13 @@ const sectionLabels: Record<string, string> = {
   benefits: "지원혜택",
   preference: "우대사항",
 };
+
+function millisecondsUntilKoreanNoon(now = Date.now()) {
+  const kst = new Date(now + 9 * 60 * 60 * 1000);
+  let nextNoon = Date.UTC(kst.getUTCFullYear(), kst.getUTCMonth(), kst.getUTCDate(), 3);
+  if (nextNoon <= now) nextNoon += 24 * 60 * 60 * 1000;
+  return nextNoon - now;
+}
 
 function collectItems(section: ReportSection | Record<string, ReportSection> | undefined): ReportItem[] {
   if (!section) return [];
@@ -294,6 +302,7 @@ function ObligationsGroupView({ section }: { section: ReportGroup["section"] }) 
 }
 
 export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle }: ProgramReportDialogProps) {
+  const { session } = useAuth();
   const [report, setReport] = useState<NoticeReport | null>(null);
   const [reportNoticeId, setReportNoticeId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -312,35 +321,82 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle 
       setDialogHeight(null);
       return;
     }
-    if (!noticeId) return;
-    const currentNoticeId = noticeId;
-    let cancelled = false;
-
-    async function loadReport() {
-      setLoading(true);
-      setError(null);
+    if (!noticeId || !session?.user.id) {
       setReport(null);
       setReportNoticeId(null);
-      const { data, error: rpcError } = await supabase.rpc("get_my_notice_report_v1", {
-        p_notice_id: currentNoticeId,
-      });
-
-      if (cancelled) return;
-      if (rpcError) {
-        console.error("[programs] 맞춤 리포트 조회 실패", rpcError);
-        setError("리포트를 불러오지 못했습니다.");
-      } else {
-        setReport((data as NoticeReport | null) ?? null);
-        setReportNoticeId(currentNoticeId);
-      }
       setLoading(false);
+      setError(null);
+      return;
+    }
+    const currentNoticeId = noticeId;
+    const currentUserId = session.user.id;
+    let cancelled = false;
+    let requestInFlight = false;
+    let noonTimer: number | null = null;
+
+    async function loadReport(clearContent = false) {
+      if (requestInFlight) return;
+      requestInFlight = true;
+      setLoading(true);
+      setError(null);
+      if (clearContent) {
+        setReport(null);
+        setReportNoticeId(null);
+      }
+      try {
+        const { data, error: rpcError } = await supabase.rpc("get_my_notice_report_v1", {
+          p_notice_id: currentNoticeId,
+        });
+
+        if (!cancelled && session?.user.id === currentUserId && noticeId === currentNoticeId) {
+          if (rpcError) {
+            console.error("[programs] 맞춤 리포트 조회 실패", rpcError);
+            setError("리포트를 불러오지 못했습니다.");
+          } else {
+            setReport((data as NoticeReport | null) ?? null);
+            setReportNoticeId(currentNoticeId);
+          }
+          setLoading(false);
+        }
+      } catch (loadError) {
+        if (!cancelled && session?.user.id === currentUserId && noticeId === currentNoticeId) {
+          console.error("[programs] 맞춤 리포트 조회 실패", loadError);
+          setError("리포트를 불러오지 못했습니다.");
+          setLoading(false);
+        }
+      } finally {
+        requestInFlight = false;
+      }
     }
 
-    void loadReport();
+    const scheduleNoonRefresh = () => {
+      if (noonTimer !== null) window.clearTimeout(noonTimer);
+      noonTimer = window.setTimeout(() => {
+        if (!cancelled && document.visibilityState === "visible") void loadReport();
+        scheduleNoonRefresh();
+      }, millisecondsUntilKoreanNoon());
+    };
+    const refreshOnResume = () => {
+      if (document.visibilityState === "visible") {
+        void loadReport();
+        scheduleNoonRefresh();
+      }
+    };
+
+    void loadReport(true);
+    scheduleNoonRefresh();
+    window.addEventListener("focus", refreshOnResume);
+    window.addEventListener("pageshow", refreshOnResume);
+    document.addEventListener("visibilitychange", refreshOnResume);
+
     return () => {
       cancelled = true;
+      if (noonTimer !== null) window.clearTimeout(noonTimer);
+      window.removeEventListener("focus", refreshOnResume);
+      window.removeEventListener("pageshow", refreshOnResume);
+      document.removeEventListener("visibilitychange", refreshOnResume);
     };
-  }, [noticeId, open]);
+  }, [noticeId, open, session?.user.id]);
 
   const currentReport = reportNoticeId === noticeId ? report : null;
   const displayNoticeTitle = noticeTitle?.trim() || currentReport?.notice?.title?.trim() || null;

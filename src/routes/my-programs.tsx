@@ -86,11 +86,23 @@ function removeSavedStatus(userId: string, noticeId: string) {
   }
 }
 
+function safeNoticeUrl(value: string | null | undefined): string | null {
+  if (!value) return null;
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:" ? value : null;
+  } catch {
+    return null;
+  }
+}
+
 function toSavedProgram(item: SavedNotice, index: number): Program {
+  const url = safeNoticeUrl(item.url);
+
   return {
     id: item.notice_id,
     source: "saved",
-    ...(item.url ? { url: item.url } : {}),
+    ...(url ? { url } : {}),
     title: item.title,
     organization: item.organization,
     category: item.field ?? "지원 분야 확인 필요",
@@ -110,6 +122,7 @@ function MyProgramsPage() {
   const navigate = Route.useNavigate();
   const { loading: authLoading, session } = useAuth();
   const [programs, setPrograms] = useState<Program[]>([]);
+  const [savedTotalCount, setSavedTotalCount] = useState(0);
   const [activeFilter, setActiveFilter] = useState<StatusFilter>("all");
   const [sort, setSort] = useState<SortOption>("created");
   const [loading, setLoading] = useState(true);
@@ -133,6 +146,7 @@ function MyProgramsPage() {
 
     if (!session?.user.id) {
       setPrograms([]);
+      setSavedTotalCount(0);
       setLoading(false);
       setLoadError(null);
       return () => {
@@ -145,8 +159,9 @@ function MyProgramsPage() {
     setLoadError(null);
     savedNoticesApi
       .getMySupportNotices()
-      .then(({ items }) => {
+      .then(({ items, total_count }) => {
         if (!mounted || savedRequestRef.current !== requestId) return;
+        setSavedTotalCount(total_count ?? items.length);
         const savedStatuses = readSavedStatuses(userId);
         setPrograms(
           items.map((item, index) => {
@@ -162,6 +177,7 @@ function MyProgramsPage() {
         if (!mounted || savedRequestRef.current !== requestId) return;
         console.error("[my-programs] 저장 공고 조회 실패", error);
         setPrograms([]);
+        setSavedTotalCount(0);
         setLoadError("저장한 지원사업을 불러오지 못했습니다.");
       })
       .finally(() => {
@@ -175,13 +191,13 @@ function MyProgramsPage() {
 
   const counts = useMemo(
     () => ({
-      all: programs.length,
+      all: savedTotalCount + programs.filter((program) => program.source === "manual").length,
       preparing: programs.filter((program) => program.status === "preparing")
         .length,
       submitted: programs.filter((program) => program.status === "submitted")
         .length,
     }),
-    [programs],
+    [programs, savedTotalCount],
   );
 
   const visiblePrograms = useMemo(() => {

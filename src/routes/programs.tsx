@@ -931,7 +931,7 @@ function ProgramsPage() {
           }}
         />
         <div
-          className="relative z-30 flex h-12 items-center gap-2 overflow-visible rounded-xl border border-field-border bg-white pl-6 pr-1.5"
+          className="relative z-10 flex h-12 items-center gap-2 overflow-visible rounded-xl border border-field-border bg-white pl-6 pr-1.5"
           onFocus={() => setIsQueryFocused(true)}
           onBlur={(event) => {
             const nextFocused = event.relatedTarget as Node | null;
@@ -1184,7 +1184,7 @@ function ProgramsPage() {
             ))
           ) : (
             tab === "manual" ? (
-              <div className="rounded-[12px] bg-item-hover px-6 py-16 text-center">
+              <div className="rounded-[12px] bg-transparent px-6 py-16 text-center">
                 <p className="text-[16px] font-semibold text-ink">수동 공고가 없습니다</p>
                 <p className="mt-[2px] text-[14px] text-ink-muted">
                   직접 확인하고 싶은 지원사업 공고를 추가해 관리해 보세요.
