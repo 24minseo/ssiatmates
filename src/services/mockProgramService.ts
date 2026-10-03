@@ -10,7 +10,7 @@ export type Schedule = {
 
 export type Program = {
   id: string;
-  source?: "local" | "saved";
+  source?: "manual" | "saved";
   url?: string;
   title: string;
   organization: string;
@@ -218,6 +218,7 @@ export const programService = {
     const program: Program = {
       ...input,
       id: uid("prg"),
+      source: "manual",
       createdAt: new Date().toISOString(),
       fitScore: Math.floor(Math.random() * 40) + 60,
       schedules: [],

@@ -7,16 +7,48 @@ type PreferenceMatch = {
   preference_matched?: boolean;
 };
 
+type PreferenceStatus =
+  | "success"
+  | "insufficient_data"
+  | "no_results"
+  | "needs_clarification"
+  | "clarification";
+
 export type PreferenceSearchResult = {
-  status?: string;
+  status?: PreferenceStatus | "cleared" | "stale" | "error";
   items: PreferenceMatch[];
   clarification_message?: string | null;
   message?: string | null;
+  display_message?: string;
   [key: string]: unknown;
 };
 
+const ALLOWED_STATUSES = new Set<PreferenceStatus>([
+  "success",
+  "insufficient_data",
+  "no_results",
+  "needs_clarification",
+  "clarification",
+]);
+
 const GENERIC_ERROR_MESSAGE = "선호조건 검색을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.";
 const NETWORK_ERROR_MESSAGE = "인터넷 연결을 확인한 뒤 다시 시도해 주세요.";
+
+export function preferenceResultMessage(result: PreferenceSearchResult) {
+  switch (result.status) {
+    case "success":
+      return `선호조건을 충족하는 공고 ${result.items.length}건을 확인했어요.`;
+    case "insufficient_data":
+      return "선호조건을 확인할 분석 정보가 부족해요. 기존 공고는 그대로 확인할 수 있어요.";
+    case "no_results":
+      return "선호조건을 충족하는 것으로 확인된 공고가 없어요.";
+    case "needs_clarification":
+    case "clarification":
+      return "선호조건을 조금 더 구체적으로 알려주세요.";
+    default:
+      return "";
+  }
+}
 
 function isNetworkError(error: unknown) {
   const message = error instanceof Error ? error.message : String(error ?? "");
@@ -58,6 +90,7 @@ export function createPreferenceTags<T extends { id: string }>({
   let matchedIds = readStoredIds(storageKey);
   let generation = 0;
   let pending: { key: string; promise: Promise<PreferenceSearchResult> } | null = null;
+  let disposed = false;
 
   function apply(items: T[]) {
     return items.map((item) => ({
@@ -67,7 +100,7 @@ export function createPreferenceTags<T extends { id: string }>({
   }
 
   function refresh() {
-    setItems(apply(getItems()));
+    if (!disposed) setItems(apply(getItems()));
   }
 
   function persist() {
@@ -76,6 +109,7 @@ export function createPreferenceTags<T extends { id: string }>({
   }
 
   function clear() {
+    if (disposed) return;
     generation += 1;
     pending = null;
     matchedIds = new Set();
@@ -88,10 +122,18 @@ export function createPreferenceTags<T extends { id: string }>({
     pending = null;
   }
 
+  function dispose() {
+    disposed = true;
+    generation += 1;
+    pending = null;
+    matchedIds = new Set();
+  }
+
   async function search(
     preferenceText: string,
     selectedField: string | null = null,
   ): Promise<PreferenceSearchResult> {
+    if (disposed) return Promise.resolve({ status: "stale" as const, items: [] });
     const text = typeof preferenceText === "string" ? preferenceText.trim() : "";
     if (!text) {
       clear();
@@ -111,7 +153,7 @@ export function createPreferenceTags<T extends { id: string }>({
           body: { preference_text: text, p_field: selectedField },
         });
 
-        if (current !== generation) return { status: "stale", items: [] };
+        if (current !== generation || disposed) return { status: "stale" as const, items: [] };
 
         if (error) {
           let message = isNetworkError(error) ? NETWORK_ERROR_MESSAGE : GENERIC_ERROR_MESSAGE;
@@ -127,11 +169,40 @@ export function createPreferenceTags<T extends { id: string }>({
           throw new Error(message);
         }
 
-        if (!data || !Array.isArray(data.items)) {
+        if (!data || typeof data !== "object") {
           throw new Error("검색 응답 형식이 잘못됐습니다.");
         }
 
-        const result = data as PreferenceSearchResult;
+        const payload = data as Record<string, unknown>;
+        const status = payload["status"];
+        if (typeof status !== "string" || !ALLOWED_STATUSES.has(status as PreferenceStatus)) {
+          throw new Error("검색 응답 형식이 잘못됐습니다.");
+        }
+
+        const items = payload["items"];
+        const normalizedItems =
+          items === undefined && (status === "insufficient_data" || status === "needs_clarification")
+            ? []
+            : items;
+        if (
+          !Array.isArray(normalizedItems) ||
+          normalizedItems.some(
+            (item) =>
+              !item ||
+              typeof item !== "object" ||
+              typeof (item as { notice_id?: unknown }).notice_id !== "string" ||
+              !(item as { notice_id: string }).notice_id,
+          )
+        ) {
+          throw new Error("검색 응답 형식이 잘못됐습니다.");
+        }
+
+        const result: PreferenceSearchResult = {
+          ...payload,
+          status: status as PreferenceStatus,
+          items: normalizedItems as PreferenceMatch[],
+        };
+        result.display_message = preferenceResultMessage(result);
         matchedIds = new Set(
           result.items
             .filter((item) => item.preference_matched === true)
@@ -142,7 +213,7 @@ export function createPreferenceTags<T extends { id: string }>({
         onResult(result);
         return result;
       } catch (error) {
-        if (current !== generation) return { status: "stale", items: [] };
+        if (current !== generation) return { status: "stale" as const, items: [] };
         matchedIds = new Set();
         persist();
         refresh();
@@ -152,7 +223,11 @@ export function createPreferenceTags<T extends { id: string }>({
               ? error
               : new Error(GENERIC_ERROR_MESSAGE);
         onError(normalizedError);
-        return { status: "error", items: [], message: normalizedError.message };
+        return {
+          status: "error" as const,
+          items: [],
+          message: normalizedError.message,
+        };
       } finally {
         if (current === generation) pending = null;
       }
@@ -162,5 +237,5 @@ export function createPreferenceTags<T extends { id: string }>({
     return promise;
   }
 
-  return { search, clear, cancel, apply };
+  return { search, clear, cancel, dispose, apply };
 }

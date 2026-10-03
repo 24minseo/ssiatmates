@@ -366,14 +366,6 @@ function MyProgramsPage() {
 
         <div className="absolute right-0 top-[-1px] flex items-center gap-[6px]">
           <ProgramSortDropdown value={sort} onChange={setSort} variant="myPrograms" />
-          <Button
-            type="button"
-            aria-label="지원사업 추가"
-            onClick={openCreateDialog}
-            className="size-[42px] shrink-0 rounded-[12px] border border-field-border bg-surface p-0 text-ink shadow-none hover:bg-item-hover"
-          >
-            <img src="/assets/my-programs/plus-20.svg" alt="" aria-hidden className="size-5" draggable={false} />
-          </Button>
         </div>
       </div>
 
@@ -405,7 +397,7 @@ function MyProgramsPage() {
       ) : counts.all === 0 ? (
         <div className="rounded-[12px] bg-item-hover px-6 py-16 text-center">
           <p className="text-[16px] font-semibold text-ink">저장된 지원사업이 없습니다</p>
-          <p className="mt-2 text-[14px] text-ink-muted">
+          <p className="mt-[2px] text-[14px] text-ink-muted">
             지원사업을 탐색하거나 직접 추가해 진행 상황을 관리해 보세요.
           </p>
           <Button
@@ -419,7 +411,7 @@ function MyProgramsPage() {
       ) : (
         <div className="rounded-[12px] bg-item-hover px-6 py-16 text-center">
           <p className="text-[16px] font-semibold text-ink">표시할 지원사업이 없습니다.</p>
-          <p className="mt-2 text-[14px] text-ink-muted">다른 상태를 선택해보세요.</p>
+          <p className="mt-[2px] text-[14px] text-ink-muted">다른 상태를 선택해보세요.</p>
         </div>
       )}
 

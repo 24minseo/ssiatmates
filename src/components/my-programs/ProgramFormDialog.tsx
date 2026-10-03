@@ -88,7 +88,7 @@ export function ProgramFormDialog({
       >
         <DialogHeader className="space-y-1 text-left">
           <DialogTitle className="text-[20px] font-bold leading-7 text-ink">
-            {program ? "지원사업 수정" : "수동공고 추가"}
+            {program ? "지원사업 수정" : "수동 공고 추가"}
           </DialogTitle>
         </DialogHeader>
 

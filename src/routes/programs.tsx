@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { createFileRoute } from "@tanstack/react-router";
 import { Pagination } from "@/components/ui/pagination";
 import { ProgramSortDropdown, type ProgramSortOption } from "@/components/my-programs/ProgramSortDropdown";
+import { ProgramFormDialog } from "@/components/my-programs/ProgramFormDialog";
 import { ProgramResultRow } from "@/components/programs/ProgramResultRow";
 import { ProgramResultsTabs, type ProgramResultsTab } from "@/components/programs/ProgramResultsTabs";
 import { SupportCategorySelect } from "@/components/programs/SupportCategorySelect";
@@ -17,11 +18,13 @@ import { ProgramReportDialog } from "@/components/programs/ProgramReportDialog";
 import { getSupportFilterSession, setSupportFilterSession } from "@/lib/supportFilterSession";
 import { applySavedStates, savedNoticesApi } from "@/services/savedNoticesApi";
 import { createPreferenceTags } from "@/services/preferenceTags";
+import { programService, type Program, type ProgramInput } from "@/services/programRepository";
 import { formatProgramRegion } from "@/lib/programRegion";
 import { SquareAlertIcon } from "@/components/ui/square-alert-icon";
 
 const PAGE_SIZE = 20;
 const PREFERENCE_QUERY_STORAGE_PREFIX = "programs-preference-query:";
+const PREFERENCE_COMMITTED_QUERY_STORAGE_PREFIX = "programs-preference-committed-query:";
 const PREFERENCE_MATCH_STORAGE_PREFIX = "programs-preference-matches:";
 const PREFERENCE_SUGGESTIONS = [
   "온라인으로 신청하고 싶어요",
@@ -32,7 +35,13 @@ const PREFERENCE_SUGGESTIONS = [
   "혼자 참여할 수 있으면 좋겠어요",
 ] as const;
 
-const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"] as const;
+function millisecondsUntilKoreanNoon(now = Date.now()) {
+  const kst = new Date(now + 9 * 60 * 60 * 1000);
+  let nextNoon = Date.UTC(kst.getUTCFullYear(), kst.getUTCMonth(), kst.getUTCDate(), 3);
+  if (nextNoon <= now) nextNoon += 24 * 60 * 60 * 1000;
+  return nextNoon - now;
+}
+
 type NoticeMatchItem = {
   notice_id: string;
   preference_matched?: boolean;
@@ -60,13 +69,14 @@ type NoticeMatchesResponse = {
   has_more?: boolean;
 };
 
-function formatDeadline(deadline: string | null): string {
-  if (!deadline) return "";
-  const date = new Date(`${deadline}T00:00:00+09:00`);
-  if (Number.isNaN(date.getTime())) return deadline;
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `~${month}.${day}(${WEEKDAYS[date.getDay()]})`;
+function safeNoticeUrl(value: string | null): string | null {
+  if (!value) return null;
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:" ? url.href : null;
+  } catch {
+    return null;
+  }
 }
 
 function toMatchedProgram(item: NoticeMatchItem): MatchedProgram {
@@ -74,19 +84,19 @@ function toMatchedProgram(item: NoticeMatchItem): MatchedProgram {
     .filter((value): value is string => Boolean(value?.trim()))
     .map((value) => value.trim())
     .filter((value) => value.length <= 20);
-  const rawDDay = item.deadline_label ?? item.status_label ?? "";
-  const dDay = rawDDay === "일정 확인 필요" ? "-" : rawDDay;
+  const deadlineLabel = item.deadline_label?.trim() || "공고 원문 확인";
+  const dDay = deadlineLabel === "일정 확인 필요" ? "-" : deadlineLabel;
 
   return {
     id: item.notice_id,
     preference_matched: item.preference_matched === true,
     is_saved: item.is_saved === true,
-    ...(item.url ? { url: item.url } : {}),
+    ...(safeNoticeUrl(item.url) ? { url: safeNoticeUrl(item.url)! } : {}),
     organization: item.organization,
     title: item.title,
     categories,
     dDay,
-    deadline: formatDeadline(item.deadline) || (rawDDay === "일정 확인 필요" ? "공고 원문 확인" : ""),
+    deadline: deadlineLabel,
     daysUntilDeadline: item.days_until_deadline,
     // 리포트가 아직 준비되지 않은 공고도 버튼에서 준비 상태를 안내한다.
     matchLabel: "리포트 보기 〉",
@@ -97,10 +107,34 @@ function toMatchedProgram(item: NoticeMatchItem): MatchedProgram {
   };
 }
 
+function toManualMatchedProgram(program: Program): MatchedProgram {
+  const categories = [program.category, program.region]
+    .map((value) => value.trim())
+    .filter(Boolean)
+    .filter((value) => value.length <= 20);
+
+  return {
+    id: program.id,
+    preference_matched: false,
+    is_saved: false,
+    ...(program.url ? { url: program.url } : {}),
+    organization: program.organization,
+    title: program.title,
+    categories,
+    dDay: program.deadlineLabel ?? "-",
+    deadline: program.deadlineLabel ?? "일정 확인 필요",
+    daysUntilDeadline: null,
+    matchLabel: "",
+    type: "default",
+  };
+}
+
 export const Route = createFileRoute("/programs")({
   head: () => ({ meta: [{ title: "지원사업 탐색" }] }),
   validateSearch: (search: Record<string, unknown>): { tab?: ProgramResultsTab } =>
-    search["tab"] === "review" ? { tab: "review" } : {},
+    search["tab"] === "review" || search["tab"] === "manual"
+      ? { tab: search["tab"] as "review" | "manual" }
+      : {},
   component: ProgramsPage,
 });
 
@@ -227,6 +261,8 @@ function ProgramsPage() {
   const previousPreferenceStorageKey = useRef<string | null>(null);
   const [isQueryFocused, setIsQueryFocused] = useState(false);
   const preferenceInputRef = useRef<HTMLInputElement>(null);
+  const submittedPreferenceQueryRef = useRef("");
+  const silentPreferenceReapplyRef = useRef(false);
 
   useEffect(() => {
     if (!searchLoaderVisible) {
@@ -255,11 +291,36 @@ function ProgramsPage() {
   const [isLoadingMatches, setIsLoadingMatches] = useState(true);
   const [matchError, setMatchError] = useState<string | null>(null);
   const [excludedPrograms, setExcludedPrograms] = useState<MatchedProgram[]>([]);
+  const [manualPrograms, setManualPrograms] = useState<MatchedProgram[]>([]);
   const [isLoadingExcluded, setIsLoadingExcluded] = useState(false);
   const [excludedError, setExcludedError] = useState<string | null>(null);
   const [savingNoticeIds, setSavingNoticeIds] = useState<Set<string>>(new Set());
   const [reportTarget, setReportTarget] = useState<MatchedProgram | null>(null);
+  const [manualFormOpen, setManualFormOpen] = useState(false);
+  const [manualSaving, setManualSaving] = useState(false);
   const matchedProgramsRef = useRef<MatchedProgram[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!session?.user.id) {
+      setManualPrograms([]);
+      return () => {
+        cancelled = true;
+      };
+    }
+    void programService.list().then((programs) => {
+      if (!cancelled) {
+        setManualPrograms(
+          programs
+            .filter((program) => program.source === "manual")
+            .map(toManualMatchedProgram),
+        );
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [session?.user.id]);
   const preferenceTags = useMemo(
     () =>
       createPreferenceTags<MatchedProgram>({
@@ -289,19 +350,31 @@ function ProgramsPage() {
             }
             return;
           }
-          const backendMessage = result.clarification_message ?? result.message;
+          const isSilentReapply = silentPreferenceReapplyRef.current;
+          silentPreferenceReapplyRef.current = false;
+          const submittedQuery = submittedPreferenceQueryRef.current.trim();
+          if (submittedQuery && preferenceStorageKey) {
+            window.sessionStorage.setItem(
+              `${PREFERENCE_COMMITTED_QUERY_STORAGE_PREFIX}${preferenceStorageKey}`,
+              submittedQuery,
+            );
+          }
           const needsClarification =
-            result.status === "clarification" || Boolean(result.clarification_message);
+            result.status === "clarification" ||
+            result.status === "needs_clarification" ||
+            Boolean(result.clarification_message);
           const message =
-            backendMessage?.trim() ||
+            result.display_message ||
             (needsClarification
-              ? "선호조건을 분석하지 못했어요. 원하는 조건을 조금 더 구체적으로 입력해 주세요."
-              : result.items.length === 0
-              ? "조건을 완화해볼까요? 선호조건에 맞는 공고가 없어요."
-              : "선호조건을 반영했어요.");
+              ? "선호조건을 조금 더 구체적으로 알려주세요."
+              : result.message?.trim() ||
+                (result.items.length === 0
+                  ? "선호조건을 충족하는 것으로 확인된 공고가 없어요."
+                  : "선호조건을 반영했어요."));
           setSort(
             result.items.some((item) => item.preference_matched === true) ? "fit" : "deadline",
           );
+          if (isSilentReapply) return;
           setPreferenceFeedbackExiting(false);
           setPreferenceFeedbackVersion((version) => version + 1);
           setPreferenceFeedback({
@@ -321,6 +394,8 @@ function ProgramsPage() {
           }
         },
         onError: (error) => {
+          const isSilentReapply = silentPreferenceReapplyRef.current;
+          silentPreferenceReapplyRef.current = false;
           setIsPreferenceSearching(false);
           setIsSearchLoadingVisible(false);
           if (searchLoadingTimerRef.current) {
@@ -331,10 +406,19 @@ function ProgramsPage() {
             clearTimeout(preferenceFeedbackTimerRef.current);
             preferenceFeedbackTimerRef.current = null;
           }
-          setPreferenceFeedbackExiting(false);
-          setSort("deadline");
-          setPreferenceFeedbackVersion((version) => version + 1);
-          setPreferenceFeedback({ tone: "error", message: error.message });
+          if (!isSilentReapply) {
+            setPreferenceFeedbackExiting(false);
+            const submittedQuery = submittedPreferenceQueryRef.current.trim();
+            if (submittedQuery && preferenceStorageKey) {
+              window.sessionStorage.setItem(
+                `${PREFERENCE_COMMITTED_QUERY_STORAGE_PREFIX}${preferenceStorageKey}`,
+                submittedQuery,
+              );
+            }
+            setSort("deadline");
+            setPreferenceFeedbackVersion((version) => version + 1);
+            setPreferenceFeedback({ tone: "error", message: error.message });
+          }
         },
       }),
     [preferenceStorageKey],
@@ -346,7 +430,7 @@ function ProgramsPage() {
 
   useEffect(
     () => () => {
-      preferenceTags.cancel();
+      preferenceTags.dispose();
       if (preferenceFeedbackTimerRef.current) clearTimeout(preferenceFeedbackTimerRef.current);
       if (searchLoadingTimerRef.current) clearTimeout(searchLoadingTimerRef.current);
     },
@@ -357,6 +441,7 @@ function ProgramsPage() {
     const previousKey = previousPreferenceStorageKey.current;
     if (previousKey && previousKey !== preferenceStorageKey) {
       window.sessionStorage.removeItem(`${PREFERENCE_QUERY_STORAGE_PREFIX}${previousKey}`);
+      window.sessionStorage.removeItem(`${PREFERENCE_COMMITTED_QUERY_STORAGE_PREFIX}${previousKey}`);
       window.sessionStorage.removeItem(`${PREFERENCE_MATCH_STORAGE_PREFIX}${previousKey}`);
     }
     previousPreferenceStorageKey.current = preferenceStorageKey;
@@ -365,10 +450,15 @@ function ProgramsPage() {
       setQuery("");
       return;
     }
-    setQuery(
-      window.sessionStorage.getItem(`${PREFERENCE_QUERY_STORAGE_PREFIX}${preferenceStorageKey}`) ??
-        "",
-    );
+    const storedCommittedQuery =
+      window.sessionStorage.getItem(
+        `${PREFERENCE_COMMITTED_QUERY_STORAGE_PREFIX}${preferenceStorageKey}`,
+      ) ??
+      window.sessionStorage.getItem(
+        `${PREFERENCE_QUERY_STORAGE_PREFIX}${preferenceStorageKey}`,
+      ) ??
+      "";
+    setQuery(storedCommittedQuery);
   }, [preferenceStorageKey]);
 
   useEffect(() => {
@@ -385,8 +475,9 @@ function ProgramsPage() {
 
   useEffect(() => {
     let cancelled = false;
+    let requestInFlight = false;
 
-    async function loadMatches() {
+    async function loadMatches(showLoading = true) {
       if (!session?.user.id) {
         preferenceTags.clear();
         if (preferenceStorageKey) {
@@ -401,12 +492,16 @@ function ProgramsPage() {
         return;
       }
       if (!profileFilterInitializedFor.current) return;
+      if (requestInFlight) return;
+      requestInFlight = true;
 
       const requestId = matchingRequestRef.current + 1;
       matchingRequestRef.current = requestId;
 
-      setIsLoadingMatches(true);
-      setMatchError(null);
+      if (showLoading) {
+        setIsLoadingMatches(true);
+        setMatchError(null);
+      }
 
       try {
         const fields = getSelectedFields(supportCategories, usesProfileDefault);
@@ -433,6 +528,18 @@ function ProgramsPage() {
         const nextPrograms = itemsWithSavedState.map(toMatchedProgram);
         const nextProgramsWithPreferences = preferenceTags.apply(nextPrograms);
         setMatchedPrograms(nextProgramsWithPreferences);
+        const committedQuery = preferenceStorageKey
+          ? window.sessionStorage.getItem(
+              `${PREFERENCE_COMMITTED_QUERY_STORAGE_PREFIX}${preferenceStorageKey}`,
+            )?.trim() ?? ""
+          : "";
+        if (committedQuery && !isPreferenceSearching) {
+          const selectedField =
+            fields.length === 1 && !fields.includes(SUPPORT_ALL) ? fields[0] ?? null : null;
+          submittedPreferenceQueryRef.current = committedQuery;
+          silentPreferenceReapplyRef.current = true;
+          void preferenceTags.search(committedQuery, selectedField);
+        }
         setSort(
           nextProgramsWithPreferences.some((item) => item.preference_matched === true)
             ? "fit"
@@ -453,28 +560,47 @@ function ProgramsPage() {
       } catch (error) {
         if (cancelled || matchingRequestRef.current !== requestId) return;
         console.error("[programs] 맞춤 공고 조회 실패", error);
-        setMatchError("맞춤 공고를 불러오지 못했습니다.");
-        setMatchedPrograms([]);
-        setActiveTotalCount(0);
-        setExcludedCount(0);
+        if (showLoading) {
+          setMatchError("맞춤 공고를 불러오지 못했습니다.");
+          setMatchedPrograms([]);
+          setActiveTotalCount(0);
+          setExcludedCount(0);
+        }
       } finally {
-        if (!cancelled && matchingRequestRef.current === requestId) {
+        requestInFlight = false;
+        if (showLoading && !cancelled && matchingRequestRef.current === requestId) {
           setIsLoadingMatches(false);
         }
       }
     }
 
+    let noonTimer: number | null = null;
+    const scheduleNoonRefresh = () => {
+      if (noonTimer !== null) window.clearTimeout(noonTimer);
+      noonTimer = window.setTimeout(() => {
+        if (cancelled) return;
+        if (document.visibilityState === "visible") void loadMatches(false);
+        scheduleNoonRefresh();
+      }, millisecondsUntilKoreanNoon());
+    };
     const refreshIfVisible = () => {
-      if (document.visibilityState === "visible") void loadMatches();
+      if (document.visibilityState === "visible") {
+        void loadMatches(false);
+        scheduleNoonRefresh();
+      }
     };
 
     void loadMatches();
-    const interval = window.setInterval(refreshIfVisible, 60_000);
+    scheduleNoonRefresh();
+    window.addEventListener("focus", refreshIfVisible);
+    window.addEventListener("pageshow", refreshIfVisible);
     document.addEventListener("visibilitychange", refreshIfVisible);
 
     return () => {
       cancelled = true;
-      window.clearInterval(interval);
+      if (noonTimer !== null) window.clearTimeout(noonTimer);
+      window.removeEventListener("focus", refreshIfVisible);
+      window.removeEventListener("pageshow", refreshIfVisible);
       document.removeEventListener("visibilitychange", refreshIfVisible);
     };
   }, [
@@ -504,9 +630,13 @@ function ProgramsPage() {
 
     try {
       const fields = getSelectedFields(supportCategories, usesProfileDefault);
-      const responses = await Promise.all(
-        fields.map((field) => loadMatchingNotices("excluded", field, 0)),
-      );
+      const [responses, savedState] = await Promise.all([
+        Promise.all(fields.map((field) => loadMatchingNotices("excluded", field, 0))),
+        savedNoticesApi.getSavedStates().catch((error) => {
+          console.error("[programs] 저장 상태 조회 실패", error);
+          return { items: [] };
+        }),
+      ]);
 
       if (excludedRequestRef.current !== requestId) return;
 
@@ -515,7 +645,11 @@ function ProgramsPage() {
         response.items.forEach((item) => uniqueItems.set(item.notice_id, item));
       });
 
-      setExcludedPrograms(Array.from(uniqueItems.values()).map(toMatchedProgram));
+      const itemsWithSavedState = applySavedStates(
+        Array.from(uniqueItems.values()),
+        savedState.items,
+      );
+      setExcludedPrograms(itemsWithSavedState.map(toMatchedProgram));
       setExcludedCount(
         responses.reduce(
           (total, response) => total + (response.total_count ?? response.items.length),
@@ -593,11 +727,14 @@ function ProgramsPage() {
       });
     };
 
+    const manualResults = filterAndSort(manualPrograms);
+
     return {
       recommended: filterAndSort(matchedPrograms),
       review: [],
+      manual: manualResults.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
     };
-  }, [matchedPrograms, sort, supportCategories]);
+  }, [manualPrograms, matchedPrograms, page, sort, supportCategories]);
 
   useEffect(() => {
     setPage(1);
@@ -608,11 +745,57 @@ function ProgramsPage() {
   }, [search]);
 
   const results = resultsByTab[tab];
-  const pageCount = Math.max(1, Math.ceil(Math.max(activeTotalCount, results.length) / PAGE_SIZE));
+  const tabTotalCount =
+    tab === "recommended"
+      ? activeTotalCount
+      : tab === "manual"
+        ? manualPrograms.length
+        : resultsByTab.review.length;
+  const pageCount = Math.max(1, Math.ceil(tabTotalCount / PAGE_SIZE));
   const handleTabChange = (nextTab: ProgramResultsTab) => {
     setTab(nextTab);
-    void navigate({ search: nextTab === "review" ? { tab: "review" } : {} });
+    void navigate({
+      search: nextTab === "review" || nextTab === "manual" ? { tab: nextTab } : {},
+    });
   };
+
+  async function handleManualSubmit(input: ProgramInput) {
+    setManualSaving(true);
+    try {
+      const created = await programService.create(input);
+      setManualPrograms((current) => [toManualMatchedProgram(created), ...current]);
+      setManualFormOpen(false);
+      toast.success("수동 공고를 추가했습니다.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "수동 공고를 추가하지 못했습니다.");
+    } finally {
+      setManualSaving(false);
+    }
+  }
+
+  function handleClearPreferenceSearch() {
+    setQuery("");
+    submittedPreferenceQueryRef.current = "";
+    if (preferenceStorageKey) {
+      window.sessionStorage.removeItem(
+        `${PREFERENCE_COMMITTED_QUERY_STORAGE_PREFIX}${preferenceStorageKey}`,
+      );
+      window.sessionStorage.removeItem(`${PREFERENCE_QUERY_STORAGE_PREFIX}${preferenceStorageKey}`);
+    }
+    preferenceTags.clear();
+    setPreferenceFeedback(null);
+    setIsPreferenceSearching(false);
+    setIsSearchLoadingVisible(false);
+    if (searchLoadingTimerRef.current) {
+      clearTimeout(searchLoadingTimerRef.current);
+      searchLoadingTimerRef.current = null;
+    }
+    if (preferenceFeedbackTimerRef.current) {
+      clearTimeout(preferenceFeedbackTimerRef.current);
+      preferenceFeedbackTimerRef.current = null;
+    }
+    setSort("deadline");
+  }
 
   return (
     <section className="space-y-[18px]">
@@ -704,13 +887,15 @@ function ProgramsPage() {
             const next = event.target.value;
             setQuery(next);
             setPreferenceFeedback(null);
-              if (preferenceStorageKey) {
-                window.sessionStorage.setItem(
-                  `${PREFERENCE_QUERY_STORAGE_PREFIX}${preferenceStorageKey}`,
-                  next,
-                );
-              }
               if (!next.trim()) {
+                if (preferenceStorageKey) {
+                  window.sessionStorage.removeItem(
+                    `${PREFERENCE_COMMITTED_QUERY_STORAGE_PREFIX}${preferenceStorageKey}`,
+                  );
+                  window.sessionStorage.removeItem(
+                    `${PREFERENCE_QUERY_STORAGE_PREFIX}${preferenceStorageKey}`,
+                  );
+                }
                 preferenceTags.clear();
                 setIsPreferenceSearching(false);
                 setIsSearchLoadingVisible(false);
@@ -743,6 +928,18 @@ function ProgramsPage() {
               </span>
             </div>
           ) : null}
+          {query.trim() ? (
+            <button
+              type="button"
+              aria-label="전체 삭제"
+              title="전체 삭제"
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={handleClearPreferenceSearch}
+              className="flex size-5 shrink-0 items-center justify-center rounded-full bg-item-hover text-icon-muted transition-colors hover:bg-secondary-btn-hover"
+            >
+              <X aria-hidden className="size-3" strokeWidth={2.5} />
+            </button>
+          ) : null}
           <button
             type="button"
             aria-label="조건 검색"
@@ -764,9 +961,10 @@ function ProgramsPage() {
                 supportCategories.length === 1 && !supportCategories.includes(SUPPORT_ALL)
                   ? supportCategories[0] ?? null
                   : null;
+              submittedPreferenceQueryRef.current = query;
               void preferenceTags.search(query, selectedField);
             }}
-            className="ai-search-shimmer flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand text-brand-foreground transition-[box-shadow,transform,background-color] duration-150 hover:bg-[#3A8F77] active:translate-y-px active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-brand-disabled disabled:text-brand-foreground"
+            className={`ai-search-shimmer flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand text-brand-foreground transition-[box-shadow,transform,background-color] duration-150 hover:bg-[#3A8F77] active:translate-y-px active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-brand-disabled disabled:text-brand-foreground ${query.trim() ? "ml-1" : ""}`}
           >
             <img draggable={false} src="/assets/programs/ai-search.svg" alt="" className="pointer-events-none select-none size-6" />
           </button>
@@ -793,12 +991,6 @@ function ProgramsPage() {
                           ? `${currentQuery}, ${suggestion}`
                           : suggestion;
                       setQuery(nextQuery);
-                      if (preferenceStorageKey) {
-                        window.sessionStorage.setItem(
-                          `${PREFERENCE_QUERY_STORAGE_PREFIX}${preferenceStorageKey}`,
-                          nextQuery,
-                        );
-                      }
                       preferenceInputRef.current?.focus();
                     }}
                     className="inline-flex h-8 shrink-0 items-center whitespace-nowrap rounded-full bg-item-hover px-3 text-sm font-normal text-ink-muted transition-colors hover:bg-secondary-btn-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
@@ -816,7 +1008,11 @@ function ProgramsPage() {
         <div className="relative h-[48px] w-full">
           <ProgramResultsTabs
             selected={tab}
-            counts={{ recommended: activeTotalCount, review: resultsByTab.review.length }}
+            counts={{
+              recommended: activeTotalCount,
+              review: resultsByTab.review.length,
+              manual: manualPrograms.length,
+            }}
             onChange={handleTabChange}
           />
           <div className="absolute right-0 top-[-1px] flex items-center gap-[6px]">
@@ -859,7 +1055,7 @@ function ProgramsPage() {
           </div>
         </div>
 
-        <div className="mt-1 overflow-hidden rounded-sm">
+        <div className={`${tab === "manual" ? "mt-[18px]" : "mt-1"} overflow-hidden rounded-sm`}>
           {isLoadingMatches ? (
             <p className="bg-white px-8 py-16 text-center text-ink-muted">맞춤 공고를 불러오는 중입니다.</p>
           ) : matchError ? (
@@ -875,9 +1071,25 @@ function ProgramsPage() {
               />
             ))
           ) : (
-            <p className="bg-white px-8 py-16 text-center text-ink-muted">
-              {tab === "review" ? "추가 검토가 필요한 지원사업이 없습니다." : "조건에 맞는 지원사업이 없습니다."}
-            </p>
+            tab === "manual" ? (
+              <div className="rounded-[12px] bg-item-hover px-6 py-16 text-center">
+                <p className="text-[16px] font-semibold text-ink">수동 공고가 없습니다</p>
+                <p className="mt-[2px] text-[14px] text-ink-muted">
+                  직접 확인하고 싶은 지원사업 공고를 추가해 관리해 보세요.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setManualFormOpen(true)}
+                  className="mt-5 inline-flex h-10 items-center gap-2 rounded-[10px] bg-brand px-4 text-[14px] font-semibold text-brand-foreground shadow-none transition-colors hover:bg-brand/88 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                >
+                  수동 공고 추가
+                </button>
+              </div>
+            ) : (
+              <p className="bg-white px-8 py-16 text-center text-ink-muted">
+                {tab === "review" ? "추가 검토가 필요한 지원사업이 없습니다." : "조건에 맞는 지원사업이 없습니다."}
+              </p>
+            )
           )}
         </div>
 
@@ -931,7 +1143,14 @@ function ProgramsPage() {
           noticeId={reportTarget?.id ?? null}
           noticeTitle={reportTarget?.title ?? null}
         />
-        {activeTotalCount > 0 && (
+        <ProgramFormDialog
+          open={manualFormOpen}
+          onOpenChange={setManualFormOpen}
+          program={null}
+          saving={manualSaving}
+          onSubmit={handleManualSubmit}
+        />
+        {tabTotalCount > 0 && pageCount > 1 && (
           <Pagination page={page} pageCount={pageCount} onChange={setPage} />
         )}
       </div>

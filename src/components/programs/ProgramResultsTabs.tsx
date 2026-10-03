@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
-export type ProgramResultsTab = "recommended" | "review";
+export type ProgramResultsTab = "recommended" | "review" | "manual";
 
 type ProgramResultsTabsProps = {
   selected: ProgramResultsTab;
@@ -12,6 +12,7 @@ type ProgramResultsTabsProps = {
 const tabs: Array<{ value: ProgramResultsTab; label: string }> = [
   { value: "recommended", label: "맞춤 공고" },
   { value: "review", label: "추가 검토 필요" },
+  { value: "manual", label: "수동 공고" },
 ];
 
 export function ProgramResultsTabs({ selected, counts, onChange }: ProgramResultsTabsProps) {
@@ -31,7 +32,7 @@ export function ProgramResultsTabs({ selected, counts, onChange }: ProgramResult
     update();
     window.addEventListener("resize", update);
     return () => window.removeEventListener("resize", update);
-  }, [selected, counts.recommended, counts.review]);
+  }, [selected, counts.recommended, counts.review, counts.manual]);
 
   return (
     <div ref={rootRef} className="relative h-[48px] w-[1200px] shrink-0" role="tablist" aria-label="지원사업 결과">
