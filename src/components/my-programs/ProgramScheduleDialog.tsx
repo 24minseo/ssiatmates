@@ -87,7 +87,7 @@ export function ProgramScheduleDialog({
                   }
                   aria-pressed={schedule.completed}
                   onClick={() => onToggle(schedule.id)}
-                  className={`flex size-5 shrink-0 items-center justify-center rounded-[6px] border transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand ${
+                  className={`flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-[6px] border transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand ${
                     schedule.completed
                       ? "border-brand bg-brand text-brand-foreground"
                       : "border-field-border bg-surface"
@@ -113,7 +113,7 @@ export function ProgramScheduleDialog({
                   type="button"
                   aria-label={`${schedule.title} 일정 삭제`}
                   onClick={() => onRemove(schedule.id)}
-                  className="flex size-8 shrink-0 items-center justify-center rounded-[8px] text-icon-muted transition-colors hover:bg-item-hover hover:text-destructive focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                  className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-[8px] text-icon-muted transition-colors hover:bg-item-hover hover:text-destructive focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
                 >
                   <Trash2 className="size-4" />
                 </button>

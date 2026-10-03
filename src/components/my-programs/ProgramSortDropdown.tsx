@@ -49,7 +49,7 @@ export function ProgramSortDropdown({
           type="button"
           aria-label="지원사업 정렬"
           aria-expanded={open}
-          className="group flex h-[42px] w-[136px] shrink-0 items-center justify-between rounded-[12px] border border-field-border bg-surface px-[14px] text-[15px] font-medium text-ink shadow-none transition-colors hover:bg-item-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+          className="group flex h-[42px] w-[136px] shrink-0 cursor-pointer items-center justify-between rounded-[12px] border border-field-border bg-surface px-[14px] text-[15px] font-medium text-ink shadow-none transition-colors hover:bg-item-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
         >
           <span className="whitespace-nowrap">{sortLabels[value]}</span>
           <DropdownChevron open={open} variant="muted" />

@@ -132,7 +132,12 @@ export function SupportCategorySelect({ value, onChange }: SupportCategorySelect
           <p className="text-[16px] font-semibold leading-5 text-ink">지원 분야 필터</p>
         </div>
 
-        <PillGroup options={SUPPORT_CATEGORIES} value={draftValue} onToggle={toggle} />
+        <PillGroup
+          options={SUPPORT_CATEGORIES}
+          value={draftValue}
+          onToggle={toggle}
+          variant="default"
+        />
 
         <div className="mt-5 flex items-center justify-between pt-1">
           <button
@@ -146,11 +151,18 @@ export function SupportCategorySelect({ value, onChange }: SupportCategorySelect
           <button
             type="button"
             onClick={apply}
-            className="h-10 shrink-0 rounded-[10px] bg-brand px-5 text-[14px] font-semibold text-white transition-colors hover:bg-[#3A8F77] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+            className={`inline-flex h-10 shrink-0 items-center justify-center rounded-[10px] bg-brand px-5 text-[14px] font-semibold text-white transition-colors hover:bg-[#3A8F77] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand ${!draftValue.includes(SUPPORT_ALL) && draftValue.length >= 10 ? "w-auto min-w-[120px]" : "w-[120px]"}`}
           >
-            {draftValue.includes(SUPPORT_ALL)
-              ? "전체 분야 적용"
-              : `${draftValue.length}개 분야 적용`}
+            {draftValue.includes(SUPPORT_ALL) ? (
+              "전체 분야 적용"
+            ) : (
+              <>
+                <span className="text-center tabular-nums">
+                  {draftValue.length}
+                </span>
+                <span>개 분야 적용</span>
+              </>
+            )}
           </button>
         </div>
       </PopoverContent>
