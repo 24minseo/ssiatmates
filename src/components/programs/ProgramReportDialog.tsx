@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
 type ReportItem = {
-  label?: string | null;
+  label?: string | null | undefined;
   detail?: string | null;
   condition_kind?: string | null;
 };
@@ -18,6 +18,26 @@ type ReportItem = {
 type ReportSection = {
   items?: ReportItem[];
   [key: string]: unknown;
+};
+
+type ReportChangeField = {
+  field?: string | null;
+  old_value?: unknown;
+  new_value?: unknown;
+};
+
+type ReportBodyChange = {
+  before_quote?: string | null;
+  after_quote?: string | null;
+  reason?: string | null;
+};
+
+type ReportChangeEvent = {
+  recorded_at?: string | null;
+  changed_fields?: ReportChangeField[];
+  body_changes?: ReportBodyChange[] | ReportBodyChange;
+  body_applied?: boolean;
+  review_required_at_recording?: boolean;
 };
 
 type NoticeReport = {
@@ -32,6 +52,7 @@ type NoticeReport = {
     matching_conditions?: Record<string, ReportSection>;
     sections?: Record<string, ReportSection>;
   } | null;
+  change_history?: ReportChangeEvent[];
 };
 
 type ReportGroup = {
@@ -62,6 +83,16 @@ function millisecondsUntilKoreanNoon(now = Date.now()) {
   return nextNoon - now;
 }
 
+function safeNoticeUrl(value?: string | null): string | null {
+  if (!value) return null;
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:" ? url.href : null;
+  } catch {
+    return null;
+  }
+}
+
 function collectItems(section: ReportSection | Record<string, ReportSection> | undefined): ReportItem[] {
   if (!section) return [];
   if (Array.isArray((section as ReportSection).items)) {
@@ -77,8 +108,156 @@ function formatReportDetail(detail: string) {
   return detail.replace(/(^|\n)\s*☞\s?/g, "$1");
 }
 
+const changeFieldLabels: Record<string, string> = {
+  title: "제목",
+  organization: "주최기관",
+  target: "지원 대상",
+  excluded_target: "제외 대상",
+  region: "지역",
+  region_requirements: "지역 조건",
+  field: "지원분야",
+  published_at: "게시일",
+  start_date: "접수 시작일",
+  start_at: "접수 시작 시각",
+  deadline: "마감일",
+  deadline_at: "마감 시각",
+  application_method: "신청 방법",
+  application_url: "신청 링크",
+};
+
+function formatChangeValue(value: unknown) {
+  if (value === null || value === undefined || value === "") return "-";
+  if (typeof value === "string") return value;
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return String(value);
+  }
+}
+
+function ChangeHistoryView({ history }: { history: ReportChangeEvent[] }) {
+  if (!history.length) return null;
+
+  return (
+    <section className="py-5">
+      <h3 className="mb-3 text-[18px] font-bold leading-7 text-ink">변경 내역</h3>
+      <div className="overflow-hidden border-b border-field-border text-[15px] leading-6 text-ink">
+        <div className="grid grid-cols-2">
+          <div className="border-b border-field-border bg-item-hover px-3 py-1 text-[13px] font-bold text-ink">
+            변경 일자
+          </div>
+          <div className="border-b border-field-border bg-item-hover px-3 py-1 text-[13px] font-bold text-ink">
+            변경 내용
+          </div>
+        </div>
+        {history.map((event, eventIndex) => {
+          const bodyChanges = Array.isArray(event.body_changes)
+            ? event.body_changes
+            : event.body_changes
+              ? [event.body_changes]
+              : [];
+          return (
+            <div
+              key={`${event.recorded_at ?? "change"}-${eventIndex}`}
+              className="grid grid-cols-2 border-b border-field-border last:border-b-0"
+            >
+              <div className="px-3 py-2 text-[15px] text-ink-muted">{event.recorded_at ?? "-"}</div>
+              <div className="space-y-1 px-3 py-2 text-[15px] text-ink-muted">
+                {event.review_required_at_recording ? (
+                  <p className="text-ink-muted">당시 검토 필요 기록</p>
+                ) : null}
+                {event.changed_fields?.map((change, changeIndex) => (
+                  <p key={`${change.field ?? "field"}-${changeIndex}`} className="break-keep">
+                    <span className="text-ink-muted">
+                      {changeFieldLabels[change.field ?? ""] ?? change.field ?? "변경 항목"}
+                    </span>{" "}
+                    {formatChangeValue(change.old_value)} → {formatChangeValue(change.new_value)}
+                  </p>
+                ))}
+                {bodyChanges.map((change, changeIndex) => (
+                  <div key={`body-${changeIndex}`} className="space-y-1">
+                    <p className="text-ink-muted">
+                      {event.body_applied ? "본문에 반영된 변경" : "본문 반영이 확인되지 않은 판단 기록"}
+                    </p>
+                    {change.before_quote ? <p className="break-keep">이전: {change.before_quote}</p> : null}
+                    {change.after_quote ? <p className="break-keep">변경: {change.after_quote}</p> : null}
+                    {change.reason ? <p className="break-keep">사유: {change.reason}</p> : null}
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 function formatMatchingConditionDetail(detail: string) {
   return formatReportDetail(detail).replace(/(^|\n)\s*-\s+/g, "$1");
+}
+
+function ImportantDetail({
+  detail,
+  label,
+  marker = "bullet",
+  structured = false,
+}: {
+  detail: string;
+  label?: string | null | undefined;
+  marker?: "bullet" | "hyphen";
+  structured?: boolean;
+}) {
+  const normalizedLabel = normalizeReportLabel(label);
+  const lines = formatReportDetail(detail)
+    .split(/\r?\n/)
+    .map((line) => ({ raw: line, text: line.trim() }))
+    .filter((line) => line.text.length > 0)
+    .map((line) => {
+      const match = line.text.match(/^\\?([*●•-])\s*(.*)$/);
+      const isIndentedNumber = /^\s+\d+\.\s/.test(line.raw);
+      return {
+        kind: match?.[1] === "-" || isIndentedNumber ? "detail" : match ? "label" : "plain",
+        text: match?.[2] || line.text,
+      } as const;
+    })
+    .filter((line) => !normalizedLabel || normalizeReportLabel(line.text) !== normalizedLabel);
+
+  if (structured) {
+    return (
+      <div className="space-y-2 text-[15px] leading-6 text-ink">
+        {lines.map((line, index) => (
+          line.kind !== "detail" ? (
+            <ul key={`${line.text}-${index}`} className="list-disc pl-5 marker:text-ink">
+              <li className="whitespace-pre-wrap break-keep">{line.text}</li>
+            </ul>
+          ) : line.kind === "detail" ? (
+            <p key={`${line.text}-${index}`} className="whitespace-pre-wrap break-keep pl-5">
+              - {line.text}
+            </p>
+          ) : (
+            <p key={`${line.text}-${index}`} className="whitespace-pre-wrap break-keep pl-5">
+              {line.text}
+            </p>
+          )
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <ul className={marker === "hyphen" ? "space-y-2 pl-5 text-[15px] leading-6 text-ink" : "list-disc space-y-2 pl-5 text-[15px] leading-6 text-ink marker:text-ink"}>
+      {lines.map((line, index) => (
+        <li
+          key={`${line.text}-${index}`}
+          className={`${marker === "hyphen" || line.text.startsWith("※") ? "list-none" : ""} whitespace-pre-wrap break-keep`}
+        >
+          {marker === "hyphen" && !line.text.startsWith("※") ? "- " : null}
+          {line.text}
+        </li>
+      ))}
+    </ul>
+  );
 }
 
 function formatApplicationDetail(detail: string) {
@@ -156,6 +335,26 @@ function ReportGroupView({
   const hasApplicationPeriodPair =
     applicationPeriodItems.some((item) => normalizeReportLabel(item.label) === "신청시작") &&
     applicationPeriodItems.some((item) => normalizeReportLabel(item.label) === "신청마감");
+  const flatListDetails = isFlatList
+    ? items.flatMap((item) =>
+        formatMatchingConditionDetail(item.detail ?? "")
+          .split(/\r?\n/)
+          .map((line) => line.trim())
+          .filter(Boolean)
+          .map((line) => line.replace(/^[-*●•]\s*/, "")),
+      )
+    : [];
+  const normalizedFlatListDetails =
+    group.key === "documents" &&
+    flatListDetails.filter((detail) => detail !== "없음").length === 1 &&
+    flatListDetails.includes("없음")
+      ? [`${flatListDetails.find((detail) => detail !== "없음")} 없음`]
+      : group.key === "documents" &&
+          items.some((item) => Boolean(item.label?.trim())) &&
+          flatListDetails.length === 1 &&
+          flatListDetails[0] === "없음"
+        ? [`${items.find((item) => item.label?.trim())?.label?.trim()} 없음`]
+        : flatListDetails;
 
   return (
     <>
@@ -223,9 +422,12 @@ function ReportGroupView({
           )
         ) : isFlatList ? (
           <ul className="list-disc space-y-2 pl-5 text-[15px] leading-6 text-ink marker:text-ink">
-            {items.map((item, index) => (
-              <li key={`${item.label ?? group.title}-${index}`} className="whitespace-pre-wrap break-keep">
-                {formatMatchingConditionDetail(item.detail ?? "")}
+            {normalizedFlatListDetails.map((detail, index) => (
+              <li
+                key={`${group.title}-${index}`}
+                className={`${detail.startsWith("※") ? "list-none -ml-5" : ""} whitespace-pre-wrap break-keep`}
+              >
+                {detail}
               </li>
             ))}
           </ul>
@@ -276,23 +478,26 @@ function ObligationsGroupView({ section }: { section: ReportGroup["section"] }) 
   return (
     <section className="py-5">
       <h3 className="mb-3 text-[18px] font-bold leading-7 text-ink">중요 확인사항</h3>
-      {participationItems.length ? (
+          {participationItems.length ? (
         <div className="space-y-3 text-[15px] leading-6">
           {participationItems.map((item, index) => (
-            <p key={`important-${index}`} className="whitespace-pre-wrap break-keep text-ink">
-              {formatReportDetail(item.detail ?? "")}
-            </p>
+            <ImportantDetail
+              key={`important-${index}`}
+              detail={item.detail ?? ""}
+              label={item.label}
+              structured
+            />
           ))}
         </div>
       ) : null}
       {exclusionItems.length ? (
         <div className={participationItems.length ? "mt-5" : undefined}>
-          <h4 className="mb-2 text-[15px] font-semibold text-ink">제외 조건</h4>
+          <ul className="mb-2 list-disc pl-5 text-[15px] leading-6 text-ink marker:text-ink">
+            <li>제외 조건</li>
+          </ul>
           <div className="space-y-3 text-[15px] leading-6">
             {exclusionItems.map((item, index) => (
-              <p key={`exclusion-${index}`} className="whitespace-pre-wrap break-keep text-ink">
-                {formatReportDetail(item.detail ?? "")}
-              </p>
+              <ImportantDetail key={`exclusion-${index}`} detail={item.detail ?? ""} marker="hyphen" />
             ))}
           </div>
         </div>
@@ -400,7 +605,9 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle 
 
   const currentReport = reportNoticeId === noticeId ? report : null;
   const displayNoticeTitle = noticeTitle?.trim() || currentReport?.notice?.title?.trim() || null;
-  const noticeUrl = currentReport?.notice?.url ?? currentReport?.notice?.application_url;
+  const noticeUrl = safeNoticeUrl(
+    currentReport?.notice?.url ?? currentReport?.notice?.application_url,
+  );
 
   const groups = useMemo<ReportGroup[]>(() => {
     const sections = currentReport?.report?.sections;
@@ -515,13 +722,16 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle 
             ) : currentReport?.status !== "ready" ? (
               <p className="py-16 text-center text-[15px] text-ink-muted">{statusMessage}</p>
             ) : (
-              groups.map((group) =>
-                group.key === "obligations" ? (
-                  <ObligationsGroupView key={group.title} section={group.section} />
-                ) : (
-                  <ReportGroupView key={group.title} group={group} />
-                ),
-              )
+              <>
+                {groups.map((group) =>
+                  group.key === "obligations" ? (
+                    <ObligationsGroupView key={group.title} section={group.section} />
+                  ) : (
+                    <ReportGroupView key={group.title} group={group} />
+                  ),
+                )}
+                <ChangeHistoryView history={currentReport?.change_history ?? []} />
+              </>
             )}
           </div>
         </div>

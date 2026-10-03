@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Check, MoreVertical, X } from "lucide-react";
+import { ArrowRight, Check, MoreVertical, X } from "lucide-react";
 import { toast } from "sonner";
 import { createFileRoute } from "@tanstack/react-router";
 import { Pagination } from "@/components/ui/pagination";
@@ -283,8 +283,37 @@ function ProgramsPage() {
   const previousPreferenceStorageKey = useRef<string | null>(null);
   const [isQueryFocused, setIsQueryFocused] = useState(false);
   const preferenceInputRef = useRef<HTMLInputElement>(null);
+  const preferenceSuggestionsRef = useRef<HTMLDivElement>(null);
+  const [canScrollPreferenceSuggestions, setCanScrollPreferenceSuggestions] = useState(false);
   const submittedPreferenceQueryRef = useRef("");
   const silentPreferenceReapplyRef = useRef(false);
+
+  useEffect(() => {
+    if (!isQueryFocused) {
+      setCanScrollPreferenceSuggestions(false);
+      return;
+    }
+
+    const suggestions = preferenceSuggestionsRef.current;
+    if (!suggestions) return;
+
+    const updateScrollState = () => {
+      setCanScrollPreferenceSuggestions(
+        suggestions.scrollWidth > suggestions.clientWidth + 1 &&
+          suggestions.scrollLeft < suggestions.scrollWidth - suggestions.clientWidth - 1,
+      );
+    };
+
+    updateScrollState();
+    suggestions.addEventListener("scroll", updateScrollState, { passive: true });
+    const resizeObserver = new ResizeObserver(updateScrollState);
+    resizeObserver.observe(suggestions);
+
+    return () => {
+      suggestions.removeEventListener("scroll", updateScrollState);
+      resizeObserver.disconnect();
+    };
+  }, [isQueryFocused]);
 
   useEffect(() => {
     if (!searchLoaderVisible) {
@@ -1083,7 +1112,11 @@ function ProgramsPage() {
               <p className="mb-3 text-[16px] font-semibold leading-5 text-ink">
                 이런 조건은 어때요?
               </p>
-              <div className="flex max-w-full flex-nowrap gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              <div className="relative">
+                <div
+                  ref={preferenceSuggestionsRef}
+                  className="flex max-w-full flex-nowrap gap-2 overflow-x-auto pb-1 pr-10 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                >
                 {PREFERENCE_SUGGESTIONS.map((suggestion) => (
                   <button
                     key={suggestion}
@@ -1108,6 +1141,18 @@ function ProgramsPage() {
                     {suggestion}
                   </button>
                 ))}
+                </div>
+                {canScrollPreferenceSuggestions ? (
+                  <button
+                    type="button"
+                    aria-label="추천 조건 더 보기"
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={() => preferenceSuggestionsRef.current?.scrollBy({ left: 180, behavior: "smooth" })}
+                    className="absolute -right-[14px] top-4 flex size-8 -translate-y-1/2 items-center justify-center rounded-full border border-field-border/20 bg-surface text-icon-muted shadow-chip-arrow transition-colors hover:text-ink"
+                  >
+                    <ArrowRight aria-hidden className="size-4" strokeWidth={2.25} />
+                  </button>
+                ) : null}
               </div>
             </div>
           ) : null}
@@ -1140,7 +1185,7 @@ function ProgramsPage() {
                   aria-label="지원사업 더보기"
                   className="flex size-[42px] shrink-0 items-center justify-center rounded-[12px] border border-field-border bg-surface p-0 text-ink shadow-none transition-colors hover:bg-item-hover"
                 >
-                  <MoreVertical className="size-5 stroke-[1.5]" />
+                  <MoreVertical fill="currentColor" className="size-5 stroke-[1.5]" />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent
