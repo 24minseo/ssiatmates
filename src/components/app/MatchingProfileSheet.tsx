@@ -220,8 +220,8 @@ export function MatchingProfileSheet({ open, onOpenChange, onSaved, profile }: M
     }
 
     setDirty(false);
-    window.dispatchEvent(new CustomEvent("matching-profile-saved"));
     await onSaved?.();
+    window.dispatchEvent(new CustomEvent("matching-profile-saved"));
     onOpenChange(false);
     setSaving(false);
   };

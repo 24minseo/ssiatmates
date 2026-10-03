@@ -523,14 +523,17 @@ function ProgramsPage() {
   }, [preferenceStorageKey]);
 
   useEffect(() => {
-    if (!profile || profileFilterInitializedFor.current === profile.id) return;
+    if (!profile) return;
 
     const savedCategories = getSupportFilterSession(profile.id);
     const profileCategories = profile.support_categories.filter(Boolean);
-    setUsesProfileDefault(savedCategories === null);
-    setSupportCategories(
-      savedCategories ?? (profileCategories.length ? profileCategories : [SUPPORT_ALL]),
-    );
+    if (savedCategories === null) {
+      setUsesProfileDefault(true);
+      setSupportCategories(profileCategories.length ? profileCategories : [SUPPORT_ALL]);
+    } else if (profileFilterInitializedFor.current !== profile.id) {
+      setUsesProfileDefault(false);
+      setSupportCategories(savedCategories);
+    }
     profileFilterInitializedFor.current = profile.id;
   }, [profile]);
 
