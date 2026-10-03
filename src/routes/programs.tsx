@@ -286,6 +286,13 @@ function ProgramsPage() {
   const preferenceSuggestionsRef = useRef<HTMLDivElement>(null);
   const [canScrollPreferenceSuggestions, setCanScrollPreferenceSuggestions] = useState(false);
   const submittedPreferenceQueryRef = useRef("");
+  const submittedPreferenceFieldRef = useRef<string | null>(null);
+  const matchDataVersionRef = useRef(0);
+  const lastPreferenceSearchRef = useRef<{
+    query: string;
+    field: string | null;
+    version: number;
+  } | null>(null);
   const silentPreferenceReapplyRef = useRef(false);
 
   useEffect(() => {
@@ -409,6 +416,13 @@ function ProgramsPage() {
           const isSilentReapply = silentPreferenceReapplyRef.current;
           silentPreferenceReapplyRef.current = false;
           const submittedQuery = submittedPreferenceQueryRef.current.trim();
+          if (submittedQuery) {
+            lastPreferenceSearchRef.current = {
+              query: submittedQuery,
+              field: submittedPreferenceFieldRef.current,
+              version: matchDataVersionRef.current,
+            };
+          }
           if (submittedQuery && preferenceStorageKey) {
             window.sessionStorage.setItem(
               `${PREFERENCE_COMMITTED_QUERY_STORAGE_PREFIX}${preferenceStorageKey}`,
@@ -601,6 +615,7 @@ function ProgramsPage() {
           const selectedField =
             fields.length === 1 && !fields.includes(SUPPORT_ALL) ? fields[0] ?? null : null;
           submittedPreferenceQueryRef.current = committedQuery;
+          submittedPreferenceFieldRef.current = selectedField;
           silentPreferenceReapplyRef.current = true;
           void preferenceTags.search(committedQuery, selectedField);
         }
@@ -621,6 +636,7 @@ function ProgramsPage() {
             0,
           ),
         );
+        matchDataVersionRef.current += 1;
       } catch (error) {
         if (cancelled || matchingRequestRef.current !== requestId) return;
         console.error("[programs] 맞춤 공고 조회 실패", error);
@@ -923,6 +939,8 @@ function ProgramsPage() {
   function handleClearPreferenceSearch() {
     setQuery("");
     submittedPreferenceQueryRef.current = "";
+    submittedPreferenceFieldRef.current = null;
+    lastPreferenceSearchRef.current = null;
     if (preferenceStorageKey) {
       window.sessionStorage.removeItem(
         `${PREFERENCE_COMMITTED_QUERY_STORAGE_PREFIX}${preferenceStorageKey}`,
@@ -1108,8 +1126,30 @@ function ProgramsPage() {
                 supportCategories.length === 1 && !supportCategories.includes(SUPPORT_ALL)
                   ? supportCategories[0] ?? null
                   : null;
-              submittedPreferenceQueryRef.current = query;
-              void preferenceTags.search(query, selectedField);
+              const normalizedQuery = query.trim();
+              const previousSearch = lastPreferenceSearchRef.current;
+              if (
+                previousSearch?.query === normalizedQuery &&
+                previousSearch.field === selectedField &&
+                previousSearch.version === matchDataVersionRef.current
+              ) {
+                if (searchLoadingTimerRef.current) {
+                  clearTimeout(searchLoadingTimerRef.current);
+                  searchLoadingTimerRef.current = null;
+                }
+                setIsSearchLoadingVisible(false);
+                setPreferenceFeedbackExiting(false);
+                setPreferenceFeedbackVersion((version) => version + 1);
+                setPreferenceFeedback({
+                  tone: "success",
+                  message: "이미 적용된 선호조건이에요.",
+                });
+                setIsPreferenceSearching(false);
+                return;
+              }
+              submittedPreferenceQueryRef.current = normalizedQuery;
+              submittedPreferenceFieldRef.current = selectedField;
+              void preferenceTags.search(normalizedQuery, selectedField);
             }}
             className={`ai-search-shimmer flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand text-brand-foreground transition-[box-shadow,transform,background-color] duration-150 hover:bg-[#3A8F77] active:translate-y-px active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-brand-disabled disabled:text-brand-foreground ${query.trim() ? "ml-1" : ""}`}
           >
