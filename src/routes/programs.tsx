@@ -34,6 +34,7 @@ const PREFERENCE_SUGGESTIONS = [
   "발표 심사가 없으면 좋겠어요",
   "혼자 참여할 수 있으면 좋겠어요",
 ] as const;
+const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"] as const;
 
 function millisecondsUntilKoreanNoon(now = Date.now()) {
   const kst = new Date(now + 9 * 60 * 60 * 1000);
@@ -79,15 +80,28 @@ function safeNoticeUrl(value: string | null): string | null {
   }
 }
 
+function formatDeadline(deadline: string | null): string {
+  if (!deadline) return "";
+  const date = new Date(`${deadline}T00:00:00+09:00`);
+  if (Number.isNaN(date.getTime())) return "";
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `~${month}.${day}(${WEEKDAYS[date.getDay()]})`;
+}
+
 function toMatchedProgram(item: NoticeMatchItem): MatchedProgram {
   const categories = [item.field, formatProgramRegion(item.region)]
     .filter((value): value is string => Boolean(value?.trim()))
     .map((value) => value.trim())
     .filter((value) => value.length <= 20);
   const rawDeadlineLabel = item.deadline_label?.trim() ?? "";
-  const deadlineLabel =
-    !rawDeadlineLabel || rawDeadlineLabel === "공고 원문 확인" ? "-" : rawDeadlineLabel;
-  const dDay = deadlineLabel === "일정 확인 필요" ? "-" : deadlineLabel;
+  const dDay =
+    rawDeadlineLabel &&
+    rawDeadlineLabel !== "공고 원문 확인" &&
+    rawDeadlineLabel !== "일정 확인 필요"
+      ? rawDeadlineLabel
+      : "-";
+  const deadlineLabel = formatDeadline(item.deadline) || "공고 원문 확인";
 
   return {
     id: item.notice_id,
@@ -178,10 +192,10 @@ async function loadMatchingNotices(
     params.p_include_closed = false;
   }
 
-  const invokeRpc = supabase.rpc as unknown as (
+  const invokeRpc = (
     name: string,
     args: typeof params,
-  ) => Promise<{ data: unknown; error: Error | null }>;
+  ) => supabase.rpc(name as never, args as never);
   const { data, error } = await invokeRpc(rpc, params);
   if (error) throw error;
 
