@@ -377,10 +377,15 @@ function ProgramsPage() {
           if (isSilentReapply) return;
           setPreferenceFeedbackExiting(false);
           setPreferenceFeedbackVersion((version) => version + 1);
+          const showInfoIcon =
+            result.status === "insufficient_data" ||
+            result.status === "needs_clarification" ||
+            result.status === "clarification" ||
+            result.status === "matching_not_ready";
           setPreferenceFeedback({
             tone: "success",
             message,
-            ...(result.items.length === 0 ? { icon: "alert" as const } : {}),
+            ...(showInfoIcon ? { icon: "alert" as const } : {}),
           });
           if (!needsClarification && result.items.length > 0) {
             preferenceFeedbackTimerRef.current = setTimeout(() => {

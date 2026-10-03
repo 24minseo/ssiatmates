@@ -12,6 +12,7 @@ type PreferenceStatus =
   | "insufficient_data"
   | "no_results"
   | "needs_clarification"
+  | "matching_not_ready"
   | "clarification";
 
 export type PreferenceSearchResult = {
@@ -28,6 +29,7 @@ const ALLOWED_STATUSES = new Set<PreferenceStatus>([
   "insufficient_data",
   "no_results",
   "needs_clarification",
+  "matching_not_ready",
   "clarification",
 ]);
 
@@ -45,6 +47,8 @@ export function preferenceResultMessage(result: PreferenceSearchResult) {
     case "needs_clarification":
     case "clarification":
       return "선호조건을 조금 더 구체적으로 알려주세요.";
+    case "matching_not_ready":
+      return "기본매칭이 아직 준비되지 않았어요. 잠시 후 다시 확인해주세요.";
     default:
       return "";
   }
@@ -181,7 +185,8 @@ export function createPreferenceTags<T extends { id: string }>({
 
         const items = payload["items"];
         const normalizedItems =
-          items === undefined && (status === "insufficient_data" || status === "needs_clarification")
+          items === undefined &&
+          ["insufficient_data", "needs_clarification", "matching_not_ready"].includes(status)
             ? []
             : items;
         if (
