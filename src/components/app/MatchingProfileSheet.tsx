@@ -65,6 +65,7 @@ export function MatchingProfileSheet({ open, onOpenChange, onSaved, profile }: M
   const [businessFields, setBusinessFields] = useState<string[]>([]);
   const [supportCategories, setSupportCategories] = useState<string[]>(["전체"]);
   const [personalStatuses, setPersonalStatuses] = useState<string[]>([]);
+  const [saving, setSaving] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
   const [scrollFades, setScrollFades] = useState({ top: false, bottom: true });
 
@@ -154,6 +155,7 @@ export function MatchingProfileSheet({ open, onOpenChange, onSaved, profile }: M
 
     if (!profile) return;
 
+    setSaving(true);
     const stageCode = STARTUP_STAGE_CODES[startupStage] ?? startupStage;
     const regionNames = [residence, businessLocation].filter(Boolean);
     const { data: regionRows, error: regionError } = await supabase
@@ -163,6 +165,7 @@ export function MatchingProfileSheet({ open, onOpenChange, onSaved, profile }: M
 
     if (regionError) {
       console.error("[matching-profile] 지역 조회 실패", regionError);
+      setSaving(false);
       return;
     }
 
@@ -184,12 +187,43 @@ export function MatchingProfileSheet({ open, onOpenChange, onSaved, profile }: M
 
     if (error) {
       console.error("[matching-profile] 저장 실패", error);
+      setSaving(false);
+      return;
+    }
+
+    // 프로필 저장 트랜잭션 이후 매칭 작업이 완료될 때까지 확인한다.
+    // 완료 전에 목록을 갱신하면 이전 프로필 기준 공고가 다시 보일 수 있다.
+    try {
+      const deadline = Date.now() + 120_000;
+      let matchingCompleted = false;
+      while (Date.now() < deadline) {
+        const { data: status, error: statusError } = await supabase.rpc(
+          "get_my_profile_matching_status_v1",
+        );
+        if (statusError) throw statusError;
+        if (status?.user_id !== profile.id) throw new Error("매칭 상태의 사용자가 일치하지 않습니다.");
+        if (status.status === "failed") throw new Error("프로필은 저장됐지만 매칭 작업이 실패했습니다.");
+        if (["no_profile", "not_requested"].includes(status.status)) {
+          throw new Error("저장된 프로필의 매칭 작업이 등록되지 않았습니다.");
+        }
+        if (status.status === "completed" && status.profile_matches === true && status.revision) {
+          matchingCompleted = true;
+          break;
+        }
+        await new Promise((resolve) => window.setTimeout(resolve, 2_000));
+      }
+      if (!matchingCompleted) throw new Error("프로필은 저장됐지만 매칭 완료 확인이 지연되고 있습니다.");
+    } catch (matchingError) {
+      console.error("[matching-profile] 매칭 갱신 실패", matchingError);
+      setSaving(false);
       return;
     }
 
     setDirty(false);
+    window.dispatchEvent(new CustomEvent("matching-profile-saved"));
     await onSaved?.();
     onOpenChange(false);
+    setSaving(false);
   };
 
   return (
@@ -409,10 +443,10 @@ export function MatchingProfileSheet({ open, onOpenChange, onSaved, profile }: M
             <button
               type="submit"
               form="matching-profile-form"
-              disabled={!canSave}
+              disabled={!canSave || saving}
               className="h-11 rounded-[10px] bg-brand px-5 text-[15px] font-semibold text-brand-foreground transition-colors hover:bg-brand/90 disabled:cursor-not-allowed disabled:bg-brand-disabled disabled:text-brand-foreground"
             >
-              변경사항 저장
+              {saving ? "매칭 갱신 중…" : "변경사항 저장"}
             </button>
           </SheetFooter>
         </div>

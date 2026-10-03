@@ -650,12 +650,16 @@ function ProgramsPage() {
         scheduleNoonRefresh();
       }
     };
+    const refreshAfterProfileSave = () => {
+      void loadMatches(true);
+    };
 
     void loadMatches();
     scheduleNoonRefresh();
     window.addEventListener("focus", refreshIfVisible);
     window.addEventListener("pageshow", refreshIfVisible);
     document.addEventListener("visibilitychange", refreshIfVisible);
+    window.addEventListener("matching-profile-saved", refreshAfterProfileSave);
 
     return () => {
       cancelled = true;
@@ -663,6 +667,7 @@ function ProgramsPage() {
       window.removeEventListener("focus", refreshIfVisible);
       window.removeEventListener("pageshow", refreshIfVisible);
       document.removeEventListener("visibilitychange", refreshIfVisible);
+      window.removeEventListener("matching-profile-saved", refreshAfterProfileSave);
     };
   }, [
     session?.user.id,

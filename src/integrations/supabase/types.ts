@@ -173,6 +173,15 @@ export type Database = {
           evaluated_at: string
         }
       }
+      get_my_profile_matching_status_v1: {
+        Args: Record<string, never>
+        Returns: {
+          user_id: string
+          status: string
+          profile_matches: boolean
+          revision: string | number | null
+        }
+      }
       get_my_excluded_notice_matches_v1: {
         Args: {
           p_limit: number
