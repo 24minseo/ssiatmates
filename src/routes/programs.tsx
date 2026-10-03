@@ -293,6 +293,7 @@ function ProgramsPage() {
     field: string | null;
     version: number;
   } | null>(null);
+  const preferenceReapplyReasonRef = useRef<"silent" | "profile-save">("silent");
   const silentPreferenceReapplyRef = useRef(false);
 
   useEffect(() => {
@@ -616,7 +617,9 @@ function ProgramsPage() {
             fields.length === 1 && !fields.includes(SUPPORT_ALL) ? fields[0] ?? null : null;
           submittedPreferenceQueryRef.current = committedQuery;
           submittedPreferenceFieldRef.current = selectedField;
-          silentPreferenceReapplyRef.current = true;
+          silentPreferenceReapplyRef.current =
+            preferenceReapplyReasonRef.current !== "profile-save";
+          preferenceReapplyReasonRef.current = "silent";
           void preferenceTags.search(committedQuery, selectedField);
         }
         setSort(
@@ -670,6 +673,7 @@ function ProgramsPage() {
       }
     };
     const refreshAfterProfileSave = () => {
+      preferenceReapplyReasonRef.current = "profile-save";
       void loadMatches(true);
     };
 
