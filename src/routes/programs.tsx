@@ -1262,7 +1262,7 @@ function ProgramsPage() {
           saving={manualSaving}
           onSubmit={handleManualSubmit}
         />
-        {tabTotalCount > 0 && pageCount > 1 && (
+        {tabTotalCount > 0 && (
           <Pagination page={page} pageCount={pageCount} onChange={setPage} />
         )}
       </div>
