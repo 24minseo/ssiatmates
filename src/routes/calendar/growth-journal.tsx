@@ -206,8 +206,12 @@ function GrowthJournalPage() {
   const [selectedEntry, setSelectedEntry] = useState<JournalEntry | null>(null);
 
   useEffect(() => {
-    if (pathname === "/calendar/growth-journal/new") return;
+    if (pathname !== "/calendar/growth-journal") return;
     let cancelled = false;
+    setIsLoading(true);
+    setLoadError(null);
+    setEntries([]);
+    setThumbnailUrls({});
 
     const loadEntries = async () => {
       const { data, error } = await supabase
@@ -380,7 +384,7 @@ function GrowthJournalPage() {
         </div>
 
         {isLoading ? (
-          <div className="mt-[18px] rounded-[12px] bg-item-hover px-6 py-16 text-center">
+          <div className="mt-[18px] rounded-[12px] bg-transparent px-6 py-16 text-center">
             <p className="text-[16px] text-ink-muted">성장일지를 불러오는 중이에요…</p>
           </div>
         ) : loadError ? (
