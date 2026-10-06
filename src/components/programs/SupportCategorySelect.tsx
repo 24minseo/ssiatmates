@@ -146,7 +146,7 @@ export function SupportCategorySelect({ value, onChange }: SupportCategorySelect
             className="inline-flex h-9 shrink-0 items-center gap-1 whitespace-nowrap rounded-[10px] px-2 text-[13px] font-medium text-ink-muted transition-colors hover:text-ink hover:underline hover:underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
           >
             <RotateCcw aria-hidden className="size-3.5" strokeWidth={2} />
-            선택 초기화
+            기본 프로필로 초기화
           </button>
           <button
             type="button"

@@ -17,6 +17,8 @@ import { Route as ProgramsRouteImport } from './routes/programs'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as CalendarIndexRouteImport } from './routes/calendar/index'
 import { Route as CalendarGrowthJournalRouteImport } from './routes/calendar/growth-journal'
+import { Route as CalendarGrowthJournalIdRouteImport } from './routes/calendar/growth-journal/$id'
+import { Route as CalendarGrowthJournalNewRouteImport } from './routes/calendar/growth-journal/new'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -58,6 +60,17 @@ const CalendarGrowthJournalRoute = CalendarGrowthJournalRouteImport.update({
   path: '/calendar/growth-journal',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CalendarGrowthJournalIdRoute = CalendarGrowthJournalIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => CalendarGrowthJournalRoute,
+} as any)
+const CalendarGrowthJournalNewRoute =
+  CalendarGrowthJournalNewRouteImport.update({
+    id: '/new',
+    path: '/new',
+    getParentRoute: () => CalendarGrowthJournalRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -66,8 +79,10 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof OnboardingRoute
   '/programs': typeof ProgramsRoute
   '/signup': typeof SignupRoute
-  '/calendar/growth-journal': typeof CalendarGrowthJournalRoute
+  '/calendar/growth-journal': typeof CalendarGrowthJournalRouteWithChildren
   '/calendar/': typeof CalendarIndexRoute
+  '/calendar/growth-journal/$id': typeof CalendarGrowthJournalIdRoute
+  '/calendar/growth-journal/new': typeof CalendarGrowthJournalNewRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -76,8 +91,10 @@ export interface FileRoutesByTo {
   '/onboarding': typeof OnboardingRoute
   '/programs': typeof ProgramsRoute
   '/signup': typeof SignupRoute
-  '/calendar/growth-journal': typeof CalendarGrowthJournalRoute
+  '/calendar/growth-journal': typeof CalendarGrowthJournalRouteWithChildren
   '/calendar': typeof CalendarIndexRoute
+  '/calendar/growth-journal/$id': typeof CalendarGrowthJournalIdRoute
+  '/calendar/growth-journal/new': typeof CalendarGrowthJournalNewRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -87,8 +104,10 @@ export interface FileRoutesById {
   '/onboarding': typeof OnboardingRoute
   '/programs': typeof ProgramsRoute
   '/signup': typeof SignupRoute
-  '/calendar/growth-journal': typeof CalendarGrowthJournalRoute
+  '/calendar/growth-journal': typeof CalendarGrowthJournalRouteWithChildren
   '/calendar/': typeof CalendarIndexRoute
+  '/calendar/growth-journal/$id': typeof CalendarGrowthJournalIdRoute
+  '/calendar/growth-journal/new': typeof CalendarGrowthJournalNewRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -101,6 +120,8 @@ export interface FileRouteTypes {
     | '/signup'
     | '/calendar/growth-journal'
     | '/calendar/'
+    | '/calendar/growth-journal/$id'
+    | '/calendar/growth-journal/new'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -111,6 +132,8 @@ export interface FileRouteTypes {
     | '/signup'
     | '/calendar/growth-journal'
     | '/calendar'
+    | '/calendar/growth-journal/$id'
+    | '/calendar/growth-journal/new'
   id:
     | '__root__'
     | '/'
@@ -121,6 +144,8 @@ export interface FileRouteTypes {
     | '/signup'
     | '/calendar/growth-journal'
     | '/calendar/'
+    | '/calendar/growth-journal/$id'
+    | '/calendar/growth-journal/new'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -130,7 +155,7 @@ export interface RootRouteChildren {
   OnboardingRoute: typeof OnboardingRoute
   ProgramsRoute: typeof ProgramsRoute
   SignupRoute: typeof SignupRoute
-  CalendarGrowthJournalRoute: typeof CalendarGrowthJournalRoute
+  CalendarGrowthJournalRoute: typeof CalendarGrowthJournalRouteWithChildren
   CalendarIndexRoute: typeof CalendarIndexRoute
 }
 
@@ -192,8 +217,37 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CalendarGrowthJournalRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/calendar/growth-journal/$id': {
+      id: '/calendar/growth-journal/$id'
+      path: '/$id'
+      fullPath: '/calendar/growth-journal/$id'
+      preLoaderRoute: typeof CalendarGrowthJournalIdRouteImport
+      parentRoute: typeof CalendarGrowthJournalRoute
+    }
+    '/calendar/growth-journal/new': {
+      id: '/calendar/growth-journal/new'
+      path: '/new'
+      fullPath: '/calendar/growth-journal/new'
+      preLoaderRoute: typeof CalendarGrowthJournalNewRouteImport
+      parentRoute: typeof CalendarGrowthJournalRoute
+    }
   }
 }
+
+interface CalendarGrowthJournalRouteChildren {
+  CalendarGrowthJournalIdRoute: typeof CalendarGrowthJournalIdRoute
+  CalendarGrowthJournalNewRoute: typeof CalendarGrowthJournalNewRoute
+}
+
+const CalendarGrowthJournalRouteChildren: CalendarGrowthJournalRouteChildren = {
+  CalendarGrowthJournalIdRoute: CalendarGrowthJournalIdRoute,
+  CalendarGrowthJournalNewRoute: CalendarGrowthJournalNewRoute,
+}
+
+const CalendarGrowthJournalRouteWithChildren =
+  CalendarGrowthJournalRoute._addFileChildren(
+    CalendarGrowthJournalRouteChildren,
+  )
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -202,7 +256,7 @@ const rootRouteChildren: RootRouteChildren = {
   OnboardingRoute: OnboardingRoute,
   ProgramsRoute: ProgramsRoute,
   SignupRoute: SignupRoute,
-  CalendarGrowthJournalRoute: CalendarGrowthJournalRoute,
+  CalendarGrowthJournalRoute: CalendarGrowthJournalRouteWithChildren,
   CalendarIndexRoute: CalendarIndexRoute,
 }
 export const routeTree = rootRouteImport

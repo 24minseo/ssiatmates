@@ -440,7 +440,7 @@ function ProgramsPage() {
               ? "선호조건을 조금 더 구체적으로 알려주세요."
               : result.message?.trim() ||
                 (result.items.length === 0
-                  ? "선호조건을 충족하는 것으로 확인된 공고가 없어요."
+                  ? "선호조건을 충족하는 것으로 확인된 공고가 없어요"
                   : "선호조건을 반영했어요."));
           setSort(
             result.items.some((item) => item.preference_matched === true) ? "fit" : "deadline",
@@ -970,14 +970,43 @@ function ProgramsPage() {
     <section className="space-y-[18px]">
       <h1 className="text-[28px] font-bold leading-tight text-ink">지원사업 탐색</h1>
       <div className="grid grid-cols-[290px_290px_minmax(0,1fr)] gap-4">
-        <div className="flex h-12 items-center justify-between rounded-xl bg-[#f6f8f7] pl-6 pr-4 text-[15px] font-medium text-ink">
-          기본 프로필 적용 중
-          <span aria-hidden className="flex size-6 flex-col items-center justify-center gap-[3px]">
-            <span className="size-[2px] rounded-full bg-[#84968E]" />
-            <span className="size-[2px] rounded-full bg-[#84968E]" />
-            <span className="size-[2px] rounded-full bg-[#84968E]" />
-          </span>
-        </div>
+        <DropdownMenu modal={false}>
+          <div className="flex h-12 items-center justify-between rounded-xl bg-[#f6f8f7] pl-6 pr-1 text-[15px] font-medium text-ink">
+            <span>매칭 프로필 적용 중</span>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                aria-label="매칭 프로필 메뉴 열기"
+                className="group/dots flex size-10 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-dropdown-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+              >
+                <span aria-hidden className="flex size-6 flex-col items-center justify-center gap-[3px]">
+                  <span className="size-[2px] rounded-full bg-[#84968E] transition-colors group-hover/dots:bg-ink" />
+                  <span className="size-[2px] rounded-full bg-[#84968E] transition-colors group-hover/dots:bg-ink" />
+                  <span className="size-[2px] rounded-full bg-[#84968E] transition-colors group-hover/dots:bg-ink" />
+                </span>
+              </button>
+            </DropdownMenuTrigger>
+          </div>
+          <DropdownMenuContent
+            align="end"
+            sideOffset={2}
+            className="min-w-0 w-fit rounded-[12px] border-0 bg-surface p-1 shadow-none"
+            style={{ boxShadow: "var(--shadow-dropdown)" }}
+          >
+            <DropdownMenuItem
+              onSelect={() =>
+                window.dispatchEvent(
+                  new CustomEvent("open-matching-profile", {
+                    detail: { variant: "programs-explore" },
+                  }),
+                )
+              }
+              className="min-h-10 w-auto cursor-pointer px-[14px] text-ink hover:bg-dropdown-hover data-[highlighted]:bg-dropdown-hover focus:bg-dropdown-hover focus:text-ink"
+            >
+              매칭 프로필 설정
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
         <SupportCategorySelect
           value={supportCategories}
           onChange={(next) => {
@@ -1262,7 +1291,9 @@ function ProgramsPage() {
           </div>
         </div>
 
-        <div className={`${tab === "manual" ? "mt-[18px]" : "mt-1"} overflow-hidden rounded-sm`}>
+        <div
+          className={`${tab === "manual" || tab === "review" || (!currentLoading && !currentError && results.length === 0) ? "mt-[18px]" : "mt-1"} overflow-hidden rounded-sm`}
+        >
           {currentLoading ? (
             <p className="bg-white px-8 py-16 text-center text-ink-muted">
               {tab === "review" ? "추가 검토 공고를 불러오는 중입니다." : "맞춤 공고를 불러오는 중입니다."}
@@ -1282,22 +1313,34 @@ function ProgramsPage() {
           ) : (
             tab === "manual" ? (
               <div className="rounded-[12px] bg-transparent px-6 py-16 text-center">
-                <p className="text-[16px] font-semibold text-ink">수동 공고가 없습니다</p>
-                <p className="mt-[2px] text-[14px] text-ink-muted">
+                <p className="text-[18px] font-semibold text-ink">수동 공고가 없어요</p>
+                <p className="mt-[2px] text-[15px] text-ink-muted">
                   직접 확인하고 싶은 지원사업 공고를 추가해 관리해 보세요.
                 </p>
                 <button
                   type="button"
                   onClick={() => setManualFormOpen(true)}
-                  className="mt-5 inline-flex h-10 items-center gap-2 rounded-[10px] bg-brand px-4 text-[14px] font-semibold text-brand-foreground shadow-none transition-colors hover:bg-brand/88 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                  className="mt-5 inline-flex h-10 items-center gap-2 rounded-[10px] bg-[#F2F7F4] px-4 text-[14px] font-semibold text-brand shadow-none transition-colors hover:bg-[#EAF1EC] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
                 >
                   수동 공고 추가
                 </button>
               </div>
             ) : (
-              <p className="bg-white px-8 py-16 text-center text-ink-muted">
-                {tab === "review" ? "추가 검토가 필요한 지원사업이 없습니다." : "조건에 맞는 지원사업이 없습니다."}
-              </p>
+              tab === "review" ? (
+                <div className="rounded-[12px] bg-transparent px-6 py-16 text-center">
+                  <p className="text-[18px] font-semibold text-ink">추가 검토가 필요한 공고가 없어요</p>
+                  <p className="mt-[2px] text-[15px] text-ink-muted">
+                    기존 공고에 변경 사항이 생기면 이곳에서 확인할 수 있어요.
+                  </p>
+                </div>
+              ) : (
+                <div className="rounded-[12px] bg-transparent px-6 py-16 text-center">
+                  <p className="text-[18px] font-semibold text-ink">조건에 맞는 공고가 없어요</p>
+                  <p className="mt-[2px] text-[15px] text-ink-muted">
+                    매칭 프로필을 수정하거나 다른 지원 분야를 선택해보세요.
+                  </p>
+                </div>
+              )
             )
           )}
         </div>

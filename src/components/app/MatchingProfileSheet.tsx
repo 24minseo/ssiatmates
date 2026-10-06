@@ -22,12 +22,14 @@ import { PillGroup } from "@/components/onboarding/PillGroup";
 import { RegionCombobox } from "@/components/onboarding/RegionCombobox";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import { SquareAlertIcon } from "@/components/ui/square-alert-icon";
 import { supabase } from "@/integrations/supabase/client";
 
 type MatchingProfileSheetProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSaved?: () => void | Promise<unknown>;
+  variant?: "sidebar" | "programs-explore";
   profile: {
     id: string;
     birth_date: string | null;
@@ -53,7 +55,14 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
   );
 }
 
-export function MatchingProfileSheet({ open, onOpenChange, onSaved, profile }: MatchingProfileSheetProps) {
+export function MatchingProfileSheet({
+  open,
+  onOpenChange,
+  onSaved,
+  profile,
+  variant = "sidebar",
+}: MatchingProfileSheetProps) {
+  const isProgramsExploreVariant = variant === "programs-explore";
   const [dirty, setDirty] = useState(false);
   const [birthDate, setBirthDate] = useState("");
   const [startupStage, setStartupStage] = useState("");
@@ -235,6 +244,14 @@ export function MatchingProfileSheet({ open, onOpenChange, onSaved, profile }: M
         <div className="flex h-full min-h-0 flex-col">
           <SheetHeader className="shrink-0 px-7 pb-7 pt-7 pr-20 text-left">
             <SheetTitle className="text-[22px] font-bold text-ink">매칭 프로필 설정</SheetTitle>
+            {isProgramsExploreVariant && (
+              <div className="mt-3 flex h-11 w-[calc(100%+52px)] items-center gap-1 rounded-[12px] bg-item-hover px-3 py-2 text-[14px] font-medium leading-5 text-ink-muted">
+                <SquareAlertIcon className="size-4 shrink-0 text-icon-muted" />
+                <span className="min-w-0 flex-1 break-keep">
+                  변경한 항목은 기본 프로필에 반영되며, 전체 설정은 프로필 카드에서 관리할 수 있습니다.
+                </span>
+              </div>
+            )}
           </SheetHeader>
 
           <div className="relative min-h-0 flex-1">
@@ -245,11 +262,12 @@ export function MatchingProfileSheet({ open, onOpenChange, onSaved, profile }: M
               className="h-full overflow-y-auto bg-surface px-7 pb-6 pt-0"
             >
               <div className="flex flex-col gap-7">
-              <div
-                role="tablist"
-                aria-label="매칭 프로필"
-                className={`relative sticky top-0 z-20 -mx-7 mt-0 flex items-end gap-4 bg-item-hover px-7 pt-2 sm:grid sm:grid-cols-2 after:pointer-events-none after:absolute after:inset-x-0 after:-bottom-16 after:h-16 after:bg-[linear-gradient(to_bottom,var(--surface)_0%,var(--surface)_28%,rgba(255,255,255,0)_100%)] after:transition-opacity after:duration-200 ${scrollFades.top ? "after:opacity-100" : "after:opacity-0"}`}
-              >
+              {!isProgramsExploreVariant && (
+                <div
+                  role="tablist"
+                  aria-label="매칭 프로필"
+                  className={`relative sticky top-0 z-20 -mx-7 mt-0 flex items-end gap-4 bg-item-hover px-7 pt-2 sm:grid sm:grid-cols-2 after:pointer-events-none after:absolute after:inset-x-0 after:-bottom-16 after:h-16 after:bg-[linear-gradient(to_bottom,var(--surface)_0%,var(--surface)_28%,rgba(255,255,255,0)_100%)] after:transition-opacity after:duration-200 ${scrollFades.top ? "after:opacity-100" : "after:opacity-0"}`}
+                >
                 <div className="relative isolate z-0 min-w-0 max-w-[274px] flex-1 sm:-ml-4 sm:max-w-none">
                   <span
                     aria-hidden="true"
@@ -285,7 +303,8 @@ export function MatchingProfileSheet({ open, onOpenChange, onSaved, profile }: M
                   <X aria-hidden className="size-4 rotate-45" strokeWidth={2.5} />
                   <span className="text-[15px]">추가</span>
                 </button>
-              </div>
+                </div>
+              )}
 
               <Section title="기본 정보">
                 <div className="flex flex-col gap-4">
@@ -392,7 +411,7 @@ export function MatchingProfileSheet({ open, onOpenChange, onSaved, profile }: M
 
               <div aria-hidden="true" className="-mx-7 h-2 bg-[#F8FAF9]" />
 
-              <Section title="사업 및 관심 정보">
+              <Section title={isProgramsExploreVariant ? "사업 정보" : "사업 및 관심 정보"}>
                 <div className="flex flex-col gap-4">
                   <FormField label="사업 분야" required labelVariant="muted2">
                     <MultiSelectDropdown
@@ -409,15 +428,17 @@ export function MatchingProfileSheet({ open, onOpenChange, onSaved, profile }: M
                     />
                   </FormField>
                 </div>
-                <div className="pt-4">
-                  <FormField label="관심 지원 분야" labelVariant="muted2">
-                    <PillGroup
-                      options={SUPPORT_CATEGORIES}
-                      value={supportCategories}
-                      onToggle={toggleSupportCategory}
-                    />
-                  </FormField>
-                </div>
+                {!isProgramsExploreVariant && (
+                  <div className="pt-4">
+                    <FormField label="관심 지원 분야" labelVariant="muted2">
+                      <PillGroup
+                        options={SUPPORT_CATEGORIES}
+                        value={supportCategories}
+                        onToggle={toggleSupportCategory}
+                      />
+                    </FormField>
+                  </div>
+                )}
               </Section>
               </div>
             </form>

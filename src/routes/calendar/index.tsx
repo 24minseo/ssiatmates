@@ -1537,7 +1537,8 @@ function CalendarPage() {
                         {day.date.getDate()}
                       </span>
                       <Link
-                        to="/calendar/growth-journal"
+                        to="/calendar/growth-journal/new"
+                        search={{ date: day.key, from: "calendar" }}
                         onClick={(event) => event.stopPropagation()}
                         className="group/journal invisible flex h-6 items-center gap-0.5 rounded-[6px] bg-item-hover py-0.5 pl-[7px] pr-2 text-[13px] font-medium text-ink-muted group-hover:visible hover:bg-calendar-journal-hover hover:text-brand"
                       >

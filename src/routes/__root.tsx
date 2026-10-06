@@ -87,10 +87,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "씨앗" },
-      { name: "description", content: "지원사업 매칭부터 일정 관리까지, 사업의 다음 단계를 준비하세요." },
+      {
+        name: "description",
+        content: "지원사업 매칭부터 일정 관리까지, 사업의 다음 단계를 준비하세요.",
+      },
       { name: "author", content: "씨앗" },
       { property: "og:title", content: "씨앗 | 지원사업 관리 서비스" },
-      { property: "og:description", content: "지원사업 매칭부터 일정 관리까지, 사업의 다음 단계를 준비하세요." },
+      {
+        property: "og:description",
+        content: "지원사업 매칭부터 일정 관리까지, 사업의 다음 단계를 준비하세요.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:site", content: "@ssiatmates" },
@@ -102,7 +108,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
     ],
-
   }),
   shellComponent: RootShell,
   component: RootComponent,
@@ -128,7 +133,9 @@ function getAppNavigationKey(pathname: string): AppNavigationKey | null {
   if (pathname === "/myhome") return "home";
   if (pathname === "/programs") return "programs";
   if (pathname === "/my-programs") return "my-programs";
-  if (pathname === "/calendar/growth-journal") return "growth-journal";
+  if (pathname === "/calendar/growth-journal" || pathname.startsWith("/calendar/growth-journal/")) {
+    return "growth-journal";
+  }
   if (pathname === "/calendar" || pathname === "/calendar/") return "calendar";
   return null;
 }

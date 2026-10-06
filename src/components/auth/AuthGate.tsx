@@ -32,6 +32,7 @@ export function AuthGate({
 
   const isAuthPage = AUTH_PAGES.includes(pathname);
   const isOnboarding = pathname === ONBOARDING_ROUTE;
+  const isGrowthJournalComposer = pathname === "/calendar/growth-journal/new";
 
   let target: string | null = null;
   if (!loading) {
@@ -47,6 +48,9 @@ export function AuthGate({
     if (target) void navigate({ to: target, replace: true });
   }, [target, navigate]);
 
-  if (loading || target) return <FullScreenLoader />;
+  // Keep the composer visible while the existing session is being restored.
+  // Otherwise a full route entry can remain on the spinner even though the
+  // editor itself is ready to render.
+  if ((loading && !isGrowthJournalComposer) || target) return <FullScreenLoader />;
   return <>{children}</>;
 }

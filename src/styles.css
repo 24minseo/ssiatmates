@@ -98,6 +98,7 @@
   --color-control-inactive: var(--control-inactive);
   --color-pill: var(--pill);
   --color-pill-foreground: var(--pill-foreground);
+  --color-search-highlight: var(--search-highlight);
   --color-page: var(--page);
   --color-canvas: var(--canvas);
   --color-overlay: var(--overlay);
@@ -166,6 +167,7 @@
   --control-inactive: #9a9d9b;
   --pill: #E2F8F0;
   --pill-foreground: #1f8064;
+  --search-highlight: #FFF1B8;
   --overlay: rgb(148 155 162 / 0.3);
   --page: var(--overlay);
   --canvas: var(--background);
@@ -590,6 +592,52 @@
   isolation: isolate;
 }
 
+.growth-journal-toolbar-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+}
+
+.growth-journal-editor .ProseMirror hr {
+  height: 24px;
+  margin: 12px 0;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+  background: linear-gradient(
+    to bottom,
+    transparent 11px,
+    rgb(216 225 221 / 0.6) 11px,
+    rgb(216 225 221 / 0.6) 12px,
+    transparent 12px
+  );
+  transition: background 180ms ease, opacity 180ms ease;
+}
+
+.growth-journal-editor .ProseMirror hr:hover {
+  background: linear-gradient(
+    to bottom,
+    rgb(246 248 247 / 0.45) 0,
+    rgb(246 248 247 / 0.45) 10px,
+    rgb(22 59 49 / 0.65) 10px,
+    rgb(22 59 49 / 0.65) 12px,
+    rgb(246 248 247 / 0.45) 12px,
+    rgb(246 248 247 / 0.45) 24px
+  );
+}
+
+.growth-journal-editor .ProseMirror hr.ProseMirror-selectednode {
+  background: linear-gradient(
+    to bottom,
+    rgb(246 248 247 / 0.55) 0,
+    rgb(246 248 247 / 0.55) 11px,
+    rgb(31 128 100 / 0.8) 11px,
+    rgb(31 128 100 / 0.8) 13px,
+    rgb(246 248 247 / 0.55) 13px,
+    rgb(246 248 247 / 0.55) 24px
+  );
+}
+
 .app-header-soft-edge::before {
   content: "";
   position: absolute;
@@ -617,6 +665,22 @@
   mask-position: center;
   -webkit-mask-size: 100% 100%;
   mask-size: 100% 100%;
+}
+
+.growth-journal-header-expanded::before {
+  bottom: -48px;
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    black 0%,
+    black 55%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    black 0%,
+    black 55%,
+    transparent 100%
+  );
 }
 
 .google-auth-button {

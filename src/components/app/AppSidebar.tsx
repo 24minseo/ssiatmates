@@ -16,6 +16,8 @@ type AppSidebarProps = {
   active: AppNavigationKey;
 };
 
+type MatchingProfileVariant = "sidebar" | "programs-explore";
+
 type AppRoute =
   | "/myhome"
   | "/programs"
@@ -265,6 +267,8 @@ export function AppSidebar({ active }: AppSidebarProps) {
   const projectName = getProfileTitle(user, profile);
   const profileCardStatus = "기본 매칭 프로필";
   const [matchingProfileOpen, setMatchingProfileOpen] = useState(false);
+  const [matchingProfileVariant, setMatchingProfileVariant] =
+    useState<MatchingProfileVariant>("sidebar");
   const [projectInitial = "", ...projectNameRest] = Array.from(projectName);
 
   useEffect(() => {
@@ -282,6 +286,17 @@ export function AppSidebar({ active }: AppSidebarProps) {
 
     sidebar.addEventListener("wheel", handleWheel, { capture: true, passive: false });
     return () => sidebar.removeEventListener("wheel", handleWheel, true);
+  }, []);
+
+  useEffect(() => {
+    const openMatchingProfile = (event: Event) => {
+      const variant = (event as CustomEvent<{ variant?: MatchingProfileVariant }>).detail
+        ?.variant;
+      setMatchingProfileVariant(variant ?? "sidebar");
+      setMatchingProfileOpen(true);
+    };
+    window.addEventListener("open-matching-profile", openMatchingProfile);
+    return () => window.removeEventListener("open-matching-profile", openMatchingProfile);
   }, []);
 
   return (
@@ -369,6 +384,7 @@ export function AppSidebar({ active }: AppSidebarProps) {
             ) {
               return;
             }
+            setMatchingProfileVariant("sidebar");
             setMatchingProfileOpen(true);
           }}
           className={`group/profile absolute left-4 top-[79px] ${expanded ? "!cursor-default" : "cursor-pointer"} overflow-visible rounded-[10px] bg-[#FEFEFE] shadow-[1px_1px_0_1px_rgba(185,201,194,0.25)] transition-[width,height] duration-200 ease-out motion-reduce:transition-none ${
@@ -454,6 +470,7 @@ export function AppSidebar({ active }: AppSidebarProps) {
         <MatchingProfileSheet
           open={matchingProfileOpen}
           onOpenChange={setMatchingProfileOpen}
+          variant={matchingProfileVariant}
           profile={profile}
           onSaved={refreshProfile}
         />

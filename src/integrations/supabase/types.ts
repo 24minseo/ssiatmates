@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      startup_diaries: {
+        Row: {
+          content: string | null
+          created_at: string | null
+          diary_date: string
+          id: string
+          image_paths: string[]
+          mood: string | null
+          tags: string[]
+          title: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string | null
+          diary_date: string
+          id?: string
+          image_paths?: string[]
+          mood?: string | null
+          title: string
+          tags?: string[]
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string | null
+          diary_date?: string
+          id?: string
+          image_paths?: string[]
+          mood?: string | null
+          tags?: string[]
+          title?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       onboarding_profiles: {
         Row: {
           user_id: string

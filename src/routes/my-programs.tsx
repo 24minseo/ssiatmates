@@ -280,6 +280,9 @@ function MyProgramsPage() {
       setPrograms((current) =>
         current.filter((program) => program.id !== deleteTarget.id),
       );
+      if (deleteTarget.source === "saved") {
+        setSavedTotalCount((current) => Math.max(0, current - 1));
+      }
       toast.success(
         deleteTarget.source === "saved"
           ? "관심 공고 저장을 해제했습니다."
@@ -411,23 +414,23 @@ function MyProgramsPage() {
           ))}
         </div>
       ) : counts.all === 0 ? (
-        <div className="rounded-[12px] bg-item-hover px-6 py-16 text-center">
-          <p className="text-[16px] font-semibold text-ink">저장된 지원사업이 없습니다</p>
-          <p className="mt-[2px] text-[14px] text-ink-muted">
+        <div className="rounded-[12px] border border-field-border bg-surface px-6 py-16 text-center">
+          <p className="text-[18px] font-semibold text-ink">저장된 지원사업이 없어요</p>
+          <p className="mt-[2px] text-[15px] text-ink-muted">
             지원사업을 탐색하거나 직접 추가해 진행 상황을 관리해 보세요.
           </p>
           <Button
             type="button"
             onClick={() => void navigate({ to: "/programs" })}
-            className="mt-5 h-10 rounded-[10px] bg-brand px-4 text-[14px] font-semibold text-brand-foreground shadow-none hover:bg-brand/88"
+            className="mt-5 h-10 rounded-[10px] bg-[#F2F7F4] px-4 text-[14px] font-semibold text-brand shadow-none transition-colors hover:bg-[#EAF1EC]"
           >
             지원사업 탐색
           </Button>
         </div>
       ) : (
-        <div className="rounded-[12px] bg-item-hover px-6 py-16 text-center">
-          <p className="text-[16px] font-semibold text-ink">표시할 지원사업이 없습니다.</p>
-          <p className="mt-[2px] text-[14px] text-ink-muted">다른 상태를 선택해보세요.</p>
+        <div className="rounded-[12px] border border-field-border bg-surface px-6 py-16 text-center">
+          <p className="text-[18px] font-semibold text-ink">선택한 진행 상태의 지원사업이 없어요</p>
+          <p className="mt-[2px] text-[15px] text-ink-muted">다른 진행 상태를 선택해보세요.</p>
         </div>
       )}
 
