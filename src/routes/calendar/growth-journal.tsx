@@ -1,4 +1,4 @@
-import { Search, X } from "lucide-react";
+import { Loader2, Search, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
@@ -193,6 +193,34 @@ function HighlightedText({ text, query }: { text: string; query: string }) {
   );
 }
 
+type GrowthJournalErrorState = {
+  title: string;
+  description: string;
+};
+
+function getGrowthJournalErrorState(error: { message?: string; status?: number } | null): GrowthJournalErrorState {
+  const message = error?.message?.toLowerCase() ?? "";
+
+  if (typeof navigator !== "undefined" && !navigator.onLine) {
+    return {
+      title: "인터넷 연결이 끊겼어요.",
+      description: "연결 상태를 확인한 후 다시 시도해주세요.",
+    };
+  }
+
+  if (error?.status === 408 || error?.status === 504 || message.includes("timeout") || message.includes("timed out")) {
+    return {
+      title: "불러오는 데 시간이 걸리고 있어요.",
+      description: "요청이 지연되고 있어요. 잠시 후 다시 시도해주세요.",
+    };
+  }
+
+  return {
+    title: "일시적으로 불러오지 못했어요.",
+    description: "잠시 후 다시 시도해주세요.",
+  };
+}
+
 function GrowthJournalPage() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const navigate = useNavigate();
@@ -200,7 +228,8 @@ function GrowthJournalPage() {
   const [viewMode, setViewMode] = useState<"month" | "year">("month");
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<GrowthJournalErrorState | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
   const [thumbnailUrls, setThumbnailUrls] = useState<Record<string, string>>({});
   const [deleteTarget, setDeleteTarget] = useState<JournalEntry | null>(null);
   const [selectedEntry, setSelectedEntry] = useState<JournalEntry | null>(null);
@@ -222,7 +251,7 @@ function GrowthJournalPage() {
 
       if (cancelled) return;
       if (error) {
-        setLoadError("성장일지를 불러오지 못했어요.");
+        setLoadError(getGrowthJournalErrorState(error));
         setEntries([]);
       } else {
         setEntries((data ?? []).map(mapDiaryRow));
@@ -234,7 +263,7 @@ function GrowthJournalPage() {
     return () => {
       cancelled = true;
     };
-  }, [pathname]);
+  }, [pathname, retryCount]);
 
   useEffect(() => {
     let cancelled = false;
@@ -382,24 +411,49 @@ function GrowthJournalPage() {
             일지 쓰기
           </Link>
         </div>
-
         {isLoading ? (
-          <div className="mt-[18px] rounded-[12px] bg-transparent px-6 py-16 text-center">
-            <p className="text-[16px] text-ink-muted">성장일지를 불러오는 중이에요…</p>
+          <div className="mt-[18px] flex min-h-[240px] items-center justify-center rounded-[12px] bg-transparent px-6 py-16 text-ink-muted" role="status">
+            <Loader2 className="mr-2 size-5 animate-spin" aria-hidden />
+            성장일지를 불러오는 중이에요…
           </div>
         ) : loadError ? (
-          <div className="mt-[18px] rounded-[12px] bg-item-hover px-6 py-16 text-center">
-            <p className="text-[16px] text-destructive">{loadError}</p>
+          <div className="mt-[18px] rounded-[12px] bg-transparent px-6 py-16 text-center">
+            <div className="relative mx-auto mb-2 flex h-[180px] w-[180px] items-center justify-center">
+              <img
+                src="/assets/empty/error.svg"
+                alt=""
+                aria-hidden="true"
+                draggable={false}
+                className="block w-[132px] saturate-[0.1]"
+              />
+            </div>
+            <p className="text-[18px] font-semibold text-ink">{loadError.title}</p>
+            <p className="mt-[2px] text-[15px] text-ink-muted">{loadError.description}</p>
+            <Button
+              type="button"
+              onClick={() => setRetryCount((count) => count + 1)}
+              className="mt-5 h-10 rounded-[10px] bg-[#F2F7F4] px-4 text-[14px] font-semibold text-brand shadow-none hover:bg-[#EAF1EC]"
+            >
+              다시 시도
+            </Button>
           </div>
         ) : entries.length === 0 ? (
-          <div className="mt-[18px] rounded-[12px] border border-field-border bg-surface px-6 py-16 text-center">
+          <div className="mt-[18px] rounded-[12px] bg-transparent px-6 py-16 text-center">
+            <div className="relative mx-auto mb-2 flex h-[180px] w-[180px] items-center justify-center">
+              <img
+                src="/assets/empty/growth-journal.svg"
+                alt=""
+                aria-hidden="true"
+                className="block w-[132px] saturate-[0.1]"
+              />
+            </div>
             <p className="text-[18px] font-semibold text-ink">아직 작성한 성장일지가 없어요</p>
             <p className="mt-[2px] text-[15px] text-ink-muted">
               오늘의 생각과 경험을 첫 일지로 남겨보세요.
             </p>
           </div>
         ) : filteredEntries.length === 0 ? (
-          <div className="mt-[18px] rounded-[12px] border border-field-border bg-surface px-6 py-16 text-center">
+          <div className="mt-[18px] rounded-[12px] bg-transparent px-6 py-16 text-center">
             <p className="text-[18px] font-semibold text-ink">검색 결과가 없어요</p>
             <p className="mt-[2px] text-[15px] text-ink-muted">다른 검색어로 다시 시도해보세요.</p>
           </div>
@@ -549,7 +603,7 @@ function GrowthJournalPage() {
                                   setSelectedEntry(null);
                                   setDeleteTarget(entry);
                                 }}
-                                className="cursor-pointer px-[10px] text-destructive hover:bg-dropdown-hover data-[highlighted]:bg-dropdown-hover focus:bg-dropdown-hover focus:text-destructive"
+                                className="cursor-pointer px-[10px] text-destructive hover:bg-destructive-surface data-[highlighted]:bg-destructive-surface focus:bg-destructive-surface focus:text-destructive"
                               >
                                 삭제하기
                               </DropdownMenuItem>

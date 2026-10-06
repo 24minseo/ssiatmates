@@ -244,6 +244,11 @@
     scrollbar-width: thin;
   }
 
+  img[aria-hidden="true"] {
+    user-select: none;
+    -webkit-user-drag: none;
+  }
+
   *::-webkit-scrollbar {
     width: 6px;
     height: 6px;
@@ -280,6 +285,83 @@
   0% { transform: scale(0.85); }
   45% { transform: scale(1.12); }
   100% { transform: scale(1); }
+}
+
+@keyframes empty-state-zzz-float {
+  0%,
+  25%,
+  75%,
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  50% {
+    opacity: 0.5;
+    transform: translate(5px, -8px) rotate(2deg);
+  }
+}
+
+@keyframes empty-state-speech-bubble-float {
+  0%,
+  15%,
+  72%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+
+  35% {
+    transform: translateY(-5px) scale(1);
+  }
+
+  65% {
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-empty-speech-bubble {
+  animation: empty-state-speech-bubble-float 2.8s ease infinite;
+  transform-origin: center;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform: translateZ(0);
+  will-change: transform;
+}
+
+.animate-empty-manual-pen {
+  animation: empty-state-speech-bubble-float 2.8s ease infinite;
+  transform-origin: center;
+  will-change: transform;
+}
+
+.animate-empty-manual-bubble-delay {
+  animation-delay: 0.3s;
+}
+
+.animate-empty-review-bubble-delay {
+  animation-delay: 0.25s;
+}
+
+.animate-empty-zzz {
+  animation: empty-state-zzz-float 2.4s ease-in-out infinite;
+}
+
+.animate-empty-zzz-delay-1 {
+  animation-delay: 0.15s;
+}
+
+.animate-empty-zzz-delay-2 {
+  animation-delay: 0.3s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-empty-zzz,
+  .animate-empty-speech-bubble,
+  .animate-empty-manual-pen,
+  .animate-empty-manual-bubble-delay,
+  .animate-empty-review-bubble-delay {
+    animation: none;
+  }
 }
 
 @keyframes preference-feedback-in {

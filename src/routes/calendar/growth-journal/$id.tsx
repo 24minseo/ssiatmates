@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowUp } from "lucide-react";
+import { ArrowLeft, ArrowUp, Loader2 } from "lucide-react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { createElement, useEffect, useState, type ReactNode } from "react";
 
@@ -136,7 +136,12 @@ function GrowthJournalDetailPage() {
 
   if (error) return <p className="py-16 text-center text-[16px] text-destructive">{error}</p>;
   if (!entry)
-    return <p className="py-16 text-center text-[16px] text-ink-muted">불러오는 중이에요…</p>;
+    return (
+      <div className="flex min-h-[240px] items-center justify-center py-16 text-ink-muted" role="status">
+        <Loader2 className="mr-2 size-5 animate-spin" aria-hidden />
+        불러오는 중이에요…
+      </div>
+    );
 
   return (
     <section className="mx-auto w-full max-w-[960px] pb-16">

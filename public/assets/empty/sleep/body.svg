@@ -1,0 +1,26 @@
+<svg width="132" height="132" viewBox="0 0 132 132" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g filter="url(#filter0_i_2753_4808)">
+<g clip-path="url(#clip0_2753_4808)">
+<path d="M65.9651 131.93C29.5336 131.93 0 102.397 0 65.9651C0 29.5336 29.5336 -1.29095e-06 65.9651 -2.88343e-06L107.943 -4.71833e-06C121.191 -5.29741e-06 131.93 10.7395 131.93 23.9873V65.9651C131.93 102.397 102.397 131.93 65.9651 131.93Z" fill="url(#paint0_radial_2753_4808)"/>
+</g>
+</g>
+<defs>
+<filter id="filter0_i_2753_4808" x="0" y="0" width="133.93" height="133.93" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+<feOffset dx="2" dy="2"/>
+<feGaussianBlur stdDeviation="8.45"/>
+<feComposite in2="hardAlpha" operator="arithmetic" k2="-1" k3="1"/>
+<feColorMatrix type="matrix" values="0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 1 0"/>
+<feBlend mode="normal" in2="shape" result="effect1_innerShadow_2753_4808"/>
+</filter>
+<radialGradient id="paint0_radial_2753_4808" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(57.6203 92.1795) rotate(84.2012) scale(82.5924)">
+<stop stop-color="#B3F3D0"/>
+<stop offset="0.677885" stop-color="#E2F8F0"/>
+</radialGradient>
+<clipPath id="clip0_2753_4808">
+<rect width="131.93" height="131.93" fill="white"/>
+</clipPath>
+</defs>
+</svg>

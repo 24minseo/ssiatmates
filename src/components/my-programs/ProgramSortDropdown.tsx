@@ -23,6 +23,7 @@ type ProgramSortDropdownProps = {
   onChange: (value: ProgramSortOption) => void;
   variant?: "explore" | "myPrograms";
   preferenceActive?: boolean;
+  hiddenOptions?: ProgramSortOption[];
 };
 
 export function ProgramSortDropdown({
@@ -30,6 +31,7 @@ export function ProgramSortDropdown({
   onChange,
   variant = "explore",
   preferenceActive = false,
+  hiddenOptions = [],
 }: ProgramSortDropdownProps) {
   const sortLabels = sortLabelsByVariant[variant];
   const disabledOptions = disabledOptionsByVariant[variant] as ProgramSortOption[];
@@ -69,7 +71,9 @@ export function ProgramSortDropdown({
         >
           <CommandList>
             <CommandGroup>
-              {(Object.keys(sortLabels) as ProgramSortOption[]).map((option) => {
+              {(Object.keys(sortLabels) as ProgramSortOption[])
+                .filter((option) => !hiddenOptions.includes(option))
+                .map((option) => {
                 const selected = value === option;
                 const disabled =
                   disabledOptions.includes(option) ||
@@ -97,7 +101,7 @@ export function ProgramSortDropdown({
                     ) : null}
                   </CommandItem>
                 );
-              })}
+                })}
             </CommandGroup>
           </CommandList>
         </Command>

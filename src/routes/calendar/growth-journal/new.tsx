@@ -79,6 +79,21 @@ const MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024;
 const JOURNAL_IMAGE_BUCKET = "growth-journal-images";
 type DateEditPart = "year" | "month" | "day";
 
+type JournalDraftSnapshot = {
+  title: string;
+  content: string;
+  recordDate: string;
+  tags: string[];
+  imagePaths: string[];
+};
+
+function normalizeDraftContent(content: string) {
+  return content
+    .replace(/<p>(?:\s|<br\s*\/?>)*<\/p>/gi, "")
+    .replace(/\s+/g, "")
+    .trim();
+}
+
 function getTodayDateValue() {
   const today = new Date();
   const year = today.getFullYear();
@@ -372,8 +387,15 @@ function GrowthJournalNewPage() {
   const [imagePaths, setImagePaths] = useState<string[]>([]);
   const imageUrlPathsRef = useRef(new Map<string, string>());
   const imageDataPathsRef = useRef(new Map<string, string>());
+  const initialDraftRef = useRef<JournalDraftSnapshot>({
+    title: "",
+    content: "",
+    recordDate: initialRecordDate,
+    tags: [],
+    imagePaths: [],
+  });
   const allowSavedNavigationRef = useRef(false);
-  const [, setEditorVersion] = useState(0);
+  const [editorVersion, setEditorVersion] = useState(0);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const toolbarRef = useRef<HTMLDivElement>(null);
   const saveAnchorRef = useRef<HTMLDivElement>(null);
@@ -467,6 +489,21 @@ function GrowthJournalNewPage() {
   });
 
   useEffect(() => {
+    if (!editor) return;
+    const initial = initialDraftRef.current;
+    const isSameTags = tags.length === initial.tags.length && tags.every((tag, index) => tag === initial.tags[index]);
+    const isSameImages = imagePaths.length === initial.imagePaths.length && imagePaths.every((path, index) => path === initial.imagePaths[index]);
+    const nextIsDirty =
+      title.trim() !== initial.title.trim() ||
+      normalizeDraftContent(editor.getHTML()) !== initial.content ||
+      recordDate !== initial.recordDate ||
+      !isSameTags ||
+      !isSameImages;
+    setIsDirty(nextIsDirty);
+    if (nextIsDirty) setSaved(false);
+  }, [editor, editorVersion, imagePaths, recordDate, tags, title]);
+
+  useEffect(() => {
     if (!editor || !editId) return;
     let cancelled = false;
 
@@ -494,6 +531,13 @@ function GrowthJournalNewPage() {
         hydratedContent = hydratedContent.split(storageUrl).join(signedUrlData.signedUrl);
       }
       editor.commands.setContent(hydratedContent, { emitUpdate: false });
+      initialDraftRef.current = {
+        title: data.title,
+        content: normalizeDraftContent(hydratedContent),
+        recordDate: data.diary_date,
+        tags: [...data.tags],
+        imagePaths: [...data.image_paths],
+      };
       setIsDirty(false);
     };
 
@@ -780,6 +824,13 @@ function GrowthJournalNewPage() {
         await supabase.storage.from(JOURNAL_IMAGE_BUCKET).remove(removedImagePaths);
       }
       setImagePaths(nextImagePaths);
+      initialDraftRef.current = {
+        title: title.trim(),
+        content: normalizeDraftContent(content),
+        recordDate,
+        tags: [...tags],
+        imagePaths: [...nextImagePaths],
+      };
       setSaved(true);
       setIsDirty(false);
       if (navigateAfterSave && savedEntry?.id) {
@@ -816,6 +867,7 @@ function GrowthJournalNewPage() {
             className="size-10 shrink-0 rounded-[8px] px-0 text-ink-muted hover:bg-item-hover hover:text-ink"
           >
             <Link
+              draggable={false}
               to={
                 from === "calendar"
                   ? "/calendar"

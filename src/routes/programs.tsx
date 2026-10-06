@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { ArrowRight, Check, MoreVertical, X } from "lucide-react";
+import { ArrowRight, Check, Loader2, MoreVertical, X } from "lucide-react";
 import { toast } from "sonner";
 import { createFileRoute } from "@tanstack/react-router";
 import { Pagination } from "@/components/ui/pagination";
@@ -644,7 +644,7 @@ function ProgramsPage() {
         if (cancelled || matchingRequestRef.current !== requestId) return;
         console.error("[programs] 맞춤 공고 조회 실패", error);
         if (showLoading) {
-          setMatchError("맞춤 공고를 불러오지 못했습니다.");
+          setMatchError("맞춤 공고를 불러오는 중 문제가 발생했어요. 잠시 후 다시 시도해주세요.");
           setMatchedPrograms([]);
           setActiveTotalCount(0);
           setExcludedCount(0);
@@ -763,7 +763,7 @@ function ProgramsPage() {
         if (cancelled || reviewRequestRef.current !== requestId) return;
         console.error("[programs] 추가 검토 공고 조회 실패", error);
         if (showLoading) {
-          setReviewError("추가 검토 공고를 불러오지 못했습니다.");
+          setReviewError("추가 검토 공고를 불러오는 중 문제가 발생했어요. 잠시 후 다시 시도해주세요.");
           setReviewPrograms([]);
           setReviewTotalCount(0);
         }
@@ -856,7 +856,7 @@ function ProgramsPage() {
     } catch (error) {
       if (excludedRequestRef.current !== requestId) return;
       console.error("[programs] 제외된 공고 조회 실패", error);
-      setExcludedError("제외된 공고를 불러오지 못했습니다.");
+      setExcludedError("제외된 공고를 불러오는 중 문제가 발생했어요. 잠시 후 다시 시도해주세요.");
       setExcludedPrograms([]);
     } finally {
       if (excludedRequestRef.current === requestId) {
@@ -1324,14 +1324,34 @@ function ProgramsPage() {
         </div>
 
         <div
-          className={`${tab === "manual" || tab === "review" || (!currentLoading && !currentError && results.length === 0) ? "mt-[18px]" : "mt-1"} overflow-hidden rounded-sm`}
+          className={`${tab === "manual" || tab === "review" || currentError || (!currentLoading && !currentError && results.length === 0) ? "mt-[18px]" : "mt-1"} overflow-hidden rounded-sm`}
         >
           {currentLoading ? (
-            <p className="bg-white px-8 py-16 text-center text-ink-muted">
-              {tab === "review" ? "추가 검토 공고를 불러오는 중입니다." : "맞춤 공고를 불러오는 중입니다."}
-            </p>
+            <div className="flex min-h-[240px] items-center justify-center bg-white px-8 py-16 text-ink-muted" role="status">
+              <Loader2 className="mr-2 size-5 animate-spin" aria-hidden />
+              {tab === "review" ? "추가 검토 공고를 불러오는 중이에요…" : "맞춤 공고를 불러오는 중이에요…"}
+            </div>
           ) : currentError ? (
-            <p className="bg-white px-8 py-16 text-center text-ink-muted">{currentError}</p>
+            <div className="flex min-h-[360px] flex-col items-center justify-center bg-white px-8 py-16 text-center">
+              <div className="relative mx-auto mb-2 flex h-[180px] w-[180px] items-center justify-center">
+                <img
+                  src="/assets/empty/error.svg"
+                  alt=""
+                  aria-hidden="true"
+                  draggable={false}
+                  className="block w-[132px] saturate-[0.1]"
+                />
+              </div>
+              <p className="text-[18px] font-semibold text-ink">일시적으로 불러오지 못했어요.</p>
+              <p className="mt-[2px] text-[15px] text-ink-muted">{currentError}</p>
+              <button
+                type="button"
+                onClick={() => window.location.reload()}
+                className="mt-5 inline-flex h-10 items-center justify-center rounded-[10px] bg-[#F2F7F4] px-4 text-[14px] font-semibold text-brand transition-colors hover:bg-[#EAF1EC]"
+              >
+                다시 시도
+              </button>
+            </div>
           ) : results.length ? (
             results.map((program) => (
               <ProgramResultRow
@@ -1344,7 +1364,30 @@ function ProgramsPage() {
             ))
           ) : (
             tab === "manual" ? (
-              <div className="rounded-[12px] bg-transparent px-6 py-16 text-center">
+                <div key="manual-empty" className="rounded-[12px] bg-transparent px-6 py-16 text-center">
+                  <div className="relative mx-auto mb-2 flex h-[180px] w-[180px] -translate-y-4 items-center justify-center">
+                    <div className="relative h-[165px] w-[132px] saturate-[0.1]">
+                      <img
+                        src="/assets/empty/manual/pen.svg"
+                        alt=""
+                        aria-hidden="true"
+                        className="animate-empty-manual-pen absolute left-0 top-[24.3px] block h-auto w-[48.15px] max-w-none"
+                      />
+                      <img
+                        src="/assets/empty/manual/speech-bubble.svg"
+                        alt=""
+                        aria-hidden="true"
+                        className="animate-empty-speech-bubble animate-empty-manual-bubble-delay absolute left-[79.4px] top-0 block h-auto w-[52.55px] max-w-none"
+                      />
+                      <img
+                        src="/assets/empty/manual-empty.svg"
+                        alt=""
+                        aria-hidden="true"
+                        draggable={false}
+                        className="absolute left-[3.9px] top-[80.8px] block h-auto w-[112px] max-w-none"
+                      />
+                    </div>
+                </div>
                 <p className="text-[18px] font-semibold text-ink">수동 공고가 없어요</p>
                 <p className="mt-[2px] text-[15px] text-ink-muted">
                   직접 확인하고 싶은 지원사업 공고를 추가해 관리해 보세요.
@@ -1359,14 +1402,59 @@ function ProgramsPage() {
               </div>
             ) : (
               tab === "review" ? (
-                <div className="rounded-[12px] bg-transparent px-6 py-16 text-center">
+                <div key="review-empty" className="rounded-[12px] bg-transparent px-6 py-16 text-center">
+                  <div className="relative mx-auto mb-2 flex h-[180px] w-[180px] -translate-y-2 items-center justify-center">
+                    <div className="relative h-[141px] w-[132px] saturate-[0.1]">
+                      <img
+                        src="/assets/empty/review/body.svg"
+                        alt=""
+                        aria-hidden="true"
+                        className="absolute left-[17px] top-[69px] block h-auto w-[95.65px] max-w-none"
+                      />
+                      <img
+                        src="/assets/empty/review/bubble-left.svg"
+                        alt=""
+                        aria-hidden="true"
+                        className="animate-empty-speech-bubble absolute left-0 top-0 block h-auto w-[52.06px] max-w-none"
+                      />
+                      <img
+                        src="/assets/empty/review/bubble-right.svg"
+                        alt=""
+                        aria-hidden="true"
+                        className="animate-empty-speech-bubble animate-empty-review-bubble-delay absolute left-[80.8px] top-[47.2px] block h-auto w-[52.06px] max-w-none"
+                      />
+                    </div>
+                  </div>
                   <p className="text-[18px] font-semibold text-ink">추가 검토가 필요한 공고가 없어요</p>
                   <p className="mt-[2px] text-[15px] text-ink-muted">
                     기존 공고에 변경 사항이 생기면 이곳에서 확인할 수 있어요.
                   </p>
                 </div>
               ) : (
-                <div className="rounded-[12px] bg-transparent px-6 py-16 text-center">
+                <div key="matched-empty" className="rounded-[12px] bg-transparent px-6 py-16 text-center">
+                  <div className="relative mx-auto mb-2 flex h-[180px] w-[180px] -translate-y-2 items-center justify-center">
+                    <div className="relative w-[180px]">
+                      <img
+                        src="/assets/empty/empty-program-search.svg"
+                        alt=""
+                        aria-hidden="true"
+                        draggable={false}
+                        className="block w-[180px] saturate-[0.1]"
+                      />
+                      <span
+                        aria-hidden="true"
+                        className="pointer-events-none absolute left-[123px] top-[15px] h-[48px] w-[48px] bg-white"
+                      />
+                      <img
+                        src="/assets/empty/empty-program-search.svg"
+                        alt=""
+                        aria-hidden="true"
+                        draggable={false}
+                        className="animate-empty-speech-bubble pointer-events-none absolute left-0 top-0 block w-[180px] saturate-[0.1]"
+                        style={{ clipPath: "inset(11.4% 6.7% 55% 69.2%)" }}
+                      />
+                    </div>
+                  </div>
                   <p className="text-[18px] font-semibold text-ink">조건에 맞는 공고가 없어요</p>
                   <p className="mt-[2px] text-[15px] text-ink-muted">
                     매칭 프로필을 수정하거나 다른 지원 분야를 선택해보세요.
@@ -1405,13 +1493,48 @@ function ProgramsPage() {
                 </div>
                 <div className="min-h-0 overflow-y-auto pb-[10px]">
                   {isLoadingExcluded ? (
-                    <p className="px-8 py-16 text-center text-ink-muted">제외된 공고를 불러오는 중입니다.</p>
+                    <div className="flex min-h-[180px] items-center justify-center px-8 py-16 text-ink-muted" role="status">
+                      <Loader2 className="mr-2 size-5 animate-spin" aria-hidden />
+                      제외된 공고를 불러오는 중이에요…
+                    </div>
                   ) : excludedError ? (
-                    <p className="px-8 py-16 text-center text-ink-muted">{excludedError}</p>
+                    <div className="px-8 py-16 text-center">
+                      <div className="relative mx-auto mb-2 flex h-[180px] w-[180px] items-center justify-center">
+                        <img
+                          src="/assets/empty/error.svg"
+                          alt=""
+                          aria-hidden="true"
+                          draggable={false}
+                          className="block w-[132px] saturate-[0.1]"
+                        />
+                      </div>
+                      <p className="text-[18px] font-semibold text-ink">일시적으로 불러오지 못했어요.</p>
+                      <p className="mt-1 text-[15px] text-ink-muted">{excludedError}</p>
+                      <button
+                        type="button"
+                        onClick={() => void loadExcludedNotices()}
+                        className="mt-5 inline-flex h-10 items-center justify-center rounded-[10px] bg-[#F2F7F4] px-4 text-[14px] font-semibold text-brand transition-colors hover:bg-[#EAF1EC]"
+                      >
+                        다시 시도
+                      </button>
+                    </div>
                   ) : excludedPrograms.length ? (
                     excludedPrograms.map((program) => <ExcludedProgramRow key={program.id} program={program} />)
                   ) : (
-                    <p className="px-8 py-16 text-center text-ink-muted">제외된 공고가 없습니다.</p>
+                    <div className="px-8 py-12 text-center">
+                      <div className="relative mx-auto mb-2 flex h-[180px] w-[180px] items-center justify-center">
+                        <img
+                          src="/assets/empty/empty-program-search.svg"
+                          alt=""
+                          aria-hidden="true"
+                          className="block w-[180px] saturate-[0.1]"
+                        />
+                      </div>
+                      <p className="text-[18px] font-semibold text-ink">제외된 공고가 없어요</p>
+                      <p className="mt-[2px] text-[15px] text-ink-muted">
+                        노출된 공고 중 마감일이 지난 공고가 탐색 리스트에서 제외돼요.
+                      </p>
+                    </div>
                   )}
                 </div>
               </div>

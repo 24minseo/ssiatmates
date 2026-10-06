@@ -5,7 +5,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -565,7 +565,7 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle 
         if (!cancelled && session?.user.id === currentUserId && noticeId === currentNoticeId) {
           if (rpcError) {
             console.error("[programs] 맞춤 리포트 조회 실패", rpcError);
-            setError("리포트를 불러오지 못했습니다.");
+            setError("리포트를 불러오는 중 문제가 발생했어요. 잠시 후 다시 시도해주세요.");
           } else {
             setReport((data as NoticeReport | null) ?? null);
             setReportNoticeId(currentNoticeId);
@@ -575,7 +575,7 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle 
       } catch (loadError) {
         if (!cancelled && session?.user.id === currentUserId && noticeId === currentNoticeId) {
           console.error("[programs] 맞춤 리포트 조회 실패", loadError);
-          setError("리포트를 불러오지 못했습니다.");
+          setError("리포트를 불러오는 중 문제가 발생했어요. 잠시 후 다시 시도해주세요.");
           setLoading(false);
         }
       } finally {
@@ -643,9 +643,6 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle 
     ];
   }, [currentReport]);
 
-  const statusMessage = currentReport?.status === "not_found"
-    ? "이 공고의 맞춤 리포트를 찾을 수 없습니다."
-    : "아직 맞춤 리포트가 준비되지 않았습니다.";
   const reportContentKey = loading
     ? "loading"
     : error
@@ -725,11 +722,36 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle 
               </div>
             </div>
             {loading ? (
-              <p className="py-16 text-center text-[15px] text-ink-muted">리포트를 불러오는 중입니다.</p>
+              <div className="flex min-h-[180px] items-center justify-center py-16 text-[15px] text-ink-muted" role="status">
+                <Loader2 className="mr-2 size-5 animate-spin" aria-hidden />
+                리포트를 불러오는 중이에요…
+              </div>
             ) : error ? (
-              <p className="py-16 text-center text-[15px] text-ink-muted">{error}</p>
+              <div className="px-6 py-16 text-center">
+                <div className="relative mx-auto mb-2 flex h-[180px] w-[180px] items-center justify-center">
+                  <img
+                    src="/assets/empty/error.svg"
+                    alt=""
+                    aria-hidden="true"
+                    draggable={false}
+                    className="block w-[132px] saturate-[0.1]"
+                  />
+                </div>
+                <p className="text-[18px] font-semibold text-ink">일시적으로 불러오지 못했어요.</p>
+                <p className="mt-1 text-[15px] text-ink-muted">{error}</p>
+                <button
+                  type="button"
+                  onClick={() => window.location.reload()}
+                  className="mt-5 inline-flex h-10 items-center justify-center rounded-[10px] bg-[#F2F7F4] px-4 text-[14px] font-semibold text-brand transition-colors hover:bg-[#EAF1EC]"
+                >
+                  다시 시도
+                </button>
+              </div>
             ) : currentReport?.status !== "ready" ? (
-              <p className="py-16 text-center text-[15px] text-ink-muted">{statusMessage}</p>
+              <div className="px-6 py-16 text-center">
+                <p className="text-[18px] font-semibold text-ink">아직 리포트가 없어요</p>
+                <p className="mt-[2px] text-[15px] text-ink-muted">리포트가 준비되는 대로 이곳에 표시돼요.</p>
+              </div>
             ) : (
               <>
                 {groups.map((group) =>

@@ -125,6 +125,7 @@ function MyProgramsPage() {
   const [savedTotalCount, setSavedTotalCount] = useState(0);
   const [activeFilter, setActiveFilter] = useState<StatusFilter>("all");
   const [sort, setSort] = useState<SortOption>("created");
+  const [retryCount, setRetryCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -134,6 +135,10 @@ function MyProgramsPage() {
   const [scheduleProgram, setScheduleProgram] = useState<Program | null>(null);
   const [reportTarget, setReportTarget] = useState<Program | null>(null);
   const savedRequestRef = useRef(0);
+
+  useEffect(() => {
+    if (activeFilter !== "all" && sort === "fit") setSort("created");
+  }, [activeFilter, sort]);
 
   useEffect(() => {
     let mounted = true;
@@ -157,6 +162,7 @@ function MyProgramsPage() {
     const userId = session.user.id;
     setLoading(true);
     setLoadError(null);
+
     savedNoticesApi
       .getMySupportNotices()
       .then(({ items, total_count }) => {
@@ -178,7 +184,7 @@ function MyProgramsPage() {
         console.error("[my-programs] 저장 공고 조회 실패", error);
         setPrograms([]);
         setSavedTotalCount(0);
-        setLoadError("저장한 지원사업을 불러오지 못했습니다.");
+        setLoadError("저장한 지원사업을 불러오는 중 문제가 발생했어요. 잠시 후 다시 시도해주세요.");
       })
       .finally(() => {
         if (mounted && savedRequestRef.current === requestId) setLoading(false);
@@ -187,7 +193,7 @@ function MyProgramsPage() {
     return () => {
       mounted = false;
     };
-  }, [authLoading, session?.user.id]);
+  }, [authLoading, retryCount, session?.user.id]);
 
   const counts = useMemo(
     () => ({
@@ -384,22 +390,42 @@ function MyProgramsPage() {
         />
 
         <div className="absolute right-0 top-[-1px] flex items-center gap-[6px]">
-          <ProgramSortDropdown value={sort} onChange={setSort} variant="myPrograms" />
+          <ProgramSortDropdown
+            value={sort}
+            onChange={setSort}
+            variant="myPrograms"
+            hiddenOptions={activeFilter === "all" ? [] : ["fit"]}
+          />
         </div>
       </div>
-
-      {loadError ? (
-        <div className="rounded-[12px] border border-destructive/30 bg-destructive/5 px-5 py-4 text-[14px] text-destructive" role="alert">
-          {loadError}
-        </div>
-      ) : null}
 
       {loading ? (
         <div className="flex min-h-[240px] items-center justify-center text-ink-muted" role="status">
           <Loader2 className="mr-2 size-5 animate-spin" aria-hidden />
           불러오는 중…
         </div>
-      ) : loadError ? null : visiblePrograms.length > 0 ? (
+      ) : loadError ? (
+        <div className="rounded-[12px] bg-transparent px-6 py-16 text-center" role="alert">
+          <div className="relative mx-auto mb-2 flex h-[180px] w-[180px] items-center justify-center">
+            <img
+              src="/assets/empty/error.svg"
+              alt=""
+              aria-hidden="true"
+              draggable={false}
+              className="block w-[132px] saturate-[0.1]"
+            />
+          </div>
+          <p className="text-[18px] font-semibold text-ink">일시적으로 불러오지 못했어요.</p>
+          <p className="mt-[2px] text-[15px] text-ink-muted">{loadError}</p>
+          <Button
+            type="button"
+            onClick={() => setRetryCount((count) => count + 1)}
+            className="mt-5 h-10 rounded-[10px] bg-[#F2F7F4] px-4 text-[14px] font-semibold text-brand shadow-none transition-colors hover:bg-[#EAF1EC]"
+          >
+            다시 시도
+          </Button>
+        </div>
+      ) : visiblePrograms.length > 0 ? (
         <div className="space-y-[18px]">
           {visiblePrograms.map((program) => (
             <ProgramCard
@@ -414,7 +440,17 @@ function MyProgramsPage() {
           ))}
         </div>
       ) : counts.all === 0 ? (
-        <div className="rounded-[12px] border border-field-border bg-surface px-6 py-16 text-center">
+        <div className="rounded-[12px] bg-surface px-6 py-16 text-center">
+          <div className="relative left-[6px] mx-auto mb-2 h-[81px] w-[79px] origin-top-left scale-[0.53] saturate-[0.1]">
+            <img src="/assets/empty/sleep/body.svg" alt="" aria-hidden="true" className="absolute left-0 top-0 max-w-none" />
+            <img src="/assets/empty/sleep/zzz.svg" alt="" aria-hidden="true" className="animate-empty-zzz animate-empty-zzz-delay-2 absolute left-[74.46px] top-[21.1px] max-w-none" style={{ clipPath: "inset(0 0 0 44px)" }} />
+            <img src="/assets/empty/sleep/zzz.svg" alt="" aria-hidden="true" className="animate-empty-zzz animate-empty-zzz-delay-1 absolute left-[74.46px] top-[21.1px] max-w-none" style={{ clipPath: "inset(0 30px 0 22px)" }} />
+            <img src="/assets/empty/sleep/zzz.svg" alt="" aria-hidden="true" className="animate-empty-zzz absolute left-[74.46px] top-[21.1px] max-w-none" style={{ clipPath: "inset(0 52px 0 0)" }} />
+            <img src="/assets/empty/sleep/eyes.svg" alt="" aria-hidden="true" className="absolute left-[23.47px] top-[78.81px] max-w-none" />
+            <img src="/assets/empty/sleep/mouth.svg" alt="" aria-hidden="true" className="absolute left-[41.17px] top-[94.21px] max-w-none" />
+            <img src="/assets/empty/sleep/foot-left.svg" alt="" aria-hidden="true" className="absolute left-[18.07px] top-[114.64px] max-w-none" />
+            <img src="/assets/empty/sleep/foot-right.svg" alt="" aria-hidden="true" className="absolute left-[56.38px] top-[114.64px] max-w-none" />
+          </div>
           <p className="text-[18px] font-semibold text-ink">저장된 지원사업이 없어요</p>
           <p className="mt-[2px] text-[15px] text-ink-muted">
             지원사업을 탐색하거나 직접 추가해 진행 상황을 관리해 보세요.
@@ -428,7 +464,14 @@ function MyProgramsPage() {
           </Button>
         </div>
       ) : (
-        <div className="rounded-[12px] border border-field-border bg-surface px-6 py-16 text-center">
+        <div className="rounded-[12px] bg-surface px-6 py-16 text-center">
+          <img
+            src="/assets/empty/program-status.svg"
+            alt=""
+            aria-hidden="true"
+            draggable={false}
+            className="mx-auto mb-2 h-[130px] w-[132px] object-contain saturate-[0.1]"
+          />
           <p className="text-[18px] font-semibold text-ink">선택한 진행 상태의 지원사업이 없어요</p>
           <p className="mt-[2px] text-[15px] text-ink-muted">다른 진행 상태를 선택해보세요.</p>
         </div>

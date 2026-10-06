@@ -241,7 +241,7 @@ export function AppHeader({
         {notificationsOpen ? (
           <aside
             data-notification-panel
-            className="absolute -right-1.5 top-[calc(100%+8px)] z-[110] flex max-h-[560px] w-[360px] max-w-[calc(100vw-32px)] flex-col overflow-hidden rounded-[16px] bg-surface shadow-dropdown animate-in fade-in-0 zoom-in-95 duration-150 ease-out"
+            className="absolute -right-1.5 top-[calc(100%+8px)] z-[110] flex max-h-[560px] w-[340px] max-w-[calc(100vw-32px)] flex-col overflow-hidden rounded-[16px] bg-surface shadow-dropdown animate-in fade-in-0 zoom-in-95 duration-150 ease-out"
           >
             <div className="flex items-center justify-between px-5 py-4">
               <div className="flex items-center gap-2">
