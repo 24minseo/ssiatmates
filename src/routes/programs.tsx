@@ -710,10 +710,7 @@ function ProgramsPage() {
   ]);
 
   useEffect(() => {
-    if (tab !== "review") return;
     let cancelled = false;
-    const requestId = reviewRequestRef.current + 1;
-    reviewRequestRef.current = requestId;
 
     if (!session?.user.id || !profileFilterInitializedFor.current) {
       setReviewPrograms([]);
@@ -724,10 +721,14 @@ function ProgramsPage() {
       };
     }
 
-    setIsLoadingReview(true);
-    setReviewError(null);
+    async function loadReviewMatches(showLoading = true) {
+      const requestId = reviewRequestRef.current + 1;
+      reviewRequestRef.current = requestId;
+      if (showLoading) {
+        setIsLoadingReview(true);
+        setReviewError(null);
+      }
 
-    const loadReviewMatches = async () => {
       try {
         const fields = getSelectedFields(supportCategories, usesProfileDefault);
         const offset = (page - 1) * PAGE_SIZE;
@@ -761,22 +762,53 @@ function ProgramsPage() {
       } catch (error) {
         if (cancelled || reviewRequestRef.current !== requestId) return;
         console.error("[programs] 추가 검토 공고 조회 실패", error);
-        setReviewError("추가 검토 공고를 불러오지 못했습니다.");
-        setReviewPrograms([]);
-        setReviewTotalCount(0);
+        if (showLoading) {
+          setReviewError("추가 검토 공고를 불러오지 못했습니다.");
+          setReviewPrograms([]);
+          setReviewTotalCount(0);
+        }
       } finally {
-        if (!cancelled && reviewRequestRef.current === requestId) {
+        if (showLoading && !cancelled && reviewRequestRef.current === requestId) {
           setIsLoadingReview(false);
         }
       }
+    }
+
+    let noonTimer: number | null = null;
+    const scheduleNoonRefresh = () => {
+      if (noonTimer !== null) window.clearTimeout(noonTimer);
+      noonTimer = window.setTimeout(() => {
+        if (cancelled) return;
+        if (document.visibilityState === "visible") void loadReviewMatches(false);
+        scheduleNoonRefresh();
+      }, millisecondsUntilKoreanNoon());
+    };
+    const refreshIfVisible = () => {
+      if (document.visibilityState === "visible") {
+        void loadReviewMatches(false);
+        scheduleNoonRefresh();
+      }
+    };
+    const refreshAfterProfileSave = () => {
+      void loadReviewMatches(true);
     };
 
     void loadReviewMatches();
+    scheduleNoonRefresh();
+    window.addEventListener("focus", refreshIfVisible);
+    window.addEventListener("pageshow", refreshIfVisible);
+    document.addEventListener("visibilitychange", refreshIfVisible);
+    window.addEventListener("matching-profile-saved", refreshAfterProfileSave);
+
     return () => {
       cancelled = true;
+      if (noonTimer !== null) window.clearTimeout(noonTimer);
+      window.removeEventListener("focus", refreshIfVisible);
+      window.removeEventListener("pageshow", refreshIfVisible);
+      document.removeEventListener("visibilitychange", refreshIfVisible);
+      window.removeEventListener("matching-profile-saved", refreshAfterProfileSave);
     };
   }, [
-    tab,
     page,
     session?.user.id,
     profile?.id,
