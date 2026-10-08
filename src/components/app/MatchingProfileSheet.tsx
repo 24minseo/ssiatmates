@@ -1,13 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { X } from "lucide-react";
 
-import {
-  Sheet,
-  SheetContent,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import {
   BUSINESS_FIELDS,
   PERSONAL_STATUS_OPTIONS,
@@ -45,6 +39,7 @@ type MatchingProfileSheetProps = {
 
 const inputClassName =
   "h-11 w-full rounded-[10px] border border-field-border bg-surface px-3 text-sm text-ink outline-none transition-colors placeholder:text-guide-text focus:border-brand focus:ring-2 focus:ring-focus-soft";
+const NAME_HINT_STORAGE_KEY = "matching-profile-name-hint-seen-v4";
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -75,36 +70,45 @@ export function MatchingProfileSheet({
   const [supportCategories, setSupportCategories] = useState<string[]>(["전체"]);
   const [personalStatuses, setPersonalStatuses] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
+  const [showNameHint, setShowNameHint] = useState(false);
+  const [nameHintExiting, setNameHintExiting] = useState(false);
+  const [nameHintOpenKey, setNameHintOpenKey] = useState(0);
   const formRef = useRef<HTMLFormElement>(null);
   const [scrollFades, setScrollFades] = useState({ top: false, bottom: true });
 
   useEffect(() => {
     if (!open) return;
+    const hintSeen = window.localStorage.getItem(NAME_HINT_STORAGE_KEY) === "true";
+    const shouldShowNameHint = !hintSeen && !profile?.business_name?.trim();
+    setShowNameHint(false);
+    setNameHintExiting(false);
+    setNameHintOpenKey((value) => value + 1);
+    const hintFrame = requestAnimationFrame(() => setShowNameHint(shouldShowNameHint));
     setBirthDate(profile?.birth_date?.replace(/-/g, ".") ?? "");
     setBusinessName(profile?.business_name ?? "");
     const savedStage = profile?.startup_stage ?? "";
     setStartupStage(
-      STARTUP_STAGES.find((stage) =>
-        stage === savedStage ||
-        (stage === "예비창업자" && savedStage === "pre_founder") ||
-        (stage === "1년 미만" && savedStage === "under_1_year") ||
-        (stage === "1년 이상 ~ 3년 미만" && savedStage === "1_to_3_years") ||
-        (stage === "3년 이상 ~ 7년 미만" && savedStage === "3_to_7_years") ||
-        (stage === "7년 이상" && savedStage === "over_7_years"),
+      STARTUP_STAGES.find(
+        (stage) =>
+          stage === savedStage ||
+          (stage === "예비창업자" && savedStage === "pre_founder") ||
+          (stage === "1년 미만" && savedStage === "under_1_year") ||
+          (stage === "1년 이상 ~ 3년 미만" && savedStage === "1_to_3_years") ||
+          (stage === "3년 이상 ~ 7년 미만" && savedStage === "3_to_7_years") ||
+          (stage === "7년 이상" && savedStage === "over_7_years"),
       ) ?? "",
     );
     setResidence(profile?.residence ?? "");
     setBusinessLocation(profile?.business_location ?? "");
     setBusinessLocationAttention(false);
-    setSameAsResidence(
-      !!profile?.residence && profile.residence === profile.business_location,
-    );
+    setSameAsResidence(!!profile?.residence && profile.residence === profile.business_location);
     setBusinessFields(profile?.business_fields ?? []);
     setSupportCategories(
       profile?.support_categories?.length ? profile.support_categories : ["전체"],
     );
     setPersonalStatuses(profile?.personal_statuses ?? []);
     setDirty(false);
+    return () => cancelAnimationFrame(hintFrame);
   }, [open, profile]);
 
   useEffect(() => {
@@ -119,8 +123,7 @@ export function MatchingProfileSheet({
         const hasOverflow = form.scrollHeight > form.clientHeight + 1;
         setScrollFades({
           top: form.scrollTop > 4,
-          bottom:
-            !hasOverflow || form.scrollTop + form.clientHeight < form.scrollHeight - 4,
+          bottom: !hasOverflow || form.scrollTop + form.clientHeight < form.scrollHeight - 4,
         });
       };
 
@@ -142,6 +145,14 @@ export function MatchingProfileSheet({
   }, [open, profile]);
 
   const markDirty = () => setDirty(true);
+  const dismissNameHint = () => {
+    window.localStorage.setItem(NAME_HINT_STORAGE_KEY, "true");
+    setNameHintExiting(true);
+    window.setTimeout(() => {
+      setShowNameHint(false);
+      setNameHintExiting(false);
+    }, 180);
+  };
   const isPreFounder = startupStage === "예비창업자";
   const canSave = dirty && (isPreFounder || businessLocation.trim().length > 0);
 
@@ -161,6 +172,7 @@ export function MatchingProfileSheet({
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    dismissNameHint();
 
     if (!profile) return;
 
@@ -210,8 +222,10 @@ export function MatchingProfileSheet({
           "get_my_profile_matching_status_v1",
         );
         if (statusError) throw statusError;
-        if (status?.user_id !== profile.id) throw new Error("매칭 상태의 사용자가 일치하지 않습니다.");
-        if (status.status === "failed") throw new Error("프로필은 저장됐지만 매칭 작업이 실패했습니다.");
+        if (status?.user_id !== profile.id)
+          throw new Error("매칭 상태의 사용자가 일치하지 않습니다.");
+        if (status.status === "failed")
+          throw new Error("프로필은 저장됐지만 매칭 작업이 실패했습니다.");
         if (["no_profile", "not_requested"].includes(status.status)) {
           throw new Error("저장된 프로필의 매칭 작업이 등록되지 않았습니다.");
         }
@@ -221,7 +235,8 @@ export function MatchingProfileSheet({
         }
         await new Promise((resolve) => window.setTimeout(resolve, 2_000));
       }
-      if (!matchingCompleted) throw new Error("프로필은 저장됐지만 매칭 완료 확인이 지연되고 있습니다.");
+      if (!matchingCompleted)
+        throw new Error("프로필은 저장됐지만 매칭 완료 확인이 지연되고 있습니다.");
     } catch (matchingError) {
       console.error("[matching-profile] 매칭 갱신 실패", matchingError);
       setSaving(false);
@@ -248,13 +263,51 @@ export function MatchingProfileSheet({
               <div className="mt-3 flex h-11 w-[calc(100%+52px)] items-center gap-1 rounded-[12px] bg-item-hover px-3 py-2 text-[14px] font-medium leading-5 text-ink-muted">
                 <SquareAlertIcon className="size-4 shrink-0 text-icon-muted" />
                 <span className="min-w-0 flex-1 break-keep">
-                  변경한 항목은 기본 프로필에 반영되며, 전체 설정은 프로필 카드에서 관리할 수 있습니다.
+                  변경한 항목은 기본 프로필에 반영되며, 전체 설정은 프로필 카드에서 관리할 수
+                  있습니다.
                 </span>
               </div>
             )}
           </SheetHeader>
 
           <div className="relative min-h-0 flex-1">
+            {!isProgramsExploreVariant &&
+              (showNameHint || nameHintExiting) &&
+              (!businessName.trim() || nameHintExiting) && (
+                <div
+                  key={nameHintOpenKey}
+                  className={`matching-profile-name-hint pointer-events-auto absolute left-[17px] top-[-12px] z-[60] w-max max-w-[250px] ${nameHintExiting ? "preference-feedback-bubble-exit" : ""}`}
+    style={{ animationDelay: nameHintExiting ? "0ms" : "500ms" }}
+                >
+                  <div
+                    role="status"
+                    className="relative flex min-h-6 w-full items-start gap-0 rounded-full bg-tooltip pl-[12px] pr-[7px] py-1 text-[14px] font-semibold leading-5 text-tooltip-foreground shadow-none"
+                  >
+                    <span
+                      aria-hidden="true"
+                      className="pointer-events-none absolute -bottom-[7.3px] left-3 z-10 block h-[8.64px] w-[15.84px] bg-tooltip"
+                      style={{
+                        maskImage: "url('/assets/programs/preference-tail-success-8684.svg?v=1')",
+                        WebkitMaskImage:
+                          "url('/assets/programs/preference-tail-success-8684.svg?v=1')",
+                        maskRepeat: "no-repeat",
+                        WebkitMaskRepeat: "no-repeat",
+                        maskSize: "100% 100%",
+                        WebkitMaskSize: "100% 100%",
+                      }}
+                    />
+                    <span>내 사업 이름을 입력해보세요</span>
+                    <button
+                      type="button"
+                      aria-label="안내 닫기"
+                      onClick={dismissNameHint}
+                      className="ml-1 inline-flex size-[18px] shrink-0 self-center items-center justify-center text-white/80"
+                    >
+                      <X aria-hidden className="size-3.5" strokeWidth={2} />
+                    </button>
+                  </div>
+                </div>
+              )}
             <form
               ref={formRef}
               id="matching-profile-form"
@@ -262,184 +315,185 @@ export function MatchingProfileSheet({
               className="h-full overflow-y-auto bg-surface px-7 pb-6 pt-0"
             >
               <div className="flex flex-col gap-7">
-              {!isProgramsExploreVariant && (
-                <div
-                  role="tablist"
-                  aria-label="매칭 프로필"
-                  className={`relative sticky top-0 z-20 -mx-7 mt-0 flex items-end gap-4 bg-item-hover px-7 pt-2 sm:grid sm:grid-cols-2 after:pointer-events-none after:absolute after:inset-x-0 after:-bottom-16 after:h-16 after:bg-[linear-gradient(to_bottom,var(--surface)_0%,var(--surface)_28%,rgba(255,255,255,0)_100%)] after:transition-opacity after:duration-200 ${scrollFades.top ? "after:opacity-100" : "after:opacity-0"}`}
-                >
-                <div className="relative isolate z-0 min-w-0 max-w-[274px] flex-1 sm:-ml-4 sm:max-w-none">
-                  <span
-                    aria-hidden="true"
-                    className="pointer-events-none absolute inset-0 rounded-t-[12px] shadow-[0_0_30px_-8px_rgba(64,72,66,0.12)] [clip-path:inset(-30px_-30px_0_-30px)]"
-                  />
+                {!isProgramsExploreVariant && (
                   <div
-                    role="tab"
-                    aria-selected="true"
-                    className="relative z-10 -mb-px flex h-12 w-full items-center rounded-t-[12px] bg-surface before:pointer-events-none before:absolute before:bottom-0 before:-left-3 before:size-3 before:rounded-br-[12px] before:shadow-[6px_6px_0_6px_var(--surface)] after:pointer-events-none after:absolute after:bottom-0 after:-right-3 after:size-3 after:rounded-bl-[12px] after:shadow-[-6px_6px_0_6px_var(--surface)]"
+                    role="tablist"
+                    aria-label="매칭 프로필"
+                    className={`relative sticky top-0 z-20 -mx-7 mt-0 flex items-end gap-4 bg-item-hover px-7 pt-2 sm:grid sm:grid-cols-2 after:pointer-events-none after:absolute after:inset-x-0 after:-bottom-16 after:h-16 after:bg-[linear-gradient(to_bottom,var(--surface)_0%,var(--surface)_28%,rgba(255,255,255,0)_100%)] after:transition-opacity after:duration-200 ${scrollFades.top ? "after:opacity-100" : "after:opacity-0"}`}
                   >
-                    <input
-                      id="matching-business-name"
-                      name="matching-profile-name"
-                      type="text"
-                      aria-label="프로필 이름"
-                      placeholder="사업·프로젝트 이름 입력"
-                      autoComplete="on"
-                      className="h-full min-w-0 flex-1 bg-transparent px-4 text-[15px] text-ink outline-none placeholder:text-guide-text"
-                      value={businessName}
-                      onChange={(event) => {
-                        setBusinessName(event.target.value);
-                        markDirty();
-                      }}
-                    />
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  aria-label="프로필 추가"
-                  disabled
-                  className="inline-flex h-12 shrink-0 cursor-not-allowed items-center gap-1.5 rounded-t-[10px] bg-transparent px-4 text-[14px] font-semibold text-guide-text sm:-translate-x-4 sm:justify-self-start"
-                >
-                  <X aria-hidden className="size-4 rotate-45" strokeWidth={2.5} />
-                  <span className="text-[15px]">추가</span>
-                </button>
-                </div>
-              )}
-
-              <Section title="기본 정보">
-                <div className="flex flex-col gap-4">
-                  <FormField label="생년월일" required labelVariant="muted2">
-                    <Input
-                      inputMode="numeric"
-                      placeholder="YYYY.MM.DD"
-                      className="h-12 rounded-[12px] border-field-border bg-surface px-4 text-[15px] text-ink shadow-none placeholder:text-guide-text focus-visible:border-[1.5px] focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft"
-                      value={birthDate}
-                      onChange={(event) => {
-                        setBirthDate(event.target.value);
-                        markDirty();
-                      }}
-                    />
-                  </FormField>
-                  <FormField label="신분" required labelVariant="muted2">
-                    <MultiSelectDropdown
-                      options={PERSONAL_STATUS_OPTIONS}
-                      value={personalStatuses}
-                      maxSelected={2}
-                      listHeight={208}
-                      alwaysShowScrollbar
-                      scrollSelectedToTop
-                      placeholder="신분을 선택해주세요 (최대 2개)"
-                      onChange={(value) => {
-                        setPersonalStatuses(value);
-                        markDirty();
-                      }}
-                    />
-                  </FormField>
-                  <FormField label="창업단계" required labelVariant="muted2">
-                    <OptionCards
-                      options={STARTUP_STAGES}
-                      value={startupStage || null}
-                      onChange={(value) => {
-                        setStartupStage(value);
-                        if (value === "예비창업자") {
-                          setBusinessLocation("");
-                          setSameAsResidence(false);
-                          setBusinessLocationAttention(false);
-                        } else if (!businessLocation.trim()) {
-                          setBusinessLocationAttention(true);
-                          requestAnimationFrame(() => {
-                            document.getElementById("matching-business-location")?.focus();
-                          });
-                        }
-                        markDirty();
-                      }}
-                    />
-                  </FormField>
-                </div>
-                <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                  <FormField label="거주지역" required labelVariant="muted2">
-                    <RegionCombobox
-                      value={residence || null}
-                      listHeight={208}
-                      alwaysShowScrollbar
-                      onChange={(value) => {
-                        setResidence(value);
-                        markDirty();
-                      }}
-                    />
-                  </FormField>
-                  <FormField
-                    label="사업장 소재지"
-                    required={!isPreFounder}
-                    labelVariant="muted2"
-                    labelRight={
-                      <label className="flex items-center gap-2 text-[12px] text-ink">
-                        <Checkbox
-                          checked={sameAsResidence}
-                          disabled={isPreFounder}
-                          onCheckedChange={(checked) => {
-                            setSameAsResidence(checked === true);
-                            if (checked === true) {
-                              setBusinessLocation(residence);
-                              setBusinessLocationAttention(false);
-                            }
+                    <div className="relative isolate z-30 min-w-0 max-w-[274px] flex-1 sm:-ml-4 sm:max-w-none">
+                      <span
+                        aria-hidden="true"
+                        className="pointer-events-none absolute inset-0 rounded-t-[12px] shadow-[0_0_30px_-8px_rgba(64,72,66,0.12)] [clip-path:inset(-30px_-30px_0_-30px)]"
+                      />
+                      <div
+                        role="tab"
+                        aria-selected="true"
+                        className="relative z-10 -mb-px flex h-12 w-full items-center rounded-t-[12px] bg-surface before:pointer-events-none before:absolute before:bottom-0 before:-left-3 before:size-3 before:rounded-br-[12px] before:shadow-[6px_6px_0_6px_var(--surface)] after:pointer-events-none after:absolute after:bottom-0 after:-right-3 after:size-3 after:rounded-bl-[12px] after:shadow-[-6px_6px_0_6px_var(--surface)]"
+                      >
+                        <input
+                          id="matching-business-name"
+                          name="matching-profile-name"
+                          type="text"
+                          aria-label="프로필 이름"
+                          placeholder="사업·프로젝트 이름 입력"
+                          autoComplete="on"
+                          className="h-full min-w-0 flex-1 bg-transparent px-4 text-[15px] text-ink outline-none placeholder:text-guide-text"
+                          value={businessName}
+                          onChange={(event) => {
+                            setBusinessName(event.target.value);
+                            dismissNameHint();
                             markDirty();
                           }}
-                          className="size-[18px] rounded-[5px] border-field-border [&_svg]:size-3 data-[state=checked]:border-brand data-[state=checked]:bg-brand data-[state=checked]:text-brand-foreground"
                         />
-                        거주지역과 동일
-                      </label>
-                    }
-                  >
-                    <RegionCombobox
-                      id="matching-business-location"
-                      value={businessLocation || null}
-                      highlighted={businessLocationAttention}
-                      listHeight={208}
-                      alwaysShowScrollbar
-                      onChange={(value) => {
-                        setBusinessLocation(value);
-                        setBusinessLocationAttention(false);
-                        markDirty();
-                      }}
-                      disabled={isPreFounder || sameAsResidence}
-                      placeholder={isPreFounder ? "사업자 등록 후 입력 가능" : undefined}
-                    />
-                  </FormField>
-                </div>
-              </Section>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      aria-label="프로필 추가"
+                      disabled
+                      className="inline-flex h-12 shrink-0 cursor-not-allowed items-center gap-1.5 rounded-t-[10px] bg-transparent px-4 text-[14px] font-semibold text-guide-text sm:-translate-x-4 sm:justify-self-start"
+                    >
+                      <X aria-hidden className="size-4 rotate-45" strokeWidth={2.5} />
+                      <span className="text-[15px]">추가</span>
+                    </button>
+                  </div>
+                )}
 
-              <div aria-hidden="true" className="-mx-7 h-2 bg-[#F8FAF9]" />
-
-              <Section title={isProgramsExploreVariant ? "사업 정보" : "사업 및 관심 정보"}>
-                <div className="flex flex-col gap-4">
-                  <FormField label="사업 분야" required labelVariant="muted2">
-                    <MultiSelectDropdown
-                      options={BUSINESS_FIELDS}
-                      value={businessFields}
-                      listHeight={208}
-                      alwaysShowScrollbar
-                      scrollSelectedToTop
-                      placeholder="사업 분야를 선택해주세요"
-                      onChange={(value) => {
-                        setBusinessFields(value);
-                        markDirty();
-                      }}
-                    />
-                  </FormField>
-                </div>
-                {!isProgramsExploreVariant && (
-                  <div className="pt-4">
-                    <FormField label="관심 지원 분야" labelVariant="muted2">
-                      <PillGroup
-                        options={SUPPORT_CATEGORIES}
-                        value={supportCategories}
-                        onToggle={toggleSupportCategory}
+                <Section title="기본 정보">
+                  <div className="flex flex-col gap-4">
+                    <FormField label="생년월일" required labelVariant="muted2">
+                      <Input
+                        inputMode="numeric"
+                        placeholder="YYYY.MM.DD"
+                        className="h-12 rounded-[12px] border-field-border bg-surface px-4 text-[15px] text-ink shadow-none placeholder:text-guide-text focus-visible:border-[1.5px] focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft"
+                        value={birthDate}
+                        onChange={(event) => {
+                          setBirthDate(event.target.value);
+                          markDirty();
+                        }}
+                      />
+                    </FormField>
+                    <FormField label="신분" required labelVariant="muted2">
+                      <MultiSelectDropdown
+                        options={PERSONAL_STATUS_OPTIONS}
+                        value={personalStatuses}
+                        maxSelected={2}
+                        listHeight={208}
+                        alwaysShowScrollbar
+                        scrollSelectedToTop
+                        placeholder="신분을 선택해주세요 (최대 2개)"
+                        onChange={(value) => {
+                          setPersonalStatuses(value);
+                          markDirty();
+                        }}
+                      />
+                    </FormField>
+                    <FormField label="창업단계" required labelVariant="muted2">
+                      <OptionCards
+                        options={STARTUP_STAGES}
+                        value={startupStage || null}
+                        onChange={(value) => {
+                          setStartupStage(value);
+                          if (value === "예비창업자") {
+                            setBusinessLocation("");
+                            setSameAsResidence(false);
+                            setBusinessLocationAttention(false);
+                          } else if (!businessLocation.trim()) {
+                            setBusinessLocationAttention(true);
+                            requestAnimationFrame(() => {
+                              document.getElementById("matching-business-location")?.focus();
+                            });
+                          }
+                          markDirty();
+                        }}
                       />
                     </FormField>
                   </div>
-                )}
-              </Section>
+                  <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                    <FormField label="거주지역" required labelVariant="muted2">
+                      <RegionCombobox
+                        value={residence || null}
+                        listHeight={208}
+                        alwaysShowScrollbar
+                        onChange={(value) => {
+                          setResidence(value);
+                          markDirty();
+                        }}
+                      />
+                    </FormField>
+                    <FormField
+                      label="사업장 소재지"
+                      required={!isPreFounder}
+                      labelVariant="muted2"
+                      labelRight={
+                        <label className="flex items-center gap-2 text-[12px] text-ink">
+                          <Checkbox
+                            checked={sameAsResidence}
+                            disabled={isPreFounder}
+                            onCheckedChange={(checked) => {
+                              setSameAsResidence(checked === true);
+                              if (checked === true) {
+                                setBusinessLocation(residence);
+                                setBusinessLocationAttention(false);
+                              }
+                              markDirty();
+                            }}
+                            className="size-[18px] rounded-[5px] border-field-border [&_svg]:size-3 data-[state=checked]:border-brand data-[state=checked]:bg-brand data-[state=checked]:text-brand-foreground"
+                          />
+                          거주지역과 동일
+                        </label>
+                      }
+                    >
+                      <RegionCombobox
+                        id="matching-business-location"
+                        value={businessLocation || null}
+                        highlighted={businessLocationAttention}
+                        listHeight={208}
+                        alwaysShowScrollbar
+                        onChange={(value) => {
+                          setBusinessLocation(value);
+                          setBusinessLocationAttention(false);
+                          markDirty();
+                        }}
+                        disabled={isPreFounder || sameAsResidence}
+                        placeholder={isPreFounder ? "사업자 등록 후 입력 가능" : undefined}
+                      />
+                    </FormField>
+                  </div>
+                </Section>
+
+                <div aria-hidden="true" className="-mx-7 h-2 bg-[#F8FAF9]" />
+
+                <Section title={isProgramsExploreVariant ? "사업 정보" : "사업 및 관심 정보"}>
+                  <div className="flex flex-col gap-4">
+                    <FormField label="사업 분야" required labelVariant="muted2">
+                      <MultiSelectDropdown
+                        options={BUSINESS_FIELDS}
+                        value={businessFields}
+                        listHeight={208}
+                        alwaysShowScrollbar
+                        scrollSelectedToTop
+                        placeholder="사업 분야를 선택해주세요"
+                        onChange={(value) => {
+                          setBusinessFields(value);
+                          markDirty();
+                        }}
+                      />
+                    </FormField>
+                  </div>
+                  {!isProgramsExploreVariant && (
+                    <div className="pt-4">
+                      <FormField label="관심 지원 분야" labelVariant="muted2">
+                        <PillGroup
+                          options={SUPPORT_CATEGORIES}
+                          value={supportCategories}
+                          onToggle={toggleSupportCategory}
+                        />
+                      </FormField>
+                    </div>
+                  )}
+                </Section>
               </div>
             </form>
             <div
