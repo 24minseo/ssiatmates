@@ -1,5 +1,4 @@
 import {
-  ArrowLeft,
   ArrowUp,
   Bold,
   ChevronLeft,
@@ -884,7 +883,21 @@ function GrowthJournalNewPage() {
                     : "성장일지 목록으로 돌아가기"
               }
             >
-              <ArrowLeft className="size-5" strokeWidth={2} />
+              <svg
+                aria-hidden="true"
+                className="-translate-x-px size-6"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M5 12H23 M12 5L5 12L12 19"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
             </Link>
           </Button>
           <span aria-hidden="true" className="h-6 w-px shrink-0 bg-field-border" />

@@ -74,7 +74,7 @@ function seedPrograms(): Program[] {
     }
   > = [
     {
-      title: "[제2서울핀테크랩] 서울 핀테크 위크 2026 데모데이 및 글로벌 기술창업 지원 연계 프로그램 참가기업 모집과 사업화 후속 지원 대상자 선정 공고",
+      title: "2026년 대한민국 물산업 혁신 창업대전 (Startup Water 2026) 참가자(팀) 모집 공고",
       organization: "서울핀테크랩",
       category: "판로·마케팅",
       stage: "초기창업",
@@ -86,7 +86,7 @@ function seedPrograms(): Program[] {
       schedules: [],
     },
     {
-      title: "2026년 초기창업패키지 예비창업자 모집 공고",
+      title: "[서울] 서대문구 2026년 청년창업기업 및 사회연대경제기업 수시 전문상담 경영컨설팅 신청 기업 모집 공고",
       organization: "창업진흥원",
       category: "사업화",
       stage: "예비창업",
@@ -107,8 +107,9 @@ function seedPrograms(): Program[] {
       category: "사업화",
       stage: "초기창업",
       region: "경기",
-      status: "submitted",
+      status: "preparing",
       deadline: shift(-3),
+      deadlineLabel: "D-3",
       createdAt: shift(-14),
       fitScore: 74,
       schedules: [
@@ -122,8 +123,9 @@ function seedPrograms(): Program[] {
       category: "기술개발",
       stage: "도약기",
       region: "전북",
-      status: "preparing",
+      status: "submitted",
       deadline: shift(1),
+      deadlineLabel: "마감",
       createdAt: shift(-1),
       fitScore: 81,
       schedules: [
@@ -148,8 +150,9 @@ function seedPrograms(): Program[] {
       category: "투자·융자",
       stage: "초기창업",
       region: "서울",
-      status: "submitted",
+      status: "not_started",
       deadline: shift(-12),
+      deadlineLabel: "D-23",
       createdAt: shift(-30),
       fitScore: 57,
       schedules: [
@@ -183,15 +186,41 @@ function read(): Program[] {
     }
     const parsed = JSON.parse(raw) as Program[];
     if (!Array.isArray(parsed)) throw new Error("invalid");
-    const migrated = parsed.map((program) =>
-      (program.title === "[제2서울핀테크랩] 서울 핀테크 위크 2026 데모데이 with 네이버클라우드" ||
-        program.title === "[제2서울핀테크랩] 서울 핀테크 위크 2026 데모데이 및 글로벌 기술창업 지원 연계 프로그램 참가기업 모집 공고")
+    const titleMigrations: Record<string, string> = {
+      "[제2서울핀테크랩] 서울 핀테크 위크 2026 데모데이 with 네이버클라우드":
+        "2026년 대한민국 물산업 혁신 창업대전 (Startup Water 2026) 참가자(팀) 모집 공고",
+      "[제2서울핀테크랩] 서울 핀테크 위크 2026 데모데이 및 글로벌 기술창업 지원 연계 프로그램 참가기업 모집 공고":
+        "2026년 대한민국 물산업 혁신 창업대전 (Startup Water 2026) 참가자(팀) 모집 공고",
+      "[제2서울핀테크랩] 서울 핀테크 위크 2026 데모데이 및 글로벌 기술창업 지원 연계 프로그램 참가기업 모집과 사업화 후속 지원 대상자 선정 공고":
+        "2026년 대한민국 물산업 혁신 창업대전 (Startup Water 2026) 참가자(팀) 모집 공고",
+      "2026년 초기창업패키지 예비창업자 모집 공고":
+        "[서울] 서대문구 2026년 청년창업기업 및 사회연대경제기업 수시 전문상담 경영컨설팅 신청 기업 모집 공고",
+    };
+    const statusMigrations: Record<string, Program["status"]> = {
+      "소셜벤처 임팩트 투자 연계 프로그램": "not_started",
+      "청년창업사관학교 15기 입교생 모집": "preparing",
+      "지역 특화 농식품 R&D 지원사업": "submitted",
+      "[서울] 서대문구 2026년 청년창업기업 및 사회연대경제기업 수시 전문상담 경영컨설팅 신청 기업 모집 공고": "preparing",
+    };
+    const deadlineLabelMigrations: Record<string, string> = {
+      "소셜벤처 임팩트 투자 연계 프로그램": "D-23",
+      "청년창업사관학교 15기 입교생 모집": "D-3",
+      "지역 특화 농식품 R&D 지원사업": "마감",
+    };
+    const migrated = parsed.map((program) => {
+      const migratedTitle = titleMigrations[program.title];
+      const nextTitle = migratedTitle ?? program.title;
+      const migratedStatus = statusMigrations[nextTitle];
+      const migratedDeadlineLabel = deadlineLabelMigrations[nextTitle];
+      return migratedTitle || (migratedStatus && program.status === "submitted") || migratedDeadlineLabel
         ? {
             ...program,
-            title: "[제2서울핀테크랩] 서울 핀테크 위크 2026 데모데이 및 글로벌 기술창업 지원 연계 프로그램 참가기업 모집과 사업화 후속 지원 대상자 선정 공고",
+            title: nextTitle,
+            ...(migratedStatus ? { status: migratedStatus } : {}),
+            ...(migratedDeadlineLabel ? { deadlineLabel: migratedDeadlineLabel } : {}),
           }
-        : program,
-    );
+        : program;
+    });
     if (migrated.some((program, index) => program !== parsed[index])) {
       write(migrated);
     }

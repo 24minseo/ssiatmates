@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { MatchedProgram } from "@/mocks/programSearchMock";
+import { recordRecentMatchedProgram } from "@/services/homeNoticeFeed";
 
 type ProgramResultRowProps = {
   program: MatchedProgram;
@@ -25,17 +26,40 @@ export function ProgramResultRow({
     onFavoriteToggle(program);
   };
 
+  const reportAction = program.matchLabel ? (
+    onReportClick ? (
+      <button
+        type="button"
+        onClick={() => onReportClick(program)}
+        className="inline-flex shrink-0 self-center -translate-y-1 items-center rounded-[8px] px-2 py-1 text-sm font-medium text-ink transition-colors hover:bg-item-hover"
+      >
+        {program.matchLabel}
+      </button>
+    ) : (
+      <span className="self-center -translate-y-1 text-sm font-medium text-ink">
+        {program.matchLabel}
+      </span>
+    )
+  ) : null;
+
   return (
-    <article className={`flex items-center gap-[38px] border-b border-[#e9e9e9] bg-white px-8 pb-[18px] pt-[14px] h-[118px]`}>
-      <div className="flex h-[75px] w-[742px] shrink-0 flex-col justify-center gap-2 pl-[20px]">
-        <div className="flex min-w-0 flex-col gap-0.5">
-          <p className="text-[13px] leading-[21px] text-ink-muted">{program.organization}</p>
-          <h2 className="truncate text-[20px] font-semibold leading-6 tracking-[-0.22px] text-ink">
+    <article
+      className={`flex items-center gap-[38px] border-b border-[#e9e9e9] bg-white px-8 pb-[18px] pt-[14px] h-[128px]`}
+    >
+      <div
+        className={`flex w-[742px] shrink-0 flex-col justify-center gap-2 pl-[20px] ${program.changeReason ? "min-h-[92px]" : "h-[75px]"}`}
+      >
+        <div className="flex min-w-0 flex-col gap-1.5">
+          <p className="text-[14px] leading-[21px] text-ink-muted">{program.organization}</p>
+          <h2
+            className={`${program.changeReason ? "line-clamp-2 text-[20px] leading-6" : "truncate text-[20px] leading-6"} font-semibold tracking-[-0.22px] text-ink`}
+          >
             {program.url ? (
               <a
                 href={program.url}
                 target="_blank"
                 rel="noreferrer"
+                onClick={() => recordRecentMatchedProgram(program)}
                 className="block truncate hover:underline hover:decoration-[1px] hover:underline-offset-[4px]"
               >
                 {program.title}
@@ -45,27 +69,45 @@ export function ProgramResultRow({
             )}
           </h2>
         </div>
-        <div className="flex items-center gap-2">
-          {isRecommended && <span className="rounded bg-[#e2f8f0] px-[7px] py-1 text-xs font-medium text-brand">선호조건 충족</span>}
-          {program.categories.map((category) => <span key={category} className="rounded bg-[#f5f5f5] px-[7px] py-1 text-xs font-medium text-ink-muted">{category}</span>)}
-        </div>
-      </div>
-      {program.matchLabel ? (
-        onReportClick ? (
-          <button
-            type="button"
-            onClick={() => onReportClick(program)}
-            className="inline-flex shrink-0 self-center -translate-y-1 items-center rounded-[8px] px-2 py-1 text-sm font-medium text-ink transition-colors hover:bg-item-hover"
-          >
-            {program.matchLabel}
-          </button>
+        {program.changeReason ? (
+          <>
+            <p
+              className={`flex min-w-0 items-center gap-2 text-[13px] font-medium leading-5 ${program.changeTone === "danger" ? "text-deadline" : program.changeTone === "neutral" ? "text-ink-muted" : "text-brand"}`}
+            >
+              <span
+                className={`shrink-0 rounded px-[7px] py-1 text-xs font-medium ${program.changeTone === "danger" ? "bg-deadline-surface text-deadline" : program.changeTone === "neutral" ? "bg-item-hover text-ink-muted" : "bg-[#e2f8f0] text-brand"}`}
+              >
+                {program.changeReason}
+              </span>
+              <span className="truncate text-[14px] text-ink-muted">{program.changeDetail}</span>
+            </p>
+          </>
         ) : (
-          <span className="self-center -translate-y-1 text-sm font-medium text-ink">{program.matchLabel}</span>
-        )
-      ) : null}
+          <div className="flex items-center gap-2">
+            {isRecommended && (
+              <span className="rounded bg-[#e2f8f0] px-[7px] py-1 text-xs font-medium text-brand">
+                선호조건 충족
+              </span>
+            )}
+            {program.categories.map((category) => (
+              <span
+                key={category}
+                className="rounded bg-[#f5f5f5] px-[7px] py-1 text-xs font-medium text-ink-muted"
+              >
+                {category}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+      {reportAction}
       <div className="relative ml-2 h-[86px] w-[110px] shrink-0">
-        <p className="absolute left-0 top-[25.5px] text-[20px] font-bold leading-[26px] text-ink">{program.dDay}</p>
-        <p className="absolute left-0 top-[56px] text-[13px] leading-5 text-ink-muted">{program.deadline}</p>
+        <p className="absolute left-0 top-[25.5px] text-[20px] font-bold leading-[26px] text-ink">
+          {program.dDay}
+        </p>
+        <p className="absolute left-0 top-[56px] text-[13px] leading-5 text-ink-muted">
+          {program.deadline}
+        </p>
       </div>
       <button
         type="button"
@@ -73,13 +115,17 @@ export function ProgramResultRow({
         aria-pressed={isFavorite}
         onClick={toggleFavorite}
         disabled={favoriteSaving || !onFavoriteToggle}
-        className="shrink-0 disabled:cursor-wait disabled:opacity-60"
+        className="inline-flex shrink-0 self-center disabled:cursor-wait disabled:opacity-60"
       >
         <img
           draggable={false}
-          src={isFavorite ? "/assets/programs/favorite-filled.svg" : "/assets/programs/favorite-outline.svg"}
+          src={
+            isFavorite
+              ? "/assets/programs/favorite-filled.svg"
+              : "/assets/programs/favorite-outline.svg"
+          }
           alt=""
-          className={`pointer-events-none select-none h-[17px] w-5 ${isFavoritePopping ? "animate-heart-pop" : ""}`}
+          className={`pointer-events-none select-none h-[17px] w-5 translate-y-[-4px] ${isFavoritePopping ? "animate-heart-pop" : ""}`}
         />
       </button>
     </article>

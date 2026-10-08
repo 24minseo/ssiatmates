@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { AppHeader } from "./AppHeader";
+import { AppFooter } from "./AppFooter";
 import { AppSidebar, type AppNavigationKey } from "./AppSidebar";
 
 type AppShellProps = {
@@ -49,7 +50,7 @@ export function AppShell({ active, children }: AppShellProps) {
   }, [isGrowthJournal]);
 
   return (
-    <div className="h-screen min-h-0 overflow-hidden bg-item-hover text-ink">
+    <div className="h-dvh min-h-dvh min-h-0 overflow-hidden bg-item-hover text-ink">
       <div className="flex h-full min-w-0">
         <AppSidebar active={active} />
         <div className="relative z-0 flex min-w-0 flex-1 flex-col overflow-hidden rounded-l-[20px] bg-surface">
@@ -61,8 +62,9 @@ export function AppShell({ active, children }: AppShellProps) {
             ref={mainRef}
             className="min-h-0 flex-1 overflow-auto overscroll-y-contain pt-[74px]"
           >
-            <div className="min-h-full min-w-[1264px]">
-              <div className="mx-auto w-[1208px] pb-10 pt-[3px]">{children}</div>
+            <div className="flex min-h-[calc(100dvh-74px)] min-w-[1264px] flex-col">
+              <div className="mx-auto flex w-[1208px] flex-1 flex-col pt-[3px]">{children}</div>
+              <AppFooter />
             </div>
           </main>
         </div>

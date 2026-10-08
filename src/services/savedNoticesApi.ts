@@ -21,6 +21,8 @@ export type SavedNotice = {
   days_until_deadline: number | null;
   is_closed: boolean;
   is_saved?: boolean;
+  saved_notice_id?: string;
+  saved_at?: string;
 };
 
 export type SavedNoticeListResponse = {
@@ -31,6 +33,13 @@ export type SavedNoticeListResponse = {
 export type SavedNoticeMutationResponse = {
   notice_id: string;
   is_saved: boolean;
+};
+
+export type SavedNoticeProgressStatus = "not_started" | "preparing" | "submitted";
+
+export type SavedNoticeProgress = {
+  notice_id: string;
+  status: SavedNoticeProgressStatus;
 };
 
 type SavedNoticesClient = Pick<SupabaseClient<Database>, "rpc">;
@@ -73,7 +82,26 @@ export function createSavedNoticesApi(
     };
   }
 
-  return { getSavedStates, setSaved, getMySupportNotices };
+  async function getMyProgress(): Promise<{ items: SavedNoticeProgress[] }> {
+    const { data, error } = await client.rpc("get_my_saved_notice_progress_v1", {});
+    if (error) throw error;
+    const response = (data ?? {}) as { items?: SavedNoticeProgress[] };
+    return { items: Array.isArray(response.items) ? response.items : [] };
+  }
+
+  async function setProgress(
+    noticeId: string,
+    status: SavedNoticeProgressStatus,
+  ): Promise<SavedNoticeProgress> {
+    const { data, error } = await client.rpc("set_my_saved_notice_progress_v1", {
+      p_notice_id: noticeId,
+      p_status: status,
+    });
+    if (error) throw error;
+    return data as SavedNoticeProgress;
+  }
+
+  return { getSavedStates, setSaved, getMySupportNotices, getMyProgress, setProgress };
 }
 
 export const savedNoticesApi = createSavedNoticesApi();

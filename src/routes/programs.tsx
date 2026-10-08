@@ -4,14 +4,25 @@ import { ArrowRight, Check, Loader2, MoreVertical, X } from "lucide-react";
 import { toast } from "sonner";
 import { createFileRoute } from "@tanstack/react-router";
 import { Pagination } from "@/components/ui/pagination";
-import { ProgramSortDropdown, type ProgramSortOption } from "@/components/my-programs/ProgramSortDropdown";
+import {
+  ProgramSortDropdown,
+  type ProgramSortOption,
+} from "@/components/my-programs/ProgramSortDropdown";
 import { ProgramFormDialog } from "@/components/my-programs/ProgramFormDialog";
 import { ProgramResultRow } from "@/components/programs/ProgramResultRow";
-import { ProgramResultsTabs, type ProgramResultsTab } from "@/components/programs/ProgramResultsTabs";
+import {
+  ProgramResultsTabs,
+  type ProgramResultsTab,
+} from "@/components/programs/ProgramResultsTabs";
 import { SupportCategorySelect } from "@/components/programs/SupportCategorySelect";
 import { SUPPORT_ALL } from "@/components/onboarding/constants";
 import type { MatchedProgram } from "@/mocks/programSearchMock";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { ProgramReportDialog } from "@/components/programs/ProgramReportDialog";
@@ -162,6 +173,7 @@ type PreferenceFeedback = {
 };
 const PREFERENCE_FEEDBACK_BASE_CLASS =
   "relative flex min-h-6 items-start gap-1 border border-transparent px-[10px] py-1 text-[14px] font-semibold leading-5";
+const DEBUG_SHOW_PREFERENCE_FEEDBACK = false;
 
 async function loadMatchingNotices(
   view: MatchingView,
@@ -182,20 +194,19 @@ async function loadMatchingNotices(
     p_offset: offset,
     p_field: selectedField,
   };
-  const rpc = view === "excluded"
-    ? "get_my_excluded_notice_matches_v1"
-    : view === "review"
-      ? "get_my_notice_review_matches_v1"
-      : "get_my_notice_matches_v1";
+  const rpc =
+    view === "excluded"
+      ? "get_my_excluded_notice_matches_v1"
+      : view === "review"
+        ? "get_my_notice_review_matches_v1"
+        : "get_my_notice_matches_v1";
 
   if (view !== "excluded") {
     params.p_include_closed = false;
   }
 
-  const invokeRpc = (
-    name: string,
-    args: typeof params,
-  ) => supabase.rpc(name as never, args as never);
+  const invokeRpc = (name: string, args: typeof params) =>
+    supabase.rpc(name as never, args as never);
   const { data, error } = await invokeRpc(rpc, params);
   if (error) throw error;
 
@@ -256,9 +267,7 @@ function ExcludedProgramRow({ program }: { program: MatchedProgram }) {
         <span className="rounded-[6px] bg-item-hover px-1.5 py-0.5 text-[13px] font-semibold text-content-disabled">
           {program.dDay}
         </span>
-        <p className="mt-3 text-[14px] leading-5 text-ink-muted">
-          {program.deadline}
-        </p>
+        <p className="mt-3 text-[14px] leading-5 text-ink-muted">{program.deadline}</p>
       </div>
     </article>
   );
@@ -276,7 +285,11 @@ function ProgramsPage() {
   const [isSearchLoadingVisible, setIsSearchLoadingVisible] = useState(false);
   const [showWaitMessage, setShowWaitMessage] = useState(false);
   const searchLoaderVisible = isSearchLoadingVisible;
-  const feedbackForDisplay = preferenceFeedback;
+  const feedbackForDisplay =
+    preferenceFeedback ??
+    (DEBUG_SHOW_PREFERENCE_FEEDBACK
+      ? { tone: "success" as const, message: "선호조건을 입력해보세요" }
+      : null);
   const preferenceFeedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const searchLoadingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const preferenceStorageKey = session?.user.id ?? null;
@@ -375,9 +388,7 @@ function ProgramsPage() {
     void programService.list().then((programs) => {
       if (!cancelled) {
         setManualPrograms(
-          programs
-            .filter((program) => program.source === "manual")
-            .map(toManualMatchedProgram),
+          programs.filter((program) => program.source === "manual").map(toManualMatchedProgram),
         );
       }
     });
@@ -517,7 +528,9 @@ function ProgramsPage() {
     const previousKey = previousPreferenceStorageKey.current;
     if (previousKey && previousKey !== preferenceStorageKey) {
       window.sessionStorage.removeItem(`${PREFERENCE_QUERY_STORAGE_PREFIX}${previousKey}`);
-      window.sessionStorage.removeItem(`${PREFERENCE_COMMITTED_QUERY_STORAGE_PREFIX}${previousKey}`);
+      window.sessionStorage.removeItem(
+        `${PREFERENCE_COMMITTED_QUERY_STORAGE_PREFIX}${previousKey}`,
+      );
       window.sessionStorage.removeItem(`${PREFERENCE_MATCH_STORAGE_PREFIX}${previousKey}`);
     }
     previousPreferenceStorageKey.current = preferenceStorageKey;
@@ -530,9 +543,7 @@ function ProgramsPage() {
       window.sessionStorage.getItem(
         `${PREFERENCE_COMMITTED_QUERY_STORAGE_PREFIX}${preferenceStorageKey}`,
       ) ??
-      window.sessionStorage.getItem(
-        `${PREFERENCE_QUERY_STORAGE_PREFIX}${preferenceStorageKey}`,
-      ) ??
+      window.sessionStorage.getItem(`${PREFERENCE_QUERY_STORAGE_PREFIX}${preferenceStorageKey}`) ??
       "";
     setQuery(storedCommittedQuery);
   }, [preferenceStorageKey]);
@@ -608,13 +619,13 @@ function ProgramsPage() {
         const nextProgramsWithPreferences = preferenceTags.apply(nextPrograms);
         setMatchedPrograms(nextProgramsWithPreferences);
         const committedQuery = preferenceStorageKey
-          ? window.sessionStorage.getItem(
-              `${PREFERENCE_COMMITTED_QUERY_STORAGE_PREFIX}${preferenceStorageKey}`,
-            )?.trim() ?? ""
+          ? (window.sessionStorage
+              .getItem(`${PREFERENCE_COMMITTED_QUERY_STORAGE_PREFIX}${preferenceStorageKey}`)
+              ?.trim() ?? "")
           : "";
         if (committedQuery && !isPreferenceSearching) {
           const selectedField =
-            fields.length === 1 && !fields.includes(SUPPORT_ALL) ? fields[0] ?? null : null;
+            fields.length === 1 && !fields.includes(SUPPORT_ALL) ? (fields[0] ?? null) : null;
           submittedPreferenceQueryRef.current = committedQuery;
           submittedPreferenceFieldRef.current = selectedField;
           silentPreferenceReapplyRef.current =
@@ -750,9 +761,7 @@ function ProgramsPage() {
           Array.from(uniqueItems.values()),
           savedState.items,
         );
-        setReviewPrograms(
-          preferenceTags.apply(itemsWithSavedState.map(toMatchedProgram)),
-        );
+        setReviewPrograms(preferenceTags.apply(itemsWithSavedState.map(toMatchedProgram)));
         setReviewTotalCount(
           responses.reduce(
             (total, response) => total + (response.total_count ?? response.items.length),
@@ -763,7 +772,9 @@ function ProgramsPage() {
         if (cancelled || reviewRequestRef.current !== requestId) return;
         console.error("[programs] 추가 검토 공고 조회 실패", error);
         if (showLoading) {
-          setReviewError("추가 검토 공고를 불러오는 중 문제가 발생했어요. 잠시 후 다시 시도해주세요.");
+          setReviewError(
+            "추가 검토 공고를 불러오는 중 문제가 발생했어요. 잠시 후 다시 시도해주세요.",
+          );
           setReviewPrograms([]);
           setReviewTotalCount(0);
         }
@@ -887,9 +898,7 @@ function ProgramsPage() {
         ),
       );
       toast.success(
-        result.is_saved
-          ? "내 지원사업에 저장되었습니다."
-          : "내 지원사업에서 삭제되었습니다.",
+        result.is_saved ? "내 지원사업에 저장되었습니다." : "내 지원사업에서 삭제되었습니다.",
       );
     } catch (error) {
       console.error("[programs] 저장 상태 변경 실패", error);
@@ -1011,7 +1020,10 @@ function ProgramsPage() {
                 aria-label="매칭 프로필 메뉴 열기"
                 className="group/dots flex size-10 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-dropdown-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
               >
-                <span aria-hidden className="flex size-6 flex-col items-center justify-center gap-[3px]">
+                <span
+                  aria-hidden
+                  className="flex size-6 flex-col items-center justify-center gap-[3px]"
+                >
                   <span className="size-[2px] rounded-full bg-[#84968E] transition-colors group-hover/dots:bg-ink" />
                   <span className="size-[2px] rounded-full bg-[#84968E] transition-colors group-hover/dots:bg-ink" />
                   <span className="size-[2px] rounded-full bg-[#84968E] transition-colors group-hover/dots:bg-ink" />
@@ -1074,14 +1086,14 @@ function ProgramsPage() {
               <div
                 role={feedbackForDisplay.tone === "error" ? "alert" : "status"}
                 className={`${PREFERENCE_FEEDBACK_BASE_CLASS} ${
-                feedbackForDisplay.message.length > 60 ? "rounded-[20px]" : "rounded-full"
-              } ${
-                feedbackForDisplay.tone === "error"
-                  ? "border border-transparent bg-[#FFF3F3] text-[#D84A4A] after:bg-[#FFF3F3]"
-                  : "border border-transparent bg-[#E2F8F0] pl-[12px] pr-[12px] text-[#1F8064] after:bg-[#E2F8F0]"
+                  feedbackForDisplay.message.length > 60 ? "rounded-[20px]" : "rounded-full"
+                } ${
+                  feedbackForDisplay.tone === "error"
+                    ? "border border-transparent bg-[#FFF3F3] text-[#D84A4A] after:bg-[#FFF3F3]"
+                    : "border border-transparent bg-[#E2F8F0] pl-[12px] pr-[12px] text-[#1F8064] after:bg-[#E2F8F0]"
                 }`}
               >
-                <span className="pointer-events-none absolute -bottom-[8.64px] left-3 z-10 block h-[8.64px] w-[15.84px]">
+                <span className="pointer-events-none absolute -bottom-[8.3px] left-3 z-10 block h-[8.64px] w-[15.84px]">
                   <img
                     aria-hidden
                     src={
@@ -1105,7 +1117,9 @@ function ProgramsPage() {
                     />
                   </span>
                 ) : null}
-                <span className="relative z-20 min-w-0 whitespace-normal">{feedbackForDisplay.message}</span>
+                <span className="relative z-20 min-w-0 whitespace-normal">
+                  {feedbackForDisplay.message}
+                </span>
               </div>
             </div>
           ) : null}
@@ -1113,10 +1127,10 @@ function ProgramsPage() {
             ref={preferenceInputRef}
             disabled={isPreferenceSearching}
             value={query}
-          onChange={(event) => {
-            const next = event.target.value;
-            setQuery(next);
-            setPreferenceFeedback(null);
+            onChange={(event) => {
+              const next = event.target.value;
+              setQuery(next);
+              setPreferenceFeedback(null);
               if (!next.trim()) {
                 if (preferenceStorageKey) {
                   window.sessionStorage.removeItem(
@@ -1135,7 +1149,7 @@ function ProgramsPage() {
                 }
                 setSort("deadline");
               }
-          }}
+            }}
             placeholder="선호하는 조건을 입력해 보세요"
             aria-busy={searchLoaderVisible}
             className={`min-w-0 flex-1 bg-transparent text-[15px] outline-none placeholder:text-guide-text ${
@@ -1189,7 +1203,7 @@ function ProgramsPage() {
               }, 200);
               const selectedField =
                 supportCategories.length === 1 && !supportCategories.includes(SUPPORT_ALL)
-                  ? supportCategories[0] ?? null
+                  ? (supportCategories[0] ?? null)
                   : null;
               const normalizedQuery = query.trim();
               const previousSearch = lastPreferenceSearchRef.current;
@@ -1218,7 +1232,12 @@ function ProgramsPage() {
             }}
             className={`ai-search-shimmer flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand text-brand-foreground transition-[box-shadow,transform,background-color] duration-150 hover:bg-[#3A8F77] active:translate-y-px active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-brand-disabled disabled:text-brand-foreground ${query.trim() ? "ml-1" : ""}`}
           >
-            <img draggable={false} src="/assets/programs/ai-search.svg" alt="" className="pointer-events-none select-none size-6" />
+            <img
+              draggable={false}
+              src="/assets/programs/ai-search.svg"
+              alt=""
+              className="pointer-events-none select-none size-6"
+            />
           </button>
           {isQueryFocused ? (
             <div className="absolute left-0 top-full z-50 mt-1 w-full rounded-xl border-0 bg-white p-6 shadow-dropdown">
@@ -1230,37 +1249,39 @@ function ProgramsPage() {
                   ref={preferenceSuggestionsRef}
                   className="flex max-w-full flex-nowrap gap-2 overflow-x-auto pb-1 pr-10 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
                 >
-                {PREFERENCE_SUGGESTIONS.map((suggestion) => (
-                  <button
-                    key={suggestion}
-                    type="button"
-                    onMouseDown={(event) => event.preventDefault()}
-                    onClick={() => {
-                      const currentQuery = query.trim().replace(/,+\s*$/, "");
-                      const selectedSuggestions = currentQuery
-                        .split(",")
-                        .map((item) => item.trim())
-                        .filter(Boolean);
-                      const nextQuery = selectedSuggestions.includes(suggestion)
-                        ? currentQuery
-                        : currentQuery
-                          ? `${currentQuery}, ${suggestion}`
-                          : suggestion;
-                      setQuery(nextQuery);
-                      preferenceInputRef.current?.focus();
-                    }}
-                    className="inline-flex h-8 shrink-0 items-center whitespace-nowrap rounded-full bg-item-hover px-3 text-sm font-normal text-ink-muted transition-colors hover:bg-secondary-btn-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-                  >
-                    {suggestion}
-                  </button>
-                ))}
+                  {PREFERENCE_SUGGESTIONS.map((suggestion) => (
+                    <button
+                      key={suggestion}
+                      type="button"
+                      onMouseDown={(event) => event.preventDefault()}
+                      onClick={() => {
+                        const currentQuery = query.trim().replace(/,+\s*$/, "");
+                        const selectedSuggestions = currentQuery
+                          .split(",")
+                          .map((item) => item.trim())
+                          .filter(Boolean);
+                        const nextQuery = selectedSuggestions.includes(suggestion)
+                          ? currentQuery
+                          : currentQuery
+                            ? `${currentQuery}, ${suggestion}`
+                            : suggestion;
+                        setQuery(nextQuery);
+                        preferenceInputRef.current?.focus();
+                      }}
+                      className="inline-flex h-8 shrink-0 items-center whitespace-nowrap rounded-full bg-item-hover px-3 text-sm font-normal text-ink-muted transition-colors hover:bg-secondary-btn-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                    >
+                      {suggestion}
+                    </button>
+                  ))}
                 </div>
                 {canScrollPreferenceSuggestions ? (
                   <button
                     type="button"
                     aria-label="추천 조건 더 보기"
                     onMouseDown={(event) => event.preventDefault()}
-                    onClick={() => preferenceSuggestionsRef.current?.scrollBy({ left: 180, behavior: "smooth" })}
+                    onClick={() =>
+                      preferenceSuggestionsRef.current?.scrollBy({ left: 180, behavior: "smooth" })
+                    }
                     className="absolute -right-[14px] top-4 flex size-8 -translate-y-1/2 items-center justify-center rounded-full border border-field-border/20 bg-surface text-icon-muted shadow-chip-arrow transition-colors hover:text-ink"
                   >
                     <ArrowRight aria-hidden className="size-4" strokeWidth={2.25} />
@@ -1287,9 +1308,7 @@ function ProgramsPage() {
             <ProgramSortDropdown
               value={sort}
               onChange={setSort}
-              preferenceActive={matchedPrograms.some(
-                (item) => item.preference_matched === true,
-              )}
+              preferenceActive={matchedPrograms.some((item) => item.preference_matched === true)}
             />
             <DropdownMenu modal={false}>
               <DropdownMenuTrigger asChild>
@@ -1327,9 +1346,14 @@ function ProgramsPage() {
           className={`${tab === "manual" || tab === "review" || currentError || (!currentLoading && !currentError && results.length === 0) ? "mt-[18px]" : "mt-1"} overflow-hidden rounded-sm`}
         >
           {currentLoading ? (
-            <div className="flex min-h-[240px] items-center justify-center bg-white px-8 py-16 text-ink-muted" role="status">
+            <div
+              className="flex min-h-[240px] items-center justify-center bg-white px-8 py-16 text-ink-muted"
+              role="status"
+            >
               <Loader2 className="mr-2 size-5 animate-spin" aria-hidden />
-              {tab === "review" ? "추가 검토 공고를 불러오는 중이에요…" : "맞춤 공고를 불러오는 중이에요…"}
+              {tab === "review"
+                ? "추가 검토 공고를 불러오는 중이에요…"
+                : "맞춤 공고를 불러오는 중이에요…"}
             </div>
           ) : currentError ? (
             <div className="flex min-h-[360px] flex-col items-center justify-center bg-white px-8 py-16 text-center">
@@ -1347,7 +1371,7 @@ function ProgramsPage() {
               <button
                 type="button"
                 onClick={() => window.location.reload()}
-                className="mt-5 inline-flex h-10 items-center justify-center rounded-[10px] bg-[#F2F7F4] px-4 text-[14px] font-semibold text-brand transition-colors hover:bg-[#EAF1EC]"
+                className="mt-5 inline-flex h-11 items-center justify-center rounded-[10px] bg-[#F2F7F4] px-5 text-[15px] font-semibold text-brand transition-colors hover:bg-[#EAF1EC]"
               >
                 다시 시도
               </button>
@@ -1362,106 +1386,111 @@ function ProgramsPage() {
                 favoriteSaving={savingNoticeIds.has(program.id)}
               />
             ))
-          ) : (
-            tab === "manual" ? (
-                <div key="manual-empty" className="rounded-[12px] bg-transparent px-6 py-16 text-center">
-                  <div className="relative mx-auto mb-2 flex h-[180px] w-[180px] -translate-y-4 items-center justify-center">
-                    <div className="relative h-[165px] w-[132px] saturate-[0.1]">
-                      <img
-                        src="/assets/empty/manual/pen.svg"
-                        alt=""
-                        aria-hidden="true"
-                        className="animate-empty-manual-pen absolute left-0 top-[24.3px] block h-auto w-[48.15px] max-w-none"
-                      />
-                      <img
-                        src="/assets/empty/manual/speech-bubble.svg"
-                        alt=""
-                        aria-hidden="true"
-                        className="animate-empty-speech-bubble animate-empty-manual-bubble-delay absolute left-[79.4px] top-0 block h-auto w-[52.55px] max-w-none"
-                      />
-                      <img
-                        src="/assets/empty/manual-empty.svg"
-                        alt=""
-                        aria-hidden="true"
-                        draggable={false}
-                        className="absolute left-[3.9px] top-[80.8px] block h-auto w-[112px] max-w-none"
-                      />
-                    </div>
+          ) : tab === "manual" ? (
+            <div
+              key="manual-empty"
+              className="rounded-[12px] bg-transparent px-6 py-16 text-center"
+            >
+              <div className="relative mx-auto mb-2 flex h-[180px] w-[180px] -translate-y-4 items-center justify-center">
+                <div className="relative h-[165px] w-[132px] saturate-[0.1]">
+                  <img
+                    src="/assets/empty/manual/pen.svg"
+                    alt=""
+                    aria-hidden="true"
+                    className="animate-empty-manual-pen absolute left-0 top-[24.3px] block h-auto w-[48.15px] max-w-none"
+                  />
+                  <img
+                    src="/assets/empty/manual/speech-bubble.svg"
+                    alt=""
+                    aria-hidden="true"
+                    className="animate-empty-speech-bubble animate-empty-manual-bubble-delay absolute left-[79.4px] top-0 block h-auto w-[52.55px] max-w-none"
+                  />
+                  <img
+                    src="/assets/empty/manual-empty.svg"
+                    alt=""
+                    aria-hidden="true"
+                    draggable={false}
+                    className="absolute left-[3.9px] top-[80.8px] block h-auto w-[112px] max-w-none"
+                  />
                 </div>
-                <p className="text-[18px] font-semibold text-ink">수동 공고가 없어요</p>
-                <p className="mt-[2px] text-[15px] text-ink-muted">
-                  직접 확인하고 싶은 지원사업 공고를 추가해 관리해 보세요.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setManualFormOpen(true)}
-                  className="mt-5 inline-flex h-10 items-center gap-2 rounded-[10px] bg-[#F2F7F4] px-4 text-[14px] font-semibold text-brand shadow-none transition-colors hover:bg-[#EAF1EC] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-                >
-                  수동 공고 추가
-                </button>
               </div>
-            ) : (
-              tab === "review" ? (
-                <div key="review-empty" className="rounded-[12px] bg-transparent px-6 py-16 text-center">
-                  <div className="relative mx-auto mb-2 flex h-[180px] w-[180px] -translate-y-2 items-center justify-center">
-                    <div className="relative h-[141px] w-[132px] saturate-[0.1]">
-                      <img
-                        src="/assets/empty/review/body.svg"
-                        alt=""
-                        aria-hidden="true"
-                        className="absolute left-[17px] top-[69px] block h-auto w-[95.65px] max-w-none"
-                      />
-                      <img
-                        src="/assets/empty/review/bubble-left.svg"
-                        alt=""
-                        aria-hidden="true"
-                        className="animate-empty-speech-bubble absolute left-0 top-0 block h-auto w-[52.06px] max-w-none"
-                      />
-                      <img
-                        src="/assets/empty/review/bubble-right.svg"
-                        alt=""
-                        aria-hidden="true"
-                        className="animate-empty-speech-bubble animate-empty-review-bubble-delay absolute left-[80.8px] top-[47.2px] block h-auto w-[52.06px] max-w-none"
-                      />
-                    </div>
-                  </div>
-                  <p className="text-[18px] font-semibold text-ink">추가 검토가 필요한 공고가 없어요</p>
-                  <p className="mt-[2px] text-[15px] text-ink-muted">
-                    기존 공고에 변경 사항이 생기면 이곳에서 확인할 수 있어요.
-                  </p>
+              <p className="text-[18px] font-semibold text-ink">수동 공고가 없어요</p>
+              <p className="mt-[2px] text-[15px] text-ink-muted">
+                직접 확인하고 싶은 지원사업 공고를 추가해 관리해 보세요.
+              </p>
+              <button
+                type="button"
+                onClick={() => setManualFormOpen(true)}
+                className="mt-5 inline-flex h-11 items-center gap-2 rounded-[10px] bg-[#F2F7F4] px-5 text-[15px] font-semibold text-brand shadow-none transition-colors hover:bg-[#EAF1EC] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+              >
+                수동 공고 추가
+              </button>
+            </div>
+          ) : tab === "review" ? (
+            <div
+              key="review-empty"
+              className="rounded-[12px] bg-transparent px-6 py-16 text-center"
+            >
+              <div className="relative mx-auto mb-2 flex h-[180px] w-[180px] -translate-y-2 items-center justify-center">
+                <div className="relative h-[141px] w-[132px] saturate-[0.1]">
+                  <img
+                    src="/assets/empty/review/body.svg"
+                    alt=""
+                    aria-hidden="true"
+                    className="absolute left-[17px] top-[69px] block h-auto w-[95.65px] max-w-none"
+                  />
+                  <img
+                    src="/assets/empty/review/bubble-left.svg"
+                    alt=""
+                    aria-hidden="true"
+                    className="animate-empty-speech-bubble absolute left-0 top-0 block h-auto w-[52.06px] max-w-none"
+                  />
+                  <img
+                    src="/assets/empty/review/bubble-right.svg"
+                    alt=""
+                    aria-hidden="true"
+                    className="animate-empty-speech-bubble animate-empty-review-bubble-delay absolute left-[80.8px] top-[47.2px] block h-auto w-[52.06px] max-w-none"
+                  />
                 </div>
-              ) : (
-                <div key="matched-empty" className="rounded-[12px] bg-transparent px-6 py-16 text-center">
-                  <div className="relative mx-auto mb-2 flex h-[180px] w-[180px] -translate-y-2 items-center justify-center">
-                    <div className="relative w-[180px]">
-                      <img
-                        src="/assets/empty/empty-program-search.svg"
-                        alt=""
-                        aria-hidden="true"
-                        draggable={false}
-                        className="block w-[180px] saturate-[0.1]"
-                      />
-                      <span
-                        aria-hidden="true"
-                        className="pointer-events-none absolute left-[123px] top-[15px] h-[48px] w-[48px] bg-white"
-                      />
-                      <img
-                        src="/assets/empty/empty-program-search.svg"
-                        alt=""
-                        aria-hidden="true"
-                        draggable={false}
-                        className="animate-empty-speech-bubble pointer-events-none absolute left-0 top-0 block w-[180px] saturate-[0.1]"
-                        style={{ clipPath: "inset(11.4% 6.7% 55% 69.2%)" }}
-                      />
-                    </div>
-                  </div>
-                  <p className="text-[18px] font-semibold text-ink">조건에 맞는 공고가 없어요</p>
-                  <p className="mt-[2px] text-[15px] text-ink-muted">
-                    매칭 프로필을 수정하거나 다른 지원 분야를 선택해보세요.
-                  </p>
+              </div>
+              <p className="text-[18px] font-semibold text-ink">추가 검토가 필요한 공고가 없어요</p>
+              <p className="mt-[2px] text-[15px] text-ink-muted">
+                기존 공고에 변경 사항이 생기면 이곳에서 확인할 수 있어요.
+              </p>
+            </div>
+          ) : (
+            <div
+              key="matched-empty"
+              className="rounded-[12px] bg-transparent px-6 py-16 text-center"
+            >
+              <div className="relative mx-auto mb-2 flex h-[180px] w-[180px] -translate-y-2 items-center justify-center">
+                <div className="relative w-[180px]">
+                  <img
+                    src="/assets/empty/empty-program-search.svg"
+                    alt=""
+                    aria-hidden="true"
+                    draggable={false}
+                    className="block w-[180px] saturate-[0.1]"
+                  />
+                  <span
+                    aria-hidden="true"
+                    className="pointer-events-none absolute left-[123px] top-[15px] h-[48px] w-[48px] bg-white"
+                  />
+                  <img
+                    src="/assets/empty/empty-program-search.svg"
+                    alt=""
+                    aria-hidden="true"
+                    draggable={false}
+                    className="animate-empty-speech-bubble pointer-events-none absolute left-0 top-0 block w-[180px] saturate-[0.1]"
+                    style={{ clipPath: "inset(11.4% 6.7% 55% 69.2%)" }}
+                  />
                 </div>
-              )
-            )
+              </div>
+              <p className="text-[18px] font-semibold text-ink">조건에 맞는 공고가 없어요</p>
+              <p className="mt-[2px] text-[15px] text-ink-muted">
+                매칭 프로필을 수정하거나 다른 지원 분야를 선택해보세요.
+              </p>
+            </div>
           )}
         </div>
 
@@ -1493,7 +1522,10 @@ function ProgramsPage() {
                 </div>
                 <div className="min-h-0 overflow-y-auto pb-[10px]">
                   {isLoadingExcluded ? (
-                    <div className="flex min-h-[180px] items-center justify-center px-8 py-16 text-ink-muted" role="status">
+                    <div
+                      className="flex min-h-[180px] items-center justify-center px-8 py-16 text-ink-muted"
+                      role="status"
+                    >
                       <Loader2 className="mr-2 size-5 animate-spin" aria-hidden />
                       제외된 공고를 불러오는 중이에요…
                     </div>
@@ -1508,18 +1540,22 @@ function ProgramsPage() {
                           className="block w-[132px] saturate-[0.1]"
                         />
                       </div>
-                      <p className="text-[18px] font-semibold text-ink">일시적으로 불러오지 못했어요.</p>
+                      <p className="text-[18px] font-semibold text-ink">
+                        일시적으로 불러오지 못했어요.
+                      </p>
                       <p className="mt-1 text-[15px] text-ink-muted">{excludedError}</p>
                       <button
                         type="button"
                         onClick={() => void loadExcludedNotices()}
-                        className="mt-5 inline-flex h-10 items-center justify-center rounded-[10px] bg-[#F2F7F4] px-4 text-[14px] font-semibold text-brand transition-colors hover:bg-[#EAF1EC]"
+                        className="mt-5 inline-flex h-11 items-center justify-center rounded-[10px] bg-[#F2F7F4] px-5 text-[15px] font-semibold text-brand transition-colors hover:bg-[#EAF1EC]"
                       >
                         다시 시도
                       </button>
                     </div>
                   ) : excludedPrograms.length ? (
-                    excludedPrograms.map((program) => <ExcludedProgramRow key={program.id} program={program} />)
+                    excludedPrograms.map((program) => (
+                      <ExcludedProgramRow key={program.id} program={program} />
+                    ))
                   ) : (
                     <div className="px-8 py-12 text-center">
                       <div className="relative mx-auto mb-2 flex h-[180px] w-[180px] items-center justify-center">
@@ -1557,9 +1593,7 @@ function ProgramsPage() {
           saving={manualSaving}
           onSubmit={handleManualSubmit}
         />
-        {tabTotalCount > 0 && (
-          <Pagination page={page} pageCount={pageCount} onChange={setPage} />
-        )}
+        {tabTotalCount > 0 && <Pagination page={page} pageCount={pageCount} onChange={setPage} />}
       </div>
     </section>
   );

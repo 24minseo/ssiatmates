@@ -41,50 +41,6 @@ type StatusFilter = StatusTabValue;
 type SortOption = ProgramSortOption;
 
 const NO_DEADLINE = "9999-12-31T23:59:59.000Z";
-const SAVED_STATUS_STORAGE_PREFIX = "ssiat.my-programs.saved-status.v1";
-
-function isProgramStatus(value: unknown): value is ProgramStatus {
-  return value === "not_started" || value === "preparing" || value === "submitted";
-}
-
-function savedStatusStorageKey(userId: string) {
-  return `${SAVED_STATUS_STORAGE_PREFIX}:${userId}`;
-}
-
-function readSavedStatuses(userId: string): Record<string, ProgramStatus> {
-  try {
-    const parsed: unknown = JSON.parse(
-      localStorage.getItem(savedStatusStorageKey(userId)) ?? "{}",
-    );
-    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return {};
-
-    const statuses: Record<string, ProgramStatus> = {};
-    for (const [noticeId, status] of Object.entries(parsed)) {
-      if (isProgramStatus(status)) statuses[noticeId] = status;
-    }
-    return statuses;
-  } catch {
-    return {};
-  }
-}
-
-function writeSavedStatus(userId: string, noticeId: string, status: ProgramStatus) {
-  const statuses = readSavedStatuses(userId);
-  localStorage.setItem(
-    savedStatusStorageKey(userId),
-    JSON.stringify({ ...statuses, [noticeId]: status }),
-  );
-}
-
-function removeSavedStatus(userId: string, noticeId: string) {
-  try {
-    const statuses = readSavedStatuses(userId);
-    delete statuses[noticeId];
-    localStorage.setItem(savedStatusStorageKey(userId), JSON.stringify(statuses));
-  } catch {
-    // Status cleanup is best effort; unsaving the notice should still succeed.
-  }
-}
 
 function safeNoticeUrl(value: string | null | undefined): string | null {
   if (!value) return null;
@@ -112,7 +68,7 @@ function toSavedProgram(item: SavedNotice, index: number): Program {
     deadline: item.deadline ?? NO_DEADLINE,
     deadlineLabel: item.deadline_label ?? (item.is_closed ? "마감" : "일정 확인 필요"),
     isClosed: item.is_closed,
-    createdAt: new Date(Date.now() - index).toISOString(),
+    createdAt: item.saved_at ?? new Date(Date.now() - index).toISOString(),
     fitScore: 0,
     schedules: [],
   };
@@ -163,12 +119,16 @@ function MyProgramsPage() {
     setLoading(true);
     setLoadError(null);
 
-    savedNoticesApi
-      .getMySupportNotices()
-      .then(({ items, total_count }) => {
+    Promise.all([
+      savedNoticesApi.getMySupportNotices(),
+      savedNoticesApi.getMyProgress(),
+    ])
+      .then(([{ items, total_count }, { items: progressItems }]) => {
         if (!mounted || savedRequestRef.current !== requestId) return;
         setSavedTotalCount(total_count ?? items.length);
-        const savedStatuses = readSavedStatuses(userId);
+        const savedStatuses = Object.fromEntries(
+          progressItems.map((item) => [item.notice_id, item.status]),
+        );
         setPrograms(
           items.map((item, index) => {
             const program = toSavedProgram(item, index);
@@ -279,7 +239,6 @@ function MyProgramsPage() {
     try {
       if (deleteTarget.source === "saved") {
         await savedNoticesApi.setSaved(deleteTarget.id, false);
-        if (session?.user.id) removeSavedStatus(session.user.id, deleteTarget.id);
       } else {
         await programService.remove(deleteTarget.id);
       }
@@ -306,7 +265,7 @@ function MyProgramsPage() {
     try {
       if (program.source === "saved") {
         if (!session?.user.id) throw new Error("로그인이 필요합니다.");
-        writeSavedStatus(session.user.id, program.id, status);
+        await savedNoticesApi.setProgress(program.id, status);
         replaceProgram({ ...program, status });
         toast.success("상태를 변경했습니다.");
         return;
@@ -420,7 +379,7 @@ function MyProgramsPage() {
           <Button
             type="button"
             onClick={() => setRetryCount((count) => count + 1)}
-            className="mt-5 h-10 rounded-[10px] bg-[#F2F7F4] px-4 text-[14px] font-semibold text-brand shadow-none transition-colors hover:bg-[#EAF1EC]"
+            className="mt-5 h-11 rounded-[10px] bg-[#F2F7F4] px-5 text-[15px] font-semibold text-brand shadow-none transition-colors hover:bg-[#EAF1EC]"
           >
             다시 시도
           </Button>
@@ -458,20 +417,23 @@ function MyProgramsPage() {
           <Button
             type="button"
             onClick={() => void navigate({ to: "/programs" })}
-            className="mt-5 h-10 rounded-[10px] bg-[#F2F7F4] px-4 text-[14px] font-semibold text-brand shadow-none transition-colors hover:bg-[#EAF1EC]"
+            className="mt-5 h-11 rounded-[10px] bg-[#F2F7F4] px-5 text-[15px] font-semibold text-brand shadow-none transition-colors hover:bg-[#EAF1EC]"
           >
             지원사업 탐색
           </Button>
         </div>
       ) : (
         <div className="rounded-[12px] bg-surface px-6 py-16 text-center">
-          <img
-            src="/assets/empty/program-status.svg"
-            alt=""
-            aria-hidden="true"
-            draggable={false}
-            className="mx-auto mb-2 h-[130px] w-[132px] object-contain saturate-[0.1]"
-          />
+          <div className="relative left-[6px] mx-auto mb-2 h-[81px] w-[79px] origin-top-left scale-[0.53] saturate-[0.1]">
+            <img src="/assets/empty/sleep/body.svg" alt="" aria-hidden="true" className="absolute left-0 top-0 max-w-none" />
+            <img src="/assets/empty/sleep/zzz.svg" alt="" aria-hidden="true" className="animate-empty-zzz animate-empty-zzz-delay-2 absolute left-[74.46px] top-[21.1px] max-w-none" style={{ clipPath: "inset(0 0 0 44px)" }} />
+            <img src="/assets/empty/sleep/zzz.svg" alt="" aria-hidden="true" className="animate-empty-zzz animate-empty-zzz-delay-1 absolute left-[74.46px] top-[21.1px] max-w-none" style={{ clipPath: "inset(0 30px 0 22px)" }} />
+            <img src="/assets/empty/sleep/zzz.svg" alt="" aria-hidden="true" className="animate-empty-zzz absolute left-[74.46px] top-[21.1px] max-w-none" style={{ clipPath: "inset(0 52px 0 0)" }} />
+            <img src="/assets/empty/sleep/eyes.svg" alt="" aria-hidden="true" className="absolute left-[23.47px] top-[78.81px] max-w-none" />
+            <img src="/assets/empty/sleep/mouth.svg" alt="" aria-hidden="true" className="absolute left-[41.17px] top-[94.21px] max-w-none" />
+            <img src="/assets/empty/sleep/foot-left.svg" alt="" aria-hidden="true" className="absolute left-[18.07px] top-[114.64px] max-w-none" />
+            <img src="/assets/empty/sleep/foot-right.svg" alt="" aria-hidden="true" className="absolute left-[56.38px] top-[114.64px] max-w-none" />
+          </div>
           <p className="text-[18px] font-semibold text-ink">선택한 진행 상태의 지원사업이 없어요</p>
           <p className="mt-[2px] text-[15px] text-ink-muted">다른 진행 상태를 선택해보세요.</p>
         </div>

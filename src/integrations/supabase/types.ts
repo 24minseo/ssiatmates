@@ -295,6 +295,25 @@ export type Database = {
           total_count: number
         }
       }
+      get_my_saved_notice_progress_v1: {
+        Args: Record<string, never>
+        Returns: {
+          items: Array<{
+            notice_id: string
+            status: string
+          }>
+        }
+      }
+      set_my_saved_notice_progress_v1: {
+        Args: {
+          p_notice_id: string
+          p_status: string
+        }
+        Returns: {
+          notice_id: string
+          status: string
+        }
+      }
       get_my_notice_report_v1: {
         Args: {
           p_notice_id: string

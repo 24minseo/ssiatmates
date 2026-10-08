@@ -102,7 +102,7 @@ export function ProgramCard({
               )}
             </h3>
             <span
-              className={`shrink-0 rounded-[6px] px-1.5 py-0.5 text-[12px] font-semibold ${
+              className={`inline-flex h-[22px] shrink-0 items-center rounded-[6px] px-1.5 text-[12px] font-semibold leading-none ${
                 deadline.urgent
                   ? "bg-deadline-surface text-deadline"
                   : deadline.expired
