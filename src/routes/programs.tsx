@@ -1416,7 +1416,7 @@ function ProgramsPage() {
               </div>
               <p className="text-[18px] font-semibold text-ink">수동 공고가 없어요</p>
               <p className="mt-[2px] text-[15px] text-ink-muted">
-                직접 확인하고 싶은 지원사업 공고를 추가해 관리해 보세요.
+                직접 찾은 공고를 추가해 한곳에서 관리해보세요.
               </p>
               <button
                 type="button"
