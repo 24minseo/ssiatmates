@@ -419,7 +419,7 @@ function MyProgramsPage() {
             onClick={() => void navigate({ to: "/programs" })}
             className="mt-5 h-11 rounded-[10px] bg-[#F2F7F4] px-5 text-[15px] font-semibold text-brand shadow-none transition-colors hover:bg-[#EAF1EC]"
           >
-            지원사업 탐색
+            지원사업 탐색하기
           </Button>
         </div>
       ) : (
