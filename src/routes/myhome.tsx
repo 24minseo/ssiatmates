@@ -512,7 +512,7 @@ function MyHomePage() {
         />
         {homeProgramTab === "newMatches" && recommendationsLoading ? (
           <div
-            className="flex min-h-[260px] items-center justify-center border-b border-field-border text-[14px] text-ink-muted"
+            className="flex min-h-[260px] items-center justify-center text-[14px] text-ink-muted"
             role="status"
           >
             <Loader2 className="mr-2 size-4 animate-spin" aria-hidden />
