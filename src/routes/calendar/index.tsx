@@ -150,8 +150,17 @@ function formatDateLabel(dateKey: string) {
 }
 
 function getSoftEventColor(color?: string, alpha = "12") {
-  if (color === "#1F8064") return "var(--event-support-surface)";
-  if (color === "var(--deadline)") return "var(--deadline-surface)";
+  if (color === "#79A0D8") color = "#3568B8";
+  if (color === "#1F8064") {
+    return alpha === "20"
+      ? "color-mix(in srgb, var(--event-support-surface) 82%, var(--brand) 18%)"
+      : "var(--event-support-surface)";
+  }
+  if (color === "var(--deadline)") {
+    return alpha === "20"
+      ? "color-mix(in srgb, var(--deadline-surface) 82%, var(--deadline) 18%)"
+      : "var(--deadline-surface)";
+  }
   return color ? `${color}${alpha}` : undefined;
 }
 
@@ -856,8 +865,6 @@ function CalendarPage() {
   });
   const [calendarDragStart, setCalendarDragStart] = useState<string | null>(null);
   const [calendarDragEnd, setCalendarDragEnd] = useState<string | null>(null);
-  const [hoveredPeriodEventId, setHoveredPeriodEventId] = useState<number | null>(null);
-  const [hoveredCalendarEventId, setHoveredCalendarEventId] = useState<number | null>(null);
   const calendarDragMovedRef = useRef(false);
   const calendarAddOriginRef = useRef<"toolbar" | "calendar">("toolbar");
   const [eventDescription, setEventDescription] = useState("");
@@ -1624,14 +1631,14 @@ function CalendarPage() {
                               event.stopPropagation();
                               setSelectedEvent(calendarEvent);
                             }}
-                            onMouseEnter={() => setHoveredCalendarEventId(calendarEvent.id)}
-                            onMouseLeave={() => setHoveredCalendarEventId(null)}
                             className={cn(
-                              "h-[22px] w-full truncate rounded-[6px] px-2 text-left text-xs font-normal",
-                              "hover:brightness-[98%]",
+                              "calendar-event-hover h-[22px] w-full truncate rounded-[6px] px-2 text-left text-xs font-normal",
                               calendarEvent.color ? "bg-pill text-pill-foreground" : "bg-item-hover text-ink-muted",
                             )}
-                            style={{ backgroundColor: getSoftEventColor(calendarEvent.color, hoveredCalendarEventId === calendarEvent.id ? "20" : "12"), color: getEventForegroundColor(calendarEvent.color) }}
+                            style={{
+                              backgroundColor: getSoftEventColor(calendarEvent.color),
+                              color: getEventForegroundColor(calendarEvent.color),
+                            }}
                           >
                             {calendarEvent.title}
                           </button>
@@ -1695,14 +1702,11 @@ function CalendarPage() {
                             event.stopPropagation();
                             setSelectedEvent(segment.event);
                           }}
-                          onMouseEnter={() => setHoveredPeriodEventId(segment.event.id)}
-                          onMouseLeave={() => setHoveredPeriodEventId(null)}
                           className={cn(
-                            "z-10 flex items-center truncate px-2 text-xs font-normal transition-colors",
+                            "calendar-event-hover z-10 flex items-center truncate px-2 text-xs font-normal",
                             calendarDragStart ? "pointer-events-none" : "pointer-events-auto",
                             !segment.isStart && segment.startColumn === 0 && "pl-4",
                             segment.event.color ? "bg-pill text-pill-foreground" : "bg-item-hover text-ink-muted",
-                            hoveredPeriodEventId === segment.event.id && "brightness-[98%]",
                             segment.isStart && "rounded-l-[6px]",
                             segment.isEnd && "rounded-r-[6px]",
                           )}

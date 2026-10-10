@@ -795,6 +795,15 @@ a[href] {
   cursor: pointer;
 }
 
+.calendar-event-hover {
+  transition: filter 120ms ease;
+}
+
+.calendar-event-hover:hover {
+  filter: none !important;
+  background-image: linear-gradient(rgb(0 0 0 / 3%), rgb(0 0 0 / 3%));
+}
+
 /* Sonner adds a 1px border to every styled toast by default. */
 [data-sonner-toast][data-styled="true"] {
   border: 0 !important;
