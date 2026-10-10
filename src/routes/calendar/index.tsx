@@ -4,10 +4,8 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  Pencil,
   Plus,
   RotateCcw,
-  Trash2,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 
@@ -98,7 +96,16 @@ type CalendarEvent = {
   checklistItems?: ChecklistItem[];
   startTime?: string;
   reminders?: string[];
+  color?: string;
 };
+
+const EVENT_COLORS = [
+  { label: "초록", value: "#1F8064", dotColor: "#83C9AF" },
+  { label: "빨강", value: "var(--deadline)", dotColor: "#E78B94" },
+  { label: "파랑", value: "#3568B8", dotColor: "#8BADE4" },
+  { label: "보라", value: "#7150A8", dotColor: "#A98BD3" },
+  { label: "회색", value: "", dotColor: "#D7E5E0" },
+] as const;
 
 type CalendarDay = {
   date: Date;
@@ -140,6 +147,32 @@ function formatKoreanDate(dateKey: string) {
 function formatDateLabel(dateKey: string) {
   const [year, month, day] = dateKey.split("-").map(Number);
   return `${year}.${String(month).padStart(2, "0")}.${String(day).padStart(2, "0")}`;
+}
+
+function getSoftEventColor(color?: string, alpha = "12") {
+  if (color === "#1F8064") return "var(--event-support-surface)";
+  if (color === "var(--deadline)") return "var(--deadline-surface)";
+  return color ? `${color}${alpha}` : undefined;
+}
+
+function getEventForegroundColor(color?: string) {
+  const legacyColorMap: Record<string, string> = {
+    "#D9828B": "var(--deadline)",
+    "#C53B45": "var(--deadline)",
+    "#69B39A": "#1F8064",
+    "#79A0D8": "#3568B8",
+    "#9A7BC5": "#7150A8",
+  };
+  return color ? legacyColorMap[color] ?? color : undefined;
+}
+
+function formatTimeLabel(time?: string) {
+  if (!time) return "";
+  const [hours, minutes] = time.split(":").map(Number);
+  if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return time;
+  const period = hours < 12 ? "오전" : "오후";
+  const displayHours = hours % 12 || 12;
+  return `${period} ${displayHours}:${String(minutes).padStart(2, "0")}`;
 }
 
 function getEventDurationDays(event: CalendarEvent) {
@@ -807,6 +840,8 @@ function CalendarPage() {
   const [editingEventId, setEditingEventId] = useState<number | null>(null);
   const [selectedDayEvents, setSelectedDayEvents] = useState<{ date: string; events: CalendarEvent[] } | null>(null);
   const [eventTitle, setEventTitle] = useState("");
+  const [eventColor, setEventColor] = useState(EVENT_COLORS[0].value);
+  const [colorPickerOpen, setColorPickerOpen] = useState(false);
   const [eventDate, setEventDate] = useState("");
   const [eventEndDate, setEventEndDate] = useState("");
   const [dateSelectionMode, setDateSelectionMode] = useState<DateSelectionMode>("single");
@@ -822,6 +857,7 @@ function CalendarPage() {
   const [calendarDragStart, setCalendarDragStart] = useState<string | null>(null);
   const [calendarDragEnd, setCalendarDragEnd] = useState<string | null>(null);
   const [hoveredPeriodEventId, setHoveredPeriodEventId] = useState<number | null>(null);
+  const [hoveredCalendarEventId, setHoveredCalendarEventId] = useState<number | null>(null);
   const calendarDragMovedRef = useRef(false);
   const calendarAddOriginRef = useRef<"toolbar" | "calendar">("toolbar");
   const [eventDescription, setEventDescription] = useState("");
@@ -994,6 +1030,8 @@ function CalendarPage() {
 
     setEditingEventId(null);
     setEventTitle("");
+    setEventColor(EVENT_COLORS[0].value);
+    setColorPickerOpen(false);
     setEventDescription("");
     setContentMode("memo");
     setChecklistItems([]);
@@ -1021,6 +1059,8 @@ function CalendarPage() {
     calendarAddOriginRef.current = "calendar";
     setEditingEventId(selectedEvent.id);
     setEventTitle(selectedEvent.title);
+    setEventColor(selectedEvent.color ?? EVENT_COLORS[0].value);
+    setColorPickerOpen(false);
     setEventDate(selectedEvent.date);
     setEventEndDate(selectedEvent.endDate ?? "");
     setDateSelectionMode(selectedEvent.endDate ? "range" : "single");
@@ -1179,6 +1219,21 @@ function CalendarPage() {
     );
   };
 
+  const toggleSelectedEventChecklistItem = (itemId: number) => {
+    setSelectedEvent((current) => {
+      if (!current) return current;
+      const nextItems = (current.checklistItems ?? []).map((item) =>
+        item.id === itemId ? { ...item, completed: !item.completed } : item,
+      );
+      setEvents((events) =>
+        events.map((event) =>
+          event.id === current.id ? { ...event, checklistItems: nextItems } : event,
+        ),
+      );
+      return { ...current, checklistItems: nextItems };
+    });
+  };
+
   const removeChecklistItem = (id: number) => {
     const nextItems = checklistItems.filter((item) => item.id !== id);
     if (nextItems.length === 0) {
@@ -1224,6 +1279,7 @@ function CalendarPage() {
     const nextEvent: CalendarEvent = {
       id: editingEventId ?? Date.now(),
       title,
+      color: eventColor,
       date: eventDate,
       ...(eventEndDate && eventEndDate !== eventDate ? { endDate: eventEndDate } : {}),
       description: eventDescription.trim(),
@@ -1540,7 +1596,10 @@ function CalendarPage() {
                         to="/calendar/growth-journal/new"
                         search={{ date: day.key, from: "calendar" }}
                         onClick={(event) => event.stopPropagation()}
-                        className="group/journal invisible flex h-6 items-center gap-0.5 rounded-[6px] bg-item-hover py-0.5 pl-[7px] pr-2 text-[13px] font-medium text-ink-muted group-hover:visible hover:bg-calendar-journal-hover hover:text-brand"
+                        className={cn(
+                          "group/journal invisible flex h-6 items-center gap-0.5 rounded-[6px] bg-item-hover py-0.5 pl-[7px] pr-2 text-[13px] font-medium text-ink-muted hover:bg-calendar-journal-hover hover:text-brand",
+                          "group-hover:visible",
+                        )}
                       >
                         <img src="/assets/sidebar/journal-edit-default.svg" alt="" aria-hidden="true" className="h-[18px] w-3.5 object-contain group-hover/journal:hidden" />
                         <img src="/assets/sidebar/journal-edit-hover.svg" alt="" aria-hidden="true" className="hidden h-[18px] w-3.5 object-contain group-hover/journal:block" />
@@ -1565,7 +1624,14 @@ function CalendarPage() {
                               event.stopPropagation();
                               setSelectedEvent(calendarEvent);
                             }}
-                            className="h-[22px] w-full truncate rounded-[6px] bg-item-hover px-2 text-left text-xs font-normal hover:bg-item-hover-selected"
+                            onMouseEnter={() => setHoveredCalendarEventId(calendarEvent.id)}
+                            onMouseLeave={() => setHoveredCalendarEventId(null)}
+                            className={cn(
+                              "h-[22px] w-full truncate rounded-[6px] px-2 text-left text-xs font-normal",
+                              "hover:brightness-[98%]",
+                              calendarEvent.color ? "bg-pill text-pill-foreground" : "bg-item-hover text-ink-muted",
+                            )}
+                            style={{ backgroundColor: getSoftEventColor(calendarEvent.color, hoveredCalendarEventId === calendarEvent.id ? "20" : "12"), color: getEventForegroundColor(calendarEvent.color) }}
                           >
                             {calendarEvent.title}
                           </button>
@@ -1635,14 +1701,14 @@ function CalendarPage() {
                             "z-10 flex items-center truncate px-2 text-xs font-normal transition-colors",
                             calendarDragStart ? "pointer-events-none" : "pointer-events-auto",
                             !segment.isStart && segment.startColumn === 0 && "pl-4",
-                            hoveredPeriodEventId === segment.event.id
-                              ? "bg-item-hover-selected"
-                              : "bg-pill",
+                            segment.event.color ? "bg-pill text-pill-foreground" : "bg-item-hover text-ink-muted",
+                            hoveredPeriodEventId === segment.event.id && "brightness-[98%]",
                             segment.isStart && "rounded-l-[6px]",
                             segment.isEnd && "rounded-r-[6px]",
-                            "text-pill-foreground",
                           )}
                           style={{
+                            backgroundColor: getSoftEventColor(segment.event.color),
+                            color: getEventForegroundColor(segment.event.color),
                             gridColumn:
                               String(segment.startColumn + 1) +
                               " / span " +
@@ -1664,7 +1730,8 @@ function CalendarPage() {
                         <div
                           key={"drag-" + segment.weekIndex}
                           className={cn(
-                            "pointer-events-none z-20 flex items-center truncate bg-pill px-2 text-xs font-normal text-pill-foreground shadow-[0_4px_10px_0_rgba(22,59,49,0.18)]",
+                            "pointer-events-none z-20 flex items-center truncate px-2 text-xs font-normal shadow-[0_4px_10px_0_rgba(22,59,49,0.18)]",
+                            eventColor ? "text-pill-foreground" : "bg-item-hover text-ink-muted",
                             !segment.isStart && segment.startColumn === 0 && "pl-4",
                             segment.isStart && "rounded-l-[6px]",
                             segment.isEnd && "rounded-r-[6px]",
@@ -1679,6 +1746,8 @@ function CalendarPage() {
                             marginLeft: segment.isStart ? "8px" : undefined,
                             marginRight: segment.isEnd ? "8px" : undefined,
                             height: "22px",
+                            backgroundColor: getSoftEventColor(eventColor),
+                            color: getEventForegroundColor(eventColor),
                           }}
                         >
                           {segment.isStart || segment.startColumn === 0
@@ -1750,14 +1819,56 @@ function CalendarPage() {
           </DialogHeader>
 
           <div className="min-h-0 flex-1 -mx-1 overflow-y-auto px-1 pt-[19px]">
-            <Button
-              type="button"
-              variant="outline"
-              className="h-9 rounded-[18px] border-field-border bg-surface px-4 text-[14px] font-normal text-guide-text shadow-none hover:bg-item-hover hover:text-guide-text focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft"
-            >
-              지원사업 선택
-              <ChevronDown aria-hidden="true" className="size-4 text-ink-muted" />
-            </Button>
+            <div className="flex items-center gap-2">
+              <Popover open={colorPickerOpen} onOpenChange={setColorPickerOpen}>
+                <PopoverAnchor asChild>
+                <button
+                  type="button"
+                  aria-haspopup="listbox"
+                  aria-expanded={colorPickerOpen}
+                  onClick={() => setColorPickerOpen((open) => !open)}
+                  className="inline-flex h-9 cursor-pointer items-center gap-1 rounded-[18px] border border-field-border bg-surface pl-3 pr-3 text-[14px] text-ink-muted hover:bg-item-hover"
+                >
+                  <span
+                    aria-hidden="true"
+                    className={cn("mr-1 size-2.5 rounded-full", !eventColor && "bg-icon-muted/50")}
+                    style={{ backgroundColor: EVENT_COLORS.find((color) => color.value === eventColor)?.dotColor ?? "#D7E5E0" }}
+                  />
+                  <span>{EVENT_COLORS.find((color) => color.value === eventColor)?.label ?? "회색"}</span>
+                  <ChevronDown aria-hidden="true" className="pointer-events-none size-4 text-ink-muted" />
+                </button>
+                </PopoverAnchor>
+                <PopoverContent role="listbox" align="start" side="bottom" sideOffset={8} className="z-[100] w-auto min-w-[88px] rounded-[12px] border-0 bg-surface p-2 shadow-dropdown">
+                    {EVENT_COLORS.map((color) => (
+                      <button
+                        key={color.value}
+                        type="button"
+                        role="option"
+                        aria-selected={eventColor === color.value}
+                        onClick={() => { setEventColor(color.value); setColorPickerOpen(false); }}
+                        className="flex h-9 w-full cursor-pointer items-center justify-center gap-2 rounded-[8px] px-2 text-[14px] text-ink hover:bg-item-hover"
+                      >
+                        <span
+                          aria-hidden="true"
+                          className={cn("size-2.5 rounded-full", !color.value && "bg-icon-muted/50")}
+                          style={{ backgroundColor: color.dotColor }}
+                        />
+                        {color.label}
+                      </button>
+                    ))}
+                </PopoverContent>
+              </Popover>
+
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setColorPickerOpen(false)}
+                className="h-9 gap-1 rounded-[18px] border-field-border bg-surface pl-4 pr-3 text-[14px] font-normal text-guide-text shadow-none hover:bg-item-hover hover:text-guide-text focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft"
+              >
+                지원사업 선택
+                <ChevronDown aria-hidden="true" className="size-4 text-ink-muted" />
+              </Button>
+            </div>
 
             <div className="mt-[18px] grid gap-1.5">
               <Label htmlFor="todo-title" className="text-sm font-semibold text-ink">
@@ -1859,6 +1970,7 @@ function CalendarPage() {
                     variant="ghost"
                     aria-expanded={reminderPickerOpen}
                     onClick={() => {
+                      setColorPickerOpen(false);
                       if (reminderPickerOpen) {
                         closeReminderPicker();
                       } else {
@@ -2144,8 +2256,8 @@ function CalendarPage() {
                     onChange={(event) => setEventDescription(event.target.value)}
                     maxLength={500}
                     placeholder="메모할 내용이 있으면 적어주세요."
-                    placeholderClassName="left-3.5 top-3 text-[15px] leading-5 text-guide-text"
-                    className="h-[164px] resize-none rounded-[12px] border-field-border px-3.5 py-3 pb-3 text-[15px] leading-5 md:text-[15px] text-ink shadow-none focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft"
+                    placeholderClassName="left-3.5 top-3 text-[14px] leading-5 text-guide-text"
+                    className="h-[164px] resize-none rounded-[12px] border-field-border px-3.5 py-3 pb-3 text-[14px] leading-5 text-ink shadow-none focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft"
                   />
                   <span
                     aria-live="polite"
@@ -2358,11 +2470,11 @@ function CalendarPage() {
         onOpenChange={(open) => !open && setSelectedDayEvents(null)}
       >
         <DialogContent
-          closeClassName="right-8 top-8 flex size-6 items-center justify-center rounded-none text-ink-muted opacity-100 hover:opacity-100 focus:ring-0 focus:ring-offset-0 [&_svg]:size-6"
+          closeClassName="right-8 top-8 flex size-9 items-center justify-center rounded-lg text-icon-muted opacity-100 transition-colors hover:bg-item-hover hover:text-ink hover:opacity-100 focus:ring-0 focus:ring-offset-0 [&_svg]:size-6"
           className="rounded-[12px] border-0 bg-surface pb-8 text-ink shadow-[0_12px_16px_0_rgba(9,31,23,0.12)] sm:max-w-[460px]"
         >
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-ink">
+            <DialogTitle className="min-w-0 max-w-[calc(100%-80px)] truncate whitespace-nowrap text-[20px] font-bold leading-7 text-ink">
               {selectedDayEvents ? formatKoreanDate(selectedDayEvents.date) : ""}
             </DialogTitle>
             <DialogDescription className="text-sm text-ink-muted">
@@ -2389,19 +2501,32 @@ function CalendarPage() {
 
       <Dialog open={selectedEvent !== null} onOpenChange={(open) => !open && setSelectedEvent(null)}>
         <DialogContent
-          closeClassName="right-8 top-4 flex size-9 items-center justify-center rounded-none text-ink-muted opacity-100 hover:opacity-100 focus:ring-0 focus:ring-offset-0 [&_svg]:size-6"
-          className="rounded-[12px] border-0 bg-surface text-ink shadow-[0_12px_16px_0_rgba(9,31,23,0.12)] sm:max-w-[460px]"
+          closeClassName="right-8 top-5 flex size-9 items-center justify-center rounded-lg text-icon-muted opacity-100 transition-colors hover:bg-item-hover hover:text-ink hover:opacity-100 focus:outline-none focus:ring-0 focus:ring-offset-0 [&_svg]:size-6"
+          className="rounded-[12px] border-0 bg-surface p-7 text-ink shadow-[0_12px_16px_0_rgba(9,31,23,0.12)] sm:max-w-[520px]"
         >
-          <div className="absolute right-16 top-4 flex items-center gap-1">
+          <div className="absolute right-[72px] top-5 flex items-center gap-1">
             <Button
               type="button"
               variant="ghost"
               size="icon"
               aria-label="일정 수정"
               onClick={editSelectedEvent}
-              className="size-9 rounded-[8px] text-ink-muted hover:bg-item-hover hover:text-ink"
+              className="group size-9 rounded-lg text-icon-muted transition-colors hover:bg-item-hover hover:text-ink"
             >
-              <Pencil aria-hidden="true" className="size-5" />
+              <span
+                aria-hidden="true"
+                className="size-[18px] bg-icon-muted group-hover:bg-ink"
+                style={{
+                  maskImage: "url('/assets/sidebar/profile-edit-tooltip.svg')",
+                  WebkitMaskImage: "url('/assets/sidebar/profile-edit-tooltip.svg')",
+                  maskRepeat: "no-repeat",
+                  WebkitMaskRepeat: "no-repeat",
+                  maskPosition: "center",
+                  WebkitMaskPosition: "center",
+                  maskSize: "150%",
+                  WebkitMaskSize: "150%",
+                }}
+              />
             </Button>
             <Button
               type="button"
@@ -2409,41 +2534,74 @@ function CalendarPage() {
               size="icon"
               aria-label="일정 삭제"
               onClick={deleteSelectedEvent}
-              className="size-9 rounded-[8px] text-ink-muted hover:bg-item-hover hover:text-ink"
+              className="group size-9 rounded-lg text-icon-muted transition-colors hover:bg-item-hover hover:text-ink"
             >
-              <Trash2 aria-hidden="true" className="size-5" />
+              <span
+                aria-hidden="true"
+                className="size-[18px] bg-icon-muted group-hover:bg-ink"
+                style={{
+                  maskImage: "url('/assets/sidebar/delete.svg')",
+                  WebkitMaskImage: "url('/assets/sidebar/delete.svg')",
+                  maskRepeat: "no-repeat",
+                  WebkitMaskRepeat: "no-repeat",
+                  maskPosition: "center",
+                  WebkitMaskPosition: "center",
+                  maskSize: "contain",
+                  WebkitMaskSize: "contain",
+                }}
+              />
             </Button>
           </div>
           <DialogHeader>
-            <DialogTitle className="pr-24 text-xl font-bold text-ink">
+            <DialogDescription className="text-[16px] font-semibold leading-6 text-ink-muted">
+              {selectedEvent ? (
+                <span className="inline-flex items-center gap-2">
+                  <span>
+                    {selectedEvent.endDate
+                      ? `${formatDateLabel(selectedEvent.date)} ~ ${formatDateLabel(selectedEvent.endDate)}`
+                      : formatDateLabel(selectedEvent.date)}
+                  </span>
+                  {selectedEvent.startTime ? (
+                    <span className="inline-flex items-center rounded-full bg-item-hover px-2 py-0.5 text-[13px] font-semibold leading-5 text-ink-muted">
+                      {formatTimeLabel(selectedEvent.startTime)}
+                    </span>
+                  ) : null}
+                </span>
+              ) : null}
+            </DialogDescription>
+            <DialogTitle className="mt-3 line-clamp-2 text-[24px] font-bold leading-8 text-ink">
               {selectedEvent?.title}
             </DialogTitle>
-            <DialogDescription className="text-sm font-semibold text-brand">
-              {selectedEvent
-                ? selectedEvent.endDate
-                  ? `${formatKoreanDate(selectedEvent.date)} ~ ${formatKoreanDate(selectedEvent.endDate)}`
-                  : formatKoreanDate(selectedEvent.date)
-                : ""}
-            </DialogDescription>
           </DialogHeader>
-          <div className="min-h-16 space-y-3">
+          <div
+            className={cn(
+              "mt-0 space-y-4",
+              selectedEvent?.description || selectedEvent?.checklistItems?.length ? "min-h-16" : "",
+            )}
+          >
             {selectedEvent?.description ? (
-              <p className="whitespace-pre-wrap text-sm leading-6 text-ink-muted">
+              <p className="whitespace-pre-wrap rounded-[12px] border border-field-border px-3 py-2 text-[15px] leading-6 text-ink-muted">
                 {selectedEvent.description}
               </p>
             ) : null}
             {selectedEvent?.checklistItems?.length ? (
               <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="font-semibold text-ink">체크리스트</span>
-                  <span className="text-ink-muted">
-                    {selectedEvent.checklistItems.filter((item) => item.completed).length}/
-                    {selectedEvent.checklistItems.length}
+                <div className="flex items-center text-sm">
+                  <span className="font-semibold text-ink">
+                    체크리스트 <span className="font-normal text-ink-muted">(
+                      {selectedEvent.checklistItems.filter((item) => item.completed).length}/
+                      {selectedEvent.checklistItems.length})
+                    </span>
                   </span>
                 </div>
                 <div className="space-y-1.5">
                   {selectedEvent.checklistItems.map((item) => (
-                    <div key={item.id} className="flex items-center gap-2 text-sm">
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => toggleSelectedEventChecklistItem(item.id)}
+                      className="flex w-full items-center gap-2 rounded-[8px] py-1 text-left text-[15px]"
+                    >
                       <span
                         aria-hidden="true"
                         className={cn(
@@ -2458,7 +2616,7 @@ function CalendarPage() {
                       <span className={cn("min-w-0 flex-1", item.completed && "text-icon-muted line-through")}>
                         {item.text}
                       </span>
-                    </div>
+                    </button>
                   ))}
                 </div>
               </div>
