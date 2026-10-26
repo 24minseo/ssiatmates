@@ -6,6 +6,8 @@ import {
   ChevronRight,
   Plus,
   RotateCcw,
+  Search,
+  X,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 
@@ -26,6 +28,7 @@ import { Label } from "@/components/ui/label";
 import { LayeredTextarea } from "@/components/ui/layered-textarea";
 import { TimeWheelPicker } from "@/components/ui/time-wheel-picker";
 import { cn } from "@/lib/utils";
+import { savedNoticesApi, type SavedNotice } from "@/services/savedNoticesApi";
 
 export const Route = createFileRoute("/calendar/")({
   head: () => ({
@@ -112,6 +115,53 @@ type CalendarDay = {
   key: string;
   isCurrentMonth: boolean;
 };
+
+const KOREAN_INITIALS = [
+  "ㄱ", "ㄲ", "ㄴ", "ㄷ", "ㄸ", "ㄹ", "ㅁ", "ㅂ", "ㅃ", "ㅅ", "ㅆ",
+  "ㅇ", "ㅈ", "ㅉ", "ㅊ", "ㅋ", "ㅌ", "ㅍ", "ㅎ",
+];
+
+function getKoreanInitials(value: string) {
+  return Array.from(value)
+    .map((character) => {
+      const code = character.charCodeAt(0);
+      if (code < 0xac00 || code > 0xd7a3) return character;
+      return KOREAN_INITIALS[Math.floor((code - 0xac00) / 588)] ?? character;
+    })
+    .join("");
+}
+
+function isKoreanConsonant(value: string) {
+  const code = value.charCodeAt(0);
+  return code >= 0x3131 && code <= 0x314e;
+}
+
+function matchesKoreanQuery(text: string, query: string) {
+  const characters = Array.from(text.toLowerCase());
+  const queryCharacters = Array.from(query.trim().toLowerCase());
+
+  return characters.some((_, startIndex) =>
+    queryCharacters.every((queryCharacter, offset) => {
+      const textCharacter = characters[startIndex + offset];
+      if (!textCharacter) return false;
+      return isKoreanConsonant(queryCharacter)
+        ? getKoreanInitials(textCharacter) === queryCharacter
+        : textCharacter === queryCharacter;
+    }),
+  );
+}
+
+function matchesSavedProgram(program: SavedNotice, query: string) {
+  const normalizedQuery = query.trim().toLowerCase();
+  if (!normalizedQuery) return true;
+  const text = `${program.title} ${program.organization}`.toLowerCase();
+  const initials = getKoreanInitials(text);
+  return (
+    text.includes(normalizedQuery) ||
+    initials.includes(normalizedQuery) ||
+    matchesKoreanQuery(text, normalizedQuery)
+  );
+}
 
 type CalendarPeriodSegment = {
   event: CalendarEvent;
@@ -851,6 +901,12 @@ function CalendarPage() {
   const [eventTitle, setEventTitle] = useState("");
   const [eventColor, setEventColor] = useState(EVENT_COLORS[0].value);
   const [colorPickerOpen, setColorPickerOpen] = useState(false);
+  const [programPickerOpen, setProgramPickerOpen] = useState(false);
+  const [savedPrograms, setSavedPrograms] = useState<SavedNotice[]>([]);
+  const [savedProgramsLoading, setSavedProgramsLoading] = useState(false);
+  const [selectedProgram, setSelectedProgram] = useState<SavedNotice | null>(null);
+  const [programSearch, setProgramSearch] = useState("");
+  const [hoveredProgramId, setHoveredProgramId] = useState<string | null>(null);
   const [eventDate, setEventDate] = useState("");
   const [eventEndDate, setEventEndDate] = useState("");
   const [dateSelectionMode, setDateSelectionMode] = useState<DateSelectionMode>("single");
@@ -1039,6 +1095,9 @@ function CalendarPage() {
     setEventTitle("");
     setEventColor(EVENT_COLORS[0].value);
     setColorPickerOpen(false);
+    setProgramPickerOpen(false);
+    setSelectedProgram(null);
+    setProgramSearch("");
     setEventDescription("");
     setContentMode("memo");
     setChecklistItems([]);
@@ -1182,6 +1241,22 @@ function CalendarPage() {
     setCustomReminderAmount("");
     setCustomReminderUnit(eventStartTime ? "분" : "일");
     setReminderError("");
+  };
+
+  const openProgramPicker = async () => {
+    setHoveredProgramId(null);
+    setProgramPickerOpen(true);
+    if (savedPrograms.length > 0 || savedProgramsLoading) return;
+    setSavedProgramsLoading(true);
+    try {
+      const response = await savedNoticesApi.getMySupportNotices();
+      setSavedPrograms(response.items);
+    } catch (error) {
+      console.error("[calendar] 저장한 지원사업 조회 실패", error);
+      setSavedPrograms([]);
+    } finally {
+      setSavedProgramsLoading(false);
+    }
   };
 
   const createChecklistItem = (): ChecklistItem => ({
@@ -1863,15 +1938,103 @@ function CalendarPage() {
                 </PopoverContent>
               </Popover>
 
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setColorPickerOpen(false)}
-                className="h-9 gap-1 rounded-[18px] border-field-border bg-surface pl-4 pr-3 text-[14px] font-normal text-guide-text shadow-none hover:bg-item-hover hover:text-guide-text focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft"
-              >
-                지원사업 선택
-                <ChevronDown aria-hidden="true" className="size-4 text-ink-muted" />
-              </Button>
+              <Popover open={programPickerOpen} onOpenChange={setProgramPickerOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={openProgramPicker}
+                    className={cn(
+                      "h-9 max-w-[320px] gap-1 rounded-[18px] border-field-border bg-surface pl-4 pr-3 text-[14px] font-normal shadow-none hover:bg-item-hover focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft",
+                      selectedProgram ? "text-ink-muted hover:text-ink-muted" : "text-guide-text hover:text-guide-text",
+                    )}
+                  >
+                    <span className="truncate">
+                      {selectedProgram?.title ?? "지원사업 선택"}
+                    </span>
+                    <ChevronDown aria-hidden="true" className="size-4 shrink-0 text-ink-muted" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="start" className="z-[100] w-[320px] rounded-[12px] border-0 bg-surface p-0 shadow-dropdown">
+                  <div className="flex h-11 items-center gap-2 border-b border-field-border px-4">
+                    <Search aria-hidden="true" className="size-5 shrink-0 -translate-x-0.5 text-ink-muted" />
+                    <input
+                      type="text"
+                      value={programSearch}
+                      onChange={(event) => setProgramSearch(event.target.value)}
+                      placeholder="내 지원사업 검색"
+                      aria-label="내 지원사업 검색"
+                      className="min-w-0 flex-1 bg-transparent text-[15px] text-ink outline-none placeholder:text-guide-text"
+                    />
+                    {programSearch.trim() ? (
+                      <button
+                        type="button"
+                        aria-label="지원사업 검색어 지우기"
+                        title="검색어 지우기"
+                        onClick={() => setProgramSearch("")}
+                        className="flex size-5 shrink-0 items-center justify-center rounded-full bg-item-hover text-icon-muted transition-colors hover:bg-secondary-btn-hover"
+                      >
+                        <X aria-hidden="true" className="size-3" strokeWidth={2.5} />
+                      </button>
+                    ) : null}
+                  </div>
+                  {savedProgramsLoading ? (
+                    <p className="px-3 py-4 text-sm text-ink-muted">지원사업을 불러오는 중입니다.</p>
+                  ) : savedPrograms.filter((program) => matchesSavedProgram(program, programSearch)).length === 0 ? (
+                    <p className="px-4 py-4 text-sm text-ink-muted">
+                      {programSearch.trim() ? "검색 결과가 없습니다." : "저장한 지원사업이 없습니다."}
+                    </p>
+                  ) : (
+                    <div className="max-h-60 overflow-y-auto p-1">
+                      {savedPrograms.filter((program) => matchesSavedProgram(program, programSearch)).map((program) => (
+                        <button
+                          key={program.notice_id}
+                          type="button"
+                          onMouseEnter={() => setHoveredProgramId(program.notice_id)}
+                          onMouseLeave={() => {
+                            if (!selectedProgram) setHoveredProgramId(null);
+                          }}
+                          onClick={() => {
+                            setSelectedProgram((current) =>
+                              current?.notice_id === program.notice_id ? null : program,
+                            );
+                            setProgramPickerOpen(false);
+                          }}
+                          aria-pressed={selectedProgram?.notice_id === program.notice_id}
+                          className={cn(
+                            "flex w-full flex-col items-start gap-1 rounded-[8px] border border-transparent px-3 py-2 text-left hover:bg-item-hover",
+                            hoveredProgramId === program.notice_id ||
+                            (selectedProgram?.notice_id === program.notice_id && hoveredProgramId === null)
+                              ? "bg-item-hover"
+                              : "bg-transparent",
+                          )}
+                        >
+                          <span
+                            className={cn(
+                              "w-full truncate text-[14px] font-medium",
+                              selectedProgram?.notice_id === program.notice_id
+                                ? "text-brand"
+                                : "text-ink",
+                            )}
+                          >
+                            {program.title}
+                          </span>
+                          <span
+                            className={cn(
+                              "w-full truncate text-xs",
+                              selectedProgram?.notice_id === program.notice_id
+                                ? "text-brand/80"
+                                : "text-ink-muted",
+                            )}
+                          >
+                            {program.organization}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </PopoverContent>
+              </Popover>
             </div>
 
             <div className="mt-[18px] grid gap-1.5">

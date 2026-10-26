@@ -170,6 +170,7 @@ function RootComponent() {
     select: (state) => state.location.pathname,
   });
   const activeNavigation = getAppNavigationKey(pathname);
+  const usesAppShell = activeNavigation !== null || pathname === "/feedback";
   const routeContent = <Outlet />;
 
   return (
@@ -180,7 +181,7 @@ function RootComponent() {
             <Toaster position="bottom-right" duration={3000} />
             <AuthBackgroundOverlay pathname={pathname} />
             <AuthGate pathname={pathname}>
-              {activeNavigation ? (
+              {usesAppShell ? (
                 <AppShell active={activeNavigation}>{routeContent}</AppShell>
               ) : (
                 routeContent

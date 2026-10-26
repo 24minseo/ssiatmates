@@ -9,6 +9,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { getDisplayName, useAuth } from "@/hooks/useAuth";
+import { fetchNotifications, markNotificationsRead } from "@/services/notificationsApi";
 
 export type NotificationType = "deadline" | "schedule" | "news";
 export type AppNotification = {
@@ -20,17 +21,9 @@ export type AppNotification = {
   read: boolean;
 };
 
-export const notificationExamples: AppNotification[] = [
+const developmentNotifications: AppNotification[] = [
   {
-    id: "deadline-1",
-    type: "deadline",
-    title: "저장한 지원사업이 곧 마감돼요",
-    description: "청년창업사관학교 · 3일 전",
-    timeLabel: "3일 전",
-    read: true,
-  },
-  {
-    id: "schedule-1",
+    id: "development-schedule",
     type: "schedule",
     title: "등록한 일정이 곧 시작돼요",
     description: "사업계획서 초안 작성 · 10분 전",
@@ -38,7 +31,7 @@ export const notificationExamples: AppNotification[] = [
     read: false,
   },
   {
-    id: "news-1",
+    id: "development-news",
     type: "news",
     title: "새로운 맞춤 지원사업이 등록됐어요",
     description: "선호조건에 맞는 공고 2건 · 어제",
@@ -47,19 +40,40 @@ export const notificationExamples: AppNotification[] = [
   },
 ];
 
+function mapNotification(item: {
+  notification_id: string;
+  message: string;
+  notify_at?: string | null;
+  sent_at?: string | null;
+  read_at?: string | null;
+  is_read?: boolean;
+}): AppNotification {
+  const date = item.notify_at ?? item.sent_at;
+  const timeLabel = date ? new Intl.DateTimeFormat("ko-KR", { month: "numeric", day: "numeric" }).format(new Date(date)) : "";
+  return {
+    id: item.notification_id,
+    type: "news",
+    title: item.message,
+    description: timeLabel,
+    timeLabel,
+    read: item.is_read === true || Boolean(item.read_at),
+  };
+}
+
 type AppHeaderProps = {
-  /** Replace this with the notifications returned by Supabase/API when connected. */
-  notifications?: AppNotification[];
   growthJournal?: boolean;
   growthJournalExpanded?: boolean;
 };
 
 export function AppHeader({
-  notifications = notificationExamples,
   growthJournal = false,
   growthJournalExpanded = false,
 }: AppHeaderProps) {
   const { user, profile, signOut } = useAuth();
+  const [notifications, setNotifications] = useState<AppNotification[]>(
+    import.meta.env.DEV ? developmentNotifications : [],
+  );
+  const [apiUnreadCount, setApiUnreadCount] = useState<number | null>(null);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [readNotificationIds, setReadNotificationIds] = useState<Set<string>>(() => new Set());
@@ -123,6 +137,22 @@ export function AppHeader({
     setReadNotificationIds(
       (current) => new Set([...current, ...notifications.map((notification) => notification.id)]),
     );
+  const openNotifications = async () => {
+    setProfileMenuOpen(false);
+    setNotificationsOpen(true);
+    if (!user) return;
+    try {
+      const result = await fetchNotifications(user.id);
+      const next = (result.notifications ?? []).map(mapNotification);
+      setNotifications(next);
+      setApiUnreadCount(result.unread_count ?? next.filter((item) => !item.read).length);
+      await markNotificationsRead(user.id);
+      setReadNotificationIds(new Set(next.map((item) => item.id)));
+      setApiUnreadCount(0);
+    } catch (error) {
+      console.error("[notifications] 알림 조회 실패", error);
+    }
+  };
   const notificationTabs = [
     { label: "전체" },
     { label: "마감", type: "deadline" as NotificationType },
@@ -145,10 +175,7 @@ export function AppHeader({
             type="button"
             aria-label="알림"
             aria-expanded={notificationsOpen}
-            onClick={() => {
-              setProfileMenuOpen(false);
-              setNotificationsOpen((open) => !open);
-            }}
+            onClick={() => (notificationsOpen ? setNotificationsOpen(false) : void openNotifications())}
             className="group relative flex size-9 shrink-0 items-center justify-center text-icon-muted transition-colors duration-150 ease-out hover:text-ink-muted focus-visible:text-ink-muted group-aria-expanded:text-ink-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand motion-reduce:transition-none"
           >
             <span
@@ -162,7 +189,7 @@ export function AppHeader({
                 stroke="currentColor"
                 strokeWidth="2"
               />
-              {unreadNotifications.length > 0 ? (
+                {(apiUnreadCount ?? unreadNotifications.length) > 0 ? (
                 <circle cx="17.5" cy="6.5" r="4" fill="var(--brand)" stroke="var(--surface)" />
               ) : null}
               <rect x="9" y="19" width="6" height="2" rx="1" fill="currentColor" />
@@ -247,10 +274,10 @@ export function AppHeader({
               <div className="flex items-center gap-2">
                 <h2 className="text-[18px] font-semibold text-ink">알림</h2>
                 <span
-                  aria-label={`읽지 않은 알림 ${unreadNotifications.length}개`}
+                  aria-label={`읽지 않은 알림 ${apiUnreadCount ?? unreadNotifications.length}개`}
                   className="inline-flex h-6 min-w-6 items-center justify-center overflow-hidden rounded-full bg-item-hover px-1.5 text-[14px] font-semibold leading-none text-ink-muted"
                 >
-                  {unreadCountLabel}
+                  {apiUnreadCount === null ? unreadCountLabel : apiUnreadCount > 99 ? "99+" : apiUnreadCount}
                 </span>
               </div>
               <button
@@ -333,7 +360,9 @@ export function AppHeader({
                 ))
               ) : (
                 <div className="flex min-h-[220px] items-center justify-center px-6 text-center text-[14px] text-ink-muted">
-                  이 유형의 알림이 없어요.
+                  {notificationTab === "전체"
+                    ? "새 알림이 없어요."
+                    : `${notificationTab} 알림이 없어요.`}
                 </div>
               )}
             </div>

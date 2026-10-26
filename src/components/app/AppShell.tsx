@@ -5,7 +5,7 @@ import { AppFooter } from "./AppFooter";
 import { AppSidebar, type AppNavigationKey } from "./AppSidebar";
 
 type AppShellProps = {
-  active: AppNavigationKey;
+  active: AppNavigationKey | null;
   children: ReactNode;
 };
 

@@ -13,7 +13,7 @@ export type AppNavigationKey =
   | "growth-journal";
 
 type AppSidebarProps = {
-  active: AppNavigationKey;
+  active: AppNavigationKey | null;
 };
 
 type MatchingProfileVariant = "sidebar" | "programs-explore";
@@ -106,7 +106,7 @@ function MenuItem({
   expanded,
 }: {
   item: NavigationItem;
-  active: AppNavigationKey;
+  active: AppNavigationKey | null;
   expanded: boolean;
 }) {
   const isCurrent = item.key === active;

@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as FeedbackRouteImport } from './routes/feedback'
 import { Route as MyProgramsRouteImport } from './routes/my-programs'
 import { Route as MyhomeRouteImport } from './routes/myhome'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
@@ -23,6 +24,11 @@ import { Route as CalendarGrowthJournalNewRouteImport } from './routes/calendar/
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FeedbackRoute = FeedbackRouteImport.update({
+  id: '/feedback',
+  path: '/feedback',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MyProgramsRoute = MyProgramsRouteImport.update({
@@ -74,6 +80,7 @@ const CalendarGrowthJournalNewRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/feedback': typeof FeedbackRoute
   '/my-programs': typeof MyProgramsRoute
   '/myhome': typeof MyhomeRoute
   '/onboarding': typeof OnboardingRoute
@@ -86,6 +93,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/feedback': typeof FeedbackRoute
   '/my-programs': typeof MyProgramsRoute
   '/myhome': typeof MyhomeRoute
   '/onboarding': typeof OnboardingRoute
@@ -99,6 +107,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/feedback': typeof FeedbackRoute
   '/my-programs': typeof MyProgramsRoute
   '/myhome': typeof MyhomeRoute
   '/onboarding': typeof OnboardingRoute
@@ -113,6 +122,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/feedback'
     | '/my-programs'
     | '/myhome'
     | '/onboarding'
@@ -125,6 +135,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/feedback'
     | '/my-programs'
     | '/myhome'
     | '/onboarding'
@@ -137,6 +148,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/feedback'
     | '/my-programs'
     | '/myhome'
     | '/onboarding'
@@ -150,6 +162,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  FeedbackRoute: typeof FeedbackRoute
   MyProgramsRoute: typeof MyProgramsRoute
   MyhomeRoute: typeof MyhomeRoute
   OnboardingRoute: typeof OnboardingRoute
@@ -166,6 +179,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/feedback': {
+      id: '/feedback'
+      path: '/feedback'
+      fullPath: '/feedback'
+      preLoaderRoute: typeof FeedbackRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/my-programs': {
@@ -251,6 +271,7 @@ const CalendarGrowthJournalRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  FeedbackRoute: FeedbackRoute,
   MyProgramsRoute: MyProgramsRoute,
   MyhomeRoute: MyhomeRoute,
   OnboardingRoute: OnboardingRoute,
