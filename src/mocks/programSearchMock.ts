@@ -11,6 +11,7 @@ export type MatchedProgram = {
   daysUntilDeadline?: number | null;
   matchLabel?: string;
   changeReason?: string;
+  changes?: { field: string; badge: string; text: string }[];
   changeDetail?: string;
   changeTone?: "brand" | "danger" | "neutral";
   type: "default" | "recommended";

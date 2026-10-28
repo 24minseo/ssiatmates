@@ -15,6 +15,8 @@ export type HomeNoticeItem = {
   deadline: string;
   reportAvailable: boolean;
   viewedAt?: string;
+  changeReason?: string;
+  changeDetail?: string;
 };
 
 function safeNoticeUrl(value: string | null | undefined) {
@@ -84,17 +86,29 @@ export function subscribeRecentNotices(listener: () => void) {
   };
 }
 
-export async function getHomeRecommendedNotices(limit = 10) {
-  const { data, error } = await supabase.rpc("get_my_notice_matches_v1", {
+export async function getHomeRecommendedNotices({ selectedField = null, offset = 0, limit = 20 }: {
+  selectedField?: string | null;
+  offset?: number;
+  limit?: number;
+} = {}) {
+  if (selectedField !== null && typeof selectedField !== "string") {
+    throw new Error("지원분야를 확인해주세요.");
+  }
+  if (!Number.isInteger(offset) || offset < 0 || offset > 10000 || !Number.isInteger(limit) || limit < 1 || limit > 100) {
+    throw new Error("조회 범위를 확인해주세요.");
+  }
+  const { data, error } = await (supabase as unknown as import("@supabase/supabase-js").SupabaseClient).rpc("get_my_home_new_notices_v1", {
     p_limit: limit,
-    p_offset: 0,
-    p_field: null,
-    p_include_closed: false,
+    p_offset: offset,
+    p_field: selectedField,
   });
   if (error) throw error;
+  if (!Array.isArray(data?.items) || !Number.isSafeInteger(data.total_count) || data.total_count < 0) {
+    throw new Error("신규 공고 응답을 확인해주세요.");
+  }
 
   return {
-    items: data.items.map((item) => {
+    items: data.items.map((item: { notice_id: string; title: string; organization: string; url: string | null; field: string | null; region: string | null; deadline_label?: string; deadline: string | null; report_available?: boolean; has_meaningful_changes?: boolean; change_needs_review?: boolean; change_review_reason?: string }) => {
       const url = safeNoticeUrl(item.url);
       return {
         id: item.notice_id,
@@ -102,9 +116,11 @@ export async function getHomeRecommendedNotices(limit = 10) {
         organization: item.organization,
         ...(url ? { url } : {}),
         categories: [item.field, item.region].filter((value): value is string => Boolean(value?.trim())),
-        dDay: item.deadline_label?.trim() || "-",
+        dDay: item.deadline_label?.trim() || "공고 원문 확인",
         deadline: formatDeadline(item.deadline),
-        reportAvailable: item.report_available,
+        reportAvailable: item.report_available !== false,
+        ...(item.has_meaningful_changes === true ? { changeReason: "수정됨" } : {}),
+        ...(item.change_needs_review === true && item.change_review_reason ? { changeDetail: item.change_review_reason } : {}),
       } satisfies HomeNoticeItem;
     }),
     totalCount: data.total_count,

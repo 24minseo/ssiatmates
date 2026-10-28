@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import { cn } from "@/lib/utils";
 import type { MatchedProgram } from "@/mocks/programSearchMock";
@@ -9,6 +9,10 @@ import { ProgramReportDialog } from "@/components/programs/ProgramReportDialog";
 import { ProgramResultRow } from "@/components/programs/ProgramResultRow";
 import { getHomeRecommendedNotices, type HomeNoticeItem } from "@/services/homeNoticeFeed";
 import { savedNoticesApi } from "@/services/savedNoticesApi";
+import { createMyHomeSavedChangesApi } from "@/services/myHomeSavedChangesApi";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { createMyHomeSummaryApi } from "@/services/myHomeSummaryApi";
 
 export const Route = createFileRoute("/myhome")({
   head: () => ({ meta: [{ title: "MY홈" }] }),
@@ -35,12 +39,11 @@ export type MyHomeSummary = {
   };
 };
 
-/** Replace this mock with the summary response returned by the home API. */
-const myHomeSummary: MyHomeSummary = {
-  todayNews: { total: 122, newMatches: 1, myProgramChanges: 6 },
-  recommendedPrograms: { total: 12 },
+const emptyMyHomeSummary: MyHomeSummary = {
+  todayNews: { total: 0, newMatches: 0, myProgramChanges: 0 },
+  recommendedPrograms: { total: 0 },
   reviewPrograms: { total: 0 },
-  myPrograms: { total: 3, beforeStart: 0, preparing: 2, submitted: 1 },
+  myPrograms: { total: 0, beforeStart: 0, preparing: 0, submitted: 0 },
 };
 
 const summaryCards = (summary: MyHomeSummary) =>
@@ -89,6 +92,8 @@ function RollingNumber({ value }: { value: number }) {
       setCompactOnes(true);
       return;
     }
+    setStarted(false);
+    setCompactOnes(false);
     const frameId = requestAnimationFrame(() => {
       setStarted(true);
       setCompactOnes(true);
@@ -96,7 +101,7 @@ function RollingNumber({ value }: { value: number }) {
     return () => {
       cancelAnimationFrame(frameId);
     };
-  }, []);
+  }, [value]);
 
   return (
     <span
@@ -105,7 +110,7 @@ function RollingNumber({ value }: { value: number }) {
     >
       {digits.map((digit, digitIndex) => (
         <span
-          key={`${digitIndex}-${digit}`}
+          key={digitIndex}
           className={`inline-flex h-[1.16em] justify-center overflow-hidden transition-[width] duration-500 ease-in-out motion-reduce:transition-none ${digit === 1 && compactOnes ? "w-6" : "w-7"}`}
         >
           <span
@@ -130,89 +135,7 @@ function RollingNumber({ value }: { value: number }) {
 
 type HomeProgramTab = "newMatches" | "myProgramChanges";
 
-// Temporary preview flag for the new-matches empty state illustration.
-const previewNewMatchesEmptyState = true;
 
-const myProgramChangeItems: MatchedProgram[] = [
-  {
-    id: "my-program-change-1",
-    organization: "(사)한국중소기업발전협회",
-    title: "2026년 특허출원·등록 비용 바우처 지원사업 14차(하반기 7차)",
-    categories: ["사업화", "전국"],
-    dDay: "D-9",
-    deadline: "~10.16(금)",
-    matchLabel: "리포트 보기 〉",
-    changeReason: "마감일 연장",
-    changeDetail: "10.9(금) → 10.16(금)로 변경됐어요",
-    changeTone: "neutral",
-    type: "default",
-  },
-  {
-    id: "my-program-change-2",
-    organization: "창업진흥원",
-    title: "2026년 초기창업패키지 예비창업자 모집 공고",
-    categories: ["사업화", "전국"],
-    dDay: "D-3",
-    deadline: "~10.10(토)",
-    matchLabel: "리포트 보기 〉",
-    changeReason: "일정 변경",
-    changeDetail: "접수 마감이 10.14(수)로 단축됐어요",
-    changeTone: "danger",
-    type: "default",
-  },
-  {
-    id: "my-program-change-3",
-    organization: "중소벤처기업부",
-    title: "2026년 소상공인 온라인 판로 지원사업",
-    categories: ["판로·마케팅", "전국"],
-    dDay: "D-18",
-    deadline: "~10.25(일)",
-    matchLabel: "리포트 보기 〉",
-    changeReason: "공고 수정",
-    changeDetail: "지원 자격이 업력 3년 이하로 변경됐어요",
-    changeTone: "neutral",
-    type: "default",
-  },
-  {
-    id: "my-program-change-4",
-    organization: "서울창업허브",
-    title: "2026 서울 스타트업 액셀러레이팅 프로그램",
-    categories: ["멘토링·컨설팅·교육", "서울"],
-    dDay: "D-21",
-    deadline: "~10.28(수)",
-    matchLabel: "리포트 보기 〉",
-    changeReason: "모집 취소",
-    changeDetail: "이번 모집이 취소됐어요",
-    changeTone: "danger",
-    type: "default",
-  },
-  {
-    id: "my-program-change-5",
-    organization: "경기창조경제혁신센터",
-    title: "2026 경기 스타트업 성장지원 프로그램",
-    categories: ["사업화", "경기"],
-    dDay: "D-27",
-    deadline: "~11.03(화)",
-    matchLabel: "리포트 보기 〉",
-    changeReason: "추가 모집·일정",
-    changeDetail: "추가 모집과 사업 설명회 일정이 등록됐어요",
-    changeTone: "neutral",
-    type: "default",
-  },
-  {
-    id: "my-program-change-6",
-    organization: "서울창업허브",
-    title: "2026 서울 창업기업 판로개척 지원사업",
-    categories: ["판로·마케팅", "서울"],
-    dDay: "D-2",
-    deadline: "~10.10(토)",
-    matchLabel: "리포트 보기 〉",
-    changeReason: "모집 조기 종료",
-    changeDetail: "접수가 예정일보다 일찍 종료됐어요",
-    changeTone: "danger",
-    type: "default",
-  },
-];
 
 function MyHomeProgramTabs({
   selected,
@@ -310,49 +233,178 @@ function MyHomeProgramTabs({
 }
 
 function MyHomePage() {
+  const { user } = useAuth();
+  const [myProgramChangeItems, setMyProgramChangeItems] = useState<MatchedProgram[]>([]);
+  const [changesLoading, setChangesLoading] = useState(false);
+  const [changesError, setChangesError] = useState(false);
+  const [myHomeSummary, setMyHomeSummary] = useState<MyHomeSummary>(emptyMyHomeSummary);
   const [recommendedNotices, setRecommendedNotices] = useState<HomeNoticeItem[]>([]);
-  const [recommendationsLoading, setRecommendationsLoading] = useState(true);
+  const [recommendationsLoading, setRecommendationsLoading] = useState(false);
   const [recommendationsError, setRecommendationsError] = useState(false);
+  const [summaryError, setSummaryError] = useState(false);
   const [homeProgramTab, setHomeProgramTab] = useState<HomeProgramTab>("newMatches");
   const [savedNoticeIds, setSavedNoticeIds] = useState<Set<string>>(() => new Set());
   const [savingNoticeIds, setSavingNoticeIds] = useState<Set<string>>(() => new Set());
   const [reportTarget, setReportTarget] = useState<MatchedProgram | null>(null);
+  const homeRequestRef = useRef(0);
 
-  useEffect(() => {
-    let active = true;
-    void getHomeRecommendedNotices()
-      .then(({ items }) => {
-        if (!active) return;
-        setRecommendedNotices(items);
+  const refreshHomeData = useCallback(async (tab: HomeProgramTab = homeProgramTab) => {
+    const requestId = ++homeRequestRef.current;
+    if (!user) {
+      setRecommendedNotices([]);
+      setMyProgramChangeItems([]);
+      setSavedNoticeIds(new Set());
+      setRecommendationsLoading(false);
+      setChangesLoading(false);
+      setRecommendationsError(false);
+      setChangesError(false);
+      setSummaryError(false);
+      return;
+    }
+
+    const isNewTab = tab === "newMatches";
+    if (isNewTab) {
+      setRecommendationsLoading(true);
+      setRecommendationsError(false);
+    } else {
+      setChangesLoading(true);
+      setChangesError(false);
+    }
+    setSummaryError(false);
+
+    const [summaryResult, pageResult, savedResult, progressResult] = await Promise.allSettled([
+        createMyHomeSummaryApi(supabase).loadSummary(),
+        isNewTab ? getHomeRecommendedNotices() : createMyHomeSavedChangesApi(supabase).loadSavedChanges(),
+        savedNoticesApi.getSavedStates(),
+        savedNoticesApi.getMyProgress(),
+      ]);
+
+    if (requestId !== homeRequestRef.current) return;
+
+    if (summaryResult.status === "fulfilled") {
+      const summary = summaryResult.value;
+      const progressCounts = progressResult.status === "fulfilled"
+        ? progressResult.value.items.reduce(
+            (counts, item) => {
+              if (item.status === "not_started") counts.not_started += 1;
+              if (item.status === "preparing") counts.preparing += 1;
+              if (item.status === "submitted") counts.submitted += 1;
+              return counts;
+            },
+            { not_started: 0, preparing: 0, submitted: 0 },
+          )
+        : null;
+      setMyHomeSummary((current) => ({
+        ...current,
+        todayNews: {
+          total: summary.counts.today_new,
+          newMatches: summary.new_matching_count,
+          myProgramChanges: summary.saved_change_count,
+        },
+        recommendedPrograms: { total: summary.counts.matched },
+        reviewPrograms: { total: summary.counts.review },
+        myPrograms: progressCounts
+          ? {
+              total: summary.counts.saved,
+              beforeStart: progressCounts.not_started,
+              preparing: progressCounts.preparing,
+              submitted: progressCounts.submitted,
+            }
+          : { ...current.myPrograms, total: summary.counts.saved },
+      }));
+      setSummaryError(false);
+    } else {
+      console.error("[myhome] 요약 조회 실패", summaryResult.reason);
+      setSummaryError(true);
+    }
+
+    if (savedResult.status === "fulfilled") {
+      setSavedNoticeIds(new Set(savedResult.value.items.map((item) => item.notice_id)));
+    } else {
+      console.error("[myhome] 저장 상태 조회 실패", savedResult.reason);
+    }
+    if (progressResult.status === "rejected") {
+      console.error("[myhome] 지원사업 진행 상태 조회 실패", progressResult.reason);
+    }
+
+    if (pageResult.status === "fulfilled") {
+      if (isNewTab) {
+        setRecommendedNotices(pageResult.value.items);
         setRecommendationsError(false);
-      })
-      .catch(() => {
-        if (!active) return;
+      } else {
+        setMyProgramChangeItems(pageResult.value.items);
+        setChangesError(false);
+      }
+    } else {
+      console.error("[myhome] 목록 조회 실패", pageResult.reason);
+      if (isNewTab) {
         setRecommendedNotices([]);
         setRecommendationsError(true);
-      })
-      .finally(() => {
-        if (active) setRecommendationsLoading(false);
-      });
-    return () => {
-      active = false;
-    };
-  }, []);
+      } else {
+        setMyProgramChangeItems([]);
+        setChangesError(true);
+      }
+    }
+
+    if (isNewTab) {
+      setRecommendationsLoading(false);
+    } else {
+      setChangesLoading(false);
+    }
+  }, [homeProgramTab, user?.id]);
 
   useEffect(() => {
-    let active = true;
-    void savedNoticesApi
-      .getSavedStates()
-      .then(({ items }) => {
-        if (active) setSavedNoticeIds(new Set(items.map((item) => item.notice_id)));
-      })
-      .catch(() => {
-        if (active) setSavedNoticeIds(new Set());
-      });
-    return () => {
-      active = false;
+    void refreshHomeData();
+  }, [refreshHomeData]);
+
+  useEffect(() => {
+    if (!user) return;
+    let boundaryTimer: number | undefined;
+    const scheduleBoundaryRefresh = () => {
+      if (boundaryTimer !== undefined) window.clearTimeout(boundaryTimer);
+      if (document.visibilityState !== "visible") return;
+
+      const now = Date.now();
+      const kst = new Date(now + 9 * 60 * 60 * 1000);
+      const year = kst.getUTCFullYear();
+      const month = kst.getUTCMonth();
+      const day = kst.getUTCDate();
+      const nextBoundaries = [
+        Date.UTC(year, month, day, 3),
+        Date.UTC(year, month, day, 15),
+        Date.UTC(year, month, day + 1, 3),
+      ].filter((timestamp) => timestamp > now);
+      const nextBoundary = Math.min(...nextBoundaries);
+      if (!Number.isFinite(nextBoundary)) return;
+      boundaryTimer = window.setTimeout(() => {
+        if (document.visibilityState === "visible") void refreshHomeData();
+        scheduleBoundaryRefresh();
+      }, Math.max(1_000, nextBoundary - now));
     };
-  }, []);
+    const refreshIfVisible = () => {
+      if (document.visibilityState === "visible") {
+        void refreshHomeData();
+        scheduleBoundaryRefresh();
+      }
+    };
+    const refreshAfterProfileSave = () => {
+      if (document.visibilityState === "visible") void refreshHomeData();
+    };
+    const interval = window.setInterval(refreshIfVisible, 60_000);
+    window.addEventListener("focus", refreshIfVisible);
+    window.addEventListener("pageshow", refreshIfVisible);
+    window.addEventListener("matching-profile-saved", refreshAfterProfileSave);
+    document.addEventListener("visibilitychange", refreshIfVisible);
+    scheduleBoundaryRefresh();
+    return () => {
+      window.clearInterval(interval);
+      if (boundaryTimer !== undefined) window.clearTimeout(boundaryTimer);
+      window.removeEventListener("focus", refreshIfVisible);
+      window.removeEventListener("pageshow", refreshIfVisible);
+      window.removeEventListener("matching-profile-saved", refreshAfterProfileSave);
+      document.removeEventListener("visibilitychange", refreshIfVisible);
+    };
+  }, [refreshHomeData, user?.id]);
 
   const handleFavoriteToggle = async (program: MatchedProgram) => {
     if (savingNoticeIds.has(program.id)) return;
@@ -366,6 +418,7 @@ function MyHomePage() {
     });
     try {
       await savedNoticesApi.setSaved(program.id, nextSaved);
+      await refreshHomeData();
     } catch {
       setSavedNoticeIds((current) => {
         const next = new Set(current);
@@ -383,7 +436,6 @@ function MyHomePage() {
   };
 
   const newMatchItems: MatchedProgram[] = recommendedNotices
-    .slice(0, myHomeSummary.todayNews.newMatches)
     .map((notice) => ({
       id: notice.id,
       ...(notice.url ? { url: notice.url } : {}),
@@ -392,15 +444,15 @@ function MyHomePage() {
       categories: notice.categories,
       dDay: notice.dDay,
       deadline: notice.deadline,
+      ...(notice.changeReason ? { changeReason: notice.changeReason } : {}),
+      ...(notice.changeDetail ? { changeDetail: notice.changeDetail } : {}),
       is_saved: savedNoticeIds.has(notice.id),
       ...(notice.reportAvailable ? { matchLabel: "리포트 보기 〉" } : {}),
       type: "recommended",
     }));
   const tabPrograms =
     homeProgramTab === "newMatches"
-      ? previewNewMatchesEmptyState
-        ? []
-        : newMatchItems
+      ? newMatchItems
       : myProgramChangeItems;
   const visiblePrograms = tabPrograms;
   return (
@@ -499,18 +551,23 @@ function MyHomePage() {
         })}
       </section>
 
-      <section className="mt-14">
+      <section className="relative mt-14" style={{ top: "-8px" }}>
         <MyHomeProgramTabs
           selected={homeProgramTab}
           counts={{
-            newMatches: previewNewMatchesEmptyState ? 0 : myHomeSummary.todayNews.newMatches,
+            newMatches: myHomeSummary.todayNews.newMatches,
             myProgramChanges: myHomeSummary.todayNews.myProgramChanges,
           }}
           onChange={(tab) => {
             setHomeProgramTab(tab);
           }}
         />
-        {homeProgramTab === "newMatches" && recommendationsLoading ? (
+        {summaryError ? (
+          <p role="alert" className="mt-3 text-[13px] text-ink-muted">
+            MY홈 집계 정보를 불러오지 못했어요. 잠시 후 다시 시도해주세요.
+          </p>
+        ) : null}
+        {(homeProgramTab === "newMatches" ? recommendationsLoading : changesLoading) ? (
           <div
             className="flex min-h-[260px] items-center justify-center text-[14px] text-ink-muted"
             role="status"
@@ -518,15 +575,30 @@ function MyHomePage() {
             <Loader2 className="mr-2 size-4 animate-spin" aria-hidden />
             불러오는 중…
           </div>
+        ) : homeProgramTab === "myProgramChanges" && changesError ? (
+          <div role="alert" className="py-16 text-center text-[15px] text-ink-muted">지원사업 변동을 불러오지 못했어요. 잠시 후 다시 시도해주세요.</div>
         ) : visiblePrograms.length === 0 ? (
-          <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
+          <div className="rounded-[12px] bg-transparent px-6 pb-12 pt-16 text-center">
             {homeProgramTab === "newMatches" && !recommendationsError ? (
-              <img
-                src="/assets/empty/home-new-match.svg"
-                alt=""
-                aria-hidden
-                className="mb-2 h-auto w-[150px] saturate-[0.1]"
-              />
+              <div className="relative mx-auto mb-2 flex h-[180px] w-[180px] -translate-y-2 items-center justify-center">
+                <img
+                  src="/assets/empty/home-new-match.svg"
+                  alt=""
+                  aria-hidden
+                  draggable={false}
+                  className="block w-[150px] saturate-[0.1]"
+                />
+              </div>
+            ) : homeProgramTab === "myProgramChanges" ? (
+              <div className="relative mx-auto mb-2 flex h-[180px] w-[180px] -translate-y-2 items-center justify-center">
+                <img
+                  src="/assets/empty/home-saved-changes.svg"
+                  alt=""
+                  aria-hidden
+                  draggable={false}
+                  className="block w-[150px] saturate-[0.1]"
+                />
+              </div>
             ) : null}
             <p className="text-[18px] font-semibold text-ink">
               {homeProgramTab === "newMatches"
@@ -558,7 +630,7 @@ function MyHomePage() {
             {visiblePrograms.map((program) => (
               <ProgramResultRow
                 key={program.id}
-                program={program}
+                program={{ ...program, is_saved: savedNoticeIds.has(program.id) }}
                 onReportClick={setReportTarget}
                 onFavoriteToggle={handleFavoriteToggle}
                 favoriteSaving={savingNoticeIds.has(program.id)}

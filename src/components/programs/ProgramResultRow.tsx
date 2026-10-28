@@ -44,10 +44,10 @@ export function ProgramResultRow({
 
   return (
     <article
-      className={`flex items-center gap-[38px] border-b border-[#e9e9e9] bg-white px-8 pb-[18px] pt-[14px] h-[128px]`}
+      className={`flex items-center gap-[38px] border-b border-[#e9e9e9] bg-white px-8 pb-[18px] pt-[14px] ${program.changes?.length ? "min-h-[128px]" : "h-[128px]"}`}
     >
       <div
-        className={`flex w-[742px] shrink-0 flex-col justify-center gap-2 pl-[20px] ${program.changeReason ? "min-h-[92px]" : "h-[75px]"}`}
+        className={`flex w-[742px] shrink-0 flex-col justify-center gap-2 pl-[20px] ${program.changeReason || program.changes?.length ? "min-h-[92px]" : "h-[75px]"}`}
       >
         <div className="flex min-w-0 flex-col gap-1.5">
           <p className="text-[14px] leading-[21px] text-ink-muted">{program.organization}</p>
@@ -69,7 +69,16 @@ export function ProgramResultRow({
             )}
           </h2>
         </div>
-        {program.changeReason ? (
+        {program.changes?.length ? (
+          <div className="space-y-2">
+            {program.changes.map((change, index) => (
+              <div key={`${change.field}-${index}`} className="flex items-start gap-2 text-[14px] leading-5 text-ink-muted">
+                <span className="shrink-0 rounded bg-item-hover px-[7px] py-1 text-xs font-medium">{change.badge}</span>
+                <span className="min-w-0 whitespace-pre-wrap break-words">{change.text}</span>
+              </div>
+            ))}
+          </div>
+        ) : program.changeReason ? (
           <>
             <p
               className={`flex min-w-0 items-center gap-2 text-[13px] font-medium leading-5 ${program.changeTone === "danger" ? "text-deadline" : program.changeTone === "neutral" ? "text-ink-muted" : "text-brand"}`}

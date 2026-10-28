@@ -105,7 +105,25 @@ function collectItems(section: ReportSection | Record<string, ReportSection> | u
 }
 
 function formatReportDetail(detail: string) {
-  return detail.replace(/(^|\n)\s*☞\s?/g, "$1");
+  return normalizeReportDisplayText(detail).replace(/(^|\n)\s*☞\s?/g, "$1");
+}
+
+/**
+ * Report content is rendered as text only. Decode escaped entities and markdown
+ * backslashes for readability without using dangerouslySetInnerHTML.
+ */
+function normalizeReportDisplayText(value: string) {
+  if (!value) return value;
+
+  const decoded =
+    typeof document === "undefined"
+      ? value
+      : (() => {
+          const textarea = document.createElement("textarea");
+          textarea.innerHTML = value;
+          return textarea.value || value;
+        })();
+  return decoded.replace(/\\([\\`*_[\]{}()#!>.-])/g, "$1");
 }
 
 const changeFieldLabels: Record<string, string> = {
@@ -127,7 +145,7 @@ const changeFieldLabels: Record<string, string> = {
 
 function formatChangeValue(value: unknown) {
   if (value === null || value === undefined || value === "") return "-";
-  if (typeof value === "string") return value;
+  if (typeof value === "string") return normalizeReportDisplayText(value);
   try {
     return JSON.stringify(value);
   } catch {
@@ -179,9 +197,9 @@ function ChangeHistoryView({ history }: { history: ReportChangeEvent[] }) {
                     <p className="text-ink-muted">
                       {event.body_applied ? "본문에 반영된 변경" : "본문 반영이 확인되지 않은 판단 기록"}
                     </p>
-                    {change.before_quote ? <p className="break-keep">이전: {change.before_quote}</p> : null}
-                    {change.after_quote ? <p className="break-keep">변경: {change.after_quote}</p> : null}
-                    {change.reason ? <p className="break-keep">사유: {change.reason}</p> : null}
+                    {change.before_quote ? <p className="break-keep">이전: {normalizeReportDisplayText(change.before_quote)}</p> : null}
+                    {change.after_quote ? <p className="break-keep">변경: {normalizeReportDisplayText(change.after_quote)}</p> : null}
+                    {change.reason ? <p className="break-keep">사유: {normalizeReportDisplayText(change.reason)}</p> : null}
                   </div>
                 ))}
               </div>
