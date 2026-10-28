@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import {
   Check,
   ChevronDown,
@@ -27,7 +28,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LayeredTextarea } from "@/components/ui/layered-textarea";
 import { TimeWheelPicker } from "@/components/ui/time-wheel-picker";
+import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
+import { createCalendarTask } from "@/services/calendarTaskApi";
 import { savedNoticesApi, type SavedNotice } from "@/services/savedNoticesApi";
 
 export const Route = createFileRoute("/calendar/")({
@@ -887,6 +890,8 @@ function MonthField({ value, onChange }: MonthFieldProps) {
 
 
 function CalendarPage() {
+  const { session, user } = useAuth();
+  const createCalendarTaskFn = useServerFn(createCalendarTask);
   const [visibleMonth, setVisibleMonth] = useState(() => {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), 1);
@@ -938,6 +943,8 @@ function CalendarPage() {
   const [reminders, setReminders] = useState<string[]>([]);
   const [reminderPickerOpen, setReminderPickerOpen] = useState(false);
   const [reminderPickerMode, setReminderPickerMode] = useState<"quick" | "custom">("quick");
+  const [isSavingEvent, setIsSavingEvent] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [customReminderAmount, setCustomReminderAmount] = useState("");
   const [customReminderUnit, setCustomReminderUnit] = useState<ReminderUnit>("분");
   const [reminderError, setReminderError] = useState("");
@@ -1106,6 +1113,7 @@ function CalendarPage() {
     setReminders([]);
     setReminderPickerOpen(false);
     setReminderPickerMode("quick");
+    setSaveError(null);
     setCustomReminderAmount("");
     setCustomReminderUnit("일");
     setReminderError("");
@@ -1346,7 +1354,8 @@ function CalendarPage() {
     });
   };
 
-  const saveEvent = () => {
+  const saveEvent = async () => {
+    if (isSavingEvent) return;
     const title = eventTitle.trim();
     if (!title || !eventDate) return;
     if (
@@ -1358,10 +1367,32 @@ function CalendarPage() {
       return;
     }
 
+    const isNewManualTask =
+      editingEventId === null && selectedProgram === null && !eventEndDate;
+    if (isNewManualTask) {
+      if (!user?.id || !session?.access_token) {
+        setSaveError("로그인이 필요합니다.");
+        return;
+      }
+      setIsSavingEvent(true);
+      setSaveError(null);
+      try {
+        await createCalendarTaskFn({
+          data: { title, date: eventDate, accessToken: session.access_token },
+        });
+      } catch (error) {
+        console.error("[calendar] 직접 할 일 저장 실패", error);
+        setSaveError(error instanceof Error ? error.message : "할 일을 저장하지 못했어요.");
+        return;
+      } finally {
+        setIsSavingEvent(false);
+      }
+    }
+
     const nextEvent: CalendarEvent = {
       id: editingEventId ?? Date.now(),
       title,
-      color: eventColor,
+      color: isNewManualTask ? "#6B7280" : eventColor,
       date: eventDate,
       ...(eventEndDate && eventEndDate !== eventDate ? { endDate: eventEndDate } : {}),
       description: eventDescription.trim(),
@@ -1885,7 +1916,7 @@ function CalendarPage() {
             className="contents"
             onSubmit={(event) => {
               event.preventDefault();
-              saveEvent();
+              void saveEvent();
             }}
           >
           <DialogHeader className="h-10 shrink-0 justify-center space-y-0 text-left">
@@ -2612,6 +2643,11 @@ function CalendarPage() {
           </div>
 
           <DialogFooter className="mt-6 h-12 shrink-0 flex-row justify-end gap-2 sm:space-x-0">
+            {saveError ? (
+              <p role="alert" className="mr-auto self-center text-[13px] text-[#B44A4A]">
+                {saveError}
+              </p>
+            ) : null}
             <Button
               type="button"
               variant="secondary"
@@ -2622,7 +2658,7 @@ function CalendarPage() {
             </Button>
             <Button
               type="submit"
-              disabled={!eventTitle.trim() || !eventDate}
+              disabled={!eventTitle.trim() || !eventDate || isSavingEvent}
               className="h-12 w-[119px] rounded-[12px] bg-brand text-[16px] font-semibold text-brand-foreground shadow-none hover:bg-brand/88 active:bg-brand-pressed disabled:bg-brand-disabled disabled:opacity-100"
             >
               저장하기

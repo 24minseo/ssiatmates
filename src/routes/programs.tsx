@@ -21,6 +21,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
@@ -1326,6 +1327,13 @@ function ProgramsPage() {
                 className="min-w-0 w-fit rounded-[12px] border-0 bg-surface p-1 shadow-none"
                 style={{ boxShadow: "var(--shadow-dropdown)" }}
               >
+                <DropdownMenuItem
+                  onSelect={() => setManualFormOpen(true)}
+                  className="min-h-10 w-auto cursor-pointer rounded-[8px] px-[14px] text-ink hover:bg-dropdown-hover data-[highlighted]:bg-dropdown-hover focus:bg-dropdown-hover"
+                >
+                  <span className="whitespace-nowrap">수동 공고 추가</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onSelect={handleExcludedOpen}
                   className="min-h-10 w-auto cursor-pointer rounded-[8px] px-[14px] text-ink hover:bg-dropdown-hover data-[highlighted]:bg-dropdown-hover focus:bg-dropdown-hover"

@@ -1,0 +1,80 @@
+import { createServerFn } from "@tanstack/react-start";
+
+const CALENDAR_TASK_CREATE_URL =
+  "https://annie37.app.n8n.cloud/webhook/calendar-task-create";
+
+export type CalendarTaskCreateInput = {
+  title: string;
+  date: string;
+  accessToken: string;
+};
+
+function validateCalendarTaskInput(input: unknown): CalendarTaskCreateInput {
+  if (typeof input !== "object" || input === null) {
+    throw new Error("할 일 정보를 확인해주세요.");
+  }
+
+  const value = input as Record<string, unknown>;
+  if (
+    typeof value.title !== "string" ||
+    !value.title.trim() ||
+    typeof value.date !== "string" ||
+    !/^\d{4}-\d{2}-\d{2}$/.test(value.date) ||
+    typeof value.accessToken !== "string" ||
+    !value.accessToken.trim()
+  ) {
+    throw new Error("할 일 정보를 확인해주세요.");
+  }
+
+  return {
+    title: value.title.trim(),
+    date: value.date,
+    accessToken: value.accessToken,
+  };
+}
+
+export const createCalendarTask = createServerFn({ method: "POST" })
+  .validator(validateCalendarTaskInput)
+  .handler(async ({ data }) => {
+    const webhookSecret = process.env.N8N_WEBHOOK_SECRET;
+    if (!webhookSecret) {
+      throw new Error("서버 웹훅 비밀키가 설정되지 않았습니다.");
+    }
+
+    const supabaseUrl = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL;
+    const supabasePublishableKey =
+      process.env.SUPABASE_PUBLISHABLE_KEY ?? process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+    if (!supabaseUrl || !supabasePublishableKey) {
+      throw new Error("서버 Supabase 환경변수가 설정되지 않았습니다.");
+    }
+
+    const { createClient } = await import("@supabase/supabase-js");
+    const supabase = createClient(supabaseUrl, supabasePublishableKey, {
+      global: { headers: { Authorization: `Bearer ${data.accessToken}` } },
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    const { data: userData, error: userError } = await supabase.auth.getUser(data.accessToken);
+    if (userError || !userData.user) {
+      throw new Error("로그인이 필요합니다.");
+    }
+
+    const response = await fetch(CALENDAR_TASK_CREATE_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${webhookSecret}`,
+        "x-webhook-secret": webhookSecret,
+      },
+      body: JSON.stringify({
+        user_id: userData.user.id,
+        title: data.title,
+        date: data.date,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error("할 일을 저장하지 못했어요. 잠시 후 다시 시도해주세요.");
+    }
+
+    return { success: true };
+  });

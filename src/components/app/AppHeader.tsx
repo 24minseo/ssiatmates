@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AlertTriangle, CalendarClock, LogOut, Sparkles } from "lucide-react";
 
 import {
@@ -20,25 +20,6 @@ export type AppNotification = {
   timeLabel: string;
   read: boolean;
 };
-
-const developmentNotifications: AppNotification[] = [
-  {
-    id: "development-schedule",
-    type: "schedule",
-    title: "등록한 일정이 곧 시작돼요",
-    description: "사업계획서 초안 작성 · 10분 전",
-    timeLabel: "10분 전",
-    read: false,
-  },
-  {
-    id: "development-news",
-    type: "news",
-    title: "새로운 맞춤 지원사업이 등록됐어요",
-    description: "선호조건에 맞는 공고 2건 · 어제",
-    timeLabel: "어제",
-    read: false,
-  },
-];
 
 function mapNotification(item: {
   notification_id: string;
@@ -70,10 +51,10 @@ export function AppHeader({
   growthJournalExpanded = false,
 }: AppHeaderProps) {
   const { user, profile, signOut } = useAuth();
-  const [notifications, setNotifications] = useState<AppNotification[]>(
-    import.meta.env.DEV ? developmentNotifications : [],
-  );
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [apiUnreadCount, setApiUnreadCount] = useState<number | null>(null);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
+  const [notificationsError, setNotificationsError] = useState<string | null>(null);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [readNotificationIds, setReadNotificationIds] = useState<Set<string>>(() => new Set());
@@ -137,21 +118,43 @@ export function AppHeader({
     setReadNotificationIds(
       (current) => new Set([...current, ...notifications.map((notification) => notification.id)]),
     );
-  const openNotifications = async () => {
-    setProfileMenuOpen(false);
-    setNotificationsOpen(true);
-    if (!user) return;
+
+  const loadNotifications = useCallback(async (markRead = false) => {
+    if (!user) {
+      setNotifications([]);
+      setApiUnreadCount(0);
+      return;
+    }
+
+    setNotificationsLoading(true);
+    setNotificationsError(null);
     try {
       const result = await fetchNotifications(user.id);
       const next = (result.notifications ?? []).map(mapNotification);
       setNotifications(next);
       setApiUnreadCount(result.unread_count ?? next.filter((item) => !item.read).length);
-      await markNotificationsRead(user.id);
-      setReadNotificationIds(new Set(next.map((item) => item.id)));
-      setApiUnreadCount(0);
+
+      if (markRead) {
+        await markNotificationsRead(user.id);
+        setReadNotificationIds(new Set(next.map((item) => item.id)));
+        setApiUnreadCount(0);
+      }
     } catch (error) {
       console.error("[notifications] 알림 조회 실패", error);
+      setNotificationsError("알림을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.");
+    } finally {
+      setNotificationsLoading(false);
     }
+  }, [user]);
+
+  useEffect(() => {
+    void loadNotifications();
+  }, [loadNotifications]);
+
+  const openNotifications = async () => {
+    setProfileMenuOpen(false);
+    setNotificationsOpen(true);
+    await loadNotifications(true);
   };
   const notificationTabs = [
     { label: "전체" },
@@ -311,7 +314,15 @@ export function AppHeader({
               </div>
             </div>
             <div className="flex-1 overflow-y-auto px-3 pb-3">
-              {groupedNotifications.length ? (
+              {notificationsLoading ? (
+                <div className="flex min-h-[220px] items-center justify-center px-6 text-center text-[14px] text-ink-muted">
+                  알림을 불러오는 중이에요.
+                </div>
+              ) : notificationsError ? (
+                <div className="flex min-h-[220px] items-center justify-center px-6 text-center text-[14px] text-ink-muted">
+                  {notificationsError}
+                </div>
+              ) : groupedNotifications.length ? (
                 groupedNotifications.map((group) => (
                   <section
                     key={group.label || "older"}
