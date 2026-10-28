@@ -230,7 +230,7 @@ function getEventForegroundColor(color?: string) {
 
 function formatTimeLabel(time?: string) {
   if (!time) return "";
-  const [hours, minutes] = time.split(":").map(Number);
+  const [hours = NaN, minutes = NaN] = time.split(":").map(Number);
   if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return time;
   const period = hours < 12 ? "오전" : "오후";
   const displayHours = hours % 12 || 12;
@@ -904,7 +904,7 @@ function CalendarPage() {
   const [editingEventId, setEditingEventId] = useState<number | null>(null);
   const [selectedDayEvents, setSelectedDayEvents] = useState<{ date: string; events: CalendarEvent[] } | null>(null);
   const [eventTitle, setEventTitle] = useState("");
-  const [eventColor, setEventColor] = useState(EVENT_COLORS[0].value);
+  const [eventColor, setEventColor] = useState<string>(EVENT_COLORS[0].value);
   const [colorPickerOpen, setColorPickerOpen] = useState(false);
   const [programPickerOpen, setProgramPickerOpen] = useState(false);
   const [savedPrograms, setSavedPrograms] = useState<SavedNotice[]>([]);

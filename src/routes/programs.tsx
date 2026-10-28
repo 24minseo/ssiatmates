@@ -159,10 +159,14 @@ function toManualMatchedProgram(program: Program): MatchedProgram {
 
 export const Route = createFileRoute("/programs")({
   head: () => ({ meta: [{ title: "지원사업 탐색" }] }),
-  validateSearch: (search: Record<string, unknown>): { tab?: ProgramResultsTab } =>
-    search["tab"] === "review" || search["tab"] === "manual"
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { tab?: ProgramResultsTab; source?: "myhome" } => ({
+    ...(search["tab"] === "review" || search["tab"] === "manual"
       ? { tab: search["tab"] as "review" | "manual" }
-      : {},
+      : {}),
+    ...(search["source"] === "myhome" ? { source: "myhome" as const } : {}),
+  }),
   component: ProgramsPage,
 });
 
@@ -540,6 +544,10 @@ function ProgramsPage() {
       setQuery("");
       return;
     }
+    if (search.source === "myhome") {
+      setQuery("");
+      return;
+    }
     const storedCommittedQuery =
       window.sessionStorage.getItem(
         `${PREFERENCE_COMMITTED_QUERY_STORAGE_PREFIX}${preferenceStorageKey}`,
@@ -547,13 +555,13 @@ function ProgramsPage() {
       window.sessionStorage.getItem(`${PREFERENCE_QUERY_STORAGE_PREFIX}${preferenceStorageKey}`) ??
       "";
     setQuery(storedCommittedQuery);
-  }, [preferenceStorageKey]);
+  }, [preferenceStorageKey, search.source]);
 
   useEffect(() => {
     if (!profile) return;
 
-    const savedCategories = getSupportFilterSession(profile.id);
     const profileCategories = profile.support_categories.filter(Boolean);
+    const savedCategories = search.source === "myhome" ? null : getSupportFilterSession(profile.id);
     if (savedCategories === null) {
       setUsesProfileDefault(true);
       setSupportCategories(profileCategories.length ? profileCategories : [SUPPORT_ALL]);
@@ -562,7 +570,7 @@ function ProgramsPage() {
       setSupportCategories(savedCategories);
     }
     profileFilterInitializedFor.current = profile.id;
-  }, [profile]);
+  }, [profile, search.source]);
 
   useEffect(() => {
     let cancelled = false;
@@ -617,9 +625,12 @@ function ProgramsPage() {
           savedState.items,
         );
         const nextPrograms = itemsWithSavedState.map(toMatchedProgram);
+        if (search.source === "myhome") preferenceTags.clear();
         const nextProgramsWithPreferences = preferenceTags.apply(nextPrograms);
         setMatchedPrograms(nextProgramsWithPreferences);
-        const committedQuery = preferenceStorageKey
+        const committedQuery = search.source === "myhome"
+          ? ""
+          : preferenceStorageKey
           ? (window.sessionStorage
               .getItem(`${PREFERENCE_COMMITTED_QUERY_STORAGE_PREFIX}${preferenceStorageKey}`)
               ?.trim() ?? "")

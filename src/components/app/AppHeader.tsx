@@ -178,12 +178,13 @@ export function AppHeader({
             type="button"
             aria-label="알림"
             aria-expanded={notificationsOpen}
+            data-state={notificationsOpen ? "open" : "closed"}
             onClick={() => (notificationsOpen ? setNotificationsOpen(false) : void openNotifications())}
-            className="group relative flex size-9 shrink-0 items-center justify-center text-icon-muted transition-colors duration-150 ease-out hover:text-ink-muted focus-visible:text-ink-muted group-aria-expanded:text-ink-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand motion-reduce:transition-none"
+            className={`group relative flex size-9 shrink-0 items-center justify-center text-icon-muted transition-colors duration-150 ease-out hover:text-ink-muted focus-visible:text-ink-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand motion-reduce:transition-none ${notificationsOpen ? "text-ink-muted" : ""}`}
           >
             <span
               aria-hidden="true"
-              className="pointer-events-none absolute inset-0 rounded-lg bg-item-hover opacity-0 transition-opacity duration-150 ease-out group-hover:opacity-100 group-focus-visible:opacity-100 group-aria-expanded:opacity-100 motion-reduce:transition-none"
+              className="pointer-events-none absolute inset-0 rounded-lg bg-item-hover opacity-0 transition-opacity duration-150 ease-out group-hover:opacity-100 group-focus-visible:opacity-100 group-data-[state=open]:opacity-100 motion-reduce:transition-none"
             />
             <svg aria-hidden="true" className="relative size-6" viewBox="0 0 24 24" fill="none">
               <path

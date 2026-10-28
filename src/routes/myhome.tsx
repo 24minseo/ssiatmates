@@ -13,6 +13,8 @@ import { createMyHomeSavedChangesApi } from "@/services/myHomeSavedChangesApi";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { createMyHomeSummaryApi } from "@/services/myHomeSummaryApi";
+import { SUPPORT_ALL } from "@/components/onboarding/constants";
+import { getSupportFilterSession } from "@/lib/supportFilterSession";
 
 export const Route = createFileRoute("/myhome")({
   head: () => ({ meta: [{ title: "MY홈" }] }),
@@ -80,6 +82,18 @@ const summaryCards = (summary: MyHomeSummary) =>
       href: "/my-programs" as const,
     },
   ] as const;
+
+function normalizedSupportCategories(categories: string[]) {
+  const values = categories.filter(Boolean);
+  if (!values.length || values.includes(SUPPORT_ALL)) return [SUPPORT_ALL];
+  return [...new Set(values)].sort();
+}
+
+function supportCategoriesMatch(profileCategories: string[], temporaryCategories: string[]) {
+  const profile = normalizedSupportCategories(profileCategories);
+  const temporary = normalizedSupportCategories(temporaryCategories);
+  return profile.length === temporary.length && profile.every((value, index) => value === temporary[index]);
+}
 
 function RollingNumber({ value }: { value: number }) {
   const [started, setStarted] = useState(false);
@@ -233,7 +247,7 @@ function MyHomeProgramTabs({
 }
 
 function MyHomePage() {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [myProgramChangeItems, setMyProgramChangeItems] = useState<MatchedProgram[]>([]);
   const [changesLoading, setChangesLoading] = useState(false);
   const [changesError, setChangesError] = useState(false);
@@ -455,6 +469,12 @@ function MyHomePage() {
       ? newMatchItems
       : myProgramChangeItems;
   const visiblePrograms = tabPrograms;
+  const temporarySupportCategories = user?.id ? getSupportFilterSession(user.id) : null;
+  const opensRecommendedInNewTab = Boolean(
+    temporarySupportCategories &&
+      profile &&
+      !supportCategoriesMatch(profile.support_categories, temporarySupportCategories),
+  );
   return (
     <>
       <header>
@@ -541,7 +561,16 @@ function MyHomePage() {
             <Link
               key={card.label}
               to={card.href}
-              search={card.label === "추가 검토 필요" ? { tab: "review" } : {}}
+              {...(card.label === "맞춤 공고" && opensRecommendedInNewTab
+                ? { target: "_blank", rel: "noopener noreferrer" }
+                : {})}
+              search={
+                card.label === "맞춤 공고"
+                  ? { tab: "recommended", source: "myhome" }
+                  : card.label === "추가 검토 필요"
+                    ? { tab: "review" }
+                    : {}
+              }
               aria-label={`${card.label} 페이지로 이동`}
               className={cardClassName}
             >
