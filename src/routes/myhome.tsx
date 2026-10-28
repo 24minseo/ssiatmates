@@ -86,7 +86,7 @@ function RollingNumber({ value }: { value: number }) {
   const [compactOnes, setCompactOnes] = useState(false);
   const digits = String(value).split("").map(Number);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       setStarted(true);
       setCompactOnes(true);
