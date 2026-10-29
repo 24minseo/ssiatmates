@@ -112,6 +112,7 @@ const EVENT_COLORS = [
   { label: "보라", value: "#7150A8", dotColor: "#A98BD3" },
   { label: "회색", value: "", dotColor: "#D7E5E0" },
 ] as const;
+const UNSELECTED_PROGRAM_HOVER_ID = "__unselected_program__";
 
 type CalendarDay = {
   date: Date;
@@ -1378,7 +1379,12 @@ function CalendarPage() {
       setSaveError(null);
       try {
         await createCalendarTaskFn({
-          data: { title, date: eventDate, accessToken: session.access_token },
+          data: {
+            title,
+            date: eventDate,
+            saved_notice_id: null,
+            accessToken: session.access_token,
+          },
         });
       } catch (error) {
         console.error("[calendar] 직접 할 일 저장 실패", error);
@@ -1970,23 +1976,23 @@ function CalendarPage() {
               </Popover>
 
               <Popover open={programPickerOpen} onOpenChange={setProgramPickerOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={openProgramPicker}
-                    className={cn(
-                      "h-9 max-w-[320px] gap-1 rounded-[18px] border-field-border bg-surface pl-4 pr-3 text-[14px] font-normal shadow-none hover:bg-item-hover focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft",
-                      selectedProgram ? "text-ink-muted hover:text-ink-muted" : "text-guide-text hover:text-guide-text",
-                    )}
-                  >
-                    <span className="truncate">
-                      {selectedProgram?.title ?? "지원사업 선택"}
-                    </span>
-                    <ChevronDown aria-hidden="true" className="size-4 shrink-0 text-ink-muted" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent align="start" className="z-[100] w-[320px] rounded-[12px] border-0 bg-surface p-0 shadow-dropdown">
+                  <PopoverTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={openProgramPicker}
+                      className={cn(
+                        "h-9 max-w-[320px] gap-1 rounded-[18px] border-field-border bg-surface pl-4 pr-3 text-[14px] font-normal shadow-none hover:bg-item-hover focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft",
+                        selectedProgram ? "text-ink-muted hover:text-ink-muted" : "text-guide-text hover:text-guide-text",
+                      )}
+                    >
+                      <span className="truncate">
+                        {selectedProgram?.title ?? "지원사업 미선택"}
+                      </span>
+                      <ChevronDown aria-hidden="true" className="size-4 shrink-0 text-ink-muted" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent align="start" className="z-[100] w-[320px] rounded-[12px] border-0 bg-surface p-0 shadow-dropdown">
                   <div className="flex h-11 items-center gap-2 border-b border-field-border px-4">
                     <Search aria-hidden="true" className="size-5 shrink-0 -translate-x-0.5 text-ink-muted" />
                     <input
@@ -2009,15 +2015,45 @@ function CalendarPage() {
                       </button>
                     ) : null}
                   </div>
+                  <div className="max-h-60 overflow-y-auto p-1">
+                    <button
+                      type="button"
+                      onMouseEnter={() => setHoveredProgramId(UNSELECTED_PROGRAM_HOVER_ID)}
+                      onMouseLeave={() => setHoveredProgramId(null)}
+                      onClick={() => {
+                        setSelectedProgram(null);
+                        setHoveredProgramId(null);
+                        setProgramPickerOpen(false);
+                      }}
+                      aria-pressed={selectedProgram === null}
+                      className={cn(
+                        "flex w-full flex-col items-start gap-1 rounded-[8px] border border-transparent px-3 py-2 text-left hover:bg-item-hover",
+                        selectedProgram === null && hoveredProgramId === null
+                          ? "bg-item-hover"
+                          : "bg-transparent",
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          "w-full truncate text-[14px] font-medium",
+                          selectedProgram === null ? "text-brand" : "text-ink",
+                        )}
+                      >
+                        선택 안 함
+                      </span>
+                    </button>
                   {savedProgramsLoading ? (
                     <p className="px-3 py-4 text-sm text-ink-muted">지원사업을 불러오는 중입니다.</p>
                   ) : savedPrograms.filter((program) => matchesSavedProgram(program, programSearch)).length === 0 ? (
-                    <p className="px-4 py-4 text-sm text-ink-muted">
-                      {programSearch.trim() ? "검색 결과가 없습니다." : "저장한 지원사업이 없습니다."}
-                    </p>
+                    programSearch.trim() ? (
+                      <p className="px-4 py-4 text-sm text-ink-muted">검색 결과가 없습니다.</p>
+                    ) : (
+                      <div className="px-3 py-3 text-sm text-ink-muted">
+                        <p>저장한 지원사업이 없어요.</p>
+                      </div>
+                    )
                   ) : (
-                    <div className="max-h-60 overflow-y-auto p-1">
-                      {savedPrograms.filter((program) => matchesSavedProgram(program, programSearch)).map((program) => (
+                      savedPrograms.filter((program) => matchesSavedProgram(program, programSearch)).map((program) => (
                         <button
                           key={program.notice_id}
                           type="button"
@@ -2050,21 +2086,11 @@ function CalendarPage() {
                           >
                             {program.title}
                           </span>
-                          <span
-                            className={cn(
-                              "w-full truncate text-xs",
-                              selectedProgram?.notice_id === program.notice_id
-                                ? "text-brand/80"
-                                : "text-ink-muted",
-                            )}
-                          >
-                            {program.organization}
-                          </span>
                         </button>
-                      ))}
-                    </div>
+                      ))
                   )}
-                </PopoverContent>
+                  </div>
+                  </PopoverContent>
               </Popover>
             </div>
 

@@ -3,6 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 export type CalendarTaskCreateInput = {
   title: string;
   date: string;
+  saved_notice_id: string | null;
   accessToken: string;
 };
 
@@ -17,6 +18,8 @@ function validateCalendarTaskInput(input: unknown): CalendarTaskCreateInput {
     !value["title"].trim() ||
     typeof value["date"] !== "string" ||
     !/^\d{4}-\d{2}-\d{2}$/.test(value["date"]) ||
+    !(value["saved_notice_id"] === null ||
+      (typeof value["saved_notice_id"] === "string" && value["saved_notice_id"].trim())) ||
     typeof value["accessToken"] !== "string" ||
     !value["accessToken"].trim()
   ) {
@@ -26,6 +29,8 @@ function validateCalendarTaskInput(input: unknown): CalendarTaskCreateInput {
   return {
     title: value["title"].trim(),
     date: value["date"],
+    saved_notice_id:
+      typeof value["saved_notice_id"] === "string" ? value["saved_notice_id"].trim() : null,
     accessToken: value["accessToken"],
   };
 }
@@ -62,6 +67,7 @@ export const createCalendarTask = createServerFn({ method: "POST" })
         user_id: userData.user.id,
         title: data.title,
         date: data.date,
+        saved_notice_id: data.saved_notice_id,
       }),
     });
 
