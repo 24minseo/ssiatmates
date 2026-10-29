@@ -72,7 +72,15 @@ export const createCalendarTask = createServerFn({ method: "POST" })
     });
 
     if (!response.ok) {
-      throw new Error("할 일을 저장하지 못했어요. 잠시 후 다시 시도해주세요.");
+      const responseText = (await response.text()).trim().replace(/\s+/g, " ");
+      const detail = responseText ? ` ${responseText.slice(0, 240)}` : "";
+      console.error("[calendar] calendar-task-create webhook failed", {
+        status: response.status,
+        body: responseText.slice(0, 500),
+      });
+      throw new Error(
+        `할 일을 저장하지 못했어요. (웹훅 ${response.status})${detail}`,
+      );
     }
 
     return { success: true };
