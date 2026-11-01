@@ -397,7 +397,7 @@ export function AppHeader({
                     onClick={() => void handleNameSave()}
                     className="h-11 shrink-0 rounded-[12px] border-0 bg-brand px-5 text-[15px] font-semibold text-brand-foreground shadow-none transition-colors hover:bg-brand/88 active:bg-brand-pressed disabled:cursor-not-allowed disabled:bg-brand-disabled disabled:text-brand-foreground disabled:opacity-100"
                   >
-                    {isSavingName ? "저장 중..." : "변경"}
+                    {isSavingName ? "저장 중..." : "변경 저장"}
                   </button>
                   {nameSaveError ? (
                     <p role="alert" className="mt-1 text-[13px] leading-5 text-destructive">
