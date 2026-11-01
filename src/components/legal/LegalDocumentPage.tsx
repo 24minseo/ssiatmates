@@ -138,9 +138,9 @@ export function LegalDocumentContent({
   return (
     <>
       <div
-        className={`flex items-center justify-between gap-4 ${compactTitle ? "" : "border-b border-field-border pb-5"}`}
+        className={`relative flex items-center justify-between ${compactTitle ? "" : "border-b border-field-border pb-5"}`}
       >
-        <div className="flex items-start gap-3">
+        <div>
           {showBackLink ? (
             <button
               type="button"
@@ -149,7 +149,7 @@ export function LegalDocumentContent({
                 if (window.history.length > 1) window.history.back();
                 else window.location.href = "/signup";
               }}
-              className="mt-1 inline-flex size-8 shrink-0 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-item-hover hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+              className="absolute -left-11 top-0 inline-flex size-8 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-item-hover hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
             >
               <ArrowLeft aria-hidden="true" className="size-5" />
             </button>
