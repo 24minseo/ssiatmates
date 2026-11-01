@@ -8,6 +8,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { getDisplayName, useAuth } from "@/hooks/useAuth";
 import { fetchNotifications, markNotificationsRead } from "@/services/notificationsApi";
 
@@ -57,6 +64,7 @@ export function AppHeader({
   const [notificationsError, setNotificationsError] = useState<string | null>(null);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [accountDialogOpen, setAccountDialogOpen] = useState(false);
   const [readNotificationIds, setReadNotificationIds] = useState<Set<string>>(() => new Set());
   const [notificationTab, setNotificationTab] = useState("전체");
   const notificationsRef = useRef<HTMLDivElement>(null);
@@ -112,6 +120,7 @@ export function AppHeader({
   );
   const unreadCountLabel =
     unreadNotifications.length > 99 ? "99+" : String(unreadNotifications.length);
+  const loginProvider = user?.app_metadata?.provider === "google" ? "Google" : "이메일";
   const markNotificationRead = (id: string) =>
     setReadNotificationIds((current) => new Set(current).add(id));
   const markAllNotificationsRead = () =>
@@ -256,8 +265,19 @@ export function AppHeader({
             className="min-w-[128px] rounded-xl border-0 bg-surface p-1 shadow-none"
             style={{ boxShadow: "var(--shadow-dropdown)" }}
           >
-            <DropdownMenuItem className="cursor-default px-[10px] text-ink hover:bg-dropdown-hover data-[highlighted]:bg-dropdown-hover focus:bg-dropdown-hover focus:text-ink">
+            <DropdownMenuItem
+              className="cursor-pointer px-[10px] text-ink hover:bg-dropdown-hover data-[highlighted]:bg-dropdown-hover focus:bg-dropdown-hover focus:text-ink"
+              onSelect={() => setAccountDialogOpen(true)}
+            >
               계정 정보
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="cursor-pointer px-[10px] text-ink hover:bg-dropdown-hover data-[highlighted]:bg-dropdown-hover focus:bg-dropdown-hover focus:text-ink"
+              onSelect={() => {
+                window.dispatchEvent(new CustomEvent("open-matching-profile"));
+              }}
+            >
+              프로필 설정
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
@@ -269,6 +289,32 @@ export function AppHeader({
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+        <Dialog open={accountDialogOpen} onOpenChange={setAccountDialogOpen}>
+          <DialogContent className="w-[520px] max-w-[calc(100vw-32px)] rounded-[20px] border-0 bg-surface p-8">
+            <DialogHeader className="space-y-2 text-left">
+              <DialogTitle className="pr-8 text-[24px] font-bold leading-10 text-ink">
+                계정 정보
+              </DialogTitle>
+              <DialogDescription className="text-[14px] leading-6 text-ink-muted">
+                현재 로그인한 계정 정보를 확인할 수 있어요.
+              </DialogDescription>
+            </DialogHeader>
+            <dl className="mt-2 divide-y divide-field-border rounded-xl border border-field-border bg-background">
+              <div className="grid grid-cols-[112px_1fr] items-center gap-4 px-4 py-4">
+                <dt className="text-[14px] font-medium text-ink-muted">이름</dt>
+                <dd className="min-w-0 truncate text-[15px] text-ink">{displayName}</dd>
+              </div>
+              <div className="grid grid-cols-[112px_1fr] items-center gap-4 px-4 py-4">
+                <dt className="text-[14px] font-medium text-ink-muted">이메일</dt>
+                <dd className="min-w-0 truncate text-[15px] text-ink">{user?.email ?? "-"}</dd>
+              </div>
+              <div className="grid grid-cols-[112px_1fr] items-center gap-4 px-4 py-4">
+                <dt className="text-[14px] font-medium text-ink-muted">로그인 방식</dt>
+                <dd className="text-[15px] text-ink">{loginProvider}</dd>
+              </div>
+            </dl>
+          </DialogContent>
+        </Dialog>
         {notificationsOpen ? (
           <aside
             data-notification-panel

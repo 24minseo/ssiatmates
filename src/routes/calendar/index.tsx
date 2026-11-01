@@ -29,6 +29,7 @@ import { Label } from "@/components/ui/label";
 import { LayeredTextarea } from "@/components/ui/layered-textarea";
 import { TimeWheelPicker } from "@/components/ui/time-wheel-picker";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { createCalendarTask } from "@/services/calendarTaskApi";
 import { getCalendarEvents } from "@/services/calendarEventsApi";
@@ -1410,7 +1411,10 @@ function CalendarPage() {
     const isNewManualTask =
       editingEventId === null && selectedProgram === null && !eventEndDate;
     if (isNewManualTask) {
-      if (!user?.id || !session?.access_token) {
+      const { data: latestSessionData, error: latestSessionError } =
+        await supabase.auth.getSession();
+      const latestSession = latestSessionData.session;
+      if (latestSessionError || !latestSession?.user?.id || !latestSession.access_token) {
         setSaveError("로그인이 필요합니다.");
         return;
       }
@@ -1422,7 +1426,7 @@ function CalendarPage() {
             title,
             date: eventDate,
             saved_notice_id: null,
-            accessToken: session.access_token,
+            accessToken: latestSession.access_token,
           },
         });
         await loadCalendarEvents();
