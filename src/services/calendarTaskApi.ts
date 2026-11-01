@@ -43,9 +43,11 @@ export const createCalendarTask = createServerFn({ method: "POST" })
       throw new Error("서버 웹훅 URL이 설정되지 않았습니다.");
     }
 
-    const supabaseUrl = process.env["SUPABASE_URL"] ?? process.env["VITE_SUPABASE_URL"];
+    // Prefer the known project variables and fall back only when they are not
+    // present. An empty SUPABASE_* value must not hide a valid VITE_* value.
+    const supabaseUrl = process.env["VITE_SUPABASE_URL"] || process.env["SUPABASE_URL"];
     const supabasePublishableKey =
-      process.env["SUPABASE_PUBLISHABLE_KEY"] ?? process.env["VITE_SUPABASE_PUBLISHABLE_KEY"];
+      process.env["VITE_SUPABASE_PUBLISHABLE_KEY"] || process.env["SUPABASE_PUBLISHABLE_KEY"];
     if (!supabaseUrl || !supabasePublishableKey) {
       throw new Error("서버 Supabase 환경변수가 설정되지 않았습니다.");
     }

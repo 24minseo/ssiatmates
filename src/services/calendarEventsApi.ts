@@ -19,8 +19,12 @@ export const getCalendarEvents = createServerFn({ method: "POST" })
     const webhookUrl = process.env["N8N_CALENDAR_EVENTS_WEBHOOK_URL"];
     if (!webhookUrl) throw new Error("서버 캘린더 조회 URL이 설정되지 않았습니다.");
 
-    const supabaseUrl = process.env["SUPABASE_URL"] ?? process.env["VITE_SUPABASE_URL"];
-    const publishableKey = process.env["SUPABASE_PUBLISHABLE_KEY"] ?? process.env["VITE_SUPABASE_PUBLISHABLE_KEY"];
+    // Vercel can expose an unset/empty server variable alongside the Vite
+    // variables. Use the first non-empty value so a blank server override does
+    // not mask the project's actual Supabase configuration.
+    const supabaseUrl = process.env["VITE_SUPABASE_URL"] || process.env["SUPABASE_URL"];
+    const publishableKey =
+      process.env["VITE_SUPABASE_PUBLISHABLE_KEY"] || process.env["SUPABASE_PUBLISHABLE_KEY"];
     if (!supabaseUrl || !publishableKey) throw new Error("서버 Supabase 환경변수가 설정되지 않았습니다.");
 
     const { createClient } = await import("@supabase/supabase-js");

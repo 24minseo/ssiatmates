@@ -896,7 +896,7 @@ function MonthField({ value, onChange }: MonthFieldProps) {
 
 
 function CalendarPage() {
-  const { session, user } = useAuth();
+  const { loading: authLoading, session, user } = useAuth();
   const createCalendarTaskFn = useServerFn(createCalendarTask);
   const mutateCalendarEventFn = useServerFn(mutateCalendarEvent);
   const getCalendarEventsFn = useServerFn(getCalendarEvents);
@@ -963,11 +963,50 @@ function CalendarPage() {
   const today = useMemo(() => new Date(), []);
   const todayKey = toDateKey(today);
 
+  const getFreshAccessToken = async () => {
+    const { data, error } = await supabase.auth.getSession();
+    if (error) throw error;
+
+    let currentSession = data.session;
+    if (!currentSession) return null;
+
+    const expiresAt = (currentSession.expires_at ?? 0) * 1000;
+    if (expiresAt > 0 && expiresAt <= Date.now() + 30_000) {
+      const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
+      if (refreshError) throw refreshError;
+      currentSession = refreshed.session;
+    }
+
+    return currentSession?.access_token ?? null;
+  };
+
+  const isAuthFailure = (error: unknown) =>
+    error instanceof Error && error.message.includes("로그인이 필요합니다");
+
+  const withFreshAccessToken = async <T,>(request: (accessToken: string) => Promise<T>) => {
+    const accessToken = await getFreshAccessToken();
+    if (!accessToken) throw new Error("로그인이 필요합니다.");
+
+    try {
+      return await request(accessToken);
+    } catch (error) {
+      // A token can be rejected before its local expiry (for example after a
+      // refresh-token rotation). Refresh once and retry the same request.
+      if (!isAuthFailure(error)) throw error;
+      const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
+      const refreshedToken = refreshed.session?.access_token;
+      if (refreshError || !refreshedToken) throw error;
+      return request(refreshedToken);
+    }
+  };
+
   const loadCalendarEvents = async () => {
-    if (!session?.access_token) return;
     try {
       setEventsError(null);
-      const result = await getCalendarEventsFn({ data: { accessToken: session.access_token } });
+      if (!session) return;
+      const result = await withFreshAccessToken((token) =>
+        getCalendarEventsFn({ data: { accessToken: token } }),
+      );
       const normalized = result.events.flatMap((raw) => {
         if (typeof raw !== "object" || raw === null) return [];
         const value = raw as Record<string, unknown>;
@@ -994,8 +1033,9 @@ function CalendarPage() {
   };
 
   useEffect(() => {
+    if (authLoading) return;
     void loadCalendarEvents();
-  }, [session?.access_token]);
+  }, [authLoading, session?.access_token]);
   const year = visibleMonth.getFullYear();
   const month = visibleMonth.getMonth();
 
@@ -1432,24 +1472,19 @@ function CalendarPage() {
     const isNewManualTask =
       editingEventId === null && selectedProgram === null && !eventEndDate;
     if (isNewManualTask) {
-      const { data: latestSessionData, error: latestSessionError } =
-        await supabase.auth.getSession();
-      const latestSession = latestSessionData.session;
-      if (latestSessionError || !latestSession?.user?.id || !latestSession.access_token) {
-        setSaveError("로그인이 필요합니다.");
-        return;
-      }
       setIsSavingEvent(true);
       setSaveError(null);
       try {
-        await createCalendarTaskFn({
-          data: {
-            title,
-            date: eventDate,
-            saved_notice_id: null,
-            accessToken: latestSession.access_token,
-          },
-        });
+        await withFreshAccessToken((accessToken) =>
+          createCalendarTaskFn({
+            data: {
+              title,
+              date: eventDate,
+              saved_notice_id: null,
+              accessToken,
+            },
+          }),
+        );
         await loadCalendarEvents();
       } catch (error) {
         console.error("[calendar] 직접 할 일 저장 실패", error);
@@ -1461,26 +1496,24 @@ function CalendarPage() {
     }
 
     if (editingEventId !== null) {
-      const { data: latestSessionData } = await supabase.auth.getSession();
-      const latestSession = latestSessionData.session;
-      if (!latestSession?.user?.id || !latestSession.access_token) {
-        setSaveError("로그인이 필요합니다.");
-        return;
-      }
       setIsSavingEvent(true);
       setSaveError(null);
       try {
-        await mutateCalendarEventFn({ data: {
-          userId: latestSession.user.id,
-          eventId: editingEventId,
-          action: "update",
-          title,
-          startDate: eventDate,
-          endDate: eventEndDate || eventDate,
-          color: eventColor || "#6B7280",
-          allDay: true,
-          accessToken: latestSession.access_token,
-        }});
+        await withFreshAccessToken(async (accessToken) => {
+          const latestSession = (await supabase.auth.getSession()).data.session;
+          if (!latestSession?.user?.id) throw new Error("로그인이 필요합니다.");
+          return mutateCalendarEventFn({ data: {
+            userId: latestSession.user.id,
+            eventId: editingEventId,
+            action: "update",
+            title,
+            startDate: eventDate,
+            endDate: eventEndDate || eventDate,
+            color: eventColor || "#6B7280",
+            allDay: true,
+            accessToken,
+          }});
+        });
         await loadCalendarEvents();
       } catch (error) {
         setSaveError(error instanceof Error ? error.message : "일정을 수정하지 못했어요.");
