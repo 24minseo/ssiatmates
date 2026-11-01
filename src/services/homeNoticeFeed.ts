@@ -17,6 +17,14 @@ export type HomeNoticeItem = {
   viewedAt?: string;
   changeReason?: string;
   changeDetail?: string;
+  inbox_kind?: "new" | "changes";
+  inbox_receipt_ids?: string[];
+  display?: {
+    title_url: string | null;
+    deadline_label: string;
+    change_badge: string | null;
+    review_reason: string | null;
+  };
 };
 
 function safeNoticeUrl(value: string | null | undefined) {
@@ -121,6 +129,14 @@ export async function getHomeRecommendedNotices({ selectedField = null, offset =
         reportAvailable: item.report_available !== false,
         ...(item.has_meaningful_changes === true ? { changeReason: "수정됨" } : {}),
         ...(item.change_needs_review === true && item.change_review_reason ? { changeDetail: item.change_review_reason } : {}),
+        ...(Array.isArray((item as Record<string, unknown>).inbox_receipt_ids) ? { inbox_receipt_ids: (item as Record<string, unknown>).inbox_receipt_ids as string[] } : {}),
+        ...(typeof (item as Record<string, unknown>).inbox_kind === "string" ? { inbox_kind: (item as Record<string, unknown>).inbox_kind as "new" | "changes" } : {}),
+        display: {
+          title_url: url ?? null,
+          deadline_label: item.deadline_label?.trim() || "공고 원문 확인",
+          change_badge: item.has_meaningful_changes === true ? "수정됨" : null,
+          review_reason: item.change_needs_review === true ? item.change_review_reason ?? null : null,
+        },
       } satisfies HomeNoticeItem;
     }),
     totalCount: data.total_count,

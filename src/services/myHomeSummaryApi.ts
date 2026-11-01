@@ -11,6 +11,7 @@ export type MyHomeSummaryResponse = {
   counts: SummaryCounts;
   new_matching_count: number;
   saved_change_count: number;
+  inbox_version?: number;
 };
 
 function isNonNegativeInteger(value: unknown): value is number {
@@ -40,6 +41,9 @@ export function createMyHomeSummaryApi(supabase: Pick<SupabaseClient, "rpc">) {
         !isNonNegativeInteger(response.saved_change_count)
       ) {
         throw new Error("MY홈 집계 응답을 확인해주세요.");
+      }
+      if (response.inbox_version === 2 && counts.today_new !== response.new_matching_count + response.saved_change_count) {
+        throw new Error("MY홈 새 소식 합계를 확인해주세요.");
       }
       return response as MyHomeSummaryResponse;
     },
