@@ -65,13 +65,15 @@ function FeedbackPage() {
                 className="mt-2 block w-full resize-y rounded-xl border border-field-border bg-white px-4 py-3 text-base text-ink outline-none transition-colors placeholder:text-base placeholder:text-guide-text focus:border-brand focus:ring-2 focus:ring-brand/10"
               />
             </label>
-            <button
-              type="submit"
-              disabled={status === "sending"}
-              className="h-11 rounded-[12px] bg-brand px-5 text-[15px] font-semibold text-brand-foreground transition-colors hover:bg-brand/90"
-            >
-              전송하기
-            </button>
+            <div className="flex justify-end">
+              <button
+                type="submit"
+                disabled={status === "sending"}
+                className="h-11 rounded-[12px] bg-brand px-5 text-[15px] font-semibold text-brand-foreground transition-colors hover:bg-brand/90"
+              >
+                전송하기
+              </button>
+            </div>
             {status === "sent" && <p className="text-sm text-brand">피드백이 전송되었습니다.</p>}
             {status === "error" && (
               <p className="text-sm text-destructive">내용을 입력한 후 다시 시도해 주세요.</p>
