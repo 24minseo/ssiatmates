@@ -32,6 +32,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { createCalendarTask } from "@/services/calendarTaskApi";
+import { mutateCalendarEvent } from "@/services/calendarEventMutationApi";
 import { getCalendarEvents } from "@/services/calendarEventsApi";
 import { savedNoticesApi, type SavedNotice } from "@/services/savedNoticesApi";
 
@@ -897,6 +898,7 @@ function MonthField({ value, onChange }: MonthFieldProps) {
 function CalendarPage() {
   const { session, user } = useAuth();
   const createCalendarTaskFn = useServerFn(createCalendarTask);
+  const mutateCalendarEventFn = useServerFn(mutateCalendarEvent);
   const getCalendarEventsFn = useServerFn(getCalendarEvents);
   const [visibleMonth, setVisibleMonth] = useState(() => {
     const now = new Date();
@@ -1204,10 +1206,29 @@ function CalendarPage() {
     setIsAddOpen(true);
   };
 
-  const deleteSelectedEvent = () => {
+  const deleteSelectedEvent = async () => {
     if (!selectedEvent) return;
-    setEvents((current) => current.filter((calendarEvent) => calendarEvent.id !== selectedEvent.id));
-    setSelectedEvent(null);
+    const { data: latestSessionData } = await supabase.auth.getSession();
+    const latestSession = latestSessionData.session;
+    if (!latestSession?.user?.id || !latestSession.access_token) {
+      setEventsError("로그인이 필요합니다.");
+      return;
+    }
+    setIsSavingEvent(true);
+    try {
+      await mutateCalendarEventFn({ data: {
+        userId: latestSession.user.id,
+        eventId: selectedEvent.id,
+        action: "delete",
+        accessToken: latestSession.access_token,
+      }});
+      setSelectedEvent(null);
+      await loadCalendarEvents();
+    } catch (error) {
+      setEventsError(error instanceof Error ? error.message : "일정을 삭제하지 못했어요.");
+    } finally {
+      setIsSavingEvent(false);
+    }
   };
 
   const getReminderAnchor = (unit?: ReminderUnit) => {
@@ -1433,6 +1454,36 @@ function CalendarPage() {
       } catch (error) {
         console.error("[calendar] 직접 할 일 저장 실패", error);
         setSaveError(error instanceof Error ? error.message : "할 일을 저장하지 못했어요.");
+        return;
+      } finally {
+        setIsSavingEvent(false);
+      }
+    }
+
+    if (editingEventId !== null) {
+      const { data: latestSessionData } = await supabase.auth.getSession();
+      const latestSession = latestSessionData.session;
+      if (!latestSession?.user?.id || !latestSession.access_token) {
+        setSaveError("로그인이 필요합니다.");
+        return;
+      }
+      setIsSavingEvent(true);
+      setSaveError(null);
+      try {
+        await mutateCalendarEventFn({ data: {
+          userId: latestSession.user.id,
+          eventId: editingEventId,
+          action: "update",
+          title,
+          startDate: eventDate,
+          endDate: eventEndDate || eventDate,
+          color: eventColor || "#6B7280",
+          allDay: true,
+          accessToken: latestSession.access_token,
+        }});
+        await loadCalendarEvents();
+      } catch (error) {
+        setSaveError(error instanceof Error ? error.message : "일정을 수정하지 못했어요.");
         return;
       } finally {
         setIsSavingEvent(false);
