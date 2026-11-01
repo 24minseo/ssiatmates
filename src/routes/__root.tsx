@@ -170,7 +170,11 @@ function RootComponent() {
     select: (state) => state.location.pathname,
   });
   const activeNavigation = getAppNavigationKey(pathname);
-  const usesAppShell = activeNavigation !== null || pathname === "/feedback";
+  const usesAppShell =
+    activeNavigation !== null ||
+    pathname === "/feedback" ||
+    pathname === "/privacy" ||
+    pathname === "/terms";
   const routeContent = <Outlet />;
 
   return (
