@@ -153,6 +153,26 @@ function formatChangeValue(value: unknown) {
   }
 }
 
+function formatChangeDate(value?: string | null) {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return "-";
+
+  const parts = new Intl.DateTimeFormat("ko-KR", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(date);
+  const get = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((part) => part.type === type)?.value ?? "";
+
+  return `${get("year")}.${get("month")}.${get("day")} ${get("hour")}:${get("minute")}`;
+}
+
 function ChangeHistoryView({ history }: { history: ReportChangeEvent[] }) {
   if (!history.length) return null;
 
@@ -179,7 +199,9 @@ function ChangeHistoryView({ history }: { history: ReportChangeEvent[] }) {
               key={`${event.recorded_at ?? "change"}-${eventIndex}`}
               className="grid grid-cols-2 border-b border-field-border last:border-b-0"
             >
-              <div className="px-3 py-2 text-[15px] text-ink-muted">{event.recorded_at ?? "-"}</div>
+              <div className="px-3 py-2 text-[15px] text-ink-muted">
+                {formatChangeDate(event.recorded_at)}
+              </div>
               <div className="space-y-1 px-3 py-2 text-[15px] text-ink-muted">
                 {event.review_required_at_recording ? (
                   <p className="text-ink-muted">당시 검토 필요 기록</p>
