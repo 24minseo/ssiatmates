@@ -149,7 +149,7 @@ export function LegalDocumentContent({
                 if (window.history.length > 1) window.history.back();
                 else window.location.href = "/signup";
               }}
-              className="absolute -left-11 top-0 inline-flex size-8 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-item-hover hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+              className="absolute -left-11 top-2 inline-flex size-8 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-item-hover hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
             >
               <ArrowLeft aria-hidden="true" className="size-5" />
             </button>
