@@ -4,6 +4,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/useAuth";
 
 const AUTH_PAGES = ["/", "/signup"];
+const PUBLIC_LEGAL_PAGES = ["/privacy", "/terms"];
 const HOME_ROUTE = "/myhome";
 const ONBOARDING_ROUTE = "/onboarding";
 
@@ -20,23 +21,18 @@ function FullScreenLoader() {
 }
 
 /** 세션 확인이 끝난 뒤에만 화면을 노출하고, 상태에 맞는 라우트로 보냄 */
-export function AuthGate({
-  pathname,
-  children,
-}: {
-  pathname: string;
-  children: ReactNode;
-}) {
+export function AuthGate({ pathname, children }: { pathname: string; children: ReactNode }) {
   const { loading, session, profile } = useAuth();
   const navigate = useNavigate();
 
   const isAuthPage = AUTH_PAGES.includes(pathname);
+  const isPublicLegalPage = PUBLIC_LEGAL_PAGES.includes(pathname);
   const isOnboarding = pathname === ONBOARDING_ROUTE;
   const isGrowthJournalComposer = pathname === "/calendar/growth-journal/new";
 
   let target: string | null = null;
   if (!loading) {
-    if (!session && !isAuthPage) target = "/";
+    if (!session && !isAuthPage && !isPublicLegalPage) target = "/";
     else if (session && profile) {
       if (isAuthPage) target = profile.is_onboarded ? HOME_ROUTE : ONBOARDING_ROUTE;
       else if (!profile.is_onboarded && !isOnboarding) target = ONBOARDING_ROUTE;

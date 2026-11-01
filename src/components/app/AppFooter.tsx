@@ -12,7 +12,7 @@ export function AppFooter() {
             className="font-semibold text-[#454B48] transition-colors hover:text-[#303634]"
             href="/privacy"
           >
-            개인정보처리방침
+            개인정보 처리방침
           </a>
           <span aria-hidden className="text-[11px] leading-none text-field-border">
             |

@@ -14,8 +14,10 @@ import { Route as FeedbackRouteImport } from './routes/feedback'
 import { Route as MyProgramsRouteImport } from './routes/my-programs'
 import { Route as MyhomeRouteImport } from './routes/myhome'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ProgramsRouteImport } from './routes/programs'
 import { Route as SignupRouteImport } from './routes/signup'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as CalendarIndexRouteImport } from './routes/calendar/index'
 import { Route as CalendarGrowthJournalRouteImport } from './routes/calendar/growth-journal'
 import { Route as CalendarGrowthJournalIdRouteImport } from './routes/calendar/growth-journal/$id'
@@ -46,6 +48,11 @@ const OnboardingRoute = OnboardingRouteImport.update({
   path: '/onboarding',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProgramsRoute = ProgramsRouteImport.update({
   id: '/programs',
   path: '/programs',
@@ -54,6 +61,11 @@ const ProgramsRoute = ProgramsRouteImport.update({
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
   path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CalendarIndexRoute = CalendarIndexRouteImport.update({
@@ -84,8 +96,10 @@ export interface FileRoutesByFullPath {
   '/my-programs': typeof MyProgramsRoute
   '/myhome': typeof MyhomeRoute
   '/onboarding': typeof OnboardingRoute
+  '/privacy': typeof PrivacyRoute
   '/programs': typeof ProgramsRoute
   '/signup': typeof SignupRoute
+  '/terms': typeof TermsRoute
   '/calendar/growth-journal': typeof CalendarGrowthJournalRouteWithChildren
   '/calendar/': typeof CalendarIndexRoute
   '/calendar/growth-journal/$id': typeof CalendarGrowthJournalIdRoute
@@ -97,8 +111,10 @@ export interface FileRoutesByTo {
   '/my-programs': typeof MyProgramsRoute
   '/myhome': typeof MyhomeRoute
   '/onboarding': typeof OnboardingRoute
+  '/privacy': typeof PrivacyRoute
   '/programs': typeof ProgramsRoute
   '/signup': typeof SignupRoute
+  '/terms': typeof TermsRoute
   '/calendar/growth-journal': typeof CalendarGrowthJournalRouteWithChildren
   '/calendar': typeof CalendarIndexRoute
   '/calendar/growth-journal/$id': typeof CalendarGrowthJournalIdRoute
@@ -111,8 +127,10 @@ export interface FileRoutesById {
   '/my-programs': typeof MyProgramsRoute
   '/myhome': typeof MyhomeRoute
   '/onboarding': typeof OnboardingRoute
+  '/privacy': typeof PrivacyRoute
   '/programs': typeof ProgramsRoute
   '/signup': typeof SignupRoute
+  '/terms': typeof TermsRoute
   '/calendar/growth-journal': typeof CalendarGrowthJournalRouteWithChildren
   '/calendar/': typeof CalendarIndexRoute
   '/calendar/growth-journal/$id': typeof CalendarGrowthJournalIdRoute
@@ -126,8 +144,10 @@ export interface FileRouteTypes {
     | '/my-programs'
     | '/myhome'
     | '/onboarding'
+    | '/privacy'
     | '/programs'
     | '/signup'
+    | '/terms'
     | '/calendar/growth-journal'
     | '/calendar/'
     | '/calendar/growth-journal/$id'
@@ -139,8 +159,10 @@ export interface FileRouteTypes {
     | '/my-programs'
     | '/myhome'
     | '/onboarding'
+    | '/privacy'
     | '/programs'
     | '/signup'
+    | '/terms'
     | '/calendar/growth-journal'
     | '/calendar'
     | '/calendar/growth-journal/$id'
@@ -152,8 +174,10 @@ export interface FileRouteTypes {
     | '/my-programs'
     | '/myhome'
     | '/onboarding'
+    | '/privacy'
     | '/programs'
     | '/signup'
+    | '/terms'
     | '/calendar/growth-journal'
     | '/calendar/'
     | '/calendar/growth-journal/$id'
@@ -166,8 +190,10 @@ export interface RootRouteChildren {
   MyProgramsRoute: typeof MyProgramsRoute
   MyhomeRoute: typeof MyhomeRoute
   OnboardingRoute: typeof OnboardingRoute
+  PrivacyRoute: typeof PrivacyRoute
   ProgramsRoute: typeof ProgramsRoute
   SignupRoute: typeof SignupRoute
+  TermsRoute: typeof TermsRoute
   CalendarGrowthJournalRoute: typeof CalendarGrowthJournalRouteWithChildren
   CalendarIndexRoute: typeof CalendarIndexRoute
 }
@@ -209,6 +235,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OnboardingRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/programs': {
       id: '/programs'
       path: '/programs'
@@ -221,6 +254,13 @@ declare module '@tanstack/react-router' {
       path: '/signup'
       fullPath: '/signup'
       preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/calendar/': {
@@ -275,8 +315,10 @@ const rootRouteChildren: RootRouteChildren = {
   MyProgramsRoute: MyProgramsRoute,
   MyhomeRoute: MyhomeRoute,
   OnboardingRoute: OnboardingRoute,
+  PrivacyRoute: PrivacyRoute,
   ProgramsRoute: ProgramsRoute,
   SignupRoute: SignupRoute,
+  TermsRoute: TermsRoute,
   CalendarGrowthJournalRoute: CalendarGrowthJournalRouteWithChildren,
   CalendarIndexRoute: CalendarIndexRoute,
 }

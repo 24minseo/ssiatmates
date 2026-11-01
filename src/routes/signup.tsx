@@ -5,7 +5,6 @@ import { toast } from "sonner";
 import { AuthDivider, AuthField, AuthLayout, GoogleButton } from "@/components/auth/AuthLayout";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog,
   DialogContent,
@@ -14,6 +13,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { LegalDocumentContent } from "@/components/legal/LegalDocumentPage";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/signup")({
   component: SignupPage,
@@ -23,15 +24,10 @@ interface AgreementRowProps {
   checked: boolean;
   onCheckedChange: (checked: boolean) => void;
   label: string;
-  title: string;
+  documentKind: "terms" | "privacy";
 }
 
-function AgreementRow({
-  checked,
-  onCheckedChange,
-  label,
-  title,
-}: AgreementRowProps) {
+function AgreementRow({ checked, onCheckedChange, label, documentKind }: AgreementRowProps) {
   return (
     <div className="flex h-6 items-center justify-between gap-3">
       <label className="flex min-w-0 cursor-pointer items-center gap-2">
@@ -48,30 +44,29 @@ function AgreementRow({
             type="button"
             className="shrink-0 font-normal text-[#9A9D9B] underline-offset-2 hover:text-brand hover:underline"
           >
-            보기
+            전문 보기
           </button>
         </DialogTrigger>
-        <DialogContent className="max-w-[480px] rounded-[20px] border-field-border bg-white p-7">
+        <DialogContent
+          closeClassName="right-8 top-8 flex size-9 items-center justify-center rounded-lg text-ink-muted opacity-100 transition-colors hover:bg-item-hover hover:text-ink hover:opacity-100 focus:outline-none focus:ring-0 focus:ring-offset-0 [&_svg]:size-6"
+          className="max-h-[85vh] max-w-[720px] overflow-y-auto rounded-[20px] border-field-border bg-surface p-8 gap-0"
+        >
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-ink">{title}</DialogTitle>
-            <DialogDescription className="pt-3 text-left leading-6 text-ink-muted">
-              약관 내용이 들어갈 자리예요. 실제 서비스 약관이 준비되면 이 영역의
-              내용을 교체할 수 있어요.
+            <DialogTitle className="sr-only">
+              {documentKind === "terms" ? "이용약관" : "개인정보 처리방침"}
+            </DialogTitle>
+            <DialogDescription className="sr-only">
+              약관 전문과 시행일을 확인할 수 있습니다.
             </DialogDescription>
           </DialogHeader>
+          <LegalDocumentContent kind={documentKind} compactTitle />
         </DialogContent>
       </Dialog>
     </div>
   );
 }
 
-function PasswordRequirement({
-  met,
-  children,
-}: {
-  met: boolean;
-  children: string;
-}) {
+function PasswordRequirement({ met, children }: { met: boolean; children: string }) {
   return (
     <li
       className={`flex items-center gap-1 text-[12px] font-normal ${
@@ -178,10 +173,7 @@ function SignupPage() {
           if (canSubmit) void handleSignup();
         }}
       >
-        <GoogleButton
-          label="Google 계정으로 회원가입"
-          onClick={() => void handleGoogle()}
-        />
+        <GoogleButton label="Google 계정으로 회원가입" onClick={() => void handleGoogle()} />
 
         <div className="mt-3">
           <AuthDivider />
@@ -251,14 +243,14 @@ function SignupPage() {
           <AgreementRow
             checked={terms}
             onCheckedChange={setTerms}
-            label="이용약관 동의 (필수)"
-            title="이용약관"
+            label="이용약관에 동의합니다. (필수)"
+            documentKind="terms"
           />
           <AgreementRow
             checked={privacy}
             onCheckedChange={setPrivacy}
-            label="개인정보 수집·이용 동의 (필수)"
-            title="개인정보 수집·이용 동의"
+            label="개인정보 처리방침에 동의합니다. (필수)"
+            documentKind="privacy"
           />
         </div>
 
@@ -272,7 +264,11 @@ function SignupPage() {
 
         <p className="mt-3 text-center text-[13px] font-normal text-ink-muted">
           이미 계정이 있으신가요?{" "}
-          <Link to="/" viewTransition className="font-semibold text-brand underline decoration-1 underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
+          <Link
+            to="/"
+            viewTransition
+            className="font-semibold text-brand underline decoration-1 underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+          >
             로그인
           </Link>
         </p>
