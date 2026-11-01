@@ -31,6 +31,7 @@ import { TimeWheelPicker } from "@/components/ui/time-wheel-picker";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { createCalendarTask } from "@/services/calendarTaskApi";
+import { getCalendarEvents } from "@/services/calendarEventsApi";
 import { savedNoticesApi, type SavedNotice } from "@/services/savedNoticesApi";
 
 export const Route = createFileRoute("/calendar/")({
@@ -93,7 +94,7 @@ const REMINDER_UNITS = [
 type ReminderUnit = (typeof REMINDER_UNITS)[number]["label"];
 
 type CalendarEvent = {
-  id: number;
+  id: number | string;
   title: string;
   date: string;
   endDate?: string;
@@ -103,6 +104,8 @@ type CalendarEvent = {
   startTime?: string;
   reminders?: string[];
   color?: string;
+  url?: string;
+  allDay?: boolean;
 };
 
 const EVENT_COLORS = [
@@ -893,6 +896,7 @@ function MonthField({ value, onChange }: MonthFieldProps) {
 function CalendarPage() {
   const { session, user } = useAuth();
   const createCalendarTaskFn = useServerFn(createCalendarTask);
+  const getCalendarEventsFn = useServerFn(getCalendarEvents);
   const [visibleMonth, setVisibleMonth] = useState(() => {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), 1);
@@ -946,6 +950,7 @@ function CalendarPage() {
   const [reminderPickerMode, setReminderPickerMode] = useState<"quick" | "custom">("quick");
   const [isSavingEvent, setIsSavingEvent] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [eventsError, setEventsError] = useState<string | null>(null);
   const [customReminderAmount, setCustomReminderAmount] = useState("");
   const [customReminderUnit, setCustomReminderUnit] = useState<ReminderUnit>("분");
   const [reminderError, setReminderError] = useState("");
@@ -954,6 +959,40 @@ function CalendarPage() {
 
   const today = useMemo(() => new Date(), []);
   const todayKey = toDateKey(today);
+
+  const loadCalendarEvents = async () => {
+    if (!session?.access_token) return;
+    try {
+      setEventsError(null);
+      const result = await getCalendarEventsFn({ data: { accessToken: session.access_token } });
+      const normalized = result.events.flatMap((raw) => {
+        if (typeof raw !== "object" || raw === null) return [];
+        const value = raw as Record<string, unknown>;
+        if ((typeof value.id !== "string" && typeof value.id !== "number") || typeof value.title !== "string") return [];
+        const start = typeof value.start === "string" ? value.start : null;
+        if (!start) return [];
+        const end = typeof value.end === "string" ? value.end : undefined;
+        return [{
+          id: value.id,
+          title: value.title,
+          date: start.slice(0, 10),
+          ...(end ? { endDate: end.slice(0, 10) } : {}),
+          description: typeof value.description === "string" ? value.description : "",
+          color: typeof value.color === "string" ? value.color : undefined,
+          url: typeof value.url === "string" ? value.url : undefined,
+          allDay: value.allDay === true,
+        } satisfies CalendarEvent];
+      });
+      setEvents(normalized);
+    } catch (error) {
+      console.error("[calendar] 이벤트 조회 실패", error);
+      setEventsError(error instanceof Error ? error.message : "캘린더를 불러오지 못했어요.");
+    }
+  };
+
+  useEffect(() => {
+    void loadCalendarEvents();
+  }, [session?.access_token]);
   const year = visibleMonth.getFullYear();
   const month = visibleMonth.getMonth();
 
@@ -1386,6 +1425,7 @@ function CalendarPage() {
             accessToken: session.access_token,
           },
         });
+        await loadCalendarEvents();
       } catch (error) {
         console.error("[calendar] 직접 할 일 저장 실패", error);
         setSaveError(error instanceof Error ? error.message : "할 일을 저장하지 못했어요.");
@@ -1413,12 +1453,14 @@ function CalendarPage() {
       ...(eventStartTime ? { startTime: eventStartTime } : {}),
       ...(reminders.length ? { reminders } : {}),
     };
-    setEvents((current) => {
-      if (editingEventId === null) return [...current, nextEvent];
-      return current.map((calendarEvent) =>
-        calendarEvent.id === editingEventId ? nextEvent : calendarEvent,
-      );
-    });
+    if (!isNewManualTask) {
+      setEvents((current) => {
+        if (editingEventId === null) return [...current, nextEvent];
+        return current.map((calendarEvent) =>
+          calendarEvent.id === editingEventId ? nextEvent : calendarEvent,
+        );
+      });
+    }
     const [eventYear, eventMonth] = eventDate.split("-").map(Number);
     if (
       eventYear !== undefined &&
