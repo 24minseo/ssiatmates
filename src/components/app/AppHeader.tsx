@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { AlertTriangle, CalendarClock, LogOut, Sparkles } from "lucide-react";
 
 import {
@@ -11,12 +12,24 @@ import {
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { getDisplayName, useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { deleteAccount } from "@/services/deleteAccountApi";
 import { fetchNotifications, markNotificationsRead } from "@/services/notificationsApi";
+import { toast } from "sonner";
 
 export type NotificationType = "deadline" | "schedule" | "news";
 export type AppNotification = {
@@ -57,7 +70,8 @@ export function AppHeader({
   growthJournal = false,
   growthJournalExpanded = false,
 }: AppHeaderProps) {
-  const { user, profile, signOut } = useAuth();
+  const { user, profile, refreshProfile, signOut } = useAuth();
+  const deleteAccountFn = useServerFn(deleteAccount);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [apiUnreadCount, setApiUnreadCount] = useState<number | null>(null);
   const [notificationsLoading, setNotificationsLoading] = useState(false);
@@ -65,6 +79,12 @@ export function AppHeader({
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [accountDialogOpen, setAccountDialogOpen] = useState(false);
+  const [withdrawalDialogOpen, setWithdrawalDialogOpen] = useState(false);
+  const [isWithdrawing, setIsWithdrawing] = useState(false);
+  const [withdrawalError, setWithdrawalError] = useState<string | null>(null);
+  const [nameInput, setNameInput] = useState("");
+  const [isSavingName, setIsSavingName] = useState(false);
+  const [nameSaveError, setNameSaveError] = useState<string | null>(null);
   const [readNotificationIds, setReadNotificationIds] = useState<Set<string>>(() => new Set());
   const [notificationTab, setNotificationTab] = useState("전체");
   const notificationsRef = useRef<HTMLDivElement>(null);
@@ -84,6 +104,14 @@ export function AppHeader({
     return () => document.removeEventListener("pointerdown", handlePointerDown);
   }, [notificationsOpen]);
   const displayName = useMemo(() => getDisplayName(user, profile), [profile, user]);
+  const accountName = displayName.endsWith("님") ? displayName.slice(0, -1) : displayName;
+
+  useEffect(() => {
+    if (accountDialogOpen) {
+      setNameInput(accountName);
+      setNameSaveError(null);
+    }
+  }, [accountDialogOpen, accountName]);
   const isNotificationRead = (notification: AppNotification) =>
     notification.read || readNotificationIds.has(notification.id);
 
@@ -164,6 +192,55 @@ export function AppHeader({
     setProfileMenuOpen(false);
     setNotificationsOpen(true);
     await loadNotifications(true);
+  };
+
+  const handleAccountDeletion = async () => {
+    if (isWithdrawing) return;
+    setIsWithdrawing(true);
+    setWithdrawalError(null);
+    try {
+      const { data, error } = await supabase.auth.getSession();
+      const accessToken = data.session?.access_token;
+      if (error || !accessToken) throw new Error("로그인이 필요합니다.");
+      await deleteAccountFn({ data: { accessToken } });
+      await signOut();
+      setWithdrawalDialogOpen(false);
+      setAccountDialogOpen(false);
+    } catch (error) {
+      console.error("[auth] 회원 탈퇴 실패", error);
+      setWithdrawalError(error instanceof Error ? error.message : "회원 탈퇴를 완료하지 못했어요.");
+    } finally {
+      setIsWithdrawing(false);
+    }
+  };
+
+  const handleNameSave = async () => {
+    if (!user || isSavingName) return;
+    const nextName = nameInput.trim();
+    if (!nextName) {
+      setNameSaveError("이름을 입력해주세요.");
+      return;
+    }
+
+    setIsSavingName(true);
+    setNameSaveError(null);
+    const { error } = await supabase
+      .from("profiles")
+      .update({ username: nextName })
+      .eq("id", user.id);
+
+    if (error) {
+      console.error("[profile] 이름 저장 실패", error);
+      setNameSaveError("이름을 저장하지 못했어요.");
+      setIsSavingName(false);
+      return;
+    }
+
+    await refreshProfile();
+    setNameInput(nextName);
+    setIsSavingName(false);
+    setAccountDialogOpen(false);
+    toast.success("이름이 변경되었어요.");
   };
   const notificationTabs = [
     { label: "전체" },
@@ -282,31 +359,107 @@ export function AppHeader({
           </DropdownMenuContent>
         </DropdownMenu>
         <Dialog open={accountDialogOpen} onOpenChange={setAccountDialogOpen}>
-          <DialogContent className="w-[520px] max-w-[calc(100vw-32px)] rounded-[20px] border-0 bg-surface p-8">
+          <DialogContent
+            closeClassName="right-5 top-7 flex size-9 items-center justify-center rounded-lg text-ink-muted opacity-100 transition-colors hover:bg-item-hover hover:text-ink focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-focus-soft [&_svg]:size-6"
+            className="w-[520px] max-w-[calc(100vw-32px)] rounded-[20px] border-0 bg-surface p-8"
+          >
             <DialogHeader className="space-y-2 text-left">
-              <DialogTitle className="pr-8 text-[24px] font-bold leading-10 text-ink">
+              <DialogTitle className="pr-8 text-[20px] font-bold leading-7 text-ink">
                 계정 정보
               </DialogTitle>
-              <DialogDescription className="text-[14px] leading-6 text-ink-muted">
-                현재 로그인한 계정 정보를 확인할 수 있어요.
-              </DialogDescription>
             </DialogHeader>
-            <dl className="mt-2 divide-y divide-field-border rounded-xl border border-field-border bg-background">
-              <div className="grid grid-cols-[112px_1fr] items-center gap-4 px-4 py-4">
-                <dt className="text-[14px] font-medium text-ink-muted">이름</dt>
-                <dd className="min-w-0 truncate text-[15px] text-ink">{displayName}</dd>
+            <dl className="mt-6 grid gap-y-5">
+              <div className="flex flex-col gap-2">
+                <dt className="text-sm font-semibold text-submenu-text">이메일</dt>
+                <dd aria-disabled="true" className="flex h-11 min-w-0 items-center truncate rounded-[12px] border border-field-border bg-field-border/25 px-3.5 text-[15px] text-[#A8B4B0]">{user?.email ?? "-"}</dd>
               </div>
-              <div className="grid grid-cols-[112px_1fr] items-center gap-4 px-4 py-4">
-                <dt className="text-[14px] font-medium text-ink-muted">이메일</dt>
-                <dd className="min-w-0 truncate text-[15px] text-ink">{user?.email ?? "-"}</dd>
+              <div className="flex flex-col gap-2">
+                <dt className="text-sm font-semibold text-submenu-text">로그인 방식</dt>
+                <dd aria-disabled="true" className="flex h-11 items-center rounded-[12px] border border-field-border bg-field-border/25 px-3.5 text-[15px] text-[#A8B4B0]">{loginProvider}</dd>
               </div>
-              <div className="grid grid-cols-[112px_1fr] items-center gap-4 px-4 py-4">
-                <dt className="text-[14px] font-medium text-ink-muted">로그인 방식</dt>
-                <dd className="text-[15px] text-ink">{loginProvider}</dd>
+              <div className="flex flex-col gap-2">
+                <dt className="text-sm font-semibold text-submenu-text">이름</dt>
+                <dd className="flex min-w-0 items-center gap-3">
+                  <input
+                    type="text"
+                    value={nameInput}
+                    maxLength={50}
+                    aria-label="이름"
+                    onChange={(event) => {
+                      setNameInput(event.target.value);
+                      setNameSaveError(null);
+                    }}
+                    className="h-11 min-w-0 flex-1 rounded-[12px] border border-field-border bg-surface px-3.5 text-[15px] text-ink outline-none transition-colors placeholder:text-guide-text focus:border-brand focus:ring-[3.2px] focus:ring-focus-soft"
+                  />
+                  <button
+                    type="button"
+                    disabled={isSavingName || !nameInput.trim() || nameInput.trim() === accountName}
+                    onClick={() => void handleNameSave()}
+                    className="h-11 shrink-0 rounded-[12px] border-0 bg-brand px-5 text-[15px] font-semibold text-brand-foreground shadow-none transition-colors hover:bg-brand/88 active:bg-brand-pressed disabled:cursor-not-allowed disabled:bg-brand-disabled disabled:text-brand-foreground disabled:opacity-100"
+                  >
+                    {isSavingName ? "저장 중..." : "변경"}
+                  </button>
+                  {nameSaveError ? (
+                    <p role="alert" className="mt-1 text-[13px] leading-5 text-destructive">
+                      {nameSaveError}
+                    </p>
+                  ) : null}
+                </dd>
               </div>
             </dl>
+            <div className="-mx-8 mt-7 border-t border-field-border px-8 pt-5">
+              <button
+                type="button"
+                onClick={() => {
+                  setWithdrawalError(null);
+                  setAccountDialogOpen(false);
+                  setWithdrawalDialogOpen(true);
+                }}
+                className="text-[14px] font-medium text-ink-muted underline underline-offset-2 transition-colors hover:text-ink focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-focus-soft"
+              >
+                회원 탈퇴
+              </button>
+              <p className="mt-3 text-[14px] leading-5 text-ink">
+                탈퇴하면 SSIAT 계정과 저장한 지원사업, 캘린더 일정, 알림 등 서비스 정보가 삭제되며 복구할 수 없어요.
+              </p>
+            </div>
           </DialogContent>
         </Dialog>
+        <AlertDialog open={withdrawalDialogOpen} onOpenChange={setWithdrawalDialogOpen}>
+          <AlertDialogContent className="w-[520px] max-w-[calc(100vw-32px)] rounded-[20px] border-0 bg-surface p-8">
+            <AlertDialogHeader className="space-y-2 text-left">
+              <AlertDialogTitle className="pr-8 text-[20px] font-bold leading-7 text-ink">
+                회원 탈퇴를 진행할까요?
+              </AlertDialogTitle>
+              <AlertDialogDescription className="text-[16px] leading-6 text-ink-muted">
+                탈퇴 후에는 계정을 되돌릴 수 없어요. 저장한 지원사업과 일정도 더 이상 확인할 수 없습니다.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            {withdrawalError ? (
+              <p role="alert" className="text-[13px] leading-5 text-destructive">
+                {withdrawalError}
+              </p>
+            ) : null}
+            <AlertDialogFooter className="mt-2 flex-row justify-end gap-2 sm:space-x-0">
+              <AlertDialogCancel
+                disabled={isWithdrawing}
+                className="mt-0 h-11 rounded-[12px] border-0 bg-secondary-btn px-5 text-[15px] font-semibold text-secondary-btn-text shadow-none hover:bg-secondary-btn-hover hover:text-secondary-btn-text-hover focus-visible:ring-1 focus-visible:ring-focus-soft"
+              >
+                취소
+              </AlertDialogCancel>
+              <AlertDialogAction
+                disabled={isWithdrawing}
+                onClick={(event) => {
+                  event.preventDefault();
+                  void handleAccountDeletion();
+                }}
+                className="h-11 rounded-[12px] border-0 bg-[#E95152] px-5 text-[15px] font-semibold text-white shadow-none hover:bg-[#E95152]/90 focus-visible:ring-1 focus-visible:ring-focus-soft"
+              >
+                {isWithdrawing ? "처리 중..." : "회원 탈퇴"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
         {notificationsOpen ? (
           <aside
             data-notification-panel

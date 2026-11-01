@@ -1469,8 +1469,9 @@ function CalendarPage() {
       return;
     }
 
-    const isNewManualTask =
-      editingEventId === null && selectedProgram === null && !eventEndDate;
+    // 모든 신규 일정은 calendar-task-create로 저장합니다. 지원사업 연결과
+    // 기간 여부는 요청을 건너뛸 이유가 아니며, 연결하지 않으면 null을 보냅니다.
+    const isNewManualTask = editingEventId === null;
     if (isNewManualTask) {
       setIsSavingEvent(true);
       setSaveError(null);
@@ -1480,7 +1481,7 @@ function CalendarPage() {
             data: {
               title,
               date: eventDate,
-              saved_notice_id: null,
+              saved_notice_id: selectedProgram?.saved_notice_id ?? null,
               accessToken,
             },
           }),
