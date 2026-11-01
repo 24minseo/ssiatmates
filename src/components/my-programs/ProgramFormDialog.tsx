@@ -14,12 +14,17 @@ import type {
   Program,
   ProgramInput,
 } from "@/services/mockProgramService";
+import type {
+  ManualNoticeAnalysisOutcome,
+  ManualNoticeAnalysisResult,
+} from "@/services/manualNoticeAnalysisApi";
 
 type ProgramFormDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   program: Program | null;
   saving: boolean;
+  onAnalyze?: (inputUrl: string) => Promise<ManualNoticeAnalysisOutcome>;
   onSubmit: (input: ProgramInput) => void;
 };
 
@@ -36,6 +41,7 @@ const emptyForm: ProgramInput = {
 function toDateInput(value: string) {
   if (!value) return "";
   const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
   return `${date.getFullYear()}-${month}-${day}`;
@@ -46,18 +52,23 @@ export function ProgramFormDialog({
   onOpenChange,
   program,
   saving,
+  onAnalyze,
   onSubmit,
 }: ProgramFormDialogProps) {
   const [form, setForm] = useState<ProgramInput>(emptyForm);
   const [error, setError] = useState<string | null>(null);
   const [step, setStep] = useState(1);
   const [sourceUrl, setSourceUrl] = useState("");
+  const [analyzing, setAnalyzing] = useState(false);
+  const [analysisResult, setAnalysisResult] = useState<ManualNoticeAnalysisResult | null>(null);
 
   useEffect(() => {
     if (!open) return;
     setError(null);
     setStep(program ? 2 : 1);
     setSourceUrl("");
+    setAnalyzing(false);
+    setAnalysisResult(null);
     setForm(
       program
         ? {
@@ -77,7 +88,7 @@ export function ProgramFormDialog({
     "h-11 rounded-[12px] border-field-border px-3.5 text-[15px] shadow-none placeholder:text-guide-text focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft";
   const canSubmit =
     step === 1
-      ? sourceUrl.trim().length > 0
+      ? sourceUrl.trim().length > 0 && !analyzing
       : form.title.trim().length > 0 && Boolean(form.deadline);
 
   return (
@@ -99,16 +110,56 @@ export function ProgramFormDialog({
             event.preventDefault();
             if (saving) return;
             if (step === 1) {
-              if (!sourceUrl.trim()) {
+              const trimmedUrl = sourceUrl.trim();
+              if (!trimmedUrl) {
                 setError("공고 URL을 입력해주세요.");
                 return;
               }
-              if (!/^https?:\/\//i.test(sourceUrl.trim())) {
+              if (!/^https?:\/\//i.test(trimmedUrl)) {
                 setError("http:// 또는 https://로 시작하는 URL을 입력해주세요.");
                 return;
               }
               setError(null);
-              setStep(2);
+              if (!onAnalyze) {
+                setStep(2);
+                return;
+              }
+              setAnalyzing(true);
+              void onAnalyze(trimmedUrl)
+                .then((result) => {
+                  if (result.status === "stale") return;
+                  setAnalysisResult(result);
+                  const notice = result.notice;
+                  const readText = (value: unknown) =>
+                    typeof value === "string" ? value.trim() : "";
+                  const noticeDeadline = readText(notice.deadline);
+                  const parsedDeadline = noticeDeadline ? toDateInput(noticeDeadline) : "";
+                  setForm({
+                    title: readText(notice.title),
+                    organization: readText(notice.organization),
+                    category: readText(notice.field),
+                    stage: "",
+                    region: readText(notice.region),
+                    status: "not_started",
+                    // 분석 결과에 마감일이 없으면 빈 값으로 두고 사용자가 직접 확인합니다.
+                    deadline: parsedDeadline,
+                  });
+                  setStep(2);
+                })
+                .catch((analysisError: unknown) => {
+                  const requestId =
+                    typeof analysisError === "object" && analysisError !== null &&
+                    "requestId" in analysisError &&
+                    typeof analysisError.requestId === "string"
+                      ? analysisError.requestId
+                      : null;
+                  const message =
+                    analysisError instanceof Error
+                      ? analysisError.message
+                      : "공고 분석에 실패했습니다.";
+                  setError(requestId ? `${message} (요청번호: ${requestId})` : message);
+                })
+                .finally(() => setAnalyzing(false));
               return;
             }
             if (!form.title.trim()) {
@@ -242,11 +293,13 @@ export function ProgramFormDialog({
             ) : null}
             <Button
               type="submit"
-              disabled={saving || !canSubmit}
+              disabled={saving || analyzing || !canSubmit}
               className="h-11 rounded-[12px] bg-brand px-5 text-[15px] font-semibold text-brand-foreground shadow-none hover:bg-brand/88 active:bg-brand-pressed disabled:bg-brand-disabled disabled:opacity-100"
             >
               {step === 1
-                ? "다음"
+                ? analyzing
+                  ? "분석 중…"
+                  : "분석"
                 : saving
                   ? "저장 중…"
                   : program

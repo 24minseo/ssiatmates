@@ -15,6 +15,16 @@ import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointer
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -112,7 +122,7 @@ type CalendarEvent = {
 
 const EVENT_COLORS = [
   { label: "초록", value: "#1F8064", dotColor: "#83C9AF" },
-  { label: "빨강", value: "var(--deadline)", dotColor: "#E78B94" },
+  { label: "빨강", value: "#E54740", dotColor: "#E78B94" },
   { label: "파랑", value: "#3568B8", dotColor: "#8BADE4" },
   { label: "보라", value: "#7150A8", dotColor: "#A98BD3" },
   { label: "회색", value: "", dotColor: "#D7E5E0" },
@@ -219,6 +229,10 @@ function getSoftEventColor(color?: string, alpha = "12") {
     return alpha === "20"
       ? "color-mix(in srgb, var(--deadline-surface) 82%, var(--deadline) 18%)"
       : "var(--deadline-surface)";
+  }
+  if (color?.startsWith("oklch(")) {
+    const percentage = alpha === "20" ? 12 : 7;
+    return `color-mix(in srgb, ${color} ${percentage}%, transparent)`;
   }
   return color ? `${color}${alpha}` : undefined;
 }
@@ -907,8 +921,10 @@ function CalendarPage() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [view, setView] = useState<CalendarView>("month");
   const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const eventsRequestRef = useRef<Promise<void> | null>(null);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [editingEventId, setEditingEventId] = useState<number | null>(null);
   const [selectedDayEvents, setSelectedDayEvents] = useState<{ date: string; events: CalendarEvent[] } | null>(null);
   const [eventTitle, setEventTitle] = useState("");
@@ -1001,34 +1017,45 @@ function CalendarPage() {
   };
 
   const loadCalendarEvents = async () => {
+    if (eventsRequestRef.current) return eventsRequestRef.current;
+
+    const request = (async () => {
+      try {
+        setEventsError(null);
+        if (!session) return;
+        const result = await withFreshAccessToken((token) =>
+          getCalendarEventsFn({ data: { accessToken: token } }),
+        );
+        const normalized = result.events.flatMap((raw) => {
+          if (typeof raw !== "object" || raw === null) return [];
+          const value = raw as Record<string, unknown>;
+          if ((typeof value.id !== "string" && typeof value.id !== "number") || typeof value.title !== "string") return [];
+          const start = typeof value.start === "string" ? value.start : null;
+          if (!start) return [];
+          const end = typeof value.end === "string" ? value.end : undefined;
+          return [{
+            id: value.id,
+            title: value.title,
+            date: start.slice(0, 10),
+            ...(end ? { endDate: end.slice(0, 10) } : {}),
+            description: typeof value.description === "string" ? value.description : "",
+            color: typeof value.color === "string" ? value.color : undefined,
+            url: typeof value.url === "string" ? value.url : undefined,
+            allDay: value.allDay === true,
+          } satisfies CalendarEvent];
+        });
+        setEvents(normalized);
+      } catch (error) {
+        console.error("[calendar] 이벤트 조회 실패", error);
+        setEventsError(error instanceof Error ? error.message : "캘린더를 불러오지 못했어요.");
+      }
+    })();
+
+    eventsRequestRef.current = request;
     try {
-      setEventsError(null);
-      if (!session) return;
-      const result = await withFreshAccessToken((token) =>
-        getCalendarEventsFn({ data: { accessToken: token } }),
-      );
-      const normalized = result.events.flatMap((raw) => {
-        if (typeof raw !== "object" || raw === null) return [];
-        const value = raw as Record<string, unknown>;
-        if ((typeof value.id !== "string" && typeof value.id !== "number") || typeof value.title !== "string") return [];
-        const start = typeof value.start === "string" ? value.start : null;
-        if (!start) return [];
-        const end = typeof value.end === "string" ? value.end : undefined;
-        return [{
-          id: value.id,
-          title: value.title,
-          date: start.slice(0, 10),
-          ...(end ? { endDate: end.slice(0, 10) } : {}),
-          description: typeof value.description === "string" ? value.description : "",
-          color: typeof value.color === "string" ? value.color : undefined,
-          url: typeof value.url === "string" ? value.url : undefined,
-          allDay: value.allDay === true,
-        } satisfies CalendarEvent];
-      });
-      setEvents(normalized);
-    } catch (error) {
-      console.error("[calendar] 이벤트 조회 실패", error);
-      setEventsError(error instanceof Error ? error.message : "캘린더를 불러오지 못했어요.");
+      await request;
+    } finally {
+      if (eventsRequestRef.current === request) eventsRequestRef.current = null;
     }
   };
 
@@ -1263,7 +1290,12 @@ function CalendarPage() {
         accessToken: latestSession.access_token,
       }});
       setSelectedEvent(null);
-      await loadCalendarEvents();
+      setDeleteConfirmOpen(false);
+      setEvents((current) => current.filter((event) => event.id !== selectedEvent.id));
+      // 삭제 성공을 기다린 뒤 전체 목록을 다시 받아오면 n8n 조회 지연이
+      // UI에 그대로 노출됩니다. 로컬 목록은 즉시 반영하고 서버 재조회는
+      // 백그라운드에서 진행합니다.
+      void loadCalendarEvents();
     } catch (error) {
       setEventsError(error instanceof Error ? error.message : "일정을 삭제하지 못했어요.");
     } finally {
@@ -1482,11 +1514,11 @@ function CalendarPage() {
               title,
               date: eventDate,
               saved_notice_id: selectedProgram?.saved_notice_id ?? null,
+              color: eventColor || "#6B7280",
               accessToken,
             },
           }),
         );
-        await loadCalendarEvents();
       } catch (error) {
         console.error("[calendar] 직접 할 일 저장 실패", error);
         setSaveError(error instanceof Error ? error.message : "할 일을 저장하지 못했어요.");
@@ -1515,7 +1547,6 @@ function CalendarPage() {
             accessToken,
           }});
         });
-        await loadCalendarEvents();
       } catch (error) {
         setSaveError(error instanceof Error ? error.message : "일정을 수정하지 못했어요.");
         return;
@@ -1527,7 +1558,7 @@ function CalendarPage() {
     const nextEvent: CalendarEvent = {
       id: editingEventId ?? Date.now(),
       title,
-      color: isNewManualTask ? "#6B7280" : eventColor,
+      color: eventColor,
       date: eventDate,
       ...(eventEndDate && eventEndDate !== eventDate ? { endDate: eventEndDate } : {}),
       description: eventDescription.trim(),
@@ -1549,6 +1580,10 @@ function CalendarPage() {
           calendarEvent.id === editingEventId ? nextEvent : calendarEvent,
         );
       });
+    } else {
+      // 신규 일정도 임시 ID로 먼저 화면에 반영해 저장 완료를 즉시 보여줍니다.
+      // 실제 ID와 서버 상태는 아래 백그라운드 재조회로 동기화됩니다.
+      setEvents((current) => [...current, nextEvent]);
     }
     const [eventYear, eventMonth] = eventDate.split("-").map(Number);
     if (
@@ -1564,6 +1599,8 @@ function CalendarPage() {
     setSelectedDate(eventDate);
     setEditingEventId(null);
     setIsAddOpen(false);
+    // n8n calendar-events 응답을 기다리지 않고 모달을 닫습니다.
+    void loadCalendarEvents();
   };
 
 
@@ -2914,7 +2951,7 @@ function CalendarPage() {
               variant="ghost"
               size="icon"
               aria-label="일정 삭제"
-              onClick={deleteSelectedEvent}
+              onClick={() => setDeleteConfirmOpen(true)}
               className="group size-9 rounded-lg text-icon-muted transition-colors hover:bg-item-hover hover:text-ink"
             >
               <span
@@ -3008,6 +3045,30 @@ function CalendarPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <AlertDialogContent className="w-[calc(100vw-32px)] max-w-[420px] rounded-[20px] border-0 bg-surface p-8">
+          <AlertDialogHeader className="space-y-2 text-left">
+            <AlertDialogTitle className="pr-8 text-[20px] font-bold leading-7 text-ink">
+              일정을 삭제할까요?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-[14px] leading-6 text-ink-muted">
+              삭제한 일정은 복구할 수 없어요.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-5 gap-2 sm:justify-end">
+            <AlertDialogCancel className="h-11 rounded-[12px] border-0 bg-secondary-btn px-5 text-[15px] font-semibold text-secondary-btn-text hover:bg-secondary-btn-hover">
+              취소
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="h-11 rounded-[12px] border-0 bg-brand px-5 text-[15px] font-semibold text-brand-foreground hover:bg-brand/88"
+              onClick={() => void deleteSelectedEvent()}
+            >
+              삭제
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </section>
   );
 }

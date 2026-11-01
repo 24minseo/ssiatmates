@@ -4,6 +4,7 @@ export type CalendarTaskCreateInput = {
   title: string;
   date: string;
   saved_notice_id: string | null;
+  color: string;
   accessToken: string;
 };
 
@@ -20,6 +21,8 @@ function validateCalendarTaskInput(input: unknown): CalendarTaskCreateInput {
     !/^\d{4}-\d{2}-\d{2}$/.test(value["date"]) ||
     !(value["saved_notice_id"] === null ||
       (typeof value["saved_notice_id"] === "string" && value["saved_notice_id"].trim())) ||
+    typeof value["color"] !== "string" ||
+    !value["color"].trim() ||
     typeof value["accessToken"] !== "string" ||
     !value["accessToken"].trim()
   ) {
@@ -31,6 +34,7 @@ function validateCalendarTaskInput(input: unknown): CalendarTaskCreateInput {
     date: value["date"],
     saved_notice_id:
       typeof value["saved_notice_id"] === "string" ? value["saved_notice_id"].trim() : null,
+    color: value["color"],
     accessToken: value["accessToken"],
   };
 }
@@ -70,6 +74,7 @@ export const createCalendarTask = createServerFn({ method: "POST" })
         title: data.title,
         date: data.date,
         saved_notice_id: data.saved_notice_id,
+        color: data.color,
       }),
     });
 

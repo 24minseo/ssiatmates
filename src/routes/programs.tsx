@@ -31,6 +31,7 @@ import { getSupportFilterSession, setSupportFilterSession } from "@/lib/supportF
 import { applySavedStates, savedNoticesApi } from "@/services/savedNoticesApi";
 import { createPreferenceTags } from "@/services/preferenceTags";
 import { programService, type Program, type ProgramInput } from "@/services/programRepository";
+import { createManualNoticeAnalysisApi } from "@/services/manualNoticeAnalysisApi";
 import { formatProgramRegion } from "@/lib/programRegion";
 import { SquareAlertIcon } from "@/components/ui/square-alert-icon";
 
@@ -380,7 +381,13 @@ function ProgramsPage() {
   const [reportTarget, setReportTarget] = useState<MatchedProgram | null>(null);
   const [manualFormOpen, setManualFormOpen] = useState(false);
   const [manualSaving, setManualSaving] = useState(false);
+  const manualAnalysis = useMemo(() => createManualNoticeAnalysisApi(supabase), []);
   const matchedProgramsRef = useRef<MatchedProgram[]>([]);
+
+  useEffect(() => {
+    manualAnalysis.clear();
+    return () => manualAnalysis.clear();
+  }, [manualAnalysis, session?.user.id]);
 
   useEffect(() => {
     let cancelled = false;
@@ -1607,9 +1614,13 @@ function ProgramsPage() {
         />
         <ProgramFormDialog
           open={manualFormOpen}
-          onOpenChange={setManualFormOpen}
+          onOpenChange={(open) => {
+            setManualFormOpen(open);
+            if (!open) manualAnalysis.clear();
+          }}
           program={null}
           saving={manualSaving}
+          onAnalyze={(inputUrl) => manualAnalysis.analyze({ url: inputUrl })}
           onSubmit={handleManualSubmit}
         />
         {tabTotalCount > 0 && <Pagination page={page} pageCount={pageCount} onChange={setPage} />}
