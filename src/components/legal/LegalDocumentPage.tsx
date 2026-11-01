@@ -1,5 +1,3 @@
-import { ArrowLeft } from "lucide-react";
-
 type LegalDocumentKind = "terms" | "privacy";
 
 type LegalSection = {
@@ -126,11 +124,9 @@ const DOCUMENTS: Record<LegalDocumentKind, { title: string; sections: LegalSecti
 
 export function LegalDocumentContent({
   kind,
-  showBackLink = false,
   compactTitle = false,
 }: {
   kind: LegalDocumentKind;
-  showBackLink?: boolean;
   compactTitle?: boolean;
 }) {
   const document = DOCUMENTS[kind];
@@ -141,19 +137,6 @@ export function LegalDocumentContent({
         className={`relative flex items-center justify-between ${compactTitle ? "" : "border-b border-field-border pb-5"}`}
       >
         <div>
-          {showBackLink ? (
-            <button
-              type="button"
-              aria-label="이전 페이지로 돌아가기"
-              onClick={() => {
-                if (window.history.length > 1) window.history.back();
-                else window.location.href = "/signup";
-              }}
-              className="absolute -left-11 top-2 inline-flex size-8 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-item-hover hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-            >
-              <ArrowLeft aria-hidden="true" className="size-5" />
-            </button>
-          ) : null}
           <h1
             className={`font-bold tracking-tight text-ink ${compactTitle ? "text-[24px] leading-10" : "text-[30px]"}`}
           >
@@ -203,7 +186,7 @@ export function LegalDocumentContent({
 export function LegalDocumentPage({ kind }: { kind: LegalDocumentKind }) {
   return (
     <main className="mx-auto w-full max-w-[900px] px-8 pb-16 pt-10">
-      <LegalDocumentContent kind={kind} showBackLink />
+      <LegalDocumentContent kind={kind} />
     </main>
   );
 }
