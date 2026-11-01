@@ -1953,6 +1953,27 @@ function CalendarPage() {
       )}
 
       <Dialog
+        open={Boolean(eventsError)}
+        onOpenChange={(open) => {
+          if (!open) setEventsError(null);
+        }}
+      >
+        <DialogContent
+          closeClassName="right-5 top-5 flex size-9 items-center justify-center rounded-lg text-ink-muted opacity-100 transition-colors hover:bg-item-hover hover:text-ink focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-focus-soft [&_svg]:size-6"
+          className="w-[calc(100vw-32px)] max-w-[560px] overflow-hidden rounded-[20px] border-0 bg-surface"
+        >
+          <DialogHeader className="min-w-0 w-full max-w-full">
+            <DialogTitle className="mb-4 pr-8 text-[20px] font-bold leading-7 text-ink">
+              캘린더를 불러오지 못했어요.
+            </DialogTitle>
+            <DialogDescription role="alert" className="whitespace-pre-wrap text-[14px] leading-6 text-ink-muted">
+              {eventsError}
+            </DialogDescription>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
         open={isAddOpen}
         onOpenChange={(open) => {
           setIsAddOpen(open);

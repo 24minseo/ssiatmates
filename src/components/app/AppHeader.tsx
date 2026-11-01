@@ -271,14 +271,6 @@ export function AppHeader({
             >
               계정 정보
             </DropdownMenuItem>
-            <DropdownMenuItem
-              className="cursor-pointer px-[10px] text-ink hover:bg-dropdown-hover data-[highlighted]:bg-dropdown-hover focus:bg-dropdown-hover focus:text-ink"
-              onSelect={() => {
-                window.dispatchEvent(new CustomEvent("open-matching-profile"));
-              }}
-            >
-              프로필 설정
-            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               className="cursor-pointer px-[10px] text-ink hover:bg-dropdown-hover data-[highlighted]:bg-dropdown-hover focus:bg-dropdown-hover focus:text-ink"
