@@ -32,6 +32,10 @@ import { applySavedStates, savedNoticesApi } from "@/services/savedNoticesApi";
 import { createPreferenceTags } from "@/services/preferenceTags";
 import { programService, type Program, type ProgramInput } from "@/services/programRepository";
 import { createManualNoticeAnalysisApi } from "@/services/manualNoticeAnalysisApi";
+import { createManualNoticeConfirmApi } from "@/services/manualNoticeConfirmApi";
+import { createManualNoticeDeleteApi } from "@/services/manualNoticeDeleteApi";
+import { createManualNoticeUpdateApi } from "@/services/manualNoticeUpdateApi";
+import { createManualNoticeViewApi } from "@/services/manualNoticeViewApi";
 import { formatProgramRegion } from "@/lib/programRegion";
 import { SquareAlertIcon } from "@/components/ui/square-alert-icon";
 
@@ -152,8 +156,9 @@ function toManualMatchedProgram(program: Program): MatchedProgram {
     categories,
     dDay: program.deadlineLabel ?? "-",
     deadline: program.deadlineLabel ?? "일정 확인 필요",
+    deadlineDate: program.deadline,
     daysUntilDeadline: null,
-    matchLabel: "",
+    matchLabel: "리포트 보기 〉",
     type: "default",
   };
 }
@@ -380,14 +385,29 @@ function ProgramsPage() {
   const [savingNoticeIds, setSavingNoticeIds] = useState<Set<string>>(new Set());
   const [reportTarget, setReportTarget] = useState<MatchedProgram | null>(null);
   const [manualFormOpen, setManualFormOpen] = useState(false);
+  const [manualEditTarget, setManualEditTarget] = useState<MatchedProgram | null>(null);
   const [manualSaving, setManualSaving] = useState(false);
   const manualAnalysis = useMemo(() => createManualNoticeAnalysisApi(supabase), []);
+  const manualConfirm = useMemo(() => createManualNoticeConfirmApi(supabase), []);
+  const manualDelete = useMemo(() => createManualNoticeDeleteApi(supabase), []);
+  const manualUpdate = useMemo(() => createManualNoticeUpdateApi(supabase), []);
+  const manualView = useMemo(() => createManualNoticeViewApi(supabase), []);
   const matchedProgramsRef = useRef<MatchedProgram[]>([]);
 
   useEffect(() => {
     manualAnalysis.clear();
-    return () => manualAnalysis.clear();
-  }, [manualAnalysis, session?.user.id]);
+    manualConfirm.clear();
+    manualDelete.clear();
+    manualUpdate.clear();
+    manualView.clear();
+    return () => {
+      manualAnalysis.clear();
+      manualConfirm.clear();
+      manualDelete.clear();
+      manualUpdate.clear();
+      manualView.clear();
+    };
+  }, [manualAnalysis, manualConfirm, manualDelete, manualUpdate, manualView, session?.user.id]);
 
   useEffect(() => {
     let cancelled = false;
@@ -397,13 +417,11 @@ function ProgramsPage() {
         cancelled = true;
       };
     }
-    void programService.list().then((programs) => {
-      if (!cancelled) {
-        setManualPrograms(
-          programs.filter((program) => program.source === "manual").map(toManualMatchedProgram),
-        );
+    void manualView.list().then((result) => {
+      if (!cancelled && result.status !== "stale") {
+        setManualPrograms(result.items.map((item: any) => toManualMatchedProgram({ id: item.manual_notice_id, title: item.title || "제목 없음", organization: item.organization || "기관명 미상", category: item.field || "", region: item.region || "", deadlineLabel: item.deadline_label || item.deadline || null, url: item.url || "" } as Program)));
       }
-    });
+    }).catch(() => { if (!cancelled) setManualPrograms([]); });
     return () => {
       cancelled = true;
     };
@@ -970,6 +988,7 @@ function ProgramsPage() {
   }, [search]);
 
   const results = resultsByTab[tab];
+  const displayResults = results;
   const currentLoading = tab === "review" ? isLoadingReview : isLoadingMatches;
   const currentError = tab === "review" ? reviewError : matchError;
   const tabTotalCount =
@@ -986,18 +1005,95 @@ function ProgramsPage() {
     });
   };
 
-  async function handleManualSubmit(input: ProgramInput) {
+  async function handleManualSubmit(input: ProgramInput, analysisResult?: { manual_notice_id: string } | null) {
     setManualSaving(true);
     try {
-      const created = await programService.create(input);
-      setManualPrograms((current) => [toManualMatchedProgram(created), ...current]);
+      if (!analysisResult?.manual_notice_id) throw new Error("먼저 공고 분석을 완료해주세요.");
+      const confirmed = await manualConfirm.confirm(analysisResult.manual_notice_id);
+      if (confirmed.status === "stale") return;
+      setManualPrograms((current) => current.some((item) => item.id === confirmed.manual_notice_id)
+        ? current
+        : [{
+            id: confirmed.manual_notice_id,
+            preference_matched: false,
+            is_saved: true,
+            organization: input.organization,
+            title: input.title,
+            categories: [input.category, input.region].filter(Boolean),
+            dDay: input.deadline || "-",
+            deadline: input.deadline || "일정 확인 필요",
+            deadlineDate: input.deadline,
+            daysUntilDeadline: null,
+            matchLabel: "리포트 보기 〉",
+            type: "default",
+          }, ...current]);
       setManualFormOpen(false);
-      toast.success("수동 공고를 추가했습니다.");
+      toast.success("수동 공고를 추가하고 저장했습니다.");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "수동 공고를 추가하지 못했습니다.");
     } finally {
       setManualSaving(false);
     }
+  }
+
+  async function handleManualDelete(program: MatchedProgram) {
+    if (!window.confirm("이 수동공고와 저장된 레포트를 삭제할까요?")) return;
+    try {
+      const result = await manualDelete.remove(program.id);
+      if (result.status === "stale") return;
+      setManualPrograms((current) => current.filter((item) => item.id !== program.id));
+      toast.success("공고를 삭제했습니다.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "공고를 삭제하지 못했습니다.");
+    }
+  }
+
+  async function handleManualUpdate(
+    manualNoticeId: string,
+    changes: Record<string, string | null>,
+  ) {
+    setManualSaving(true);
+    try {
+      const result = await manualUpdate.update(manualNoticeId, changes);
+      if (typeof result === "object" && result !== null && "status" in result && result.status === "stale") {
+        return;
+      }
+      setManualPrograms((current) =>
+        current.map((item) => {
+          if (item.id !== manualNoticeId) return item;
+          const deadlineDate = Object.hasOwn(changes, "deadline")
+            ? changes.deadline
+            : item.deadlineDate ?? null;
+          const deadlineLabel = formatDeadline(deadlineDate) || "일정 확인 필요";
+          const field = Object.hasOwn(changes, "field") ? changes.field : item.categories[0] ?? null;
+          const region = Object.hasOwn(changes, "region") ? changes.region : item.categories[1] ?? null;
+          return {
+            ...item,
+            title: Object.hasOwn(changes, "title") && changes.title ? changes.title : item.title,
+            organization: Object.hasOwn(changes, "organization")
+              ? changes.organization ?? ""
+              : item.organization,
+            categories: [field, region].filter((value): value is string => Boolean(value)),
+            dDay: deadlineDate ? item.dDay : "-",
+            deadline: deadlineLabel,
+            deadlineDate,
+          };
+        }),
+      );
+      setManualEditTarget(null);
+      setManualFormOpen(false);
+      toast.success("공고를 수정했습니다.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "공고를 수정하지 못했습니다.");
+    } finally {
+      setManualSaving(false);
+    }
+  }
+
+  function handleManualEdit(program: MatchedProgram) {
+    if (program.id === MANUAL_VARIANT_PREVIEW.id) return;
+    setManualEditTarget(program);
+    setManualFormOpen(true);
   }
 
   function handleClearPreferenceSearch() {
@@ -1368,9 +1464,7 @@ function ProgramsPage() {
           </div>
         </div>
 
-        <div
-          className={`${tab === "manual" || tab === "review" || currentError || (!currentLoading && !currentError && results.length === 0) ? "mt-[18px]" : "mt-1"} overflow-hidden rounded-sm`}
-        >
+        <div className="mt-1 overflow-hidden rounded-sm">
           {currentLoading ? (
             <div
               className="flex min-h-[240px] items-center justify-center bg-white px-8 py-16 text-ink-muted"
@@ -1402,13 +1496,16 @@ function ProgramsPage() {
                 다시 시도
               </button>
             </div>
-          ) : results.length ? (
-            results.map((program) => (
+          ) : displayResults.length ? (
+            displayResults.map((program) => (
               <ProgramResultRow
                 key={program.id}
                 program={program}
+                variant={tab === "manual" ? "manual" : "default"}
                 onReportClick={setReportTarget}
                 onFavoriteToggle={handleFavoriteToggle}
+                onManualEdit={tab === "manual" ? handleManualEdit : undefined}
+                onManualDelete={tab === "manual" ? handleManualDelete : undefined}
                 favoriteSaving={savingNoticeIds.has(program.id)}
               />
             ))
@@ -1616,12 +1713,18 @@ function ProgramsPage() {
           open={manualFormOpen}
           onOpenChange={(open) => {
             setManualFormOpen(open);
-            if (!open) manualAnalysis.clear();
+            if (!open) {
+              setManualEditTarget(null);
+              manualAnalysis.clear();
+              manualConfirm.clear();
+            }
           }}
           program={null}
+          manualProgram={manualEditTarget}
           saving={manualSaving}
           onAnalyze={(inputUrl) => manualAnalysis.analyze({ url: inputUrl })}
           onSubmit={handleManualSubmit}
+          onUpdate={handleManualUpdate}
         />
         {tabTotalCount > 0 && <Pagination page={page} pageCount={pageCount} onChange={setPage} />}
       </div>

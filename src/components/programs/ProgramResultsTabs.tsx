@@ -35,8 +35,7 @@ export function ProgramResultsTabs({ selected, counts, onChange }: ProgramResult
   }, [selected, counts.recommended, counts.review, counts.manual]);
 
   return (
-    <div ref={rootRef} className="relative h-[48px] w-[1200px] shrink-0" role="tablist" aria-label="지원사업 결과">
-      <div aria-hidden className="pointer-events-none absolute left-0 top-[47px] h-px w-[1208px] bg-field-border" />
+    <div ref={rootRef} className="relative h-[48px] w-full min-w-0 shrink-0" role="tablist" aria-label="지원사업 결과">
       <div className="absolute left-[-12px] top-0 flex items-start gap-[10px]">
         {tabs.map((tab) => {
           const isSelected = selected === tab.value;

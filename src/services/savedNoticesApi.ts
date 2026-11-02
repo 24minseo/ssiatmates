@@ -9,6 +9,8 @@ export type SavedNoticeState = {
 
 export type SavedNotice = {
   notice_id: string;
+  source_kind?: "matched" | "manual";
+  manual_notice_id?: string;
   title: string;
   organization: string;
   url: string | null;
@@ -63,17 +65,24 @@ export function createSavedNoticesApi(
       throw new Error("저장 여부는 true/false여야 합니다.");
     }
 
-    const { data, error } = await client.rpc("set_my_notice_saved_v1", {
-      p_notice_id: noticeId,
-      p_saved: isSaved,
-    });
+    const isManual = noticeId.startsWith("manual:");
+    const id = isManual ? noticeId.slice("manual:".length) : noticeId;
+    const { data, error } = await client.rpc(
+      isManual ? "set_my_manual_notice_saved_v1" : "set_my_notice_saved_v1",
+      isManual
+        ? { p_manual_notice_id: id, p_saved: isSaved }
+        : { p_notice_id: id, p_saved: isSaved },
+    );
     if (error) throw error;
     if (!data) throw new Error("저장 상태 응답이 없습니다.");
-    return data as SavedNoticeMutationResponse;
+    const response = data as SavedNoticeMutationResponse & { manual_notice_id?: string };
+    return isManual
+      ? { notice_id: noticeId, is_saved: response.is_saved }
+      : response;
   }
 
   async function getMySupportNotices(): Promise<SavedNoticeListResponse> {
-    const { data, error } = await client.rpc("get_my_saved_notices_v1", {});
+    const { data, error } = await client.rpc("get_my_support_notices_with_manual_v1", {});
     if (error) throw error;
     const response = (data ?? {}) as Partial<SavedNoticeListResponse>;
     return {

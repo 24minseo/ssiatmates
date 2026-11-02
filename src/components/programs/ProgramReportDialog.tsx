@@ -5,6 +5,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { AsyncErrorState } from "@/components/AsyncErrorState";
 import { ArrowUpRight, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -767,26 +768,7 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle 
                 리포트를 불러오는 중이에요…
               </div>
             ) : error ? (
-              <div className="px-6 py-16 text-center">
-                <div className="relative mx-auto mb-2 flex h-[180px] w-[180px] items-center justify-center">
-                  <img
-                    src="/assets/empty/error.svg"
-                    alt=""
-                    aria-hidden="true"
-                    draggable={false}
-                    className="block w-[132px] saturate-[0.1]"
-                  />
-                </div>
-                <p className="text-[18px] font-semibold text-ink">일시적으로 불러오지 못했어요.</p>
-                <p className="mt-1 text-[15px] text-ink-muted">{error}</p>
-                <button
-                  type="button"
-                  onClick={() => window.location.reload()}
-                  className="mt-5 inline-flex h-10 items-center justify-center rounded-[10px] bg-[#F2F7F4] px-4 text-[14px] font-semibold text-brand transition-colors hover:bg-[#EAF1EC]"
-                >
-                  다시 시도
-                </button>
-              </div>
+              <AsyncErrorState message={error} onRetry={() => window.location.reload()} />
             ) : currentReport?.status !== "ready" ? (
               <div className="px-6 py-16 text-center">
                 <p className="text-[18px] font-semibold text-ink">아직 리포트가 없어요</p>

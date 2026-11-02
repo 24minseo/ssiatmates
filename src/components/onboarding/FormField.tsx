@@ -42,6 +42,7 @@ export function FormField({
   htmlFor,
   labelRight,
   labelVariant = "default",
+  labelClassName,
   error,
   children,
 }: {
@@ -50,6 +51,7 @@ export function FormField({
   htmlFor?: string | undefined;
   labelRight?: ReactNode | undefined;
   labelVariant?: FieldLabelVariant | undefined;
+  labelClassName?: string | undefined;
 
   error?: string | undefined;
   children: ReactNode;
@@ -57,7 +59,7 @@ export function FormField({
   return (
     <div className="flex flex-col gap-1.5">
       <div className="flex min-h-6 items-center justify-between gap-3">
-        <FieldLabel htmlFor={htmlFor} required={required} variant={labelVariant}>
+        <FieldLabel htmlFor={htmlFor} required={required} variant={labelVariant} className={labelClassName}>
           {label}
         </FieldLabel>
         {labelRight}

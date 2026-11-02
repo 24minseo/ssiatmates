@@ -8,6 +8,7 @@ export type MatchedProgram = {
   categories: string[];
   dDay: string;
   deadline: string;
+  deadlineDate?: string | null;
   daysUntilDeadline?: number | null;
   matchLabel?: string;
   changeReason?: string;
