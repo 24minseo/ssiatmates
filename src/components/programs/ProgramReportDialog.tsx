@@ -365,8 +365,21 @@ function ReportItemChildren({ items }: { items: ReportItem[] }) {
   ) : null;
 }
 
-function structuredNodeToReportItem(node: StructuredNode): ReportItem {
-  return { label: node.label, detail: node.value, children: node.children.map(structuredNodeToReportItem) };
+function structuredNodeLines(node: StructuredNode, depth = 0): string[] {
+  const label = node.label?.trim();
+  const value = node.value?.trim();
+  const own = label || value ? [`${"  ".repeat(depth)}${label && value ? `${label}: ${value}` : label || value}`] : [];
+  return [...own, ...node.children.flatMap((child) => structuredNodeLines(child, depth + 1))];
+}
+
+function structuredRows(section: StructuredNode): ReportItem[] {
+  return section.children.map((row) => ({
+    label: row.label,
+    detail: [row.value, ...row.children.flatMap((child) => structuredNodeLines(child))]
+      .filter((value): value is string => Boolean(value?.trim()))
+      .join("\n"),
+    children: [],
+  }));
 }
 
 function flattenReportItems(items: ReportItem[]): ReportItem[] {
@@ -751,11 +764,7 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle,
             ? "obligations"
           : Object.entries(sectionLabels).find(([, label]) => label.replace(/\s+/g, "") === (section.label ?? "").replace(/\s+/g, ""))?.[0] ?? `structured-${index}`,
         section: {
-          items: section.children.map((child) => ({
-            label: child.label,
-            detail: child.value,
-            children: child.children.map(structuredNodeToReportItem),
-          })),
+          items: structuredRows(section),
         },
       }));
     }
