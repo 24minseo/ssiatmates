@@ -43,6 +43,12 @@ type ReportChangeEvent = {
   review_required_at_recording?: boolean;
 };
 
+type DisplayChangeEvent = {
+  recorded_at?: string | null;
+  changes?: Array<{ label?: string | null; before?: unknown; after?: unknown }>;
+  time_note?: string | null;
+};
+
 type NoticeReport = {
   status?: "ready" | "report_unavailable" | "not_found" | string;
   notice?: {
@@ -56,6 +62,8 @@ type NoticeReport = {
     sections?: Record<string, ReportSection>;
   } | null;
   change_history?: ReportChangeEvent[];
+  change_display?: DisplayChangeEvent[];
+  additional_links?: Array<{ label?: string | null; url?: string | null }>;
   report_display?: { version?: string; sections?: StructuredNode[] };
   view_version?: string;
 };
@@ -338,7 +346,9 @@ function normalizeReportLabel(label?: string | null) {
 
 function hasReportDetail(item: ReportItem) {
   const detail = formatReportDetail(item.detail ?? "").trim();
-  return detail.length > 0 && detail !== "-";
+  // 구조화 응답은 부모 라벨의 value가 null이고 children에 실제 값이
+  // 들어올 수 있으므로, 자식이 있는 부모 항목을 먼저 보존합니다.
+  return (detail.length > 0 && detail !== "-") || Boolean(item.children?.length);
 }
 
 function ReportItemChildren({ items }: { items: ReportItem[] }) {
@@ -673,7 +683,12 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle,
             console.error("[programs] 맞춤 리포트 조회 실패", rpcError);
             setError(`리포트를 불러오지 못했습니다: ${rpcError.message || "Edge Function 호출 실패"}`);
           } else {
-            setReport((data as NoticeReport | null) ?? null);
+            const nextReport = (data as NoticeReport | null) ?? null;
+            if (nextReport && nextReport.view_version && nextReport.view_version !== "notice-view-2") {
+              setError("최종 레포트 표시 함수를 배포해주세요.");
+            } else {
+              setReport(nextReport);
+            }
             setReportNoticeId(currentNoticeId);
           }
           setLoading(false);
@@ -871,7 +886,19 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle,
                 {groups.map((group) =>
                   group.key === "obligations" ? <ObligationsGroupView key={group.title} section={group.section} /> : <ReportGroupView key={group.title} group={group} />,
                 )}
-                <ChangeHistoryView history={currentReport?.change_history ?? []} />
+                <ChangeHistoryView
+                  history={
+                    currentReport?.change_history ??
+                    (currentReport?.change_display ?? []).map((event) => ({
+                      recorded_at: event.recorded_at,
+                      changed_fields: (event.changes ?? []).map((change) => ({
+                        field: change.label,
+                        old_value: change.before,
+                        new_value: change.after,
+                      })),
+                    }))
+                  }
+                />
               </>
             )}
           </div>
