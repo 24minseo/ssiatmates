@@ -384,6 +384,7 @@ function ProgramsPage() {
   const [excludedError, setExcludedError] = useState<string | null>(null);
   const [savingNoticeIds, setSavingNoticeIds] = useState<Set<string>>(new Set());
   const [reportTarget, setReportTarget] = useState<MatchedProgram | null>(null);
+  const [reportScrollToChanges, setReportScrollToChanges] = useState(false);
   const [manualFormOpen, setManualFormOpen] = useState(false);
   const [manualEditTarget, setManualEditTarget] = useState<MatchedProgram | null>(null);
   const [manualSaving, setManualSaving] = useState(false);
@@ -419,7 +420,7 @@ function ProgramsPage() {
     }
     void manualView.list().then((result) => {
       if (!cancelled && result.status !== "stale") {
-        setManualPrograms(result.items.map((item: any) => toManualMatchedProgram({ id: item.manual_notice_id, title: item.title || "제목 없음", organization: item.organization || "기관명 미상", category: item.field || "", region: item.region || "", deadlineLabel: item.deadline_label || item.deadline || null, url: item.url || "" } as Program)));
+        setManualPrograms(result.items.map((item: any) => toManualMatchedProgram({ id: item.manual_notice_id || item.notice_id, title: item.title || "제목 없음", organization: item.organization || "기관명 미상", category: item.field || "", region: item.region || "", deadlineLabel: item.deadline_label || item.deadline || null, url: item.url || "" } as Program)));
       }
     }).catch(() => { if (!cancelled) setManualPrograms([]); });
     return () => {
@@ -798,13 +799,13 @@ function ProgramsPage() {
           Array.from(uniqueItems.values()),
           savedState.items,
         );
-        setReviewPrograms(preferenceTags.apply(itemsWithSavedState.map(toMatchedProgram)));
-        setReviewTotalCount(
-          responses.reduce(
-            (total, response) => total + (response.total_count ?? response.items.length),
-            0,
-          ),
+        const nextReviewPrograms = preferenceTags.apply(itemsWithSavedState.map(toMatchedProgram));
+        setReviewPrograms(nextReviewPrograms);
+        const serverReviewTotal = responses.reduce(
+          (total, response) => total + (response.total_count ?? response.items.length),
+          0,
         );
+        setReviewTotalCount(serverReviewTotal);
       } catch (error) {
         if (cancelled || reviewRequestRef.current !== requestId) return;
         console.error("[programs] 추가 검토 공고 조회 실패", error);
@@ -974,7 +975,9 @@ function ProgramsPage() {
 
     return {
       recommended: filterAndSort(matchedPrograms),
-      review: filterAndSort(reviewPrograms),
+      // 추가 검토 공고의 선별·정렬·건수는 서버 RPC 결과를 그대로 사용합니다.
+      // 프론트에서 지원분야나 review_reason으로 다시 걸러내지 않습니다.
+      review: reviewPrograms,
       manual: manualResults.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
     };
   }, [manualPrograms, matchedPrograms, page, reviewPrograms, sort, supportCategories]);
@@ -1502,7 +1505,18 @@ function ProgramsPage() {
                 key={program.id}
                 program={program}
                 variant={tab === "manual" ? "manual" : "default"}
-                onReportClick={setReportTarget}
+                onReportClick={(selected) => {
+                  setReportScrollToChanges(false);
+                  setReportTarget(
+                    tab === "manual" && !selected.id.startsWith("manual:")
+                      ? { ...selected, id: `manual:${selected.id}` }
+                      : selected,
+                  );
+                }}
+                onChangeClick={tab === "review" ? (selected) => {
+                  setReportScrollToChanges(true);
+                  setReportTarget(selected);
+                } : undefined}
                 onFavoriteToggle={handleFavoriteToggle}
                 onManualEdit={tab === "manual" ? handleManualEdit : undefined}
                 onManualDelete={tab === "manual" ? handleManualDelete : undefined}
@@ -1704,10 +1718,14 @@ function ProgramsPage() {
         <ProgramReportDialog
           open={Boolean(reportTarget)}
           onOpenChange={(open) => {
-            if (!open) setReportTarget(null);
+            if (!open) {
+              setReportTarget(null);
+              setReportScrollToChanges(false);
+            }
           }}
           noticeId={reportTarget?.id ?? null}
           noticeTitle={reportTarget?.title ?? null}
+          scrollToChanges={reportScrollToChanges}
         />
         <ProgramFormDialog
           open={manualFormOpen}

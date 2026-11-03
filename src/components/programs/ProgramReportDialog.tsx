@@ -67,6 +67,7 @@ type ProgramReportDialogProps = {
   onOpenChange: (open: boolean) => void;
   noticeId: string | null;
   noticeTitle?: string | null;
+  scrollToChanges?: boolean;
 };
 
 const sectionLabels: Record<string, string> = {
@@ -124,7 +125,13 @@ function normalizeReportDisplayText(value: string) {
           textarea.innerHTML = value;
           return textarea.value || value;
         })();
-  return decoded.replace(/\\([\\`*_[\]{}()#!>.-])/g, "$1");
+  return decoded
+    .replace(/<\/?(?:p|div|br|h[1-6])(?:\s+[^<>]*?)?\s*\/?>/gi, "\n")
+    .replace(/<\/?(?:b|strong|em|i|u|span)(?:\s+[^<>]*?)?\s*\/?>/gi, "")
+    .replace(/\\([\\`*_[\]{}()#!>.-])/g, "$1")
+    .replace(/[ \t\u00a0]+/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 }
 
 const changeFieldLabels: Record<string, string> = {
@@ -331,18 +338,33 @@ function hasReportDetail(item: ReportItem) {
 
 function groupItemsByLabel(items: ReportItem[], fallbackLabel: string) {
   const groups = new Map<string, { label: string; items: ReportItem[] }>();
+  const duplicateLabels: Record<string, string> = {
+    대상연령: "나이",
+    "대상 연령": "나이",
+    연령: "나이",
+    창업업력: "창업대상",
+    "창업 업력": "창업대상",
+  };
 
   items.forEach((item, index) => {
-    const label = item.label?.trim() || fallbackLabel;
+    const rawLabel = item.label?.trim() || fallbackLabel;
+    const label = duplicateLabels[rawLabel] ?? rawLabel;
+    const detail = item.detail ?? "";
+    const duplicateHeading = Object.keys(duplicateLabels).find((candidate) =>
+      detail.trim().startsWith(candidate),
+    );
+    const cleanedItem = duplicateHeading
+      ? { ...item, detail: detail.trim().slice(duplicateHeading.length).trim() }
+      : item;
     const key = label.replace(/\s+/g, " ");
     const existing = groups.get(key);
 
     if (existing) {
-      existing.items.push(item);
+      existing.items.push(cleanedItem);
       return;
     }
 
-    groups.set(key || `item-${index}`, { label, items: [item] });
+    groups.set(key || `item-${index}`, { label, items: [cleanedItem] });
   });
 
   return Array.from(groups.values());
@@ -357,9 +379,9 @@ function ReportGroupView({
   itemLabel?: string;
   showItemLabel?: boolean;
 }) {
+  const isMatchingConditions = group.key === "matching_conditions";
   const items = collectItems(group.section).filter(hasReportDetail);
   if (!items.length) return null;
-  const isMatchingConditions = group.key === "matching_conditions";
   const isFlatList = group.key === "benefits" || group.key === "documents";
   const isPreferenceGroup = group.key === "preference";
   const isApplicationGroup = group.key === "application";
@@ -556,12 +578,13 @@ function ObligationsGroupView({ section }: { section: ReportGroup["section"] }) 
   );
 }
 
-export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle }: ProgramReportDialogProps) {
+export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle, scrollToChanges = false }: ProgramReportDialogProps) {
   const { session } = useAuth();
   const [report, setReport] = useState<NoticeReport | null>(null);
   const [reportNoticeId, setReportNoticeId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [rawRpcResponse, setRawRpcResponse] = useState<unknown>(null);
   const [dialogHeight, setDialogHeight] = useState<number | null>(null);
   const dialogHeaderRef = useRef<HTMLDivElement>(null);
   const dialogBodyRef = useRef<HTMLDivElement>(null);
@@ -573,6 +596,7 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle 
       setReportNoticeId(null);
       setLoading(false);
       setError(null);
+      setRawRpcResponse(null);
       setDialogHeight(null);
       return;
     }
@@ -599,9 +623,19 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle 
         setReportNoticeId(null);
       }
       try {
-        const { data, error: rpcError } = await supabase.rpc("get_my_notice_report_v1", {
-          p_notice_id: currentNoticeId,
+        const isManual = currentNoticeId.startsWith("manual:");
+        const reportId = isManual ? currentNoticeId.slice("manual:".length) : currentNoticeId;
+        const { data, error: rpcError } = await supabase.rpc(
+          isManual ? "get_my_manual_notice_v1" : "get_my_notice_report_v1",
+          isManual ? { p_manual_notice_id: reportId } : { p_notice_id: reportId },
+        );
+        console.log("[programs] 리포트 RPC 실제 원본 응답", {
+          rpc: isManual ? "get_my_manual_notice_v1" : "get_my_notice_report_v1",
+          params: isManual ? { p_manual_notice_id: reportId } : { p_notice_id: reportId },
+          data,
+          error: rpcError,
         });
+        setRawRpcResponse({ data, error: rpcError });
 
         if (!cancelled && session?.user.id === currentUserId && noticeId === currentNoticeId) {
           if (rpcError) {
@@ -721,6 +755,14 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle 
     };
   }, [open, reportContentKey]);
 
+  useEffect(() => {
+    if (!open || !scrollToChanges || loading || !currentReport) return;
+    const frame = window.requestAnimationFrame(() => {
+      dialogBodyRef.current?.scrollTo({ top: dialogBodyRef.current.scrollHeight, behavior: "smooth" });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [currentReport, loading, open, scrollToChanges]);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
@@ -784,6 +826,14 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle 
                   ),
                 )}
                 <ChangeHistoryView history={currentReport?.change_history ?? []} />
+                <details className="mt-6 rounded-lg border border-amber-300 bg-amber-50 p-3 text-left">
+                  <summary className="cursor-pointer text-sm font-semibold text-amber-900">
+                    임시: 백엔드 원본 응답 보기
+                  </summary>
+                  <pre className="mt-3 max-h-[360px] overflow-auto whitespace-pre-wrap break-words text-xs leading-5 text-amber-950">
+                    {JSON.stringify(rawRpcResponse, null, 2)}
+                  </pre>
+                </details>
               </>
             )}
           </div>

@@ -14,6 +14,7 @@ type ProgramResultRowProps = {
   program: MatchedProgram;
   variant?: "default" | "manual";
   onReportClick?: (program: MatchedProgram) => void;
+  onChangeClick?: (program: MatchedProgram) => void;
   onFavoriteToggle?: (program: MatchedProgram) => void;
   favoriteSaving?: boolean;
   onManualEdit?: (program: MatchedProgram) => void;
@@ -24,6 +25,7 @@ export function ProgramResultRow({
   program,
   variant = "default",
   onReportClick,
+  onChangeClick,
   onFavoriteToggle,
   favoriteSaving = false,
   onManualEdit,
@@ -42,16 +44,18 @@ export function ProgramResultRow({
 
   const reportAction = program.matchLabel ? (
     onReportClick ? (
-      <button
-        type="button"
-        onClick={() => onReportClick(program)}
-        className="inline-flex shrink-0 self-center -translate-y-1 items-center rounded-[8px] px-2 py-1 text-sm font-medium text-ink transition-colors hover:bg-item-hover"
-      >
-        {program.matchLabel}
-      </button>
+      <div className="flex shrink-0 self-center -translate-y-1 items-center gap-1">
+        <button
+          type="button"
+          onClick={() => onReportClick(program)}
+          className="inline-flex items-center rounded-[8px] px-2 py-1 text-sm font-medium text-ink transition-colors hover:bg-item-hover"
+        >
+          리포트 보기 〉
+        </button>
+      </div>
     ) : (
       <span className="self-center -translate-y-1 text-sm font-medium text-ink">
-        {program.matchLabel}
+        리포트 보기 〉
       </span>
     )
   ) : null;
@@ -59,41 +63,27 @@ export function ProgramResultRow({
   return (
     <article
       data-variant={variant}
-      className={`flex items-center gap-[38px] border-b border-[#e9e9e9] bg-white px-8 pb-[18px] pt-[14px] ${program.changes?.length ? "min-h-[128px]" : "h-[128px]"}`}
+      className="flex h-[128px] items-center gap-[38px] border-b border-[#e9e9e9] bg-white px-8 pb-[18px] pt-[14px]"
     >
       <div
-        className={`flex w-[742px] shrink-0 flex-col justify-center gap-2 pl-[20px] ${program.changeReason || program.changes?.length ? "min-h-[92px]" : "h-[75px]"}`}
+        className={`flex w-[742px] shrink-0 flex-col justify-center gap-2 pl-[20px] ${program.changeReason ? "min-h-[92px]" : "h-[75px]"}`}
       >
         <div className="flex min-w-0 flex-col gap-1.5">
           <p className="text-[14px] leading-[21px] text-ink-muted">{program.organization}</p>
-          <h2
-            className={`${program.changeReason ? "line-clamp-2 text-[20px] leading-6" : "truncate text-[20px] leading-6"} font-semibold tracking-[-0.22px] text-ink`}
-          >
+          <h2 className={`${program.changeReason ? "line-clamp-2 text-[20px] leading-6" : "truncate text-[20px] leading-6"} flex items-center gap-2 font-semibold tracking-[-0.22px] text-ink`}>
             {program.url ? (
-              <a
-                href={program.url}
-                target="_blank"
-                rel="noreferrer"
-                onClick={() => recordRecentMatchedProgram(program)}
-                className="block truncate hover:underline hover:decoration-[1px] hover:underline-offset-[4px]"
-              >
+              <a href={program.url} target="_blank" rel="noreferrer" onClick={() => recordRecentMatchedProgram(program)} className="min-w-0 flex-1 truncate hover:underline hover:decoration-[1px] hover:underline-offset-[4px]">
                 {program.title}
               </a>
-            ) : (
-              program.title
-            )}
+            ) : program.title}
+            {onChangeClick ? (
+              <button type="button" onClick={() => onChangeClick(program)} className="shrink-0 rounded bg-deadline-surface/90 px-2 py-1 text-xs font-semibold text-deadline/90 transition-colors hover:bg-deadline-surface">
+                변경 내역 〉
+              </button>
+            ) : null}
           </h2>
         </div>
-        {program.changes?.length ? (
-          <div className="space-y-2">
-            {program.changes.map((change, index) => (
-              <div key={`${change.field}-${index}`} className="flex items-start gap-2 text-[14px] leading-5 text-ink-muted">
-                <span className="shrink-0 rounded bg-item-hover px-[7px] py-1 text-xs font-medium">{change.badge}</span>
-                <span className="min-w-0 whitespace-pre-wrap break-words">{change.text}</span>
-              </div>
-            ))}
-          </div>
-        ) : program.changeReason ? (
+        {program.changeReason ? (
           <>
             <p
               className={`flex min-w-0 items-center gap-2 text-[13px] font-medium leading-5 ${program.changeTone === "danger" ? "text-deadline" : program.changeTone === "neutral" ? "text-ink-muted" : "text-brand"}`}
