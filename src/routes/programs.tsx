@@ -1513,10 +1513,14 @@ function ProgramsPage() {
                       : selected,
                   );
                 }}
-                onChangeClick={tab === "review" ? (selected) => {
-                  setReportScrollToChanges(true);
-                  setReportTarget(selected);
-                } : undefined}
+                {...(tab === "review"
+                  ? {
+                      onChangeClick: (selected: MatchedProgram) => {
+                        setReportScrollToChanges(true);
+                        setReportTarget(selected);
+                      },
+                    }
+                  : {})}
                 onFavoriteToggle={handleFavoriteToggle}
                 onManualEdit={tab === "manual" ? handleManualEdit : undefined}
                 onManualDelete={tab === "manual" ? handleManualDelete : undefined}

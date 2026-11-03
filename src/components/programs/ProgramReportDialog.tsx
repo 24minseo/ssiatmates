@@ -14,7 +14,9 @@ type ReportItem = {
   label?: string | null | undefined;
   detail?: string | null;
   condition_kind?: string | null;
+  children?: ReportItem[];
 };
+type StructuredNode = { label: string | null; value: string | null; children: StructuredNode[] };
 
 type ReportSection = {
   items?: ReportItem[];
@@ -54,7 +56,10 @@ type NoticeReport = {
     sections?: Record<string, ReportSection>;
   } | null;
   change_history?: ReportChangeEvent[];
+  report_display?: { version?: string; sections?: StructuredNode[] };
+  view_version?: string;
 };
+
 
 type ReportGroup = {
   title: string;
@@ -336,6 +341,28 @@ function hasReportDetail(item: ReportItem) {
   return detail.length > 0 && detail !== "-";
 }
 
+function ReportItemChildren({ items }: { items: ReportItem[] }) {
+  return items.length ? (
+    <div className="mt-2 space-y-2 pl-4">
+      {items.map((child, index) => (
+        <div key={`${child.label ?? "child"}-${index}`}>
+          {child.label ? <p className="font-semibold text-ink">{child.label}</p> : null}
+          {child.detail ? <p className="whitespace-pre-wrap break-keep text-ink">{formatReportDetail(child.detail)}</p> : null}
+          <ReportItemChildren items={child.children ?? []} />
+        </div>
+      ))}
+    </div>
+  ) : null;
+}
+
+function structuredNodeToReportItem(node: StructuredNode): ReportItem {
+  return { label: node.label, detail: node.value, children: node.children.map(structuredNodeToReportItem) };
+}
+
+function flattenReportItems(items: ReportItem[]): ReportItem[] {
+  return items.flatMap((item) => [item, ...flattenReportItems(item.children ?? [])]);
+}
+
 function groupItemsByLabel(items: ReportItem[], fallbackLabel: string) {
   const groups = new Map<string, { label: string; items: ReportItem[] }>();
   const duplicateLabels: Record<string, string> = {
@@ -385,27 +412,31 @@ function ReportGroupView({
   const isFlatList = group.key === "benefits" || group.key === "documents";
   const isPreferenceGroup = group.key === "preference";
   const isApplicationGroup = group.key === "application";
+  const applicationLayoutItems = isApplicationGroup
+    ? flattenReportItems(items).filter(hasReportDetail)
+    : items;
   const isApplicationMethodOnly =
     isApplicationGroup &&
-    new Set(items.map((item) => normalizeReportLabel(item.label)).filter(Boolean)).size === 1 &&
-    items.every((item) => normalizeReportLabel(item.label) === "신청방법");
-  const applicationMethodItems = items.filter((item) => normalizeReportLabel(item.label) === "신청방법");
-  const applicationPeriodItems = items.filter((item) =>
-    ["신청시작", "신청마감"].includes(normalizeReportLabel(item.label)),
-  );
-  const applicationOtherItems = items.filter((item) =>
-    !["신청방법", "신청시작", "신청마감"].includes(normalizeReportLabel(item.label)),
+    new Set(applicationLayoutItems.map((item) => normalizeReportLabel(item.label)).filter(Boolean)).size === 1 &&
+    applicationLayoutItems.every((item) => normalizeReportLabel(item.label).startsWith("신청방법"));
+  const applicationMethodItems = applicationLayoutItems.filter((item) => normalizeReportLabel(item.label).startsWith("신청방법"));
+  const applicationPeriodItems = applicationLayoutItems.filter((item) => {
+    const label = normalizeReportLabel(item.label);
+    return label.startsWith("신청시작") || label.startsWith("신청마감");
+  });
+  const applicationOtherItems = applicationLayoutItems.filter((item) =>
+    !["신청방법", "신청시작", "신청마감"].some((label) => normalizeReportLabel(item.label).startsWith(label)),
   );
   const hasApplicationPeriodPair =
-    applicationPeriodItems.some((item) => normalizeReportLabel(item.label) === "신청시작") &&
-    applicationPeriodItems.some((item) => normalizeReportLabel(item.label) === "신청마감");
+    applicationPeriodItems.some((item) => normalizeReportLabel(item.label).startsWith("신청시작")) &&
+    applicationPeriodItems.some((item) => normalizeReportLabel(item.label).startsWith("신청마감"));
   const flatListDetails = isFlatList
     ? items.flatMap((item) =>
         formatMatchingConditionDetail(item.detail ?? "")
           .split(/\r?\n/)
           .map((line) => line.trim())
           .filter(Boolean)
-          .map((line) => line.replace(/^[-*●•]\s*/, "")),
+          .map((line) => line.replace(/^[-*●•·]\s*/, "").replace(/^◎\s*/, "● ")),
       )
     : [];
   const normalizedFlatListDetails =
@@ -485,16 +516,23 @@ function ReportGroupView({
             </div>
           )
         ) : isFlatList ? (
-          <ul className="list-disc space-y-2 pl-5 text-[15px] leading-6 text-ink marker:text-ink">
-            {normalizedFlatListDetails.map((detail, index) => (
-              <li
-                key={`${group.title}-${index}`}
-                className={`${detail.startsWith("※") ? "list-none -ml-5" : ""} whitespace-pre-wrap break-keep`}
-              >
-                {detail}
-              </li>
-            ))}
-          </ul>
+          group.key === "benefits" ? (
+            <div className="space-y-2 text-[15px] leading-6 text-ink">
+              {items.flatMap((item) => formatReportDetail(item.detail ?? "").split(/\r?\n/).map((line) => line.trim()).filter(Boolean)).map((detail, index) =>
+                detail.startsWith("◎") ? (
+                  <ul key={`${group.title}-${index}`} className="list-disc pl-5 marker:text-ink"><li className="whitespace-pre-wrap break-keep">{detail.replace(/^◎\s*/, "")}</li></ul>
+                ) : (
+                  <p key={`${group.title}-${index}`} className="whitespace-pre-wrap break-keep">{detail}</p>
+                ),
+              )}
+            </div>
+          ) : (
+            <ul className="list-disc space-y-2 pl-5 text-[15px] leading-6 text-ink marker:text-ink">
+              {normalizedFlatListDetails.map((detail, index) => (
+                <li key={`${group.title}-${index}`} className={`${detail.startsWith("※") ? "list-none -ml-5" : ""} whitespace-pre-wrap break-keep`}>{detail}</li>
+              ))}
+            </ul>
+          )
         ) : isPreferenceGroup ? (
           <ul className="list-disc space-y-2 pl-5 text-[15px] leading-6 text-ink marker:text-ink">
             {items.map((item, index) => (
@@ -515,9 +553,12 @@ function ReportGroupView({
                     <span className="font-bold text-ink">{itemGroup.label}</span>
                     <div className="space-y-0">
                       {itemGroup.items.map((item, itemIndex) => (
-                        <p key={`${itemGroup.label}-${itemIndex}`} className="whitespace-pre-wrap break-keep text-ink">
-                          {formatMatchingConditionDetail(item.detail ?? "")}
-                        </p>
+                        <div key={`${itemGroup.label}-${itemIndex}`}>
+                          <p className="whitespace-pre-wrap break-keep text-ink">
+                            {formatMatchingConditionDetail(item.detail ?? "")}
+                          </p>
+                          <ReportItemChildren items={item.children ?? []} />
+                        </div>
                       ))}
                     </div>
                   </div>
@@ -531,6 +572,7 @@ function ReportGroupView({
                       <span className="text-ink-muted">{itemLabel ?? item.label ?? group.title}</span>
                     ) : null}
                     <p className="whitespace-pre-wrap break-keep text-ink">{formatReportDetail(item.detail ?? "")}</p>
+                    <ReportItemChildren items={item.children ?? []} />
                   </div>
                   ))}
             </div>
@@ -584,7 +626,6 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle,
   const [reportNoticeId, setReportNoticeId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [rawRpcResponse, setRawRpcResponse] = useState<unknown>(null);
   const [dialogHeight, setDialogHeight] = useState<number | null>(null);
   const dialogHeaderRef = useRef<HTMLDivElement>(null);
   const dialogBodyRef = useRef<HTMLDivElement>(null);
@@ -596,7 +637,6 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle,
       setReportNoticeId(null);
       setLoading(false);
       setError(null);
-      setRawRpcResponse(null);
       setDialogHeight(null);
       return;
     }
@@ -625,22 +665,13 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle,
       try {
         const isManual = currentNoticeId.startsWith("manual:");
         const reportId = isManual ? currentNoticeId.slice("manual:".length) : currentNoticeId;
-        const { data, error: rpcError } = await supabase.rpc(
-          isManual ? "get_my_manual_notice_v1" : "get_my_notice_report_v1",
-          isManual ? { p_manual_notice_id: reportId } : { p_notice_id: reportId },
-        );
-        console.log("[programs] 리포트 RPC 실제 원본 응답", {
-          rpc: isManual ? "get_my_manual_notice_v1" : "get_my_notice_report_v1",
-          params: isManual ? { p_manual_notice_id: reportId } : { p_notice_id: reportId },
-          data,
-          error: rpcError,
+        const { data, error: rpcError } = await supabase.functions.invoke("notice-report-display", {
+          body: isManual ? { kind: "manual", manual_notice_id: reportId } : { kind: "notice", notice_id: reportId },
         });
-        setRawRpcResponse({ data, error: rpcError });
-
         if (!cancelled && session?.user.id === currentUserId && noticeId === currentNoticeId) {
           if (rpcError) {
             console.error("[programs] 맞춤 리포트 조회 실패", rpcError);
-            setError("리포트를 불러오는 중 문제가 발생했어요. 잠시 후 다시 시도해주세요.");
+            setError(`리포트를 불러오지 못했습니다: ${rpcError.message || "Edge Function 호출 실패"}`);
           } else {
             setReport((data as NoticeReport | null) ?? null);
             setReportNoticeId(currentNoticeId);
@@ -694,6 +725,25 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle,
   );
 
   const groups = useMemo<ReportGroup[]>(() => {
+    if (currentReport?.report_display?.sections?.length) {
+      return currentReport.report_display.sections.map((section, index) => ({
+        title: section.label ?? `리포트 ${index + 1}`,
+        key: section.label === "맞춤 조건"
+          ? "matching_conditions"
+          : ["신청방법", "신청방법및기간", "신청방법및일정", "신청기간"].includes((section.label ?? "").replace(/\s+/g, ""))
+            ? "application"
+          : ["의무및확인사항", "중요확인사항", "의무사항"].includes((section.label ?? "").replace(/\s+/g, ""))
+            ? "obligations"
+          : Object.entries(sectionLabels).find(([, label]) => label.replace(/\s+/g, "") === (section.label ?? "").replace(/\s+/g, ""))?.[0] ?? `structured-${index}`,
+        section: {
+          items: section.children.map((child) => ({
+            label: child.label,
+            detail: child.value,
+            children: child.children.map(structuredNodeToReportItem),
+          })),
+        },
+      }));
+    }
     const sections = currentReport?.report?.sections;
     const matchingConditions = currentReport?.report?.matching_conditions;
     const applicationItems = collectItems(sections?.["application"]).filter(hasReportDetail);
@@ -819,21 +869,9 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle,
             ) : (
               <>
                 {groups.map((group) =>
-                  group.key === "obligations" ? (
-                    <ObligationsGroupView key={group.title} section={group.section} />
-                  ) : (
-                    <ReportGroupView key={group.title} group={group} />
-                  ),
+                  group.key === "obligations" ? <ObligationsGroupView key={group.title} section={group.section} /> : <ReportGroupView key={group.title} group={group} />,
                 )}
                 <ChangeHistoryView history={currentReport?.change_history ?? []} />
-                <details className="mt-6 rounded-lg border border-amber-300 bg-amber-50 p-3 text-left">
-                  <summary className="cursor-pointer text-sm font-semibold text-amber-900">
-                    임시: 백엔드 원본 응답 보기
-                  </summary>
-                  <pre className="mt-3 max-h-[360px] overflow-auto whitespace-pre-wrap break-words text-xs leading-5 text-amber-950">
-                    {JSON.stringify(rawRpcResponse, null, 2)}
-                  </pre>
-                </details>
               </>
             )}
           </div>
