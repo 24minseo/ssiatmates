@@ -442,6 +442,7 @@ function ReportGroupView({
   const applicationOtherItems = applicationLayoutItems.filter((item) =>
     !["신청방법", "신청기간", "신청시작", "신청마감"].some((label) => normalizeReportLabel(item.label).startsWith(label)),
   );
+  const hasApplicationDetails = applicationMethodItems.length > 0 || applicationOtherItems.length > 0;
   const hasApplicationPeriodPair =
     applicationPeriodItems.some((item) => normalizeReportLabel(item.label).startsWith("신청시작")) &&
     applicationPeriodItems.some((item) => normalizeReportLabel(item.label).startsWith("신청마감"));
@@ -510,10 +511,10 @@ function ReportGroupView({
                   </div>
                 ))
               ) : null}
-              {applicationPeriodItems.length ? (
-                <h3 className="mb-3 pt-5 text-[18px] font-bold leading-7 text-ink">{group.title}</h3>
-              ) : <h3 className="mb-3 text-[18px] font-bold leading-7 text-ink">{group.title}</h3>}
-              <div className="space-y-3 border-y border-field-border py-4">
+              {hasApplicationDetails ? (
+                <h3 className={applicationPeriodItems.length ? "mb-3 pt-5 text-[18px] font-bold leading-7 text-ink" : "mb-3 text-[18px] font-bold leading-7 text-ink"}>{group.title}</h3>
+              ) : null}
+              {hasApplicationDetails ? <div className="space-y-3 border-y border-field-border py-4">
               {applicationMethodItems.length ? (
                 <div className="space-y-3">
                   {applicationMethodItems.map((item, index) => (
@@ -533,7 +534,7 @@ function ReportGroupView({
                     <p className="whitespace-pre-wrap break-keep">{formatApplicationDetail(item.detail ?? "")}</p>
                   </div>
               ))}
-              </div>
+              </div> : null}
             </div>
           )
         ) : isFlatList ? (
