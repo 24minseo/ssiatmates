@@ -491,7 +491,7 @@ function ReportGroupView({
                 <h3 className="mb-3 text-[18px] font-bold leading-7 text-ink">신청기간</h3>
               ) : null}
               {hasApplicationPeriodPair || singleApplicationPeriodParts.length >= 2 ? (
-                <div className="grid grid-cols-2 overflow-hidden border-y border-field-border">
+                <div className="grid grid-cols-2 overflow-hidden border-b border-field-border">
                   {(hasApplicationPeriodPair ? applicationPeriodItems : [{ label: "신청시작" }, { label: "신청마감" }]).map((item, index) => (
                     <div key={`application-period-label-${index}`} className="border-b border-field-border bg-item-hover px-3 py-1 text-[13px] font-bold text-ink">
                       <span className="text-ink">{hasApplicationPeriodPair ? item.label : item.label}</span>
