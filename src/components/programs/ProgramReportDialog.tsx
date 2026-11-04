@@ -340,6 +340,11 @@ function formatApplicationDetail(detail: string) {
   return normalized.replace(/\b(\d{4})-(\d{2})-(\d{2})\b/g, "$1. $2. $3.");
 }
 
+function formatApplicationPeriodValue(detail: string, isDeadline: boolean) {
+  const formatted = formatApplicationDetail(detail);
+  return isDeadline ? formatted.replace(/\s*까지\s*$/, "") : formatted;
+}
+
 function normalizeReportLabel(label?: string | null) {
   return label?.replace(/\s+/g, "").trim() ?? "";
 }
@@ -432,14 +437,18 @@ function ReportGroupView({
   const applicationMethodItems = applicationLayoutItems.filter((item) => normalizeReportLabel(item.label).startsWith("신청방법"));
   const applicationPeriodItems = applicationLayoutItems.filter((item) => {
     const label = normalizeReportLabel(item.label);
-    return label.startsWith("신청시작") || label.startsWith("신청마감");
+    return label.startsWith("신청기간") || label.startsWith("신청시작") || label.startsWith("신청마감");
   });
   const applicationOtherItems = applicationLayoutItems.filter((item) =>
-    !["신청방법", "신청시작", "신청마감"].some((label) => normalizeReportLabel(item.label).startsWith(label)),
+    !["신청방법", "신청기간", "신청시작", "신청마감"].some((label) => normalizeReportLabel(item.label).startsWith(label)),
   );
   const hasApplicationPeriodPair =
     applicationPeriodItems.some((item) => normalizeReportLabel(item.label).startsWith("신청시작")) &&
     applicationPeriodItems.some((item) => normalizeReportLabel(item.label).startsWith("신청마감"));
+  const singleApplicationPeriod = applicationPeriodItems.find(
+    (item) => normalizeReportLabel(item.label).startsWith("신청기간") && !normalizeReportLabel(item.label).startsWith("신청시작"),
+  );
+  const singleApplicationPeriodParts = singleApplicationPeriod?.detail?.split(/\s*[~∼]\s*/).map((part) => part.trim()).filter(Boolean) ?? [];
   const flatListDetails = isFlatList
     ? items.flatMap((item) =>
         formatMatchingConditionDetail(item.detail ?? "")
@@ -464,24 +473,52 @@ function ReportGroupView({
   return (
     <>
       <section className="py-5">
-        <h3 className="mb-3 text-[18px] font-bold leading-7 text-ink">{group.title}</h3>
+        {!isApplicationGroup ? <h3 className="mb-3 text-[18px] font-bold leading-7 text-ink">{group.title}</h3> : null}
         {isApplicationGroup ? (
           isApplicationMethodOnly ? (
             <div className="space-y-3 text-[15px] leading-6 text-ink">
               {items.map((item, index) => (
                 <div key={`application-method-${index}`} className="grid grid-cols-[150px_minmax(0,1fr)] gap-4">
-                  <span className="text-ink-muted">{item.label ?? "신청방법"}</span>
+                    <span className="font-bold text-ink">{item.label ?? "신청방법"}</span>
                   <p className="whitespace-pre-wrap break-keep">{formatApplicationDetail(item.detail ?? "")}</p>
                 </div>
               ))}
             </div>
           ) : (
             <div className="space-y-3 text-[15px] leading-6 text-ink">
+              {applicationPeriodItems.length ? (
+                <h3 className="mb-3 text-[18px] font-bold leading-7 text-ink">신청기간</h3>
+              ) : null}
+              {hasApplicationPeriodPair || singleApplicationPeriodParts.length >= 2 ? (
+                <div className="grid grid-cols-2 overflow-hidden border-y border-field-border">
+                  {(hasApplicationPeriodPair ? applicationPeriodItems : [{ label: "신청시작" }, { label: "신청마감" }]).map((item, index) => (
+                    <div key={`application-period-label-${index}`} className="border-b border-field-border bg-item-hover px-3 py-1 text-[13px] font-bold text-ink">
+                      <span className="text-ink">{hasApplicationPeriodPair ? item.label : item.label}</span>
+                    </div>
+                  ))}
+                  {(hasApplicationPeriodPair ? applicationPeriodItems : singleApplicationPeriodParts.slice(0, 2).map((detail) => ({ detail }))).map((item, index) => (
+                    <div key={`application-period-value-${index}`} className="px-3 py-2 text-[15px] text-ink-muted">
+                      <p className="whitespace-pre-wrap break-keep">{formatApplicationPeriodValue(item.detail ?? "", hasApplicationPeriodPair ? normalizeReportLabel(item.label).startsWith("신청마감") : index === 1)}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : applicationPeriodItems.length ? (
+                applicationPeriodItems.map((item, index) => (
+                  <div key={`application-period-${index}`} className="grid grid-cols-[150px_minmax(0,1fr)] gap-4">
+                    <span className="font-bold text-ink">{item.label ?? group.title}</span>
+                    <p className="whitespace-pre-wrap break-keep">{formatApplicationDetail(item.detail ?? "")}</p>
+                  </div>
+                ))
+              ) : null}
+              {applicationPeriodItems.length ? (
+                <h3 className="mb-3 pt-5 text-[18px] font-bold leading-7 text-ink">{group.title}</h3>
+              ) : <h3 className="mb-3 text-[18px] font-bold leading-7 text-ink">{group.title}</h3>}
+              <div className="space-y-3 border-y border-field-border py-4">
               {applicationMethodItems.length ? (
                 <div className="space-y-3">
                   {applicationMethodItems.map((item, index) => (
                     <div key={`application-method-${index}`} className="grid grid-cols-[150px_minmax(0,1fr)] gap-4">
-                      <span className="text-ink-muted">{item.label ?? "신청방법"}</span>
+                      <span className="font-bold text-ink">{item.label ?? "신청방법"}</span>
                       <p className="whitespace-pre-wrap break-keep">{formatApplicationDetail(item.detail ?? "")}</p>
                     </div>
                   ))}
@@ -492,37 +529,11 @@ function ReportGroupView({
                     key={`${item.label ?? group.title}-${index}`}
                     className="grid grid-cols-[150px_minmax(0,1fr)] gap-4"
                   >
-                    <span className="text-ink-muted">{item.label ?? group.title}</span>
+                    <span className="font-bold text-ink">{item.label ?? group.title}</span>
                     <p className="whitespace-pre-wrap break-keep">{formatApplicationDetail(item.detail ?? "")}</p>
                   </div>
               ))}
-              {hasApplicationPeriodPair ? (
-                <div className="grid grid-cols-2 overflow-hidden border-b border-field-border">
-                  {applicationPeriodItems.map((item, index) => (
-                    <div
-                      key={`application-period-label-${index}`}
-                      className="border-b border-field-border bg-item-hover px-3 py-1 text-[13px] font-bold text-ink"
-                    >
-                      <span className="text-ink">{item.label}</span>
-                    </div>
-                  ))}
-                  {applicationPeriodItems.map((item, index) => (
-                    <div key={`application-period-value-${index}`} className="px-3 py-2 text-[15px] text-ink-muted">
-                      <p className="whitespace-pre-wrap break-keep">{formatApplicationDetail(item.detail ?? "")}</p>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                applicationPeriodItems.map((item, index) => (
-                  <div
-                    key={`application-period-${index}`}
-                    className="grid grid-cols-[150px_minmax(0,1fr)] gap-4"
-                  >
-                    <span className="text-ink-muted">{item.label ?? group.title}</span>
-                    <p className="whitespace-pre-wrap break-keep">{formatApplicationDetail(item.detail ?? "")}</p>
-                  </div>
-                ))
-              )}
+              </div>
             </div>
           )
         ) : isFlatList ? (
