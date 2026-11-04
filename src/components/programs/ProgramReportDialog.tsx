@@ -467,25 +467,25 @@ function ReportGroupView({
         <h3 className="mb-3 text-[18px] font-bold leading-7 text-ink">{group.title}</h3>
         {isApplicationGroup ? (
           isApplicationMethodOnly ? (
-            <div>
-              <ul className="list-disc space-y-2 pl-5 text-[15px] leading-6 text-ink marker:text-ink">
-                {items.map((item, index) => (
-                  <li key={`application-method-${index}`} className="whitespace-pre-wrap break-keep">
-                    {formatApplicationDetail(item.detail ?? "")}
-                  </li>
-                ))}
-              </ul>
+            <div className="space-y-3 text-[15px] leading-6 text-ink">
+              {items.map((item, index) => (
+                <div key={`application-method-${index}`} className="grid grid-cols-[150px_minmax(0,1fr)] gap-4">
+                  <span className="text-ink-muted">{item.label ?? "신청방법"}</span>
+                  <p className="whitespace-pre-wrap break-keep">{formatApplicationDetail(item.detail ?? "")}</p>
+                </div>
+              ))}
             </div>
           ) : (
             <div className="space-y-3 text-[15px] leading-6 text-ink">
               {applicationMethodItems.length ? (
-                <ul className="list-disc space-y-2 pl-5 marker:text-ink">
+                <div className="space-y-3">
                   {applicationMethodItems.map((item, index) => (
-                    <li key={`application-method-${index}`} className="whitespace-pre-wrap break-keep">
-                      {formatApplicationDetail(item.detail ?? "")}
-                    </li>
+                    <div key={`application-method-${index}`} className="grid grid-cols-[150px_minmax(0,1fr)] gap-4">
+                      <span className="text-ink-muted">{item.label ?? "신청방법"}</span>
+                      <p className="whitespace-pre-wrap break-keep">{formatApplicationDetail(item.detail ?? "")}</p>
+                    </div>
                   ))}
-                </ul>
+                </div>
               ) : null}
               {applicationOtherItems.map((item, index) => (
                   <div
