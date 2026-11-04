@@ -1,6 +1,7 @@
 export type MatchedProgram = {
   id: string;
   is_saved?: boolean;
+  heart_pending?: boolean;
   preference_matched?: boolean;
   url?: string;
   organization: string;

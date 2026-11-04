@@ -123,14 +123,14 @@ export function ProgramResultRow({
           {program.deadline}
         </p>
       </div>
-      <div className={variant === "manual" ? "relative ml-auto h-9 w-[76px] shrink-0" : "ml-auto flex shrink-0 items-center"}>
+      <div className="relative ml-auto h-9 w-[76px] shrink-0">
         <button
           type="button"
           aria-label={isFavorite ? "관심 공고 저장 해제" : "관심 공고 저장"}
           aria-pressed={isFavorite}
           onClick={toggleFavorite}
-          disabled={favoriteSaving || !onFavoriteToggle}
-          className={`inline-flex shrink-0 self-center disabled:cursor-wait disabled:opacity-60 ${variant === "manual" ? "absolute right-12 top-1/2 -translate-y-1/2" : ""}`}
+          disabled={favoriteSaving || program.heart_pending === true || !onFavoriteToggle}
+          className="absolute right-12 top-1/2 inline-flex shrink-0 -translate-y-1/2 self-center disabled:cursor-wait disabled:opacity-60"
         >
           <img
             draggable={false}
@@ -170,7 +170,7 @@ export function ProgramResultRow({
             <DropdownMenuItem
               disabled={!onManualDelete}
               onSelect={() => onManualDelete?.(program)}
-              className="min-h-10 cursor-pointer rounded-[8px] px-[14px] text-deadline data-[highlighted]:bg-deadline-surface"
+              className="min-h-10 cursor-pointer rounded-[8px] px-[14px] text-destructive hover:bg-destructive-surface data-[highlighted]:bg-destructive-surface focus:bg-destructive-surface focus:text-destructive"
             >
               공고 삭제
             </DropdownMenuItem>

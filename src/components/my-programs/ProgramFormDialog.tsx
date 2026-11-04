@@ -27,7 +27,7 @@ type ProgramFormDialogProps = {
   program: Program | null;
   saving: boolean;
   onAnalyze?: (inputUrl: string) => Promise<ManualNoticeAnalysisOutcome>;
-  onSubmit: (input: ProgramInput, analysisResult?: ManualNoticeAnalysisResult | null) => void;
+  onSubmit: (input: ProgramInput, analysisResult?: ManualNoticeAnalysisResult | null, sourceUrl?: string) => void;
   manualProgram?: MatchedProgram | null;
   onUpdate?: (
     manualNoticeId: string,
@@ -315,7 +315,7 @@ export function ProgramFormDialog({
               title: form.title.trim(),
               organization: form.organization.trim(),
               deadline: new Date(`${form.deadline}T23:59:00`).toISOString(),
-            }, analysisResult);
+            }, analysisResult, sourceUrl.trim());
           }}
         >
           {step === 1 ? (

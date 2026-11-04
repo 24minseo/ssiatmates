@@ -38,6 +38,16 @@ import { createManualNoticeUpdateApi } from "@/services/manualNoticeUpdateApi";
 import { createManualNoticeViewApi } from "@/services/manualNoticeViewApi";
 import { formatProgramRegion } from "@/lib/programRegion";
 import { SquareAlertIcon } from "@/components/ui/square-alert-icon";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const PAGE_SIZE = 20;
 const PREFERENCE_QUERY_STORAGE_PREFIX = "programs-preference-query:";
@@ -99,11 +109,38 @@ function safeNoticeUrl(value: string | null): string | null {
 
 function formatDeadline(deadline: string | null): string {
   if (!deadline) return "";
-  const date = new Date(`${deadline}T00:00:00+09:00`);
+  const date = new Date(
+    /^\d{4}-\d{2}-\d{2}$/.test(deadline)
+      ? `${deadline}T00:00:00+09:00`
+      : deadline,
+  );
   if (Number.isNaN(date.getTime())) return "";
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `~${month}.${day}(${WEEKDAYS[date.getDay()]})`;
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Seoul",
+    month: "2-digit",
+    day: "2-digit",
+    weekday: "short",
+  }).formatToParts(date);
+  const value = (type: string) => parts.find((part) => part.type === type)?.value ?? "";
+  const weekday = { Sun: "일", Mon: "월", Tue: "화", Wed: "수", Thu: "목", Fri: "금", Sat: "토" }[value("weekday")] ?? "";
+  return `~${value("month")}.${value("day")}(${weekday})`;
+}
+
+function formatDday(deadline: string | null, fallback?: string | null): string {
+  if (fallback && /^(D-\d+|D-DAY|마감)$/.test(fallback.trim())) return fallback.trim();
+  if (!deadline) return "-";
+  const target = Date.parse(
+    /^\d{4}-\d{2}-\d{2}$/.test(deadline)
+      ? `${deadline}T00:00:00+09:00`
+      : deadline,
+  );
+  if (!Number.isFinite(target)) return "-";
+  const today = new Date();
+  const todayKst = Date.parse(
+    `${today.toLocaleDateString("en-CA", { timeZone: "Asia/Seoul" })}T00:00:00+09:00`,
+  );
+  const days = Math.ceil((target - todayKst) / 86_400_000);
+  return days < 0 ? "마감" : days === 0 ? "D-DAY" : `D-${days}`;
 }
 
 function toMatchedProgram(item: NoticeMatchItem): MatchedProgram {
@@ -149,13 +186,14 @@ function toManualMatchedProgram(program: Program): MatchedProgram {
   return {
     id: program.id,
     preference_matched: false,
-    is_saved: false,
+    // 수동공고 목록 응답의 저장 상태를 그대로 유지합니다.
+    is_saved: (program as Program & { is_saved?: boolean }).is_saved === true,
     ...(program.url ? { url: program.url } : {}),
     organization: program.organization,
     title: program.title,
     categories,
-    dDay: program.deadlineLabel ?? "-",
-    deadline: program.deadlineLabel ?? "일정 확인 필요",
+    dDay: formatDday(program.deadline, program.deadlineLabel),
+    deadline: formatDeadline(program.deadline) || "일정 확인 필요",
     deadlineDate: program.deadline,
     daysUntilDeadline: null,
     matchLabel: "리포트 보기 〉",
@@ -387,6 +425,7 @@ function ProgramsPage() {
   const [reportScrollToChanges, setReportScrollToChanges] = useState(false);
   const [manualFormOpen, setManualFormOpen] = useState(false);
   const [manualEditTarget, setManualEditTarget] = useState<MatchedProgram | null>(null);
+  const [manualDeleteTarget, setManualDeleteTarget] = useState<MatchedProgram | null>(null);
   const [manualSaving, setManualSaving] = useState(false);
   const manualAnalysis = useMemo(() => createManualNoticeAnalysisApi(supabase), []);
   const manualConfirm = useMemo(() => createManualNoticeConfirmApi(supabase), []);
@@ -420,7 +459,17 @@ function ProgramsPage() {
     }
     void manualView.list().then((result) => {
       if (!cancelled && result.status !== "stale") {
-        setManualPrograms(result.items.map((item: any) => toManualMatchedProgram({ id: item.manual_notice_id || item.notice_id, title: item.title || "제목 없음", organization: item.organization || "기관명 미상", category: item.field || "", region: item.region || "", deadlineLabel: item.deadline_label || item.deadline || null, url: item.url || "" } as Program)));
+        setManualPrograms(result.items.map((item: any) => toManualMatchedProgram({
+          id: item.manual_notice_id || item.notice_id,
+          title: item.title || "제목 없음",
+          organization: item.organization || "기관명 미상",
+          category: item.field || "",
+          region: item.region || "",
+          deadline: item.deadline || item.deadline_at || "",
+          deadlineLabel: item.deadline_label || null,
+          is_saved: item.is_saved === true,
+          url: item.url || "",
+        } as Program & { is_saved?: boolean }))); 
       }
     }).catch(() => { if (!cancelled) setManualPrograms([]); });
     return () => {
@@ -921,25 +970,59 @@ function ProgramsPage() {
 
   const handleFavoriteToggle = async (program: MatchedProgram) => {
     if (savingNoticeIds.has(program.id)) return;
-
+    const nextSaved = program.is_saved !== true;
+    const isManual = manualPrograms.some((item) => item.id === program.id);
+    const savedId = isManual ? `manual:${program.id}` : program.id;
+    // 화면은 서버 응답을 기다리지 않고 즉시 토글하고, 실패할 때만 이전 상태로 되돌립니다.
+    setMatchedPrograms((current) =>
+      current.map((item) =>
+        item.id === program.id ? { ...item, is_saved: nextSaved } : item,
+      ),
+    );
+    setReviewPrograms((current) =>
+      current.map((item) =>
+        item.id === program.id ? { ...item, is_saved: nextSaved } : item,
+      ),
+    );
+    setExcludedPrograms((current) =>
+      current.map((item) =>
+        item.id === program.id ? { ...item, is_saved: nextSaved } : item,
+      ),
+    );
+    setManualPrograms((current) =>
+      current.map((item) =>
+        item.id === program.id ? { ...item, is_saved: nextSaved } : item,
+      ),
+    );
     setSavingNoticeIds((current) => new Set(current).add(program.id));
     try {
-      const result = await savedNoticesApi.setSaved(program.id, program.is_saved !== true);
-      setMatchedPrograms((current) =>
-        current.map((item) =>
-          item.id === program.id ? { ...item, is_saved: result.is_saved } : item,
-        ),
-      );
-      setExcludedPrograms((current) =>
-        current.map((item) =>
-          item.id === program.id ? { ...item, is_saved: result.is_saved } : item,
-        ),
-      );
+      const result = await savedNoticesApi.setSaved(savedId, nextSaved);
+      if (result.is_saved !== nextSaved) throw new Error("저장 상태 응답이 올바르지 않습니다.");
       toast.success(
         result.is_saved ? "내 지원사업에 저장되었습니다." : "내 지원사업에서 삭제되었습니다.",
       );
     } catch (error) {
       console.error("[programs] 저장 상태 변경 실패", error);
+      setMatchedPrograms((current) =>
+        current.map((item) =>
+          item.id === program.id ? { ...item, is_saved: !nextSaved } : item,
+        ),
+      );
+      setReviewPrograms((current) =>
+        current.map((item) =>
+          item.id === program.id ? { ...item, is_saved: !nextSaved } : item,
+        ),
+      );
+      setExcludedPrograms((current) =>
+        current.map((item) =>
+          item.id === program.id ? { ...item, is_saved: !nextSaved } : item,
+        ),
+      );
+      setManualPrograms((current) =>
+        current.map((item) =>
+          item.id === program.id ? { ...item, is_saved: !nextSaved } : item,
+        ),
+      );
       toast.error("관심 공고 저장 상태를 변경하지 못했습니다.");
     } finally {
       setSavingNoticeIds((current) => {
@@ -1008,7 +1091,11 @@ function ProgramsPage() {
     });
   };
 
-  async function handleManualSubmit(input: ProgramInput, analysisResult?: { manual_notice_id: string } | null) {
+  async function handleManualSubmit(
+    input: ProgramInput,
+    analysisResult?: { manual_notice_id: string } | null,
+    sourceUrl?: string,
+  ) {
     setManualSaving(true);
     try {
       if (!analysisResult?.manual_notice_id) throw new Error("먼저 공고 분석을 완료해주세요.");
@@ -1020,11 +1107,12 @@ function ProgramsPage() {
             id: confirmed.manual_notice_id,
             preference_matched: false,
             is_saved: true,
+            ...(safeNoticeUrl(sourceUrl ?? "") ? { url: safeNoticeUrl(sourceUrl ?? "")! } : {}),
             organization: input.organization,
             title: input.title,
             categories: [input.category, input.region].filter(Boolean),
-            dDay: input.deadline || "-",
-            deadline: input.deadline || "일정 확인 필요",
+            dDay: formatDday(input.deadline),
+            deadline: formatDeadline(input.deadline) || "일정 확인 필요",
             deadlineDate: input.deadline,
             daysUntilDeadline: null,
             matchLabel: "리포트 보기 〉",
@@ -1040,13 +1128,26 @@ function ProgramsPage() {
   }
 
   async function handleManualDelete(program: MatchedProgram) {
-    if (!window.confirm("이 수동공고와 저장된 레포트를 삭제할까요?")) return;
+    setManualDeleteTarget(program);
+  }
+
+  async function confirmManualDelete() {
+    const program = manualDeleteTarget;
+    if (!program) return;
+    const removedIndex = manualPrograms.findIndex((item) => item.id === program.id);
+    setManualPrograms((current) => current.filter((item) => item.id !== program.id));
+    setManualDeleteTarget(null);
     try {
       const result = await manualDelete.remove(program.id);
       if (result.status === "stale") return;
-      setManualPrograms((current) => current.filter((item) => item.id !== program.id));
       toast.success("공고를 삭제했습니다.");
     } catch (error) {
+      setManualPrograms((current) => {
+        if (current.some((item) => item.id === program.id)) return current;
+        const next = [...current];
+        next.splice(Math.max(0, removedIndex), 0, program);
+        return next;
+      });
       toast.error(error instanceof Error ? error.message : "공고를 삭제하지 못했습니다.");
     }
   }
@@ -1077,7 +1178,7 @@ function ProgramsPage() {
               ? changes.organization ?? ""
               : item.organization,
             categories: [field, region].filter((value): value is string => Boolean(value)),
-            dDay: deadlineDate ? item.dDay : "-",
+            dDay: formatDday(deadlineDate),
             deadline: deadlineLabel,
             deadlineDate,
           };
@@ -1094,7 +1195,6 @@ function ProgramsPage() {
   }
 
   function handleManualEdit(program: MatchedProgram) {
-    if (program.id === MANUAL_VARIANT_PREVIEW.id) return;
     setManualEditTarget(program);
     setManualFormOpen(true);
   }
@@ -1731,6 +1831,44 @@ function ProgramsPage() {
           noticeTitle={reportTarget?.title ?? null}
           scrollToChanges={reportScrollToChanges}
         />
+        <AlertDialog
+          open={Boolean(manualDeleteTarget)}
+          onOpenChange={(open) => {
+            if (!open) setManualDeleteTarget(null);
+          }}
+        >
+          <AlertDialogContent className="w-[520px] max-w-[calc(100vw-32px)] rounded-[20px] border-0 bg-surface p-8">
+            <AlertDialogHeader className="space-y-2 text-left">
+              <AlertDialogTitle className="pr-8 text-[20px] font-bold leading-7 text-ink">
+                수동 공고를 삭제할까요?
+              </AlertDialogTitle>
+              <AlertDialogDescription className="text-[16px] leading-6 text-ink-muted">
+                <span className="mb-3 flex items-center gap-1.5 rounded-[10px] bg-item-hover px-3 py-2 text-[13px] leading-5 text-ink-muted">
+                  <SquareAlertIcon className="size-4 shrink-0 text-icon-muted" />
+                  분석된 리포트가 함께 삭제됩니다.
+                </span>
+                <span className="mb-1 block text-[13px] text-ink-muted">삭제할 공고</span>
+                <span className="block truncate rounded-[10px] border border-field-border px-3 py-2 text-[14px] font-semibold text-ink">
+                  {manualDeleteTarget?.title ?? "수동 공고"}
+                </span>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="mt-2 flex-row justify-end gap-2 sm:space-x-0">
+              <AlertDialogCancel className="mt-0 h-11 rounded-[12px] border-0 bg-secondary-btn px-5 text-[15px] font-semibold text-secondary-btn-text shadow-none hover:bg-secondary-btn-hover hover:text-secondary-btn-text-hover focus-visible:ring-1 focus-visible:ring-focus-soft">
+                취소
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={(event) => {
+                  event.preventDefault();
+                  void confirmManualDelete();
+                }}
+                className="h-11 rounded-[12px] border-0 bg-destructive px-5 text-[15px] font-semibold text-white shadow-none hover:bg-destructive/90 focus-visible:ring-1 focus-visible:ring-focus-soft"
+              >
+                수동 공고에서 삭제
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
         <ProgramFormDialog
           open={manualFormOpen}
           onOpenChange={(open) => {
