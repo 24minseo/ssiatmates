@@ -44,6 +44,7 @@ import { cn } from "@/lib/utils";
 import { createCalendarTask } from "@/services/calendarTaskApi";
 import { mutateCalendarEvent } from "@/services/calendarEventMutationApi";
 import { getCalendarEvents } from "@/services/calendarEventsApi";
+import { normalizeCalendarEvents } from "@/services/calendarEventModel";
 import { savedNoticesApi, type SavedNotice } from "@/services/savedNoticesApi";
 
 export const Route = createFileRoute("/calendar/")({
@@ -922,6 +923,9 @@ function CalendarPage() {
   const [view, setView] = useState<CalendarView>("month");
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const eventsRequestRef = useRef<Promise<void> | null>(null);
+  const eventsGenerationRef = useRef(0);
+  const ownerIdRef = useRef<string | null>(null);
+  ownerIdRef.current = user?.id ?? null;
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -976,6 +980,13 @@ function CalendarPage() {
   const [reminderUnitHintOpen, setReminderUnitHintOpen] = useState(false);
   const [reminderUnitHintSeen, setReminderUnitHintSeen] = useState(false);
 
+  useEffect(() => {
+    eventsGenerationRef.current += 1;
+    eventsRequestRef.current = null;
+    setEvents([]);
+    setSelectedEvent(null);
+  }, [user?.id]);
+
   const today = useMemo(() => new Date(), []);
   const todayKey = toDateKey(today);
 
@@ -1018,6 +1029,11 @@ function CalendarPage() {
 
   const loadCalendarEvents = async () => {
     if (eventsRequestRef.current) return eventsRequestRef.current;
+    const ownerId = user?.id;
+    const generation = eventsGenerationRef.current;
+    if (!ownerId) return;
+    const isCurrentRequest = () =>
+      ownerIdRef.current === ownerId && eventsGenerationRef.current === generation;
 
     const request = (async () => {
       try {
@@ -1026,28 +1042,14 @@ function CalendarPage() {
         const result = await withFreshAccessToken((token) =>
           getCalendarEventsFn({ data: { accessToken: token } }),
         );
-        const normalized = result.events.flatMap((raw) => {
-          if (typeof raw !== "object" || raw === null) return [];
-          const value = raw as Record<string, unknown>;
-          if ((typeof value.id !== "string" && typeof value.id !== "number") || typeof value.title !== "string") return [];
-          const start = typeof value.start === "string" ? value.start : null;
-          if (!start) return [];
-          const end = typeof value.end === "string" ? value.end : undefined;
-          return [{
-            id: value.id,
-            title: value.title,
-            date: start.slice(0, 10),
-            ...(end ? { endDate: end.slice(0, 10) } : {}),
-            description: typeof value.description === "string" ? value.description : "",
-            color: typeof value.color === "string" ? value.color : undefined,
-            url: typeof value.url === "string" ? value.url : undefined,
-            allDay: value.allDay === true,
-          } satisfies CalendarEvent];
-        });
-        setEvents(normalized);
+        if (!isCurrentRequest()) return;
+        const normalized = normalizeCalendarEvents(result.events) as CalendarEvent[];
+        if (isCurrentRequest()) setEvents(normalized);
       } catch (error) {
         console.error("[calendar] 이벤트 조회 실패", error);
-        setEventsError(error instanceof Error ? error.message : "캘린더를 불러오지 못했어요.");
+        if (isCurrentRequest()) {
+          setEventsError(error instanceof Error ? error.message : "캘린더를 불러오지 못했어요.");
+        }
       }
     })();
 

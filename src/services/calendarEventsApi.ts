@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { callCalendarRpc, isRecord, requireToken } from "./calendarApiTransport";
 
 type CalendarEventsInput = { accessToken: string };
 
@@ -14,34 +15,14 @@ function validateInput(input: unknown): CalendarEventsInput {
 }
 
 export const getCalendarEvents = createServerFn({ method: "POST" })
-  .validator(validateInput)
+  .validator((input: unknown) => {
+    if (!isRecord(input)) throw new Error("캘린더 조회 정보를 확인해주세요.");
+    return { accessToken: requireToken(input.accessToken) };
+  })
   .handler(async ({ data }) => {
-    const webhookUrl = process.env["N8N_CALENDAR_EVENTS_WEBHOOK_URL"];
-    if (!webhookUrl) throw new Error("서버 캘린더 조회 URL이 설정되지 않았습니다.");
-
-    // Vercel can expose an unset/empty server variable alongside the Vite
-    // variables. Use the first non-empty value so a blank server override does
-    // not mask the project's actual Supabase configuration.
-    const supabaseUrl = process.env["VITE_SUPABASE_URL"] || process.env["SUPABASE_URL"];
-    const publishableKey =
-      process.env["VITE_SUPABASE_PUBLISHABLE_KEY"] || process.env["SUPABASE_PUBLISHABLE_KEY"];
-    if (!supabaseUrl || !publishableKey) throw new Error("서버 Supabase 환경변수가 설정되지 않았습니다.");
-
-    const { createClient } = await import("@supabase/supabase-js");
-    const supabase = createClient(supabaseUrl, publishableKey, {
-      global: { headers: { Authorization: `Bearer ${data.accessToken}` } },
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
-    const { data: userData, error: userError } = await supabase.auth.getUser(data.accessToken);
-    if (userError || !userData.user) throw new Error("로그인이 필요합니다.");
-
-    const response = await fetch(webhookUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ user_id: userData.user.id }),
-    });
-    if (!response.ok) throw new Error(`캘린더를 불러오지 못했어요. (웹훅 ${response.status})`);
-
-    const payload = (await response.json()) as { events?: unknown };
-    return { events: Array.isArray(payload.events) ? payload.events : [] };
+    const result = await callCalendarRpc(
+      "get_my_calendar_events_v3", {}, data.accessToken,
+      "N8N_CALENDAR_EVENTS_WEBHOOK_URL", {},
+    );
+    return { events: Array.isArray(result.events) ? result.events : [] };
   });
