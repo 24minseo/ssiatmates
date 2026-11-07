@@ -23,6 +23,12 @@ export type CalendarUiEvent = {
 const record = (value: unknown): Record<string, any> =>
   value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, any> : {};
 
+function shiftCalendarDay(day: string, days: number): string {
+  const date = new Date(`${day}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
 export function normalizeCalendarEvents(items: unknown): CalendarUiEvent[] {
   if (!Array.isArray(items)) return [];
   return items.flatMap((raw) => {
@@ -31,13 +37,17 @@ export function normalizeCalendarEvents(items: unknown): CalendarUiEvent[] {
     const date = value.start.slice(0, 10);
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return [];
     const props = record(value.extendedProps);
+    const inclusiveEnd = typeof props.end_inclusive === "string"
+      ? props.end_inclusive
+      : typeof value.end === "string" ? shiftCalendarDay(value.end.slice(0, 10), -1) : date;
+    const dateMode = props.date_mode === "range" || inclusiveEnd > date ? "range" : "single";
     const checklist = props.checklist_items;
     return [{
       id: value.id,
       title: value.title,
       date,
-      ...(typeof value.end === "string" ? { endDate: value.end.slice(0, 10) } : {}),
-      dateMode: props.date_mode === "range" || typeof value.end === "string" ? "range" : "single",
+      ...(dateMode === "range" ? { endDate: inclusiveEnd } : {}),
+      dateMode,
       description: typeof props.description === "string" ? props.description : typeof value.description === "string" ? value.description : "",
       contentMode: props.content_mode === "checklist" ? "checklist" : "memo",
       checklistItems: Array.isArray(checklist) ? checklist.flatMap((item) => {
