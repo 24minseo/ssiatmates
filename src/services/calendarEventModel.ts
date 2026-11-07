@@ -19,8 +19,8 @@ export type CalendarUiEvent = {
   completed?: boolean;
 };
 
-const record = (value: unknown): Record<string, unknown> =>
-  value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
+const record = (value: unknown): Record<string, any> =>
+  value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, any> : {};
 
 export function normalizeCalendarEvents(items: unknown): CalendarUiEvent[] {
   if (!Array.isArray(items)) return [];
