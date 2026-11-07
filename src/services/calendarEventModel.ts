@@ -4,6 +4,7 @@ export type CalendarUiEvent = {
   title: string;
   date: string;
   endDate?: string;
+  dateMode?: "single" | "range";
   description: string;
   contentMode?: "memo" | "checklist";
   checklistItems?: ChecklistItem[];
@@ -36,16 +37,23 @@ export function normalizeCalendarEvents(items: unknown): CalendarUiEvent[] {
       title: value.title,
       date,
       ...(typeof value.end === "string" ? { endDate: value.end.slice(0, 10) } : {}),
+      dateMode: props.date_mode === "range" || typeof value.end === "string" ? "range" : "single",
       description: typeof props.description === "string" ? props.description : typeof value.description === "string" ? value.description : "",
       contentMode: props.content_mode === "checklist" ? "checklist" : "memo",
       checklistItems: Array.isArray(checklist) ? checklist.flatMap((item) => {
         const row = record(item);
         return typeof row.id === "number" && typeof row.text === "string" ? [{ id: row.id, text: row.text, completed: row.completed === true }] : [];
       }) : [],
+      startTime: typeof props.start_time === "string" ? props.start_time : undefined,
+      reminders: Array.isArray(props.reminders) ? props.reminders.filter((item): item is string => typeof item === "string") : [],
       color: typeof value.color === "string" ? value.color : undefined,
       url: typeof value.url === "string" ? value.url : undefined,
       allDay: value.allDay !== false,
       editable: props.editable === true,
+      savedNoticeId: typeof props.saved_notice_id === "string" ? props.saved_notice_id : null,
+      linkedNotice: record(props.linked_notice),
+      updatedAt: typeof props.updated_at === "string" ? props.updated_at : null,
+      completed: props.is_completed === true,
     } satisfies CalendarUiEvent];
   });
 }

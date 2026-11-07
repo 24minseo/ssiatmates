@@ -119,6 +119,11 @@ type CalendarEvent = {
   color?: string;
   url?: string;
   allDay?: boolean;
+  dateMode?: DateSelectionMode;
+  savedNoticeId?: string | null;
+  linkedNotice?: Record<string, unknown> | null;
+  updatedAt?: string | null;
+  completed?: boolean;
 };
 
 const EVENT_COLORS = [
