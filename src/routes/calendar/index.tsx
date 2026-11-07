@@ -1549,6 +1549,8 @@ function CalendarPage() {
             data: {
               title,
               date: eventDate,
+              end_date: eventEndDate || eventDate,
+              date_mode: eventEndDate && eventEndDate !== eventDate ? "range" : "single",
               client_request_id: crypto.randomUUID(),
               saved_notice_id: selectedProgram?.saved_notice_id ?? null,
               color: eventColor || "#6B7280",
