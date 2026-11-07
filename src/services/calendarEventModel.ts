@@ -37,6 +37,7 @@ export function normalizeCalendarEvents(items: unknown): CalendarUiEvent[] {
     const date = value.start.slice(0, 10);
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return [];
     const props = record(value.extendedProps);
+    const metadata = record(props.metadata);
     const inclusiveEnd = typeof props.end_inclusive === "string"
       ? props.end_inclusive
       : typeof value.end === "string" ? shiftCalendarDay(value.end.slice(0, 10), -1) : date;
@@ -54,8 +55,8 @@ export function normalizeCalendarEvents(items: unknown): CalendarUiEvent[] {
         const row = record(item);
         return typeof row.id === "number" && typeof row.text === "string" ? [{ id: row.id, text: row.text, completed: row.completed === true }] : [];
       }) : [],
-      startTime: typeof props.start_time === "string" ? props.start_time : undefined,
-      reminders: Array.isArray(props.reminders) ? props.reminders.filter((item): item is string => typeof item === "string") : [],
+      startTime: typeof props.start_time === "string" ? props.start_time : typeof metadata.start_time === "string" ? metadata.start_time : typeof value.start_time === "string" ? value.start_time : undefined,
+      reminders: Array.isArray(props.reminders) ? props.reminders.filter((item): item is string => typeof item === "string") : Array.isArray(metadata.reminders) ? metadata.reminders.filter((item): item is string => typeof item === "string") : [],
       color: typeof value.color === "string" ? value.color : undefined,
       url: typeof value.url === "string" ? value.url : undefined,
       allDay: value.allDay !== false,
