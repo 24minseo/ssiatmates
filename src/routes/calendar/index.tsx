@@ -2969,7 +2969,10 @@ function CalendarPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={selectedEvent !== null} onOpenChange={(open) => !open && setSelectedEvent(null)}>
+      <Dialog
+        open={selectedEvent !== null && !deleteConfirmOpen}
+        onOpenChange={(open) => !open && setSelectedEvent(null)}
+      >
         <DialogContent
           closeClassName="right-8 top-5 flex size-9 items-center justify-center rounded-lg text-icon-muted opacity-100 transition-colors hover:bg-item-hover hover:text-ink hover:opacity-100 focus:outline-none focus:ring-0 focus:ring-offset-0 [&_svg]:size-6"
           className="rounded-[12px] border-0 bg-surface p-7 text-ink shadow-[0_12px_16px_0_rgba(9,31,23,0.12)] sm:max-w-[520px]"
