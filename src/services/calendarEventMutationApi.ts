@@ -5,6 +5,6 @@ export const mutateCalendarEvent = createServerFn({ method: "POST" }).validator(
   return { ...input, accessToken: requireToken(input.accessToken) } as any;
 }).handler(async ({ data }) => {
   const { accessToken, action, eventId, title, startDate, endDate, color, allDay, itemId } = data;
-  const patch = action === "update" ? { title, start_date: startDate, end_date: endDate, color, all_day: allDay } : action === "toggle_checklist" ? { item_id: itemId } : {};
+  const patch = action === "update" ? { title, start_date: startDate, end_date: endDate, color } : action === "toggle_checklist" ? { item_id: itemId } : {};
   return callCalendarRpc("manage_my_calendar_task_v3", { p_action: action, p_event_id: eventId, p_input: patch, p_expected_updated_at: data.expectedUpdatedAt ?? null }, accessToken, "N8N_CALENDAR_EVENT_MUTATION_WEBHOOK_URL", { event_id: eventId, action, patch, expected_updated_at: data.expectedUpdatedAt ?? null });
 });
