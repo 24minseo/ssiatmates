@@ -57,3 +57,6 @@ export function normalizeCalendarEvents(items: unknown): CalendarUiEvent[] {
     } satisfies CalendarUiEvent];
   });
 }
+export function upsertCalendarEvent(items: CalendarUiEvent[], next: CalendarUiEvent): CalendarUiEvent[] {
+  return [...items.filter((item) => item.id !== next.id), next];
+}

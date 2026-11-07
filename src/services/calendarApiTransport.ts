@@ -13,6 +13,12 @@ export function requireToken(value: unknown): string {
   if (typeof value !== "string" || !value.trim()) throw new Error("로그인이 필요합니다.");
   return value;
 }
+export function requireUuid(value: unknown): string {
+  if (typeof value !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)) {
+    throw new Error("실제 저장된 일정 번호가 필요합니다.");
+  }
+  return value;
+}
 
 export async function callCalendarRpc(
   rpc: string,

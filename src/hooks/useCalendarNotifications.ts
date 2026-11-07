@@ -34,5 +34,16 @@ export function useCalendarNotifications() {
     } finally { busy.current = false; }
   }, [markFn, refresh]);
   useEffect(() => { setNotifications([]); setUnreadCount(0); if (user?.id) void refresh(); }, [user?.id, refresh]);
+  useEffect(() => {
+    const load = () => { if (!document.hidden) void refresh(); };
+    window.addEventListener("focus", load);
+    window.addEventListener("notifications-changed", load);
+    document.addEventListener("visibilitychange", load);
+    return () => {
+      window.removeEventListener("focus", load);
+      window.removeEventListener("notifications-changed", load);
+      document.removeEventListener("visibilitychange", load);
+    };
+  }, [refresh]);
   return { notifications, unreadCount, loading, refresh, markRead };
 }
