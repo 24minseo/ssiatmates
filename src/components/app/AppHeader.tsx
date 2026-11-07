@@ -28,7 +28,7 @@ import {
 import { getDisplayName, useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { deleteAccount } from "@/services/deleteAccountApi";
-import { fetchNotifications, markNotificationsRead } from "@/services/notificationsApi";
+import { useCalendarNotifications } from "@/hooks/useCalendarNotifications";
 import { toast } from "sonner";
 
 export type NotificationType = "deadline" | "schedule" | "news";
@@ -71,6 +71,7 @@ export function AppHeader({
   growthJournalExpanded = false,
 }: AppHeaderProps) {
   const { user, profile, refreshProfile, signOut } = useAuth();
+  const { notifications: apiNotifications, unreadCount: apiUnread, refresh: refreshCalendarNotifications, markRead: markCalendarNotificationsRead } = useCalendarNotifications();
   const deleteAccountFn = useServerFn(deleteAccount);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [apiUnreadCount, setApiUnreadCount] = useState<number | null>(null);
@@ -166,13 +167,13 @@ export function AppHeader({
     setNotificationsLoading(true);
     setNotificationsError(null);
     try {
-      const result = await fetchNotifications(user.id);
-      const next = (result.notifications ?? []).map(mapNotification);
+      await refreshCalendarNotifications();
+      const next = apiNotifications.map((item) => mapNotification(item as Parameters<typeof mapNotification>[0]));
       setNotifications(next);
-      setApiUnreadCount(result.unread_count ?? next.filter((item) => !item.read).length);
+      setApiUnreadCount(apiUnread ?? next.filter((item) => !item.read).length);
 
       if (markRead) {
-        await markNotificationsRead(user.id);
+        await markCalendarNotificationsRead();
         setReadNotificationIds(new Set(next.map((item) => item.id)));
         setApiUnreadCount(0);
       }
@@ -182,11 +183,13 @@ export function AppHeader({
     } finally {
       setNotificationsLoading(false);
     }
-  }, [user]);
+  }, [user, apiNotifications, apiUnread, refreshCalendarNotifications, markCalendarNotificationsRead]);
 
   useEffect(() => {
-    void loadNotifications();
-  }, [loadNotifications]);
+    const next = apiNotifications.map((item) => mapNotification(item as Parameters<typeof mapNotification>[0]));
+    setNotifications(next);
+    setApiUnreadCount(apiUnread ?? next.filter((item) => !item.read).length);
+  }, [apiNotifications, apiUnread]);
 
   const openNotifications = async () => {
     setProfileMenuOpen(false);
