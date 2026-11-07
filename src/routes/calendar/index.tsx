@@ -2878,7 +2878,7 @@ function CalendarPage() {
               disabled={!eventTitle.trim() || !eventDate || isSavingEvent}
               className="h-12 w-[119px] rounded-[12px] bg-brand text-[16px] font-semibold text-brand-foreground shadow-none hover:bg-brand/88 active:bg-brand-pressed disabled:bg-brand-disabled disabled:opacity-100"
             >
-              저장하기
+              {isSavingEvent ? "저장 중..." : "저장하기"}
             </Button>
           </DialogFooter>
           </form>
