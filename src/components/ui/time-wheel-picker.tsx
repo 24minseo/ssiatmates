@@ -583,7 +583,10 @@ export function TimeWheelPicker({
             onChange("");
             setOpen(false);
           }}
-          onComplete={() => setOpen(false)}
+          onComplete={() => {
+            onChange(toTimeValue(draft));
+            setOpen(false);
+          }}
         />
       </PopoverContent>
     </Popover>
