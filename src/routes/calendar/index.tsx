@@ -1065,6 +1065,15 @@ function CalendarPage() {
     if (authLoading) return;
     void loadCalendarEvents();
   }, [authLoading, session?.access_token]);
+  useEffect(() => {
+    const refresh = () => { if (!document.hidden) void loadCalendarEvents(); };
+    window.addEventListener("calendar-events-changed", refresh);
+    window.addEventListener("focus", refresh);
+    return () => {
+      window.removeEventListener("calendar-events-changed", refresh);
+      window.removeEventListener("focus", refresh);
+    };
+  }, [session?.access_token]);
   const year = visibleMonth.getFullYear();
   const month = visibleMonth.getMonth();
 
@@ -1298,6 +1307,7 @@ function CalendarPage() {
       // UI에 그대로 노출됩니다. 로컬 목록은 즉시 반영하고 서버 재조회는
       // 백그라운드에서 진행합니다.
       void loadCalendarEvents();
+      window.dispatchEvent(new Event("calendar-events-changed"));
     } catch (error) {
       setEventsError(error instanceof Error ? error.message : "일정을 삭제하지 못했어요.");
     } finally {
@@ -1603,6 +1613,7 @@ function CalendarPage() {
     setIsAddOpen(false);
     // n8n calendar-events 응답을 기다리지 않고 모달을 닫습니다.
     void loadCalendarEvents();
+    window.dispatchEvent(new Event("calendar-events-changed"));
   };
 
 
