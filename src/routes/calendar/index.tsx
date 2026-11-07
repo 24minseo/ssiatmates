@@ -1455,9 +1455,13 @@ function CalendarPage() {
     );
   };
 
-  const toggleSelectedEventChecklistItem = (itemId: number) => {
+  const toggleSelectedEventChecklistItem = async (itemId: number) => {
+    let previous: ChecklistItem[] | null = null;
+    let eventId: string | number | null = null;
     setSelectedEvent((current) => {
       if (!current) return current;
+      previous = current.checklistItems ?? [];
+      eventId = current.id;
       const nextItems = (current.checklistItems ?? []).map((item) =>
         item.id === itemId ? { ...item, completed: !item.completed } : item,
       );
@@ -1468,6 +1472,18 @@ function CalendarPage() {
       );
       return { ...current, checklistItems: nextItems };
     });
+    if (eventId === null) return;
+    try {
+      await withFreshAccessToken((accessToken) => mutateCalendarEventFn({
+        data: { eventId, action: "toggle_checklist", itemId, accessToken },
+      }));
+      window.dispatchEvent(new Event("calendar-events-changed"));
+    } catch (error) {
+      const rollback = previous;
+      setSelectedEvent((current) => current ? { ...current, checklistItems: rollback ?? [] } : current);
+      setEvents((current) => current.map((event) => event.id === eventId ? { ...event, checklistItems: rollback ?? [] } : event));
+      setEventsError(error instanceof Error ? error.message : "체크리스트를 저장하지 못했어요.");
+    }
   };
 
   const removeChecklistItem = (id: number) => {
