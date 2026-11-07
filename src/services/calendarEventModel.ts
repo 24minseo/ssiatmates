@@ -55,7 +55,7 @@ export function normalizeCalendarEvents(items: unknown): CalendarUiEvent[] {
         const row = record(item);
         return typeof row.id === "number" && typeof row.text === "string" ? [{ id: row.id, text: row.text, completed: row.completed === true }] : [];
       }) : [],
-      startTime: typeof props.start_time === "string" ? props.start_time : typeof metadata.start_time === "string" ? metadata.start_time : typeof value.start_time === "string" ? value.start_time : undefined,
+      startTime: typeof props.start_time === "string" ? props.start_time : typeof metadata.start_time === "string" ? metadata.start_time : typeof value.start_time === "string" ? value.start_time : typeof value.start === "string" && value.start.includes("T") ? value.start.slice(11, 16) : undefined,
       reminders: Array.isArray(props.reminders) ? props.reminders.filter((item): item is string => typeof item === "string") : Array.isArray(metadata.reminders) ? metadata.reminders.filter((item): item is string => typeof item === "string") : [],
       color: typeof value.color === "string" ? value.color : undefined,
       url: typeof value.url === "string" ? value.url : undefined,
