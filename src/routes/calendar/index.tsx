@@ -3099,7 +3099,7 @@ function CalendarPage() {
       </Dialog>
 
       <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
-        <AlertDialogContent className="w-[calc(100vw-32px)] max-w-[420px] rounded-[20px] border-0 bg-surface p-8">
+    <AlertDialogContent className="w-[calc(100vw-32px)] max-w-[420px] rounded-[20px] border-0 bg-surface p-8 [&>button:last-child]:top-7">
           <AlertDialogHeader className="space-y-2 text-left">
             <AlertDialogTitle className="pr-8 text-[20px] font-bold leading-7 text-ink">
               일정을 삭제할까요?
@@ -3108,12 +3108,12 @@ function CalendarPage() {
               삭제한 일정은 복구할 수 없어요.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="mt-5 gap-2 sm:justify-end">
-            <AlertDialogCancel className="h-11 rounded-[12px] border-0 bg-secondary-btn px-5 text-[15px] font-semibold text-secondary-btn-text hover:bg-secondary-btn-hover">
+      <AlertDialogFooter className="mt-2 flex-row justify-end gap-2 sm:space-x-0">
+        <AlertDialogCancel className="mt-0 h-11 rounded-[12px] border-0 bg-secondary-btn px-5 text-[15px] font-semibold text-secondary-btn-text shadow-none hover:bg-secondary-btn-hover hover:text-secondary-btn-text-hover focus-visible:ring-1 focus-visible:ring-focus-soft">
               취소
             </AlertDialogCancel>
             <AlertDialogAction
-              className="h-11 rounded-[12px] border-0 bg-destructive px-5 text-[15px] font-semibold text-destructive-foreground hover:bg-destructive/90"
+          className="h-11 rounded-[12px] border-0 bg-destructive px-5 text-[15px] font-semibold text-white shadow-none hover:bg-destructive/90 focus-visible:ring-1 focus-visible:ring-focus-soft"
               onClick={() => void deleteSelectedEvent()}
             >
               삭제
