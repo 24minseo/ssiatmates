@@ -1549,6 +1549,7 @@ function CalendarPage() {
             data: {
               title,
               date: eventDate,
+              client_request_id: crypto.randomUUID(),
               saved_notice_id: selectedProgram?.saved_notice_id ?? null,
               color: eventColor || "#6B7280",
               accessToken,
