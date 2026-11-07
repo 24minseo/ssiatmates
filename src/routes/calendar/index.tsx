@@ -3113,7 +3113,7 @@ function CalendarPage() {
               취소
             </AlertDialogCancel>
             <AlertDialogAction
-              className="h-11 rounded-[12px] border-0 bg-brand px-5 text-[15px] font-semibold text-brand-foreground hover:bg-brand/88"
+              className="h-11 rounded-[12px] border-0 bg-destructive px-5 text-[15px] font-semibold text-destructive-foreground hover:bg-destructive/90"
               onClick={() => void deleteSelectedEvent()}
             >
               삭제
