@@ -1258,6 +1258,14 @@ function CalendarPage() {
 
   const editSelectedEvent = () => {
     if (!selectedEvent) return;
+    const linkedNoticeId = typeof selectedEvent.linkedNotice?.notice_id === "string"
+      ? selectedEvent.linkedNotice.notice_id
+      : null;
+    const linkedProgram = savedPrograms.find((program) =>
+      (selectedEvent.savedNoticeId && program.saved_notice_id === selectedEvent.savedNoticeId) ||
+      (linkedNoticeId && program.notice_id === linkedNoticeId),
+    );
+    if (linkedProgram) setSelectedProgram(linkedProgram);
     calendarAddOriginRef.current = "calendar";
     setEditingEventId(selectedEvent.id);
     setEventTitle(selectedEvent.title);
