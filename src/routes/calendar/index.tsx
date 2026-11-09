@@ -124,11 +124,12 @@ type CalendarEvent = {
   linkedNotice?: Record<string, unknown> | null;
   updatedAt?: string | null;
   completed?: boolean;
+  eventType?: string;
 };
 
 const EVENT_COLORS = [
   { label: "초록", value: "#1F8064", dotColor: "#83C9AF" },
-  { label: "빨강", value: "#E54740", dotColor: "#E78B94" },
+  { label: "빨강", value: "#EF4444", dotColor: "#E78B94" },
   { label: "파랑", value: "#3568B8", dotColor: "#8BADE4" },
   { label: "보라", value: "#7150A8", dotColor: "#A98BD3" },
   { label: "회색", value: "", dotColor: "#D7E5E0" },
@@ -1260,19 +1261,36 @@ function CalendarPage() {
 
   const editSelectedEvent = () => {
     if (!selectedEvent) return;
-    setIsAutoDeadlineEdit(selectedEvent.title.startsWith("[접수 마감]"));
+    const isDeadlineEvent = selectedEvent.eventType === "application_deadline" || selectedEvent.title.startsWith("[접수 마감]");
+    setIsAutoDeadlineEdit(isDeadlineEvent);
     const linkedNoticeId = typeof selectedEvent.linkedNotice?.notice_id === "string"
       ? selectedEvent.linkedNotice.notice_id
       : null;
     const linkedProgram = savedPrograms.find((program) =>
       (selectedEvent.savedNoticeId && program.saved_notice_id === selectedEvent.savedNoticeId) ||
       (linkedNoticeId && program.notice_id === linkedNoticeId),
-    );
+    ) ?? (selectedEvent.savedNoticeId && typeof selectedEvent.linkedNotice?.title === "string"
+      ? {
+          notice_id: linkedNoticeId ?? selectedEvent.savedNoticeId,
+          saved_notice_id: selectedEvent.savedNoticeId,
+          title: selectedEvent.linkedNotice.title,
+          organization: typeof selectedEvent.linkedNotice.organization === "string" ? selectedEvent.linkedNotice.organization : "",
+          url: typeof selectedEvent.linkedNotice.url === "string" ? selectedEvent.linkedNotice.url : null,
+          field: null,
+          region: null,
+          deadline: selectedEvent.date,
+          deadline_label: null,
+          recruitment_status: null,
+          status_label: null,
+          days_until_deadline: null,
+          is_closed: false,
+        } satisfies SavedNotice
+      : null);
     if (linkedProgram) setSelectedProgram(linkedProgram);
     calendarAddOriginRef.current = "calendar";
     setEditingEventId(selectedEvent.id);
     setEventTitle(selectedEvent.title);
-    setEventColor(selectedEvent.color ?? EVENT_COLORS[0].value);
+    setEventColor(selectedEvent.color ?? (isDeadlineEvent ? "#EF4444" : EVENT_COLORS[0].value));
     setColorPickerOpen(false);
     setEventDate(selectedEvent.date);
     setEventEndDate(selectedEvent.endDate ?? "");
@@ -1475,15 +1493,16 @@ function CalendarPage() {
   };
 
   const toggleSelectedEventChecklistItem = async (itemId: number) => {
-    let previous: ChecklistItem[] | null = null;
+    const selected = selectedEvent;
+    if (!selected) return;
+    const previous = selected.checklistItems ?? [];
+    const nextItems = previous.map((item) =>
+      item.id === itemId ? { ...item, completed: !item.completed } : item,
+    );
     let eventId: string | number | null = null;
     setSelectedEvent((current) => {
       if (!current) return current;
-      previous = current.checklistItems ?? [];
       eventId = current.id;
-      const nextItems = (current.checklistItems ?? []).map((item) =>
-        item.id === itemId ? { ...item, completed: !item.completed } : item,
-      );
       setEvents((events) =>
         events.map((event) =>
           event.id === current.id ? { ...event, checklistItems: nextItems } : event,
@@ -1494,7 +1513,9 @@ function CalendarPage() {
     if (eventId === null) return;
     try {
       await withFreshAccessToken((accessToken) => mutateCalendarEventFn({
-        data: { eventId, action: "toggle_checklist", itemId, accessToken },
+        data: selected.eventType === "application_deadline"
+          ? { eventId, action: "update", checklistItems: nextItems, accessToken }
+          : { eventId, action: "toggle_checklist", itemId, accessToken },
       }));
       window.dispatchEvent(new Event("calendar-events-changed"));
     } catch (error) {
@@ -1879,6 +1900,8 @@ function CalendarPage() {
                   (a, b) =>
                     getEventDurationDays(b) - getEventDurationDays(a) ||
                     a.date.localeCompare(b.date) ||
+                    (a.eventType === "application_deadline" ? 0 : 1) -
+                      (b.eventType === "application_deadline" ? 0 : 1) ||
                     a.id - b.id,
                 );
                 const singleDayEvents = dayEvents.filter(
@@ -2179,7 +2202,7 @@ function CalendarPage() {
           >
           <DialogHeader className="h-10 shrink-0 justify-center space-y-0 text-left">
             <DialogTitle className="pr-10 text-[24px] font-bold leading-10 text-ink">
-              {editingEventId === null ? "할 일 추가" : "할 일 수정"}
+              {editingEventId === null ? "할 일 추가" : isAutoDeadlineEdit ? "마감일 수정" : "할 일 수정"}
             </DialogTitle>
             <DialogDescription className="sr-only">
               캘린더에 표시할 할 일을 입력해주세요.
@@ -2354,7 +2377,6 @@ function CalendarPage() {
                 id="todo-title"
                 value={eventTitle}
                 onChange={(event) => setEventTitle(event.target.value)}
-                disabled={isAutoDeadlineEdit}
                 placeholder="할 일 제목을 입력하세요"
                 className="h-12 rounded-[12px] border-field-border px-3.5 text-[15px] md:text-[15px] text-ink shadow-none placeholder:text-guide-text focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft disabled:cursor-not-allowed disabled:bg-item-hover disabled:opacity-100"
                 autoFocus
@@ -2382,7 +2404,9 @@ function CalendarPage() {
                 />
               </div>
               <div className="grid gap-1">
-                <Label htmlFor="todo-time" className="text-sm font-semibold text-ink">시작 시간</Label>
+                <Label htmlFor="todo-time" className="text-sm font-semibold text-ink">
+                  {isAutoDeadlineEdit ? "마감 시간" : "시작 시간"}
+                </Label>
                 <TimeWheelPicker
                   id="todo-time"
                   value={eventStartTime}
@@ -2877,7 +2901,7 @@ function CalendarPage() {
                               placeholder={`항목 ${index + 1}`}
                               placeholderClassName="left-0 top-1 truncate text-[15px] leading-5 text-guide-text"
                               className={cn(
-                                "h-8 !min-h-8 max-h-16 resize-none overflow-y-auto rounded-none border border-transparent bg-transparent px-0 py-1 text-[15px] md:text-[15px] leading-5 text-ink shadow-none focus-visible:border-transparent focus-visible:bg-transparent focus-visible:ring-0 focus-visible:ring-focus-soft",
+                                "h-8 !min-h-8 max-h-16 resize-none overflow-y-auto rounded-none border border-transparent bg-transparent px-0 py-1 text-left align-top text-[15px] md:text-[15px] leading-5 text-ink shadow-none focus-visible:border-transparent focus-visible:bg-transparent focus-visible:ring-0 focus-visible:ring-focus-soft",
                                 item.completed && "text-icon-muted line-through",
                               )}
                             />
@@ -2963,7 +2987,7 @@ function CalendarPage() {
               등록된 일정
             </DialogDescription>
           </DialogHeader>
-          <div className="flex max-h-[360px] flex-col gap-2 overflow-y-auto">
+          <div className="-m-1 flex max-h-[360px] flex-col gap-2 overflow-y-auto p-1">
             {selectedDayEvents?.events.map((calendarEvent) => (
               <button
                 key={calendarEvent.id}
@@ -2972,7 +2996,11 @@ function CalendarPage() {
                   setSelectedDayEvents(null);
                   setSelectedEvent(calendarEvent);
                 }}
-                className="h-10 w-full truncate rounded-[8px] bg-menu-hover px-3 text-left text-sm font-normal text-ink hover:bg-item-hover-selected"
+                className="h-10 w-full truncate rounded-[8px] border border-transparent bg-[var(--event-bg)] px-3 text-left text-sm font-normal text-[var(--event-fg)] shadow-none"
+                style={{
+                  "--event-bg": getSoftEventColor(calendarEvent.color) ?? "var(--menu-hover)",
+                  "--event-fg": getEventForegroundColor(calendarEvent.color) ?? "var(--ink)",
+                } as React.CSSProperties}
               >
                 {calendarEvent.title}
               </button>
@@ -3013,29 +3041,31 @@ function CalendarPage() {
                 }}
               />
             </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              aria-label="일정 삭제"
-              onClick={() => setDeleteConfirmOpen(true)}
-              className="group size-9 rounded-lg text-icon-muted transition-colors hover:bg-item-hover hover:text-ink"
-            >
-              <span
-                aria-hidden="true"
-                className="size-[18px] bg-icon-muted group-hover:bg-ink"
-                style={{
-                  maskImage: "url('/assets/sidebar/delete.svg')",
-                  WebkitMaskImage: "url('/assets/sidebar/delete.svg')",
-                  maskRepeat: "no-repeat",
-                  WebkitMaskRepeat: "no-repeat",
-                  maskPosition: "center",
-                  WebkitMaskPosition: "center",
-                  maskSize: "contain",
-                  WebkitMaskSize: "contain",
-                }}
-              />
-            </Button>
+            {selectedEvent?.eventType !== "application_deadline" && !selectedEvent?.title.startsWith("[접수 마감]") ? (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label="일정 삭제"
+                onClick={() => setDeleteConfirmOpen(true)}
+                className="group size-9 rounded-lg text-icon-muted transition-colors hover:bg-item-hover hover:text-ink"
+              >
+                <span
+                  aria-hidden="true"
+                  className="size-[18px] bg-icon-muted group-hover:bg-ink"
+                  style={{
+                    maskImage: "url('/assets/sidebar/delete.svg')",
+                    WebkitMaskImage: "url('/assets/sidebar/delete.svg')",
+                    maskRepeat: "no-repeat",
+                    WebkitMaskRepeat: "no-repeat",
+                    maskPosition: "center",
+                    WebkitMaskPosition: "center",
+                    maskSize: "contain",
+                    WebkitMaskSize: "contain",
+                  }}
+                />
+              </Button>
+            ) : null}
           </div>
           <DialogHeader>
             <DialogDescription className="text-[16px] font-semibold leading-6 text-ink-muted">
@@ -3094,20 +3124,20 @@ function CalendarPage() {
                       key={item.id}
                       type="button"
                       onClick={() => toggleSelectedEventChecklistItem(item.id)}
-                      className="flex w-full items-center gap-2 rounded-[8px] py-1 text-left text-[15px]"
+                      className="flex w-full items-start gap-2 rounded-[8px] py-1 text-left text-[15px]"
                     >
                       <span
                         aria-hidden="true"
                         className={cn(
-                          "flex size-5 shrink-0 items-center justify-center rounded-[5px] border",
+                          "mt-0.5 grid size-[18px] shrink-0 place-content-center rounded-[5px] border border-field-border",
                           item.completed
                             ? "border-brand bg-brand text-brand-foreground"
-                            : "border-field-border bg-surface",
+                            : "bg-surface",
                         )}
                       >
-                        {item.completed ? <Check className="size-3.5" /> : null}
+                        {item.completed ? <Check className="size-3" strokeWidth={3} /> : null}
                       </span>
-                      <span className={cn("min-w-0 flex-1", item.completed && "text-icon-muted line-through")}>
+                      <span className={cn("min-w-0 flex-1 break-words text-left whitespace-pre-wrap", item.completed && "text-icon-muted line-through")}>
                         {item.text}
                       </span>
                     </button>

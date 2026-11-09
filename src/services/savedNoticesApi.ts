@@ -50,14 +50,20 @@ function extractReportSnapshot(report: unknown): { applicationMethod: string | n
   const root = report && typeof report === "object" ? report as { report_display?: { sections?: ReportNode[] } } : {};
   const sections = Array.isArray(root.report_display?.sections) ? root.report_display.sections : [];
   const normalize = (value: unknown) => typeof value === "string" ? value.replace(/\s+/g, "") : "";
-  const applicationAliases = new Set(["신청방법및일정", "신청방법", "신청기간"]);
+  const applicationAliases = new Set(["신청방법및일정", "신청방법"]);
   const documentAliases = new Set(["제출서류", "제출서류등"]);
-  const application = sections.find((section) => applicationAliases.has(normalize(section.label)));
+  const applicationSection = sections.find((section) => applicationAliases.has(normalize(section.label)));
+  const applicationChild = applicationSection?.children?.find((child) => normalize(child.label) === "신청방법");
+  const application = sections.find((section) => normalize(section.label) === "신청방법") ?? applicationChild ?? applicationSection;
   const documents = sections.find((section) => documentAliases.has(normalize(section.label)));
   const documentItems = Array.isArray(documents?.children) ? documents.children : [];
+  const documentValues = documentItems.length > 0
+    ? documentItems.map((item) => reportText(item).trim())
+    : (documents ? [reportText(documents).trim()] : []);
+  const isEmptyDocument = (value: string) => /^(?:없음|없습니다|해당\s*없음|해당\s*사항\s*없음|없음\.)$/i.test(value.replace(/[\s.]+$/g, "").trim());
   return {
     applicationMethod: application ? reportText(application).trim() || null : null,
-    documents: documentItems.map((item) => reportText(item).trim()).filter(Boolean),
+    documents: documentValues.filter((value) => value && !isEmptyDocument(value)),
   };
 }
 

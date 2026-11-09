@@ -30,6 +30,8 @@ import {
 } from "@/services/savedNoticesApi";
 import { useAuth } from "@/hooks/useAuth";
 import { formatProgramRegion } from "@/lib/programRegion";
+import { getCalendarEvents } from "@/services/calendarEventsApi";
+import { normalizeCalendarEvents } from "@/services/calendarEventModel";
 import { createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/my-programs")({
@@ -122,9 +124,11 @@ function MyProgramsPage() {
     Promise.all([
       savedNoticesApi.getMySupportNotices(),
       savedNoticesApi.getMyProgress(),
+      getCalendarEvents({ data: { accessToken: session.access_token } }).catch(() => ({ events: [] })),
     ])
-      .then(([{ items, total_count }, { items: progressItems }]) => {
+      .then(([{ items, total_count }, { items: progressItems }, calendarResult]) => {
         if (!mounted || savedRequestRef.current !== requestId) return;
+        const calendarEvents = normalizeCalendarEvents(calendarResult.events);
         setSavedTotalCount(total_count ?? items.length);
         const savedStatuses = Object.fromEntries(
           progressItems.map((item) => [item.notice_id, item.status]),
@@ -134,6 +138,15 @@ function MyProgramsPage() {
             const program = toSavedProgram(item, index);
             return {
               ...program,
+              schedules: calendarEvents
+                .filter((event) => event.savedNoticeId === item.saved_notice_id)
+                .map((event) => ({
+                  id: String(event.id),
+                  programId: item.notice_id,
+                  title: event.eventType === "application_deadline" ? "[접수 마감일]" : event.title,
+                  scheduledAt: `${event.date}T00:00:00`,
+                  completed: event.completed === true,
+                })),
               status: savedStatuses[item.notice_id] ?? program.status,
             };
           }),
@@ -492,7 +505,9 @@ function MyProgramsPage() {
                 <SquareAlertIcon className="size-4 shrink-0 text-icon-muted" />
                 <span className="min-w-0 truncate">
                   {deleteTarget && deleteTarget.schedules.length > 0
-                    ? `연결된 일정 ${deleteTarget.schedules.length}개도 함께 삭제됩니다.`
+                    ? deleteTarget.schedules.every((schedule) => schedule.title === "[접수 마감일]")
+                      ? "자동 생성된 마감일도 함께 삭제됩니다."
+                      : `연결된 일정 ${deleteTarget.schedules.length}개도 함께 삭제됩니다.`
                     : "연결된 일정 없이 공고만 삭제됩니다."}
                 </span>
               </AlertDialogDescription>

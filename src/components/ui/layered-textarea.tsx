@@ -20,6 +20,7 @@ const LayeredTextarea = React.forwardRef<HTMLTextAreaElement, LayeredTextareaPro
     },
     ref,
   ) => {
+    const textareaRef = React.useRef<HTMLTextAreaElement | null>(null);
     const isControlled = value !== undefined;
     const [internalValue, setInternalValue] = React.useState(defaultValue ?? "");
     const currentValue = isControlled ? value : internalValue;
@@ -31,6 +32,13 @@ const LayeredTextarea = React.forwardRef<HTMLTextAreaElement, LayeredTextareaPro
       }
       onChange?.(event);
     };
+
+    React.useLayoutEffect(() => {
+      const textarea = textareaRef.current;
+      if (!textarea || !String(currentValue ?? "")) return;
+      textarea.style.height = "auto";
+      textarea.style.height = `${Math.min(textarea.scrollHeight, 64)}px`;
+    }, [currentValue]);
 
     return (
       <div className="relative">
@@ -47,7 +55,11 @@ const LayeredTextarea = React.forwardRef<HTMLTextAreaElement, LayeredTextareaPro
         ) : null}
         <Textarea
           {...props}
-          ref={ref}
+          ref={(node) => {
+            textareaRef.current = node;
+            if (typeof ref === "function") ref(node);
+            else if (ref) ref.current = node;
+          }}
           value={value}
           defaultValue={defaultValue}
           onChange={handleChange}

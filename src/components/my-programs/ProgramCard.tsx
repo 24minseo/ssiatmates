@@ -54,9 +54,16 @@ export function getDeadlineLabel(
 }
 
 export function getNextSchedule(program: Program) {
+  const today = startOfToday();
   return [...program.schedules]
-    .filter((schedule) => !schedule.completed)
-    .sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt))[0];
+    .filter((schedule) => !schedule.completed && new Date(schedule.scheduledAt) >= today)
+    .sort((a, b) => {
+      const dateOrder = a.scheduledAt.localeCompare(b.scheduledAt);
+      if (dateOrder !== 0) return dateOrder;
+      const aDeadline = a.title === "[접수 마감일]" ? 0 : 1;
+      const bDeadline = b.title === "[접수 마감일]" ? 0 : 1;
+      return aDeadline - bDeadline;
+    })[0];
 }
 
 function formatScheduleDate(value: string) {
@@ -84,7 +91,6 @@ export function ProgramCard({
   const canOpenReport = isSavedNotice && Boolean(onReportClick);
   const deadline = getDeadlineLabel(program.deadline, program.deadlineLabel, program.isClosed);
   const nextSchedule = getNextSchedule(program);
-  const remaining = program.schedules.filter((s) => !s.completed).length;
 
   return (
     <article className="overflow-hidden rounded-[12px] bg-surface">
@@ -193,14 +199,13 @@ export function ProgramCard({
           </div>
       </div>
       <div className={`flex min-w-0 items-center gap-x-5 rounded-bl-[12px] rounded-br-[12px] border-b border-l border-r border-solid border-field-border bg-item-hover px-6 pr-[22px] ${program.schedules.length > 0 ? "h-[47px] py-[14px]" : "h-[46px] py-[13px]"}`}>
-        <span className={`flex shrink-0 items-center gap-1 text-[14px] ${remaining > 0 ? "text-[#7a8883]" : "text-[#b4c1bd]"}`}>
-          <img src={remaining > 0 ? "/assets/calendar-21-remaining.svg" : "/assets/calendar-21.svg"} alt="" aria-hidden className="size-[15px]" />
-          {program.schedules.length > 0 ? `남은 일정 ${remaining}개` : "연결된 일정 없음"}
+        <span className={`flex shrink-0 items-center gap-1 text-[14px] ${nextSchedule ? "text-[#7a8883]" : "text-[#b4c1bd]"}`}>
+          <img src={nextSchedule ? "/assets/calendar-21-remaining.svg" : "/assets/calendar-21.svg"} alt="" aria-hidden className="size-[15px]" />
+          {nextSchedule ? "다음 일정" : "연결된 일정 없음"}
         </span>
         {nextSchedule ? (
           <span className="min-w-0 flex-1 truncate text-[14px] font-medium text-[#596963]">
-            다음 일정 · {formatScheduleDate(nextSchedule.scheduledAt)}{" "}
-            {nextSchedule.title}
+            {formatScheduleDate(nextSchedule.scheduledAt)} · {nextSchedule.title}
           </span>
         ) : null}
       </div>

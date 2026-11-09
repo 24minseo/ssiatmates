@@ -51,9 +51,11 @@ export function ProgramScheduleDialog({
   const inputClass =
     "h-11 rounded-[12px] border-field-border px-3.5 text-[15px] shadow-none placeholder:text-guide-text focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft";
 
-  const schedules = [...(program?.schedules ?? [])].sort((a, b) =>
-    a.scheduledAt.localeCompare(b.scheduledAt),
-  );
+  const schedules = [...(program?.schedules ?? [])].sort((a, b) => {
+    const dateOrder = a.scheduledAt.localeCompare(b.scheduledAt);
+    if (dateOrder !== 0) return dateOrder;
+    return (a.title === "[접수 마감일]" ? 0 : 1) - (b.title === "[접수 마감일]" ? 0 : 1);
+  });
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
