@@ -184,6 +184,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      attach_saved_notice_report_v1: {
+        Args: {
+          p_saved_notice_id: string
+          p_application_method?: string | null
+          p_submission_documents?: Json
+        }
+        Returns: Json
+      }
       complete_onboarding: {
         Args: {
           p_birth_date: string | null

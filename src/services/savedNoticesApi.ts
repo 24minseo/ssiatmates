@@ -35,7 +35,31 @@ export type SavedNoticeListResponse = {
 export type SavedNoticeMutationResponse = {
   notice_id: string;
   is_saved: boolean;
+  saved_notice_id?: string | null;
 };
+
+type ReportNode = { label?: unknown; value?: unknown; children?: ReportNode[] };
+
+function reportText(node: ReportNode): string {
+  const own = typeof node.value === "string" ? node.value.trim() : "";
+  const children = Array.isArray(node.children) ? node.children.map(reportText).filter(Boolean) : [];
+  return [own, ...children].filter(Boolean).join("\n");
+}
+
+function extractReportSnapshot(report: unknown): { applicationMethod: string | null; documents: string[] } {
+  const root = report && typeof report === "object" ? report as { report_display?: { sections?: ReportNode[] } } : {};
+  const sections = Array.isArray(root.report_display?.sections) ? root.report_display.sections : [];
+  const normalize = (value: unknown) => typeof value === "string" ? value.replace(/\s+/g, "") : "";
+  const applicationAliases = new Set(["신청방법및일정", "신청방법", "신청기간"]);
+  const documentAliases = new Set(["제출서류", "제출서류등"]);
+  const application = sections.find((section) => applicationAliases.has(normalize(section.label)));
+  const documents = sections.find((section) => documentAliases.has(normalize(section.label)));
+  const documentItems = Array.isArray(documents?.children) ? documents.children : [];
+  return {
+    applicationMethod: application ? reportText(application).trim() || null : null,
+    documents: documentItems.map((item) => reportText(item).trim()).filter(Boolean),
+  };
+}
 
 export type SavedNoticeProgressStatus = "not_started" | "preparing" | "submitted";
 
@@ -44,7 +68,7 @@ export type SavedNoticeProgress = {
   status: SavedNoticeProgressStatus;
 };
 
-type SavedNoticesClient = Pick<SupabaseClient<Database>, "rpc">;
+type SavedNoticesClient = Pick<SupabaseClient<Database>, "rpc" | "functions">;
 
 export function createSavedNoticesApi(
   client: SavedNoticesClient = supabase,
@@ -76,6 +100,21 @@ export function createSavedNoticesApi(
     if (error) throw error;
     if (!data) throw new Error("저장 상태 응답이 없습니다.");
     const response = data as SavedNoticeMutationResponse & { manual_notice_id?: string };
+    if (!isManual && isSaved && response.is_saved === true && response.saved_notice_id) {
+      try {
+        const { data: report } = await client.functions.invoke("notice-report-display", {
+          body: { kind: "notice", notice_id: id },
+        });
+        const snapshot = extractReportSnapshot(report);
+        await client.rpc("attach_saved_notice_report_v1", {
+          p_saved_notice_id: response.saved_notice_id,
+          p_application_method: snapshot.applicationMethod,
+          p_submission_documents: snapshot.documents,
+        });
+      } catch (reportError) {
+        console.warn("[saved-notices] 리포트 부가정보 저장 생략", reportError);
+      }
+    }
     return isManual
       ? { notice_id: noticeId, is_saved: response.is_saved }
       : response;
