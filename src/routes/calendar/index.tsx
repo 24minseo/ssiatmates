@@ -3056,7 +3056,7 @@ function CalendarPage() {
                   href={selectedEvent.url}
                   target="_blank"
                   rel="noreferrer"
-                  className="underline decoration-1 underline-offset-2 decoration-ink-muted transition-colors hover:text-brand hover:decoration-brand"
+                  className="transition-colors hover:underline hover:decoration-[1px] hover:underline-offset-[4px]"
                 >
                   {selectedEvent.title}
                 </a>
