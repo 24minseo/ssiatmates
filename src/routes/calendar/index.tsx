@@ -3051,7 +3051,16 @@ function CalendarPage() {
               ) : null}
             </DialogDescription>
             <DialogTitle className="mt-3 line-clamp-2 text-[24px] font-bold leading-8 text-ink">
-              {selectedEvent?.title}
+              {selectedEvent?.url ? (
+                <a
+                  href={selectedEvent.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="underline decoration-transparent underline-offset-4 transition-colors hover:decoration-current"
+                >
+                  {selectedEvent.title}
+                </a>
+              ) : selectedEvent?.title}
             </DialogTitle>
           </DialogHeader>
           <div
