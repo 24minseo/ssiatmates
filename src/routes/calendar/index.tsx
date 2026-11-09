@@ -3051,7 +3051,7 @@ function CalendarPage() {
               ) : null}
             </DialogDescription>
             <DialogTitle className="mt-3 line-clamp-2 text-[24px] font-bold leading-8 text-ink">
-              {selectedEvent?.url ? (
+              {selectedEvent?.url && selectedEvent.title.startsWith("[접수 마감]") ? (
                 <a
                   href={selectedEvent.url}
                   target="_blank"
