@@ -1136,12 +1136,16 @@ function ProgramsPage() {
     if (!program) return;
     const removedIndex = manualPrograms.findIndex((item) => item.id === program.id);
     setManualPrograms((current) => current.filter((item) => item.id !== program.id));
-    setManualDeleteTarget(null);
     try {
       const result = await manualDelete.remove(program.id);
-      if (result.status === "stale") return;
+      if (result.status === "stale") {
+        setManualDeleteTarget(null);
+        return;
+      }
+      setManualDeleteTarget(null);
       toast.success("공고를 삭제했습니다.");
     } catch (error) {
+      setManualDeleteTarget(null);
       setManualPrograms((current) => {
         if (current.some((item) => item.id === program.id)) return current;
         const next = [...current];
