@@ -291,24 +291,8 @@ export type Database = {
           p_saved: boolean
         }
         Returns: {
-          success: boolean
           notice_id: string
           is_saved: boolean
-          saved_notice_id: string | null
-          saved_at: string | null
-          calendar: {
-            created: boolean
-            events: Array<{
-              id: string
-              saved_notice_id: string
-              event_type: string
-              title: string
-              date: string
-              color: string | null
-              editable: boolean
-              time_label: string | null
-            }>
-          }
         }
       }
       get_my_saved_notices_v1: {

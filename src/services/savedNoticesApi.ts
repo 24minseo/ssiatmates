@@ -35,22 +35,6 @@ export type SavedNoticeListResponse = {
 export type SavedNoticeMutationResponse = {
   notice_id: string;
   is_saved: boolean;
-  success?: boolean;
-  saved_notice_id?: string | null;
-  saved_at?: string | null;
-  calendar?: {
-    created: boolean;
-    events: Array<{
-      id: string;
-      saved_notice_id: string;
-      event_type: "application_start" | "application_deadline";
-      title: string;
-      date: string;
-      color: string | null;
-      editable: false;
-      time_label: string | null;
-    }>;
-  };
 };
 
 export type SavedNoticeProgressStatus = "not_started" | "preparing" | "submitted";
