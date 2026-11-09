@@ -37,8 +37,8 @@ export function normalizeCalendarEvents(items: unknown): CalendarUiEvent[] {
     const date = value.start.slice(0, 10);
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return [];
     const props = record(value.extendedProps);
-    const metadata = record(props.metadata);
-    const linkedNotice = record(props.linked_notice ?? metadata.linked_notice);
+    const metadata = record(props.metadata ?? value.metadata);
+    const linkedNotice = record(props.linked_notice ?? metadata.linked_notice ?? value.linked_notice);
     const eventType = typeof props.event_type === "string"
       ? props.event_type
       : typeof metadata.event_type === "string"
@@ -72,7 +72,9 @@ export function normalizeCalendarEvents(items: unknown): CalendarUiEvent[] {
       editable: props.editable === true,
       savedNoticeId: typeof props.saved_notice_id === "string"
         ? props.saved_notice_id
-        : typeof metadata.saved_notice_id === "string" ? metadata.saved_notice_id : null,
+        : typeof metadata.saved_notice_id === "string"
+          ? metadata.saved_notice_id
+          : typeof value.saved_notice_id === "string" ? value.saved_notice_id : null,
       linkedNotice,
       updatedAt: typeof props.updated_at === "string" ? props.updated_at : null,
       completed: props.is_completed === true,
