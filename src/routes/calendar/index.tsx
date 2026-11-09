@@ -1265,7 +1265,28 @@ function CalendarPage() {
       (selectedEvent.savedNoticeId && program.saved_notice_id === selectedEvent.savedNoticeId) ||
       (linkedNoticeId && program.notice_id === linkedNoticeId),
     );
-    if (linkedProgram) setSelectedProgram(linkedProgram);
+    if (linkedProgram) {
+      setSelectedProgram(linkedProgram);
+    } else if (linkedNoticeId || selectedEvent.savedNoticeId) {
+      const linkedTitle = typeof selectedEvent.linkedNotice?.title === "string"
+        ? selectedEvent.linkedNotice.title
+        : selectedEvent.title.replace(/^\[접수 마감\]\s*/, "");
+      setSelectedProgram({
+        notice_id: linkedNoticeId ?? selectedEvent.savedNoticeId ?? "",
+        ...(selectedEvent.savedNoticeId ? { saved_notice_id: selectedEvent.savedNoticeId } : {}),
+        title: linkedTitle,
+        organization: "",
+        url: typeof selectedEvent.linkedNotice?.url === "string" ? selectedEvent.linkedNotice.url : null,
+        field: null,
+        region: null,
+        deadline: selectedEvent.date,
+        deadline_label: null,
+        recruitment_status: null,
+        status_label: null,
+        days_until_deadline: null,
+        is_closed: false,
+      });
+    }
     calendarAddOriginRef.current = "calendar";
     setEditingEventId(selectedEvent.id);
     setEventTitle(selectedEvent.title);
