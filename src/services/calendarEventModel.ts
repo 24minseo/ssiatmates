@@ -38,6 +38,11 @@ export function normalizeCalendarEvents(items: unknown): CalendarUiEvent[] {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return [];
     const props = record(value.extendedProps);
     const metadata = record(props.metadata);
+    const linkedNotice = record(props.linked_notice);
+    const eventType = typeof props.event_type === "string" ? props.event_type : typeof value.event_type === "string" ? value.event_type : "";
+    const displayTitle = eventType === "application_deadline" && typeof linkedNotice.title === "string"
+      ? `[접수 마감] ${linkedNotice.title}`
+      : value.title;
     const inclusiveEnd = typeof props.end_inclusive === "string"
       ? props.end_inclusive
       : typeof value.end === "string" ? shiftCalendarDay(value.end.slice(0, 10), -1) : date;
@@ -45,7 +50,7 @@ export function normalizeCalendarEvents(items: unknown): CalendarUiEvent[] {
     const checklist = props.checklist_items;
     return [{
       id: value.id,
-      title: value.title,
+      title: displayTitle,
       date,
       ...(dateMode === "range" ? { endDate: inclusiveEnd } : {}),
       dateMode,
@@ -62,7 +67,7 @@ export function normalizeCalendarEvents(items: unknown): CalendarUiEvent[] {
       allDay: value.allDay !== false,
       editable: props.editable === true,
       savedNoticeId: typeof props.saved_notice_id === "string" ? props.saved_notice_id : null,
-      linkedNotice: record(props.linked_notice),
+      linkedNotice,
       updatedAt: typeof props.updated_at === "string" ? props.updated_at : null,
       completed: props.is_completed === true,
     } satisfies CalendarUiEvent];
