@@ -943,6 +943,7 @@ function CalendarPage() {
   const [savedPrograms, setSavedPrograms] = useState<SavedNotice[]>([]);
   const [savedProgramsLoading, setSavedProgramsLoading] = useState(false);
   const [selectedProgram, setSelectedProgram] = useState<SavedNotice | null>(null);
+  const [isAutoDeadlineEdit, setIsAutoDeadlineEdit] = useState(false);
   const [programSearch, setProgramSearch] = useState("");
   const [hoveredProgramId, setHoveredProgramId] = useState<string | null>(null);
   const [eventDate, setEventDate] = useState("");
@@ -1227,6 +1228,7 @@ function CalendarPage() {
     const initialMode: DateSelectionMode = initialEndDate ? "range" : "single";
 
     setEditingEventId(null);
+    setIsAutoDeadlineEdit(false);
     setEventTitle("");
     setEventColor(EVENT_COLORS[0].value);
     setColorPickerOpen(false);
@@ -1258,6 +1260,7 @@ function CalendarPage() {
 
   const editSelectedEvent = () => {
     if (!selectedEvent) return;
+    setIsAutoDeadlineEdit(selectedEvent.title.startsWith("[접수 마감]"));
     const linkedNoticeId = typeof selectedEvent.linkedNotice?.notice_id === "string"
       ? selectedEvent.linkedNotice.notice_id
       : null;
@@ -2351,8 +2354,9 @@ function CalendarPage() {
                 id="todo-title"
                 value={eventTitle}
                 onChange={(event) => setEventTitle(event.target.value)}
+                disabled={isAutoDeadlineEdit}
                 placeholder="할 일 제목을 입력하세요"
-                className="h-12 rounded-[12px] border-field-border px-3.5 text-[15px] md:text-[15px] text-ink shadow-none placeholder:text-guide-text focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft"
+                className="h-12 rounded-[12px] border-field-border px-3.5 text-[15px] md:text-[15px] text-ink shadow-none placeholder:text-guide-text focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft disabled:cursor-not-allowed disabled:bg-item-hover disabled:opacity-100"
                 autoFocus
               />
             </div>
