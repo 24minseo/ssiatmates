@@ -91,6 +91,7 @@ export function ProgramCard({
   const canOpenReport = isSavedNotice && Boolean(onReportClick);
   const deadline = getDeadlineLabel(program.deadline, program.deadlineLabel, program.isClosed);
   const nextSchedule = getNextSchedule(program);
+  const hasSchedules = program.schedules.length > 0;
 
   return (
     <article className="overflow-hidden rounded-[12px] bg-surface">
@@ -198,10 +199,10 @@ export function ProgramCard({
               ))}
           </div>
       </div>
-      <div className={`flex min-w-0 items-center gap-x-5 rounded-bl-[12px] rounded-br-[12px] border-b border-l border-r border-solid border-field-border bg-item-hover px-6 pr-[22px] ${program.schedules.length > 0 ? "h-[47px] py-[14px]" : "h-[46px] py-[13px]"}`}>
+      <div className={`flex min-w-0 items-center gap-x-5 rounded-bl-[12px] rounded-br-[12px] border-b border-l border-r border-solid border-field-border bg-item-hover px-6 pr-[22px] ${hasSchedules ? "h-[47px] py-[14px]" : "h-[46px] py-[13px]"}`}>
         <span className={`flex shrink-0 items-center gap-1 text-[14px] ${nextSchedule ? "text-[#7a8883]" : "text-[#b4c1bd]"}`}>
           <img src={nextSchedule ? "/assets/calendar-21-remaining.svg" : "/assets/calendar-21.svg"} alt="" aria-hidden className="size-[15px]" />
-          {nextSchedule ? "다음 일정" : "연결된 일정 없음"}
+          {nextSchedule ? "다음 일정" : hasSchedules ? "연결된 일정이 모두 끝났어요" : "연결된 일정이 없어요"}
         </span>
         {nextSchedule ? (
           <span className="min-w-0 flex-1 truncate text-[14px] font-medium text-[#596963]">
