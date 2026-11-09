@@ -47,6 +47,9 @@ export function normalizeCalendarEvents(items: unknown): CalendarUiEvent[] {
     const displayTitle = eventType === "application_deadline" && typeof linkedNotice.title === "string"
       ? `[접수 마감] ${linkedNotice.title}`
       : value.title;
+    const storedDocuments = Array.isArray(metadata.submission_documents)
+      ? metadata.submission_documents.filter((item): item is string => typeof item === "string" && item.trim().length > 0)
+      : [];
     const inclusiveEnd = typeof props.end_inclusive === "string"
       ? props.end_inclusive
       : typeof value.end === "string" ? shiftCalendarDay(value.end.slice(0, 10), -1) : date;
@@ -58,12 +61,15 @@ export function normalizeCalendarEvents(items: unknown): CalendarUiEvent[] {
       date,
       ...(dateMode === "range" ? { endDate: inclusiveEnd } : {}),
       dateMode,
-      description: typeof props.description === "string" ? props.description : typeof value.description === "string" ? value.description : "",
+      description: typeof props.description === "string"
+        ? props.description
+        : typeof value.description === "string" ? value.description
+          : typeof metadata.application_method === "string" ? metadata.application_method : "",
       contentMode: props.content_mode === "checklist" ? "checklist" : "memo",
       checklistItems: Array.isArray(checklist) ? checklist.flatMap((item) => {
         const row = record(item);
         return typeof row.id === "number" && typeof row.text === "string" ? [{ id: row.id, text: row.text, completed: row.completed === true }] : [];
-      }) : [],
+      }) : storedDocuments.map((text, index) => ({ id: index + 1, text, completed: false })),
       startTime: typeof props.start_time === "string" ? props.start_time : typeof metadata.start_time === "string" ? metadata.start_time : typeof value.start_time === "string" ? value.start_time : typeof value.start === "string" && value.start.includes("T") ? value.start.slice(11, 16) : undefined,
       reminders: Array.isArray(props.reminders) ? props.reminders.filter((item): item is string => typeof item === "string") : Array.isArray(metadata.reminders) ? metadata.reminders.filter((item): item is string => typeof item === "string") : [],
       color: typeof value.color === "string" ? value.color : undefined,
