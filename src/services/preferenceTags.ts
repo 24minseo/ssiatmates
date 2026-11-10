@@ -109,7 +109,11 @@ export function createPreferenceTags<T extends { id: string }>({
 
   function persist() {
     if (!storageKey || typeof window === "undefined") return;
-    window.sessionStorage.setItem(storageKey, JSON.stringify([...matchedIds]));
+    try {
+      window.sessionStorage.setItem(storageKey, JSON.stringify([...matchedIds]));
+    } catch {
+      // Keep in-memory tags available when session storage is blocked.
+    }
   }
 
   function clear() {
@@ -186,7 +190,7 @@ export function createPreferenceTags<T extends { id: string }>({
         const items = payload["items"];
         const normalizedItems =
           items === undefined &&
-          ["insufficient_data", "needs_clarification", "matching_not_ready"].includes(status)
+          status !== "success"
             ? []
             : items;
         if (
@@ -202,17 +206,18 @@ export function createPreferenceTags<T extends { id: string }>({
           throw new Error("검색 응답 형식이 잘못됐습니다.");
         }
 
+        const matchedItems = (normalizedItems as PreferenceMatch[]).filter(
+          (item) => item.preference_matched === true,
+        );
         const result: PreferenceSearchResult = {
           ...payload,
-          status: status as PreferenceStatus,
-          items: normalizedItems as PreferenceMatch[],
+          status: status === "success" && matchedItems.length === 0
+            ? "no_results"
+            : status as PreferenceStatus,
+          items: matchedItems,
         };
         result.display_message = preferenceResultMessage(result);
-        matchedIds = new Set(
-          result.items
-            .filter((item) => item.preference_matched === true)
-            .map((item) => item.notice_id),
-        );
+        matchedIds = new Set(matchedItems.map((item) => item.notice_id));
         persist();
         refresh();
         onResult(result);
