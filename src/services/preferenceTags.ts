@@ -2,6 +2,29 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { supabase as defaultSupabase } from "@/integrations/supabase/client";
 
+const PROFILE_REFRESH_PREFIX = "programs-preference-profile-refresh:";
+export const PREFERENCE_MATCH_STORAGE_PREFIX = "programs-preference-matches:";
+
+export function markPreferenceProfileRefresh(userId: string) {
+  try {
+    window.sessionStorage.removeItem(`${PREFERENCE_MATCH_STORAGE_PREFIX}${userId}`);
+    window.sessionStorage.setItem(`${PROFILE_REFRESH_PREFIX}${userId}`, "1");
+  } catch {
+    // The profile save must still finish if session storage is unavailable.
+  }
+}
+
+export function takePreferenceProfileRefresh(userId: string): boolean {
+  try {
+    const key = `${PROFILE_REFRESH_PREFIX}${userId}`;
+    if (window.sessionStorage.getItem(key) !== "1") return false;
+    window.sessionStorage.removeItem(key);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 type PreferenceMatch = {
   notice_id: string;
   preference_matched?: boolean;

@@ -29,7 +29,11 @@ import { useAuth } from "@/hooks/useAuth";
 import { ProgramReportDialog } from "@/components/programs/ProgramReportDialog";
 import { getSupportFilterSession, setSupportFilterSession } from "@/lib/supportFilterSession";
 import { applySavedStates, savedNoticesApi } from "@/services/savedNoticesApi";
-import { createPreferenceTags } from "@/services/preferenceTags";
+import {
+  createPreferenceTags,
+  PREFERENCE_MATCH_STORAGE_PREFIX,
+  takePreferenceProfileRefresh,
+} from "@/services/preferenceTags";
 import { programService, type Program, type ProgramInput } from "@/services/programRepository";
 import { createManualNoticeAnalysisApi } from "@/services/manualNoticeAnalysisApi";
 import { createManualNoticeConfirmApi } from "@/services/manualNoticeConfirmApi";
@@ -52,7 +56,7 @@ import {
 const PAGE_SIZE = 20;
 const PREFERENCE_QUERY_STORAGE_PREFIX = "programs-preference-query:";
 const PREFERENCE_COMMITTED_QUERY_STORAGE_PREFIX = "programs-preference-committed-query:";
-const PREFERENCE_MATCH_STORAGE_PREFIX = "programs-preference-matches:";
+const activePreferenceRequests = new Map<string, Promise<unknown>>();
 const PREFERENCE_SUGGESTIONS = [
   "온라인으로 신청하고 싶어요",
   "사업계획서 없이 신청하고 싶어요",
@@ -349,6 +353,7 @@ function ProgramsPage() {
   const [canScrollPreferenceSuggestions, setCanScrollPreferenceSuggestions] = useState(false);
   const submittedPreferenceQueryRef = useRef("");
   const preferenceRequestInFlightRef = useRef(false);
+  const preferenceReapplyVersionRef = useRef(0);
 
   const stopPreferenceSearchUi = useCallback(() => {
     preferenceRequestInFlightRef.current = false;
@@ -562,6 +567,43 @@ function ProgramsPage() {
     [preferenceStorageKey, stopPreferenceSearchUi],
   );
 
+  const preferenceFieldRef = useRef<string | null>(null);
+  const fieldsForPreference = getSelectedFields(supportCategories, usesProfileDefault);
+  preferenceFieldRef.current = fieldsForPreference.length === 1 && fieldsForPreference[0] !== SUPPORT_ALL
+    ? fieldsForPreference[0] ?? null
+    : null;
+
+  const startPreferenceSearch = useCallback((text: string) => {
+    if (!text || !preferenceStorageKey || preferenceRequestInFlightRef.current ||
+        activePreferenceRequests.has(preferenceStorageKey)) return;
+
+    preferenceReapplyVersionRef.current += 1;
+    preferenceRequestInFlightRef.current = true;
+    submittedPreferenceQueryRef.current = text;
+    setIsQueryFocused(false);
+    setPreferenceFeedback(null);
+    setPreferenceFeedbackExiting(false);
+    if (preferenceFeedbackTimerRef.current) {
+      clearTimeout(preferenceFeedbackTimerRef.current);
+      preferenceFeedbackTimerRef.current = null;
+    }
+    setIsPreferenceSearching(true);
+    setIsSearchLoadingVisible(false);
+    searchLoadingTimerRef.current = setTimeout(() => {
+      setIsSearchLoadingVisible(true);
+      searchLoadingTimerRef.current = null;
+    }, 200);
+
+    const request = preferenceTags.search(text, preferenceFieldRef.current);
+    activePreferenceRequests.set(preferenceStorageKey, request);
+    const release = () => {
+      if (activePreferenceRequests.get(preferenceStorageKey) === request) {
+        activePreferenceRequests.delete(preferenceStorageKey);
+      }
+    };
+    void request.then(release, release);
+  }, [preferenceStorageKey, preferenceTags]);
+
   useEffect(() => {
     matchedProgramsRef.current = matchedPrograms;
   }, [matchedPrograms]);
@@ -614,6 +656,48 @@ function ProgramsPage() {
   }, [preferenceStorageKey, preferenceTags, search.source, stopPreferenceSearchUi]);
 
   useEffect(() => {
+    if (!preferenceStorageKey) return;
+    let cancelled = false;
+
+    const reapplyAfterProfileSave = async () => {
+      const version = ++preferenceReapplyVersionRef.current;
+      const previousRequest = activePreferenceRequests.get(preferenceStorageKey);
+      preferenceTags.clear();
+      stopPreferenceSearchUi();
+      if (preferenceFeedbackTimerRef.current) {
+        clearTimeout(preferenceFeedbackTimerRef.current);
+        preferenceFeedbackTimerRef.current = null;
+      }
+      setPreferenceFeedback(null);
+      setSort("deadline");
+      if (search.source === "myhome") return;
+      const text = window.sessionStorage.getItem(
+        `${PREFERENCE_COMMITTED_QUERY_STORAGE_PREFIX}${preferenceStorageKey}`,
+      )?.trim();
+      if (!text) return;
+      setQuery(text);
+      setIsPreferenceSearching(true);
+      await previousRequest?.catch(() => undefined);
+      if (cancelled || version !== preferenceReapplyVersionRef.current) return;
+      startPreferenceSearch(text);
+    };
+
+    const handleProfileSave = () => {
+      takePreferenceProfileRefresh(preferenceStorageKey);
+      void reapplyAfterProfileSave();
+    };
+    window.addEventListener("matching-profile-saved", handleProfileSave);
+    queueMicrotask(() => {
+      if (!cancelled && takePreferenceProfileRefresh(preferenceStorageKey)) void reapplyAfterProfileSave();
+    });
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener("matching-profile-saved", handleProfileSave);
+    };
+  }, [preferenceStorageKey, preferenceTags, search.source, startPreferenceSearch, stopPreferenceSearchUi]);
+
+  useEffect(() => {
     if (!profile) return;
 
     const profileCategories = profile.support_categories.filter(Boolean);
@@ -632,7 +716,7 @@ function ProgramsPage() {
     let cancelled = false;
     let requestInFlight = false;
 
-    async function loadMatches(showLoading = true) {
+    async function loadMatches(showLoading = true, force = false) {
       if (!session?.user.id) {
         preferenceTags.clear();
         if (preferenceStorageKey) {
@@ -647,7 +731,7 @@ function ProgramsPage() {
         return;
       }
       if (!profileFilterInitializedFor.current) return;
-      if (requestInFlight) return;
+      if (requestInFlight && !force) return;
       requestInFlight = true;
 
       const requestId = matchingRequestRef.current + 1;
@@ -711,7 +795,7 @@ function ProgramsPage() {
           setExcludedCount(0);
         }
       } finally {
-        requestInFlight = false;
+        if (matchingRequestRef.current === requestId) requestInFlight = false;
         if (showLoading && !cancelled && matchingRequestRef.current === requestId) {
           setIsLoadingMatches(false);
         }
@@ -734,7 +818,7 @@ function ProgramsPage() {
       }
     };
     const refreshAfterProfileSave = () => {
-      void loadMatches(true);
+      void loadMatches(true, true);
     };
 
     void loadMatches();
@@ -1166,33 +1250,11 @@ function ProgramsPage() {
   }
 
   function handlePreferenceSearch() {
-    const text = query.trim();
-    if (!text || !preferenceStorageKey || preferenceRequestInFlightRef.current) return;
-
-    preferenceRequestInFlightRef.current = true;
-    submittedPreferenceQueryRef.current = text;
-    setIsQueryFocused(false);
-    setPreferenceFeedback(null);
-    setPreferenceFeedbackExiting(false);
-    if (preferenceFeedbackTimerRef.current) {
-      clearTimeout(preferenceFeedbackTimerRef.current);
-      preferenceFeedbackTimerRef.current = null;
-    }
-    setIsPreferenceSearching(true);
-    setIsSearchLoadingVisible(false);
-    searchLoadingTimerRef.current = setTimeout(() => {
-      setIsSearchLoadingVisible(true);
-      searchLoadingTimerRef.current = null;
-    }, 200);
-
-    const selectedField =
-      supportCategories.length === 1 && !supportCategories.includes(SUPPORT_ALL)
-        ? (supportCategories[0] ?? null)
-        : null;
-    void preferenceTags.search(text, selectedField);
+    startPreferenceSearch(query.trim());
   }
 
   function handleClearPreferenceSearch() {
+    preferenceReapplyVersionRef.current += 1;
     setQuery("");
     submittedPreferenceQueryRef.current = "";
     if (preferenceStorageKey) {
@@ -1258,6 +1320,7 @@ function ProgramsPage() {
         <SupportCategorySelect
           value={supportCategories}
           onChange={(next) => {
+            preferenceReapplyVersionRef.current += 1;
             preferenceTags.clear();
             stopPreferenceSearchUi();
             setPreferenceFeedback(null);
