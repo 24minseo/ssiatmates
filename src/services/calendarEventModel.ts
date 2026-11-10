@@ -24,6 +24,13 @@ export type CalendarUiEvent = {
 const record = (value: unknown): Record<string, any> =>
   value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, any> : {};
 
+function calendarDay(value: unknown): string | undefined {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}(?:$|T)/.test(value)) return undefined;
+  const day = value.slice(0, 10);
+  const date = new Date(`${day}T00:00:00Z`);
+  return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === day ? day : undefined;
+}
+
 function shiftCalendarDay(day: string, days: number): string {
   const date = new Date(`${day}T00:00:00Z`);
   date.setUTCDate(date.getUTCDate() + days);
@@ -35,8 +42,8 @@ export function normalizeCalendarEvents(items: unknown): CalendarUiEvent[] {
   return items.flatMap((raw) => {
     const value = record(raw);
     if ((typeof value.id !== "string" && typeof value.id !== "number") || typeof value.title !== "string" || typeof value.start !== "string") return [];
-    const date = value.start.slice(0, 10);
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return [];
+    const date = calendarDay(value.start);
+    if (!date) return [];
     const props = record(value.extendedProps);
     const metadata = record(props.metadata ?? value.metadata);
     const linkedNotice = record(props.linked_notice ?? metadata.linked_notice ?? value.linked_notice);
@@ -62,10 +69,13 @@ export function normalizeCalendarEvents(items: unknown): CalendarUiEvent[] {
         .split(/\r?\n+/)
         .map((line) => line.replace(/^\s*(?:[-•·▪◦]\s*|\d+[.)]\s*)/, "").trim())
         .filter((line) => line.length > 0 && !/^(?:없음|없습니다|해당\s*없음|해당\s*사항\s*없음)\.?$/i.test(line)));
-    const inclusiveEnd = typeof props.end_inclusive === "string"
-      ? props.end_inclusive
-      : typeof value.end === "string" ? shiftCalendarDay(value.end.slice(0, 10), -1) : date;
-    const dateMode = props.date_mode === "range" || inclusiveEnd > date ? "range" : "single";
+    const end = calendarDay(value.end);
+    const inclusiveEnd = calendarDay(props.end_inclusive) ??
+      (end && props.end_exclusive !== false ? shiftCalendarDay(end, -1) : end) ??
+      date;
+    const storedMode = props.date_mode ?? metadata.date_mode;
+    const dateMode = storedMode !== "single" && inclusiveEnd >= date &&
+      (storedMode === "range" || inclusiveEnd > date) ? "range" : "single";
     const checklist = Array.isArray(props.checklist_items) && props.checklist_items.length > 0
       ? props.checklist_items
       : null;

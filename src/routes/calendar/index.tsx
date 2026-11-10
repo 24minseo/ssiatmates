@@ -127,6 +127,10 @@ type CalendarEvent = {
   eventType?: string;
 };
 
+type CalendarSnapshot = { ownerId: string; events: CalendarEvent[] };
+const EMPTY_CALENDAR_EVENTS: CalendarEvent[] = [];
+let cachedCalendarSnapshot: CalendarSnapshot | null = null;
+
 const EVENT_COLORS = [
   { label: "초록", value: "#1F8064", dotColor: "#83C9AF" },
   { label: "빨강", value: "#EF4444", dotColor: "#E78B94" },
@@ -927,15 +931,20 @@ function CalendarPage() {
   });
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [view, setView] = useState<CalendarView>("month");
-  const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [calendarSnapshot, setCalendarSnapshot] = useState<CalendarSnapshot | null>(null);
+  const events = calendarSnapshot?.ownerId === user?.id
+    ? calendarSnapshot?.events ?? EMPTY_CALENDAR_EVENTS
+    : EMPTY_CALENDAR_EVENTS;
   const eventsRequestRef = useRef<Promise<void> | null>(null);
   const eventsGenerationRef = useRef(0);
   const ownerIdRef = useRef<string | null>(null);
-  ownerIdRef.current = user?.id ?? null;
+  const currentEventsRef = useRef<CalendarEvent[]>(EMPTY_CALENDAR_EVENTS);
+  const mutationInFlightRef = useRef(false);
+  const createRequestRef = useRef<{ key: string; id: string } | null>(null);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [editingEventId, setEditingEventId] = useState<number | null>(null);
+  const [editingEventId, setEditingEventId] = useState<CalendarEvent["id"] | null>(null);
   const [selectedDayEvents, setSelectedDayEvents] = useState<{ date: string; events: CalendarEvent[] } | null>(null);
   const [eventTitle, setEventTitle] = useState("");
   const [eventColor, setEventColor] = useState<string>(EVENT_COLORS[0].value);
@@ -987,12 +996,42 @@ function CalendarPage() {
   const [reminderUnitHintOpen, setReminderUnitHintOpen] = useState(false);
   const [reminderUnitHintSeen, setReminderUnitHintSeen] = useState(false);
 
-  useEffect(() => {
+  const invalidateCalendarRead = () => {
     eventsGenerationRef.current += 1;
     eventsRequestRef.current = null;
-    setEvents([]);
+  };
+
+  const publishCalendarEvents = (ownerId: string, nextEvents: CalendarEvent[]) => {
+    if (ownerIdRef.current !== ownerId) return;
+    const snapshot = { ownerId, events: nextEvents };
+    currentEventsRef.current = nextEvents;
+    cachedCalendarSnapshot = snapshot;
+    setCalendarSnapshot(snapshot);
+  };
+
+  useEffect(() => {
+    const ownerId = user?.id ?? null;
+    ownerIdRef.current = ownerId;
+    if (!authLoading && cachedCalendarSnapshot?.ownerId !== ownerId) {
+      cachedCalendarSnapshot = null;
+    }
+    const cached = cachedCalendarSnapshot?.ownerId === ownerId ? cachedCalendarSnapshot : null;
+    currentEventsRef.current = cached?.events ?? EMPTY_CALENDAR_EVENTS;
+    setCalendarSnapshot(cached);
     setSelectedEvent(null);
-  }, [user?.id]);
+    setSelectedDayEvents(null);
+    setIsAddOpen(false);
+    setEditingEventId(null);
+    setIsSavingEvent(false);
+    setEventsError(null);
+    mutationInFlightRef.current = false;
+    createRequestRef.current = null;
+
+    return () => {
+      ownerIdRef.current = null;
+      invalidateCalendarRead();
+    };
+  }, [authLoading, user?.id]);
 
   const today = useMemo(() => new Date(), []);
   const todayKey = toDateKey(today);
@@ -1002,7 +1041,7 @@ function CalendarPage() {
     if (error) throw error;
 
     let currentSession = data.session;
-    if (!currentSession) return null;
+    if (!currentSession || currentSession.user.id !== user?.id) return null;
 
     const expiresAt = (currentSession.expires_at ?? 0) * 1000;
     if (expiresAt > 0 && expiresAt <= Date.now() + 30_000) {
@@ -1011,7 +1050,7 @@ function CalendarPage() {
       currentSession = refreshed.session;
     }
 
-    return currentSession?.access_token ?? null;
+    return currentSession?.user.id === user?.id ? currentSession?.access_token ?? null : null;
   };
 
   const isAuthFailure = (error: unknown) =>
@@ -1029,7 +1068,7 @@ function CalendarPage() {
       if (!isAuthFailure(error)) throw error;
       const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
       const refreshedToken = refreshed.session?.access_token;
-      if (refreshError || !refreshedToken) throw error;
+      if (refreshError || !refreshedToken || refreshed.session?.user.id !== user?.id) throw error;
       return request(refreshedToken);
     }
   };
@@ -1050,8 +1089,11 @@ function CalendarPage() {
           getCalendarEventsFn({ data: { accessToken: token } }),
         );
         if (!isCurrentRequest()) return;
-        const normalized = normalizeCalendarEvents(result.events) as CalendarEvent[];
-        if (isCurrentRequest()) setEvents(normalized);
+        const normalized = normalizeCalendarEvents(result.events);
+        if (normalized.length !== result.events.length) {
+          throw new Error("일정 날짜를 확인할 수 없어 이전 목록을 유지했어요.");
+        }
+        if (isCurrentRequest()) publishCalendarEvents(ownerId, normalized);
       } catch (error) {
         console.error("[calendar] 이벤트 조회 실패", error);
         if (isCurrentRequest()) {
@@ -1071,18 +1113,22 @@ function CalendarPage() {
   useEffect(() => {
     if (authLoading) return;
     void loadCalendarEvents();
-  }, [authLoading, session?.access_token]);
+  }, [authLoading, session?.access_token, user?.id]);
   useEffect(() => {
     const refresh = () => { if (!document.hidden) void loadCalendarEvents(); };
-    window.addEventListener("calendar-events-changed", refresh);
+    const refreshAfterChange = () => {
+      invalidateCalendarRead();
+      refresh();
+    };
+    window.addEventListener("calendar-events-changed", refreshAfterChange);
     window.addEventListener("focus", refresh);
     document.addEventListener("visibilitychange", refresh);
     return () => {
-      window.removeEventListener("calendar-events-changed", refresh);
+      window.removeEventListener("calendar-events-changed", refreshAfterChange);
       window.removeEventListener("focus", refresh);
       document.removeEventListener("visibilitychange", refresh);
     };
-  }, [session?.access_token]);
+  }, [session?.access_token, user?.id]);
   const year = visibleMonth.getFullYear();
   const month = visibleMonth.getMonth();
 
@@ -1224,6 +1270,7 @@ function CalendarPage() {
 
   const openAddDialog = (dateKey?: string, endDate = "", origin: "toolbar" | "calendar" = "toolbar") => {
     calendarAddOriginRef.current = origin;
+    createRequestRef.current = null;
     const initialStartDate = dateKey ?? todayKey;
     const initialEndDate = endDate === initialStartDate ? "" : endDate;
     const initialMode: DateSelectionMode = initialEndDate ? "range" : "single";
@@ -1286,7 +1333,7 @@ function CalendarPage() {
           is_closed: false,
         } satisfies SavedNotice
       : null);
-    if (linkedProgram) setSelectedProgram(linkedProgram);
+    setSelectedProgram(linkedProgram);
     calendarAddOriginRef.current = "calendar";
     setEditingEventId(selectedEvent.id);
     setEventTitle(selectedEvent.title);
@@ -1294,9 +1341,10 @@ function CalendarPage() {
     setColorPickerOpen(false);
     setEventDate(selectedEvent.date);
     setEventEndDate(selectedEvent.endDate ?? "");
-    setDateSelectionMode(selectedEvent.endDate ? "range" : "single");
+    const mode = selectedEvent.dateMode ?? (selectedEvent.endDate ? "range" : "single");
+    setDateSelectionMode(mode);
     setInitialDateSelection({
-      mode: selectedEvent.endDate ? "range" : "single",
+      mode,
       startDate: selectedEvent.date,
       endDate: selectedEvent.endDate ?? "",
     });
@@ -1321,34 +1369,34 @@ function CalendarPage() {
   };
 
   const deleteSelectedEvent = async () => {
-    if (!selectedEvent) return;
-    const { data: latestSessionData } = await supabase.auth.getSession();
-    const latestSession = latestSessionData.session;
-    if (!latestSession?.user?.id || !latestSession.access_token) {
-      setEventsError("로그인이 필요합니다.");
-      return;
-    }
+    const ownerId = ownerIdRef.current;
+    if (!selectedEvent || !ownerId || mutationInFlightRef.current) return;
+    mutationInFlightRef.current = true;
     setIsSavingEvent(true);
     try {
-      await mutateCalendarEventFn({ data: {
-        userId: latestSession.user.id,
+      await withFreshAccessToken((accessToken) => mutateCalendarEventFn({ data: {
         eventId: selectedEvent.id,
         action: "delete",
-        accessToken: latestSession.access_token,
-      }});
+        accessToken,
+      }}));
+      if (ownerIdRef.current !== ownerId) {
+        window.dispatchEvent(new Event("calendar-events-changed"));
+        return;
+      }
       setSelectedEvent(null);
       setDeleteConfirmOpen(false);
-      setEvents((current) => current.filter((event) => event.id !== selectedEvent.id));
-      // 삭제 성공을 기다린 뒤 전체 목록을 다시 받아오면 n8n 조회 지연이
-      // UI에 그대로 노출됩니다. 로컬 목록은 즉시 반영하고 서버 재조회는
-      // 백그라운드에서 진행합니다.
-      void loadCalendarEvents();
+      publishCalendarEvents(ownerId, currentEventsRef.current.filter((event) => event.id !== selectedEvent.id));
       window.dispatchEvent(new Event("calendar-events-changed"));
       window.dispatchEvent(new Event("notifications-changed"));
     } catch (error) {
-      setEventsError(error instanceof Error ? error.message : "일정을 삭제하지 못했어요.");
+      if (ownerIdRef.current === ownerId) {
+        setEventsError(error instanceof Error ? error.message : "일정을 삭제하지 못했어요.");
+      }
     } finally {
-      setIsSavingEvent(false);
+      if (ownerIdRef.current === ownerId) {
+        mutationInFlightRef.current = false;
+        setIsSavingEvent(false);
+      }
     }
   };
 
@@ -1494,35 +1542,32 @@ function CalendarPage() {
 
   const toggleSelectedEventChecklistItem = async (itemId: number) => {
     const selected = selectedEvent;
-    if (!selected) return;
-    const previous = selected.checklistItems ?? [];
-    const nextItems = previous.map((item) =>
+    const ownerId = ownerIdRef.current;
+    if (!selected || !ownerId || mutationInFlightRef.current) return;
+    const nextItems = (selected.checklistItems ?? []).map((item) =>
       item.id === itemId ? { ...item, completed: !item.completed } : item,
     );
-    let eventId: string | number | null = null;
-    setSelectedEvent((current) => {
-      if (!current) return current;
-      eventId = current.id;
-      setEvents((events) =>
-        events.map((event) =>
-          event.id === current.id ? { ...event, checklistItems: nextItems } : event,
-        ),
-      );
-      return { ...current, checklistItems: nextItems };
-    });
-    if (eventId === null) return;
+    mutationInFlightRef.current = true;
     try {
-      await withFreshAccessToken((accessToken) => mutateCalendarEventFn({
+      const result = await withFreshAccessToken((accessToken) => mutateCalendarEventFn({
         data: selected.eventType === "application_deadline"
-          ? { eventId, action: "update", checklistItems: nextItems, accessToken }
-          : { eventId, action: "toggle_checklist", itemId, accessToken },
+          ? { eventId: selected.id, action: "update", checklistItems: nextItems, accessToken }
+          : { eventId: selected.id, action: "toggle_checklist", itemId, accessToken },
       }));
+      if (ownerIdRef.current !== ownerId) {
+        window.dispatchEvent(new Event("calendar-events-changed"));
+        return;
+      }
+      const updated = normalizeCalendarEvents([result.event])[0] ?? { ...selected, checklistItems: nextItems };
+      setSelectedEvent((current) => current?.id === selected.id ? updated : current);
+      publishCalendarEvents(ownerId, upsertCalendarEvent(currentEventsRef.current, updated));
       window.dispatchEvent(new Event("calendar-events-changed"));
     } catch (error) {
-      const rollback = previous;
-      setSelectedEvent((current) => current ? { ...current, checklistItems: rollback ?? [] } : current);
-      setEvents((current) => current.map((event) => event.id === eventId ? { ...event, checklistItems: rollback ?? [] } : event));
-      setEventsError(error instanceof Error ? error.message : "체크리스트를 저장하지 못했어요.");
+      if (ownerIdRef.current === ownerId) {
+        setEventsError(error instanceof Error ? error.message : "체크리스트를 저장하지 못했어요.");
+      }
+    } finally {
+      if (ownerIdRef.current === ownerId) mutationInFlightRef.current = false;
     }
   };
 
@@ -1557,7 +1602,8 @@ function CalendarPage() {
   };
 
   const saveEvent = async () => {
-    if (isSavingEvent) return;
+    const ownerId = ownerIdRef.current;
+    if (!ownerId || mutationInFlightRef.current) return;
     const title = eventTitle.trim();
     if (!title || !eventDate) return;
     if (
@@ -1569,55 +1615,24 @@ function CalendarPage() {
       return;
     }
 
-    // 모든 신규 일정은 calendar-task-create로 저장합니다. 지원사업 연결과
-    // 기간 여부는 요청을 건너뛸 이유가 아니며, 연결하지 않으면 null을 보냅니다.
-    const isNewManualTask = editingEventId === null;
-    if (isNewManualTask) {
-      setIsSavingEvent(true);
-      setSaveError(null);
-      try {
-        await withFreshAccessToken((accessToken) =>
-          createCalendarTaskFn({
-            data: {
-              title,
-              date: eventDate,
-              end_date: dateSelectionMode === "range" ? eventEndDate : null,
-              date_mode: dateSelectionMode,
-              start_time: eventStartTime || null,
-              description: eventDescription.trim(),
-              content_mode: contentMode,
-              checklist_items: checklistItems,
-              reminders,
-              client_request_id: crypto.randomUUID(),
-              saved_notice_id: selectedProgram?.saved_notice_id ?? null,
-              color: eventColor || "#6B7280",
-              accessToken,
-            },
-          }),
-        );
-      } catch (error) {
-        console.error("[calendar] 직접 할 일 저장 실패", error);
-        setSaveError(error instanceof Error ? error.message : "할 일을 저장하지 못했어요.");
-        return;
-      } finally {
-        setIsSavingEvent(false);
-      }
+    const endDate = dateSelectionMode === "range" ? eventEndDate : null;
+    if (dateSelectionMode === "range" && (!endDate || endDate < eventDate)) {
+      setSaveError("기간 일정의 종료 날짜를 확인해주세요.");
+      return;
     }
 
-    if (editingEventId !== null) {
-      setIsSavingEvent(true);
-      setSaveError(null);
-      try {
-        await withFreshAccessToken(async (accessToken) => {
-          const latestSession = (await supabase.auth.getSession()).data.session;
-          if (!latestSession?.user?.id) throw new Error("로그인이 필요합니다.");
+    mutationInFlightRef.current = true;
+    setIsSavingEvent(true);
+    setSaveError(null);
+    try {
+      const result = await withFreshAccessToken((accessToken) => {
+        if (editingEventId !== null) {
           return mutateCalendarEventFn({ data: {
-            userId: latestSession.user.id,
             eventId: editingEventId,
             action: "update",
             title,
             startDate: eventDate,
-            endDate: dateSelectionMode === "range" ? eventEndDate : null,
+            endDate,
             dateMode: dateSelectionMode,
             startTime: eventStartTime || null,
             description: eventDescription.trim(),
@@ -1628,45 +1643,49 @@ function CalendarPage() {
             allDay: true,
             accessToken,
           }});
+        }
+
+        const task = {
+          title,
+          date: eventDate,
+          end_date: endDate,
+          date_mode: dateSelectionMode,
+          start_time: eventStartTime || null,
+          description: eventDescription.trim(),
+          content_mode: contentMode,
+          checklist_items: checklistItems,
+          reminders,
+          saved_notice_id: selectedProgram?.saved_notice_id ?? null,
+          color: eventColor || "#6B7280",
+        };
+        if (ownerIdRef.current !== ownerId) throw new Error("캘린더를 다시 열어주세요.");
+        const key = JSON.stringify(task);
+        if (createRequestRef.current?.key !== key) {
+          createRequestRef.current = { key, id: crypto.randomUUID() };
+        }
+        return createCalendarTaskFn({
+          data: { ...task, client_request_id: createRequestRef.current.id, accessToken },
         });
-      } catch (error) {
-        setSaveError(error instanceof Error ? error.message : "일정을 수정하지 못했어요.");
+      });
+      if (ownerIdRef.current !== ownerId) {
+        window.dispatchEvent(new Event("calendar-events-changed"));
         return;
-      } finally {
+      }
+      const saved = normalizeCalendarEvents([result.event])[0];
+      if (saved) publishCalendarEvents(ownerId, upsertCalendarEvent(currentEventsRef.current, saved));
+      createRequestRef.current = null;
+    } catch (error) {
+      if (ownerIdRef.current === ownerId) {
+        setSaveError(error instanceof Error ? error.message : "일정을 저장하지 못했어요.");
+      }
+      return;
+    } finally {
+      if (ownerIdRef.current === ownerId) {
+        mutationInFlightRef.current = false;
         setIsSavingEvent(false);
       }
     }
 
-    const nextEvent: CalendarEvent = {
-      id: editingEventId ?? Date.now(),
-      title,
-      color: eventColor,
-      date: eventDate,
-      ...(eventEndDate && eventEndDate !== eventDate ? { endDate: eventEndDate } : {}),
-      description: eventDescription.trim(),
-      contentMode,
-      checklistItems: checklistItems
-        .slice(0, CHECKLIST_MAX_ITEMS)
-        .map((item) => ({
-          ...item,
-          text: item.text.trim().slice(0, CHECKLIST_ITEM_MAX_LENGTH),
-        }))
-        .filter((item) => item.text.length > 0),
-      ...(eventStartTime ? { startTime: eventStartTime } : {}),
-      ...(reminders.length ? { reminders } : {}),
-    };
-    if (!isNewManualTask) {
-      setEvents((current) => {
-        if (editingEventId === null) return [...current, nextEvent];
-        return current.map((calendarEvent) =>
-          calendarEvent.id === editingEventId ? nextEvent : calendarEvent,
-        );
-      });
-    } else {
-      // 신규 일정도 임시 ID로 먼저 화면에 반영해 저장 완료를 즉시 보여줍니다.
-      // 실제 ID와 서버 상태는 아래 백그라운드 재조회로 동기화됩니다.
-      setEvents((current) => [...current, nextEvent]);
-    }
     const [eventYear, eventMonth] = eventDate.split("-").map(Number);
     if (
       eventYear !== undefined &&
@@ -1681,8 +1700,6 @@ function CalendarPage() {
     setSelectedDate(eventDate);
     setEditingEventId(null);
     setIsAddOpen(false);
-    // n8n calendar-events 응답을 기다리지 않고 모달을 닫습니다.
-    void loadCalendarEvents();
     window.dispatchEvent(new Event("calendar-events-changed"));
     window.dispatchEvent(new Event("notifications-changed"));
   };

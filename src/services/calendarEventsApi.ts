@@ -24,5 +24,6 @@ export const getCalendarEvents = createServerFn({ method: "POST" })
       "get_my_calendar_events_v3", {}, data.accessToken,
       "N8N_CALENDAR_EVENTS_WEBHOOK_URL", {},
     );
-    return { events: Array.isArray(result.events) ? result.events : [] };
+    if (!Array.isArray(result.events)) throw new Error("캘린더 조회 응답을 확인할 수 없어요.");
+    return { events: result.events };
   });
