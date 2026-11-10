@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { ArrowRight, Check, Loader2, MoreVertical, X } from "lucide-react";
 import { toast } from "sonner";
@@ -29,7 +29,11 @@ import { useAuth } from "@/hooks/useAuth";
 import { ProgramReportDialog } from "@/components/programs/ProgramReportDialog";
 import { getSupportFilterSession, setSupportFilterSession } from "@/lib/supportFilterSession";
 import { applySavedStates, savedNoticesApi } from "@/services/savedNoticesApi";
-import { createPreferenceTags } from "@/services/preferenceTags";
+import {
+  createPreferenceTags,
+  PREFERENCE_MATCH_STORAGE_PREFIX,
+  takePreferenceProfileRefresh,
+} from "@/services/preferenceTags";
 import { programService, type Program, type ProgramInput } from "@/services/programRepository";
 import { createManualNoticeAnalysisApi } from "@/services/manualNoticeAnalysisApi";
 import { createManualNoticeConfirmApi } from "@/services/manualNoticeConfirmApi";
@@ -52,7 +56,7 @@ import {
 const PAGE_SIZE = 20;
 const PREFERENCE_QUERY_STORAGE_PREFIX = "programs-preference-query:";
 const PREFERENCE_COMMITTED_QUERY_STORAGE_PREFIX = "programs-preference-committed-query:";
-const PREFERENCE_MATCH_STORAGE_PREFIX = "programs-preference-matches:";
+const activePreferenceRequests = new Map<string, Promise<unknown>>();
 const PREFERENCE_SUGGESTIONS = [
   "온라인으로 신청하고 싶어요",
   "사업계획서 없이 신청하고 싶어요",
@@ -348,15 +352,18 @@ function ProgramsPage() {
   const preferenceSuggestionsRef = useRef<HTMLDivElement>(null);
   const [canScrollPreferenceSuggestions, setCanScrollPreferenceSuggestions] = useState(false);
   const submittedPreferenceQueryRef = useRef("");
-  const submittedPreferenceFieldRef = useRef<string | null>(null);
-  const matchDataVersionRef = useRef(0);
-  const lastPreferenceSearchRef = useRef<{
-    query: string;
-    field: string | null;
-    version: number;
-  } | null>(null);
-  const preferenceReapplyReasonRef = useRef<"silent" | "profile-save">("silent");
-  const silentPreferenceReapplyRef = useRef(false);
+  const preferenceRequestInFlightRef = useRef(false);
+  const preferenceReapplyVersionRef = useRef(0);
+
+  const stopPreferenceSearchUi = useCallback(() => {
+    preferenceRequestInFlightRef.current = false;
+    setIsPreferenceSearching(false);
+    setIsSearchLoadingVisible(false);
+    if (searchLoadingTimerRef.current) {
+      clearTimeout(searchLoadingTimerRef.current);
+      searchLoadingTimerRef.current = null;
+    }
+  }, []);
 
   useEffect(() => {
     if (!isQueryFocused) {
@@ -488,12 +495,7 @@ function ProgramsPage() {
           setMatchedPrograms(items);
         },
         onResult: (result) => {
-          setIsPreferenceSearching(false);
-          setIsSearchLoadingVisible(false);
-          if (searchLoadingTimerRef.current) {
-            clearTimeout(searchLoadingTimerRef.current);
-            searchLoadingTimerRef.current = null;
-          }
+          stopPreferenceSearchUi();
           if (preferenceFeedbackTimerRef.current) {
             clearTimeout(preferenceFeedbackTimerRef.current);
             preferenceFeedbackTimerRef.current = null;
@@ -505,16 +507,7 @@ function ProgramsPage() {
             }
             return;
           }
-          const isSilentReapply = silentPreferenceReapplyRef.current;
-          silentPreferenceReapplyRef.current = false;
-          const submittedQuery = submittedPreferenceQueryRef.current.trim();
-          if (submittedQuery) {
-            lastPreferenceSearchRef.current = {
-              query: submittedQuery,
-              field: submittedPreferenceFieldRef.current,
-              version: matchDataVersionRef.current,
-            };
-          }
+          const submittedQuery = submittedPreferenceQueryRef.current;
           if (submittedQuery && preferenceStorageKey) {
             window.sessionStorage.setItem(
               `${PREFERENCE_COMMITTED_QUERY_STORAGE_PREFIX}${preferenceStorageKey}`,
@@ -536,7 +529,6 @@ function ProgramsPage() {
           setSort(
             result.items.some((item) => item.preference_matched === true) ? "fit" : "deadline",
           );
-          if (isSilentReapply) return;
           setPreferenceFeedbackExiting(false);
           setPreferenceFeedbackVersion((version) => version + 1);
           const showInfoIcon =
@@ -561,48 +553,76 @@ function ProgramsPage() {
           }
         },
         onError: (error) => {
-          const isSilentReapply = silentPreferenceReapplyRef.current;
-          silentPreferenceReapplyRef.current = false;
-          setIsPreferenceSearching(false);
-          setIsSearchLoadingVisible(false);
-          if (searchLoadingTimerRef.current) {
-            clearTimeout(searchLoadingTimerRef.current);
-            searchLoadingTimerRef.current = null;
-          }
+          stopPreferenceSearchUi();
           if (preferenceFeedbackTimerRef.current) {
             clearTimeout(preferenceFeedbackTimerRef.current);
             preferenceFeedbackTimerRef.current = null;
           }
-          if (!isSilentReapply) {
-            setPreferenceFeedbackExiting(false);
-            const submittedQuery = submittedPreferenceQueryRef.current.trim();
-            if (submittedQuery && preferenceStorageKey) {
-              window.sessionStorage.setItem(
-                `${PREFERENCE_COMMITTED_QUERY_STORAGE_PREFIX}${preferenceStorageKey}`,
-                submittedQuery,
-              );
-            }
-            setSort("deadline");
-            setPreferenceFeedbackVersion((version) => version + 1);
-            setPreferenceFeedback({ tone: "error", message: error.message });
-          }
+          setPreferenceFeedbackExiting(false);
+          setSort("deadline");
+          setPreferenceFeedbackVersion((version) => version + 1);
+          setPreferenceFeedback({ tone: "error", message: error.message });
         },
       }),
-    [preferenceStorageKey],
+    [preferenceStorageKey, stopPreferenceSearchUi],
   );
+
+  const preferenceFieldRef = useRef<string | null>(null);
+  const fieldsForPreference = getSelectedFields(supportCategories, usesProfileDefault);
+  preferenceFieldRef.current = fieldsForPreference.length === 1 && fieldsForPreference[0] !== SUPPORT_ALL
+    ? fieldsForPreference[0] ?? null
+    : null;
+
+  const startPreferenceSearch = useCallback((text: string) => {
+    if (!text || !preferenceStorageKey || preferenceRequestInFlightRef.current ||
+        activePreferenceRequests.has(preferenceStorageKey)) return;
+
+    preferenceReapplyVersionRef.current += 1;
+    preferenceRequestInFlightRef.current = true;
+    submittedPreferenceQueryRef.current = text;
+    setIsQueryFocused(false);
+    setPreferenceFeedback(null);
+    setPreferenceFeedbackExiting(false);
+    if (preferenceFeedbackTimerRef.current) {
+      clearTimeout(preferenceFeedbackTimerRef.current);
+      preferenceFeedbackTimerRef.current = null;
+    }
+    setIsPreferenceSearching(true);
+    setIsSearchLoadingVisible(false);
+    searchLoadingTimerRef.current = setTimeout(() => {
+      setIsSearchLoadingVisible(true);
+      searchLoadingTimerRef.current = null;
+    }, 200);
+
+    const request = preferenceTags.search(text, preferenceFieldRef.current);
+    activePreferenceRequests.set(preferenceStorageKey, request);
+    const release = () => {
+      if (activePreferenceRequests.get(preferenceStorageKey) === request) {
+        activePreferenceRequests.delete(preferenceStorageKey);
+      }
+    };
+    void request.then(release, release);
+  }, [preferenceStorageKey, preferenceTags]);
 
   useEffect(() => {
     matchedProgramsRef.current = matchedPrograms;
   }, [matchedPrograms]);
 
-  useEffect(
-    () => () => {
-      preferenceTags.dispose();
-      if (preferenceFeedbackTimerRef.current) clearTimeout(preferenceFeedbackTimerRef.current);
-      if (searchLoadingTimerRef.current) clearTimeout(searchLoadingTimerRef.current);
-    },
-    [preferenceTags],
-  );
+  useEffect(() => {
+    stopPreferenceSearchUi();
+    setPreferenceFeedback(null);
+    return () => {
+      preferenceTags.cancel();
+      if (preferenceFeedbackTimerRef.current) {
+        clearTimeout(preferenceFeedbackTimerRef.current);
+        preferenceFeedbackTimerRef.current = null;
+      }
+      if (searchLoadingTimerRef.current) {
+        clearTimeout(searchLoadingTimerRef.current);
+        searchLoadingTimerRef.current = null;
+      }
+    };
+  }, [preferenceTags, stopPreferenceSearchUi]);
 
   useEffect(() => {
     const previousKey = previousPreferenceStorageKey.current;
@@ -620,6 +640,9 @@ function ProgramsPage() {
       return;
     }
     if (search.source === "myhome") {
+      preferenceTags.clear();
+      stopPreferenceSearchUi();
+      setPreferenceFeedback(null);
       setQuery("");
       return;
     }
@@ -630,7 +653,49 @@ function ProgramsPage() {
       window.sessionStorage.getItem(`${PREFERENCE_QUERY_STORAGE_PREFIX}${preferenceStorageKey}`) ??
       "";
     setQuery(storedCommittedQuery);
-  }, [preferenceStorageKey, search.source]);
+  }, [preferenceStorageKey, preferenceTags, search.source, stopPreferenceSearchUi]);
+
+  useEffect(() => {
+    if (!preferenceStorageKey) return;
+    let cancelled = false;
+
+    const reapplyAfterProfileSave = async () => {
+      const version = ++preferenceReapplyVersionRef.current;
+      const previousRequest = activePreferenceRequests.get(preferenceStorageKey);
+      preferenceTags.clear();
+      stopPreferenceSearchUi();
+      if (preferenceFeedbackTimerRef.current) {
+        clearTimeout(preferenceFeedbackTimerRef.current);
+        preferenceFeedbackTimerRef.current = null;
+      }
+      setPreferenceFeedback(null);
+      setSort("deadline");
+      if (search.source === "myhome") return;
+      const text = window.sessionStorage.getItem(
+        `${PREFERENCE_COMMITTED_QUERY_STORAGE_PREFIX}${preferenceStorageKey}`,
+      )?.trim();
+      if (!text) return;
+      setQuery(text);
+      setIsPreferenceSearching(true);
+      await previousRequest?.catch(() => undefined);
+      if (cancelled || version !== preferenceReapplyVersionRef.current) return;
+      startPreferenceSearch(text);
+    };
+
+    const handleProfileSave = () => {
+      takePreferenceProfileRefresh(preferenceStorageKey);
+      void reapplyAfterProfileSave();
+    };
+    window.addEventListener("matching-profile-saved", handleProfileSave);
+    queueMicrotask(() => {
+      if (!cancelled && takePreferenceProfileRefresh(preferenceStorageKey)) void reapplyAfterProfileSave();
+    });
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener("matching-profile-saved", handleProfileSave);
+    };
+  }, [preferenceStorageKey, preferenceTags, search.source, startPreferenceSearch, stopPreferenceSearchUi]);
 
   useEffect(() => {
     if (!profile) return;
@@ -651,7 +716,7 @@ function ProgramsPage() {
     let cancelled = false;
     let requestInFlight = false;
 
-    async function loadMatches(showLoading = true) {
+    async function loadMatches(showLoading = true, force = false) {
       if (!session?.user.id) {
         preferenceTags.clear();
         if (preferenceStorageKey) {
@@ -666,7 +731,7 @@ function ProgramsPage() {
         return;
       }
       if (!profileFilterInitializedFor.current) return;
-      if (requestInFlight) return;
+      if (requestInFlight && !force) return;
       requestInFlight = true;
 
       const requestId = matchingRequestRef.current + 1;
@@ -700,26 +765,9 @@ function ProgramsPage() {
           savedState.items,
         );
         const nextPrograms = itemsWithSavedState.map(toMatchedProgram);
-        if (search.source === "myhome") preferenceTags.clear();
         const nextProgramsWithPreferences = preferenceTags.apply(nextPrograms);
+        matchedProgramsRef.current = nextProgramsWithPreferences;
         setMatchedPrograms(nextProgramsWithPreferences);
-        const committedQuery = search.source === "myhome"
-          ? ""
-          : preferenceStorageKey
-          ? (window.sessionStorage
-              .getItem(`${PREFERENCE_COMMITTED_QUERY_STORAGE_PREFIX}${preferenceStorageKey}`)
-              ?.trim() ?? "")
-          : "";
-        if (committedQuery && !isPreferenceSearching) {
-          const selectedField =
-            fields.length === 1 && !fields.includes(SUPPORT_ALL) ? (fields[0] ?? null) : null;
-          submittedPreferenceQueryRef.current = committedQuery;
-          submittedPreferenceFieldRef.current = selectedField;
-          silentPreferenceReapplyRef.current =
-            preferenceReapplyReasonRef.current !== "profile-save";
-          preferenceReapplyReasonRef.current = "silent";
-          void preferenceTags.search(committedQuery, selectedField);
-        }
         setSort(
           nextProgramsWithPreferences.some((item) => item.preference_matched === true)
             ? "fit"
@@ -737,7 +785,6 @@ function ProgramsPage() {
             0,
           ),
         );
-        matchDataVersionRef.current += 1;
       } catch (error) {
         if (cancelled || matchingRequestRef.current !== requestId) return;
         console.error("[programs] 맞춤 공고 조회 실패", error);
@@ -748,7 +795,7 @@ function ProgramsPage() {
           setExcludedCount(0);
         }
       } finally {
-        requestInFlight = false;
+        if (matchingRequestRef.current === requestId) requestInFlight = false;
         if (showLoading && !cancelled && matchingRequestRef.current === requestId) {
           setIsLoadingMatches(false);
         }
@@ -771,8 +818,7 @@ function ProgramsPage() {
       }
     };
     const refreshAfterProfileSave = () => {
-      preferenceReapplyReasonRef.current = "profile-save";
-      void loadMatches(true);
+      void loadMatches(true, true);
     };
 
     void loadMatches();
@@ -1203,11 +1249,14 @@ function ProgramsPage() {
     setManualFormOpen(true);
   }
 
+  function handlePreferenceSearch() {
+    startPreferenceSearch(query.trim());
+  }
+
   function handleClearPreferenceSearch() {
+    preferenceReapplyVersionRef.current += 1;
     setQuery("");
     submittedPreferenceQueryRef.current = "";
-    submittedPreferenceFieldRef.current = null;
-    lastPreferenceSearchRef.current = null;
     if (preferenceStorageKey) {
       window.sessionStorage.removeItem(
         `${PREFERENCE_COMMITTED_QUERY_STORAGE_PREFIX}${preferenceStorageKey}`,
@@ -1216,12 +1265,7 @@ function ProgramsPage() {
     }
     preferenceTags.clear();
     setPreferenceFeedback(null);
-    setIsPreferenceSearching(false);
-    setIsSearchLoadingVisible(false);
-    if (searchLoadingTimerRef.current) {
-      clearTimeout(searchLoadingTimerRef.current);
-      searchLoadingTimerRef.current = null;
-    }
+    stopPreferenceSearchUi();
     if (preferenceFeedbackTimerRef.current) {
       clearTimeout(preferenceFeedbackTimerRef.current);
       preferenceFeedbackTimerRef.current = null;
@@ -1276,7 +1320,9 @@ function ProgramsPage() {
         <SupportCategorySelect
           value={supportCategories}
           onChange={(next) => {
+            preferenceReapplyVersionRef.current += 1;
             preferenceTags.clear();
+            stopPreferenceSearchUi();
             setPreferenceFeedback(null);
             setSort("deadline");
             setUsesProfileDefault(false);
@@ -1297,7 +1343,7 @@ function ProgramsPage() {
           {feedbackForDisplay ? (
             <div
               key={preferenceFeedbackVersion}
-              className={`preference-feedback-bubble absolute bottom-[calc(100%-6px)] left-[11px] z-40 w-max max-w-[calc(100%_-_11px)] overflow-visible ${
+              className={`preference-feedback-bubble pointer-events-none absolute bottom-[calc(100%-6px)] left-[11px] z-40 w-max max-w-[calc(100%_-_11px)] overflow-visible ${
                 feedbackForDisplay.message.length > 60 ? "-translate-y-1" : ""
               } ${
                 preferenceFeedbackVersion > 1 ? "preference-feedback-bubble-refresh" : ""
@@ -1351,26 +1397,17 @@ function ProgramsPage() {
             value={query}
             onChange={(event) => {
               const next = event.target.value;
+              if (!next.trim()) {
+                handleClearPreferenceSearch();
+                return;
+              }
               setQuery(next);
               setPreferenceFeedback(null);
-              if (!next.trim()) {
-                if (preferenceStorageKey) {
-                  window.sessionStorage.removeItem(
-                    `${PREFERENCE_COMMITTED_QUERY_STORAGE_PREFIX}${preferenceStorageKey}`,
-                  );
-                  window.sessionStorage.removeItem(
-                    `${PREFERENCE_QUERY_STORAGE_PREFIX}${preferenceStorageKey}`,
-                  );
-                }
-                preferenceTags.clear();
-                setIsPreferenceSearching(false);
-                setIsSearchLoadingVisible(false);
-                if (searchLoadingTimerRef.current) {
-                  clearTimeout(searchLoadingTimerRef.current);
-                  searchLoadingTimerRef.current = null;
-                }
-                setSort("deadline");
-              }
+            }}
+            onKeyDown={(event) => {
+              if (event.key !== "Enter" || event.nativeEvent.isComposing) return;
+              event.preventDefault();
+              handlePreferenceSearch();
             }}
             placeholder="선호하는 조건을 입력해 보세요"
             aria-busy={searchLoaderVisible}
@@ -1409,49 +1446,9 @@ function ProgramsPage() {
           <button
             type="button"
             aria-label="조건 검색"
-            disabled={!query.trim() || isPreferenceSearching}
-            onMouseDown={(event) => {
-              event.preventDefault();
-              setIsQueryFocused(false);
-            }}
-            onClick={() => {
-              setIsQueryFocused(false);
-              setIsPreferenceSearching(true);
-              setIsSearchLoadingVisible(false);
-              if (searchLoadingTimerRef.current) clearTimeout(searchLoadingTimerRef.current);
-              searchLoadingTimerRef.current = setTimeout(() => {
-                setIsSearchLoadingVisible(true);
-                searchLoadingTimerRef.current = null;
-              }, 200);
-              const selectedField =
-                supportCategories.length === 1 && !supportCategories.includes(SUPPORT_ALL)
-                  ? (supportCategories[0] ?? null)
-                  : null;
-              const normalizedQuery = query.trim();
-              const previousSearch = lastPreferenceSearchRef.current;
-              if (
-                previousSearch?.query === normalizedQuery &&
-                previousSearch.field === selectedField &&
-                previousSearch.version === matchDataVersionRef.current
-              ) {
-                if (searchLoadingTimerRef.current) {
-                  clearTimeout(searchLoadingTimerRef.current);
-                  searchLoadingTimerRef.current = null;
-                }
-                setIsSearchLoadingVisible(false);
-                setPreferenceFeedbackExiting(false);
-                setPreferenceFeedbackVersion((version) => version + 1);
-                setPreferenceFeedback({
-                  tone: "success",
-                  message: "이미 적용된 선호조건이에요.",
-                });
-                setIsPreferenceSearching(false);
-                return;
-              }
-              submittedPreferenceQueryRef.current = normalizedQuery;
-              submittedPreferenceFieldRef.current = selectedField;
-              void preferenceTags.search(normalizedQuery, selectedField);
-            }}
+            disabled={!query.trim() || !preferenceStorageKey || isPreferenceSearching}
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={handlePreferenceSearch}
             className={`ai-search-shimmer flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand text-brand-foreground transition-[box-shadow,transform,background-color] duration-150 hover:bg-[#3A8F77] active:translate-y-px active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-brand-disabled disabled:text-brand-foreground ${query.trim() ? "ml-1" : ""}`}
           >
             <img

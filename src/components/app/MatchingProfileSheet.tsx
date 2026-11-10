@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { SquareAlertIcon } from "@/components/ui/square-alert-icon";
 import { supabase } from "@/integrations/supabase/client";
+import { markPreferenceProfileRefresh } from "@/services/preferenceTags";
 
 type MatchingProfileSheetProps = {
   open: boolean;
@@ -245,6 +246,7 @@ export function MatchingProfileSheet({
 
     setDirty(false);
     await onSaved?.();
+    markPreferenceProfileRefresh(profile.id);
     window.dispatchEvent(new CustomEvent("matching-profile-saved"));
     onOpenChange(false);
     setSaving(false);

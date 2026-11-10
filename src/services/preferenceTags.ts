@@ -2,6 +2,29 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { supabase as defaultSupabase } from "@/integrations/supabase/client";
 
+const PROFILE_REFRESH_PREFIX = "programs-preference-profile-refresh:";
+export const PREFERENCE_MATCH_STORAGE_PREFIX = "programs-preference-matches:";
+
+export function markPreferenceProfileRefresh(userId: string) {
+  try {
+    window.sessionStorage.removeItem(`${PREFERENCE_MATCH_STORAGE_PREFIX}${userId}`);
+    window.sessionStorage.setItem(`${PROFILE_REFRESH_PREFIX}${userId}`, "1");
+  } catch {
+    // The profile save must still finish if session storage is unavailable.
+  }
+}
+
+export function takePreferenceProfileRefresh(userId: string): boolean {
+  try {
+    const key = `${PROFILE_REFRESH_PREFIX}${userId}`;
+    if (window.sessionStorage.getItem(key) !== "1") return false;
+    window.sessionStorage.removeItem(key);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 type PreferenceMatch = {
   notice_id: string;
   preference_matched?: boolean;
@@ -109,7 +132,11 @@ export function createPreferenceTags<T extends { id: string }>({
 
   function persist() {
     if (!storageKey || typeof window === "undefined") return;
-    window.sessionStorage.setItem(storageKey, JSON.stringify([...matchedIds]));
+    try {
+      window.sessionStorage.setItem(storageKey, JSON.stringify([...matchedIds]));
+    } catch {
+      // Keep in-memory tags available when session storage is blocked.
+    }
   }
 
   function clear() {
@@ -186,7 +213,7 @@ export function createPreferenceTags<T extends { id: string }>({
         const items = payload["items"];
         const normalizedItems =
           items === undefined &&
-          ["insufficient_data", "needs_clarification", "matching_not_ready"].includes(status)
+          status !== "success"
             ? []
             : items;
         if (
@@ -202,17 +229,18 @@ export function createPreferenceTags<T extends { id: string }>({
           throw new Error("검색 응답 형식이 잘못됐습니다.");
         }
 
+        const matchedItems = (normalizedItems as PreferenceMatch[]).filter(
+          (item) => item.preference_matched === true,
+        );
         const result: PreferenceSearchResult = {
           ...payload,
-          status: status as PreferenceStatus,
-          items: normalizedItems as PreferenceMatch[],
+          status: status === "success" && matchedItems.length === 0
+            ? "no_results"
+            : status as PreferenceStatus,
+          items: matchedItems,
         };
         result.display_message = preferenceResultMessage(result);
-        matchedIds = new Set(
-          result.items
-            .filter((item) => item.preference_matched === true)
-            .map((item) => item.notice_id),
-        );
+        matchedIds = new Set(matchedItems.map((item) => item.notice_id));
         persist();
         refresh();
         onResult(result);
