@@ -5,11 +5,13 @@ export const mutateCalendarEvent = createServerFn({ method: "POST" }).validator(
   return { ...input, accessToken: requireToken(input.accessToken) } as any;
 }).handler(async ({ data }) => {
   const { accessToken, action, eventId, title, startDate, endDate, dateMode, color, allDay, itemId } = data;
+  const mode = dateMode ?? (endDate && endDate !== startDate ? "range" : "single");
   const patch = action === "update" ? {
     title,
     date: startDate,
-    end_date: endDate && endDate !== startDate ? endDate : null,
-    date_mode: dateMode ?? (endDate && endDate !== startDate ? "range" : "single"),
+    ...(dateMode !== undefined || startDate !== undefined || endDate !== undefined
+      ? { date_mode: mode, end_date: mode === "range" ? endDate ?? null : null }
+      : {}),
     color,
     ...(data.startTime !== undefined ? { start_time: data.startTime } : {}),
     ...(data.description !== undefined ? { description: data.description } : {}),
