@@ -44,7 +44,7 @@ import { cn } from "@/lib/utils";
 import { createCalendarTask } from "@/services/calendarTaskApi";
 import { mutateCalendarEvent } from "@/services/calendarEventMutationApi";
 import { getCalendarEvents } from "@/services/calendarEventsApi";
-import { normalizeCalendarEvents } from "@/services/calendarEventModel";
+import { normalizeCalendarEvents, upsertCalendarEvent } from "@/services/calendarEventModel";
 import { savedNoticesApi, type SavedNotice } from "@/services/savedNoticesApi";
 
 export const Route = createFileRoute("/calendar/")({
