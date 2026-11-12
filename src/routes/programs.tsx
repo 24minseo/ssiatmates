@@ -232,6 +232,7 @@ async function loadMatchingNotices(
   view: MatchingView,
   selectedField: string | null,
   offset = 0,
+  limit = PAGE_SIZE,
 ): Promise<NoticeMatchesResponse> {
   if (view !== "active" && view !== "review" && view !== "excluded") {
     throw new Error("목록 구분이 잘못됐습니다.");
@@ -243,7 +244,7 @@ async function loadMatchingNotices(
     p_field: string | null;
     p_include_closed?: boolean;
   } = {
-    p_limit: PAGE_SIZE,
+    p_limit: limit,
     p_offset: offset,
     p_field: selectedField,
   };
@@ -270,6 +271,35 @@ async function loadMatchingNotices(
     excluded_count: typeof response.excluded_count === "number" ? response.excluded_count : null,
     closed_count: typeof response.closed_count === "number" ? response.closed_count : null,
     has_more: response.has_more === true,
+  };
+}
+
+async function loadAllMatchingNotices(
+  view: MatchingView,
+  selectedField: string | null,
+): Promise<NoticeMatchesResponse> {
+  const limit = 100;
+  const items: NoticeMatchItem[] = [];
+  let offset = 0;
+  let firstResponse: NoticeMatchesResponse | null = null;
+
+  for (;;) {
+    const response = await loadMatchingNotices(view, selectedField, offset, limit);
+    firstResponse ??= response;
+    items.push(...response.items);
+    offset += response.items.length;
+
+    const totalCount = response.total_count;
+    const reachedTotal = typeof totalCount === "number" && offset >= totalCount;
+    if (!response.has_more || response.items.length === 0 || reachedTotal) break;
+  }
+
+  return {
+    items,
+    total_count: firstResponse?.total_count ?? items.length,
+    excluded_count: firstResponse?.excluded_count ?? null,
+    closed_count: firstResponse?.closed_count ?? null,
+    has_more: false,
   };
 }
 
@@ -567,6 +597,8 @@ function ProgramsPage() {
     [preferenceStorageKey, stopPreferenceSearchUi],
   );
 
+  const hasPreferenceMatches = preferenceTags.hasMatches();
+
   const preferenceFieldRef = useRef<string | null>(null);
   const fieldsForPreference = getSelectedFields(supportCategories, usesProfileDefault);
   preferenceFieldRef.current = fieldsForPreference.length === 1 && fieldsForPreference[0] !== SUPPORT_ALL
@@ -744,9 +776,13 @@ function ProgramsPage() {
 
       try {
         const fields = getSelectedFields(supportCategories, usesProfileDefault);
-        const offset = (page - 1) * PAGE_SIZE;
+        const offset = hasPreferenceMatches ? 0 : (page - 1) * PAGE_SIZE;
         const [responses, savedState] = await Promise.all([
-          Promise.all(fields.map((field) => loadMatchingNotices("active", field, offset))),
+          Promise.all(fields.map((field) =>
+            hasPreferenceMatches
+              ? loadAllMatchingNotices("active", field)
+              : loadMatchingNotices("active", field, offset),
+          )),
           savedNoticesApi.getSavedStates().catch((error) => {
             console.error("[programs] 저장 상태 조회 실패", error);
             return { items: [] };
@@ -768,16 +804,14 @@ function ProgramsPage() {
         const nextProgramsWithPreferences = preferenceTags.apply(nextPrograms);
         matchedProgramsRef.current = nextProgramsWithPreferences;
         setMatchedPrograms(nextProgramsWithPreferences);
-        setSort(
-          nextProgramsWithPreferences.some((item) => item.preference_matched === true)
-            ? "fit"
-            : "deadline",
-        );
+        setSort(hasPreferenceMatches ? "fit" : "deadline");
         setActiveTotalCount(
-          responses.reduce(
-            (total, response) => total + (response.total_count ?? response.items.length),
-            0,
-          ),
+          hasPreferenceMatches
+            ? uniqueItems.size
+            : responses.reduce(
+                (total, response) => total + (response.total_count ?? response.items.length),
+                0,
+              ),
         );
         setExcludedCount(
           responses.reduce(
@@ -851,6 +885,7 @@ function ProgramsPage() {
     page,
     preferenceStorageKey,
     preferenceTags,
+    hasPreferenceMatches,
   ]);
 
   useEffect(() => {
@@ -1102,14 +1137,26 @@ function ProgramsPage() {
 
     const manualResults = filterAndSort(manualPrograms);
 
+    const recommendedResults = filterAndSort(matchedPrograms);
+
     return {
-      recommended: filterAndSort(matchedPrograms),
+      recommended: hasPreferenceMatches
+        ? recommendedResults.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+        : recommendedResults,
       // 추가 검토 공고의 선별·정렬·건수는 서버 RPC 결과를 그대로 사용합니다.
       // 프론트에서 지원분야나 review_reason으로 다시 걸러내지 않습니다.
       review: reviewPrograms,
       manual: manualResults.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
     };
-  }, [manualPrograms, matchedPrograms, page, reviewPrograms, sort, supportCategories]);
+  }, [
+    hasPreferenceMatches,
+    manualPrograms,
+    matchedPrograms,
+    page,
+    reviewPrograms,
+    sort,
+    supportCategories,
+  ]);
 
   useEffect(() => {
     setPage(1);
