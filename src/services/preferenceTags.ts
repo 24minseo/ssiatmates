@@ -270,5 +270,5 @@ export function createPreferenceTags<T extends { id: string }>({
     return promise;
   }
 
-  return { search, clear, cancel, dispose, apply };
+  return { search, clear, cancel, dispose, apply, hasMatches: () => matchedIds.size > 0 };
 }
