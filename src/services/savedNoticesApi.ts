@@ -11,6 +11,7 @@ export type SavedNotice = {
   notice_id: string;
   source_kind?: "matched" | "manual";
   manual_notice_id?: string;
+  progress_status?: SavedNoticeProgressStatus;
   title: string;
   organization: string;
   url: string | null;
@@ -90,7 +91,10 @@ export function createSavedNoticesApi(
     noticeId: string,
     isSaved: boolean,
   ): Promise<SavedNoticeMutationResponse> {
-    if (!noticeId.trim()) throw new Error("공고 ID가 필요합니다.");
+    if (typeof noticeId !== "string" || !noticeId.trim()) {
+      throw new Error("공고 ID를 확인할 수 없습니다. 목록을 새로고침해주세요.");
+    }
+    noticeId = noticeId.trim();
     if (typeof isSaved !== "boolean") {
       throw new Error("저장 여부는 true/false여야 합니다.");
     }
@@ -130,8 +134,16 @@ export function createSavedNoticesApi(
     const { data, error } = await client.rpc("get_my_support_notices_with_manual_v1", {});
     if (error) throw error;
     const response = (data ?? {}) as Partial<SavedNoticeListResponse>;
+    const items = Array.isArray(response.items) ? response.items.map((item) => {
+      const isManual = item.source_kind === "manual";
+      const id = isManual ? item.manual_notice_id : item.notice_id;
+      if (typeof id !== "string" || !id.trim()) {
+        throw new Error("저장한 공고의 ID를 확인할 수 없습니다. 목록을 새로고침해주세요.");
+      }
+      return { ...item, notice_id: isManual ? `manual:${id.trim()}` : id.trim() };
+    }) : [];
     return {
-      items: Array.isArray(response.items) ? response.items : [],
+      items,
       total_count: typeof response.total_count === "number" ? response.total_count : 0,
     };
   }
@@ -147,8 +159,23 @@ export function createSavedNoticesApi(
     noticeId: string,
     status: SavedNoticeProgressStatus,
   ): Promise<SavedNoticeProgress> {
+    if (typeof noticeId !== "string" || !noticeId.trim()) {
+      throw new Error("공고 ID를 확인할 수 없습니다. 목록을 새로고침해주세요.");
+    }
+    const id = noticeId.trim();
+    const isManual = id.startsWith("manual:");
+    if (isManual) {
+      const { data, error } = await (client as unknown as SupabaseClient).rpc("set_my_manual_notice_progress_v1", {
+        p_manual_notice_id: id.slice("manual:".length),
+        p_progress_status: status,
+      });
+      if (error) throw error;
+      const response = data as { progress_status?: SavedNoticeProgressStatus } | null;
+      if (response?.progress_status !== status) throw new Error("진행 상태 응답을 확인해주세요.");
+      return { notice_id: id, status };
+    }
     const { data, error } = await client.rpc("set_my_saved_notice_progress_v1", {
-      p_notice_id: noticeId,
+      p_notice_id: id,
       p_status: status,
     });
     if (error) throw error;
@@ -170,3 +197,4 @@ export function applySavedStates<T extends { notice_id: string }>(
     is_saved: savedIds.has(item.notice_id),
   }));
 }
+
