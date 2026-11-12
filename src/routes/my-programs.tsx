@@ -147,7 +147,7 @@ function MyProgramsPage() {
                   scheduledAt: `${event.date}T00:00:00`,
                   completed: event.completed === true,
                 })),
-              status: savedStatuses[item.notice_id] ?? program.status,
+              status: savedStatuses[item.notice_id] ?? item.progress_status ?? program.status,
             };
           }),
         );
@@ -549,3 +549,4 @@ function MyProgramsPage() {
     </section>
   );
 }
+
