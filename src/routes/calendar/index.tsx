@@ -46,7 +46,7 @@ import { mutateCalendarEvent } from "@/services/calendarEventMutationApi";
 import { getCalendarEvents } from "@/services/calendarEventsApi";
 import { normalizeCalendarEvents, upsertCalendarEvent } from "@/services/calendarEventModel";
 import { savedNoticesApi, type SavedNotice } from "@/services/savedNoticesApi";
-import { findEventProgram, groupEventsByProgram, programLinkInput, savedProgramKey } from "@/services/calendarNoticeLink";
+import { eventProgramKey, findEventProgram, groupEventsByProgram, programLinkInput, savedProgramKey } from "@/services/calendarNoticeLink";
 
 export const Route = createFileRoute("/calendar/")({
   head: () => ({
@@ -223,6 +223,57 @@ function toDateKey(date: Date) {
 function formatKoreanDate(dateKey: string) {
   const [year, month, day] = dateKey.split("-").map(Number);
   return `${year}년 ${month}월 ${day}일`;
+}
+
+function formatCompactDate(dateKey: string) {
+  const [year, month, day] = dateKey.split("-").map(Number);
+  return `${year}.${String(month).padStart(2, "0")}.${String(day).padStart(2, "0")}`;
+}
+
+function formatCompactDateRange(startDate: string, endDate: string) {
+  const [startYear, startMonth, startDay] = startDate.split("-").map(Number);
+  const [endYear, endMonth, endDay] = endDate.split("-").map(Number);
+  const startLabel = `${startYear}.${String(startMonth).padStart(2, "0")}.${String(startDay).padStart(2, "0")}`;
+  const endLabel = startYear === endYear
+    ? `${String(endMonth).padStart(2, "0")}.${String(endDay).padStart(2, "0")}`
+    : `${endYear}.${String(endMonth).padStart(2, "0")}.${String(endDay).padStart(2, "0")}`;
+  return `${startLabel} ~ ${endLabel}`;
+}
+
+function getDeadlineBadgeLabel(dateKey: string) {
+  const [year, month, day] = dateKey.split("-").map(Number);
+  const today = new Date();
+  const todayUtc = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
+  const deadlineUtc = Date.UTC(year, month - 1, day);
+  const daysUntil = Math.round((deadlineUtc - todayUtc) / 86_400_000);
+  if (daysUntil < 0 || daysUntil > 3) return null;
+  return daysUntil === 0 ? "D-Day" : `D-${daysUntil}`;
+}
+
+function groupEventsByDate<T extends { date: string }>(events: T[]) {
+  const groups = new Map<string, T[]>();
+  for (const event of events) groups.set(event.date, [...(groups.get(event.date) ?? []), event]);
+  return [...groups.entries()].sort(([a], [b]) => a.localeCompare(b));
+}
+
+function sortNoticeGroups<T extends { events: Array<{ date: string; endDate?: string }>; title: string }>(groups: T[], todayKey: string) {
+  const getGroupRank = (group: T) => {
+    const relevantDates = group.events
+      .map((event) => {
+        const isCurrent = event.date <= todayKey && (!event.endDate || event.endDate >= todayKey);
+        return isCurrent ? todayKey : event.date >= todayKey ? event.date : null;
+      })
+      .filter((date): date is string => Boolean(date))
+      .sort();
+    return { isPast: relevantDates.length === 0, date: relevantDates[0] ?? "9999-12-31" };
+  };
+  return [...groups].sort((a, b) => {
+    const aRank = getGroupRank(a);
+    const bRank = getGroupRank(b);
+    return Number(aRank.isPast) - Number(bRank.isPast)
+      || aRank.date.localeCompare(bRank.date)
+      || a.title.localeCompare(b.title, "ko");
+  });
 }
 
 function formatDateLabel(dateKey: string) {
@@ -932,6 +983,10 @@ function CalendarPage() {
   });
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [view, setView] = useState<CalendarView>("month");
+  const [noticeFilterKey, setNoticeFilterKey] = useState("all");
+  const [noticePickerOpen, setNoticePickerOpen] = useState(false);
+  const [hoveredNoticeKey, setHoveredNoticeKey] = useState<string | null>(null);
+  const [noticeSearch, setNoticeSearch] = useState("");
   const [calendarSnapshot, setCalendarSnapshot] = useState<CalendarSnapshot | null>(null);
   const events = calendarSnapshot?.ownerId === user?.id
     ? calendarSnapshot?.events ?? EMPTY_CALENDAR_EVENTS
@@ -1155,6 +1210,19 @@ function CalendarPage() {
     () => [...events].sort((a, b) => a.date.localeCompare(b.date)),
     [events],
   );
+  const noticeGroups = useMemo(
+    () => groupEventsByProgram(sortedEvents, savedPrograms),
+    [sortedEvents, savedPrograms],
+  );
+  const filteredNoticeEvents = useMemo(
+    () => noticeFilterKey === "all"
+      ? sortedEvents
+      : sortedEvents.filter((event) => {
+          const program = findEventProgram(event, savedPrograms);
+          return (program ? savedProgramKey(program) : eventProgramKey(event)) === noticeFilterKey;
+        }),
+    [noticeFilterKey, savedPrograms, sortedEvents],
+  );
   const calendarPeriodSegments = useMemo(
     () => buildCalendarPeriodSegments(events, days),
     [events, days],
@@ -1271,7 +1339,7 @@ function CalendarPage() {
     setCalendarDragEnd(null);
   };
 
-  const openAddDialog = (dateKey?: string, endDate = "", origin: "toolbar" | "calendar" = "toolbar") => {
+  const openAddDialog = (dateKey?: string, endDate = "", origin: "toolbar" | "calendar" = "toolbar", programKey?: string) => {
     calendarAddOriginRef.current = origin;
     createRequestRef.current = null;
     const initialStartDate = dateKey ?? todayKey;
@@ -1284,7 +1352,16 @@ function CalendarPage() {
     setEventColor(EVENT_COLORS[0].value);
     setColorPickerOpen(false);
     setProgramPickerOpen(false);
-    setSelectedProgram(null);
+    const activeProgramKey = programKey ?? noticeFilterKey;
+    const filteredNotice = activeProgramKey !== "all"
+      ? sortedEvents.find((event) => eventProgramKey(event) === activeProgramKey) ?? null
+      : null;
+    setSelectedProgram(
+      activeProgramKey !== "all"
+        ? savedPrograms.find((program) => savedProgramKey(program) === activeProgramKey)
+          ?? (filteredNotice ? findEventProgram(filteredNotice, savedPrograms) : null)
+        : null,
+    );
     setProgramSearch("");
     setEventDescription("");
     setContentMode("memo");
@@ -1820,6 +1897,7 @@ function CalendarPage() {
 
       <div className="mt-[18px] flex h-[42px] items-center justify-between">
         <div className="flex items-center gap-2">
+          {view === "month" ? <>
           <Button
             type="button"
             variant="outline"
@@ -1851,9 +1929,44 @@ function CalendarPage() {
             </Button>
           </div>
           <MonthField value={visibleMonth} onChange={setVisibleMonth} />
+          </> : (
+            <Popover modal open={noticePickerOpen} onOpenChange={setNoticePickerOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-[42px] w-[190px] max-w-[calc(100vw-32px)] justify-start gap-1 rounded-[12px] border-field-border bg-surface px-4 text-left text-[15px] font-semibold text-ink shadow-none hover:bg-item-hover focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft"
+                >
+                  <span className="truncate">
+                    {noticeFilterKey === "all"
+                      ? "전체 지원사업"
+                      : noticeGroups.find((group) => group.key === noticeFilterKey)?.title ?? "전체 지원사업"}
+                  </span>
+                  <ChevronDown aria-hidden="true" className="ml-auto size-4 shrink-0 text-ink-muted" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="start" className="z-[100] w-[420px] max-w-[calc(100vw-32px)] rounded-[12px] border-0 bg-surface p-0 shadow-dropdown">
+                <div className="flex h-11 items-center gap-2 border-b border-field-border px-4">
+                  <Search aria-hidden="true" className="size-5 shrink-0 -translate-x-0.5 text-ink-muted" />
+                  <input type="text" value={noticeSearch} onChange={(event) => setNoticeSearch(event.target.value)} placeholder="내 지원사업 검색" aria-label="내 지원사업 검색" className="min-w-0 flex-1 bg-transparent text-[15px] text-ink outline-none placeholder:text-guide-text" />
+                  {noticeSearch.trim() ? <button type="button" aria-label="공고 검색어 지우기" onClick={() => setNoticeSearch("")} className="flex size-5 shrink-0 items-center justify-center rounded-full bg-item-hover text-icon-muted transition-colors hover:bg-secondary-btn-hover"><X aria-hidden="true" className="size-3" strokeWidth={2.5} /></button> : null}
+                </div>
+                <div className="max-h-60 overflow-y-auto p-1">
+                <button type="button" aria-pressed={noticeFilterKey === "all"} onMouseEnter={() => setHoveredNoticeKey("all")} onMouseLeave={() => setHoveredNoticeKey(null)} onClick={() => { setNoticeFilterKey("all"); setNoticePickerOpen(false); }} className={cn("flex w-full rounded-[8px] px-3 py-2 text-left text-[14px] font-medium hover:bg-item-hover", hoveredNoticeKey === "all" || (noticeFilterKey === "all" && hoveredNoticeKey === null) ? "bg-item-hover" : "", noticeFilterKey === "all" ? "text-brand" : "text-ink")}>
+                  전체 지원사업
+                </button>
+                {noticeGroups.filter((group) => group.key !== "unlinked" && group.title.toLocaleLowerCase().includes(noticeSearch.trim().toLocaleLowerCase())).map((group) => (
+                  <button key={group.key} type="button" aria-pressed={noticeFilterKey === group.key} onMouseEnter={() => setHoveredNoticeKey(group.key)} onMouseLeave={() => setHoveredNoticeKey(null)} onClick={() => { setNoticeFilterKey(group.key); setNoticePickerOpen(false); }} className={cn("flex w-full rounded-[8px] px-3 py-2 text-left text-[14px] font-medium leading-5 hover:bg-item-hover", hoveredNoticeKey === group.key || (noticeFilterKey === group.key && hoveredNoticeKey === null) ? "bg-item-hover" : "", noticeFilterKey === group.key ? "text-brand" : "text-ink")}>
+                    {group.title}
+                  </button>
+                ))}
+                </div>
+              </PopoverContent>
+            </Popover>
+          )}
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3" onClick={() => setNoticePickerOpen(false)}>
           <div
             role="group"
             aria-label="캘린더 보기 방식"
@@ -1878,7 +1991,7 @@ function CalendarPage() {
                     key={option}
                     type="button"
                     variant="ghost"
-                    onClick={() => setView(option)}
+                    onClick={() => { setNoticePickerOpen(false); setView(option); }}
                     aria-pressed={selected}
                     className={cn(
                       "relative flex shrink-0 items-center justify-center px-[10px] py-[6px] text-[14px] font-normal leading-none transition-colors duration-150 motion-reduce:transition-none hover:bg-transparent",
@@ -2166,29 +2279,66 @@ function CalendarPage() {
           </div>
         </div>
       ) : (
-        <section aria-label="공고별 일정" className="mt-4 min-h-[736px] rounded-[12px] border border-field-border bg-surface p-6">
-          {sortedEvents.length > 0 ? (
-            <div className="space-y-6">
-              {groupEventsByProgram(sortedEvents, savedPrograms).map((group) => (
-                <section key={group.key} className="rounded-[12px] border border-field-border">
-                  <h3 className="border-b border-field-border px-3 py-4 text-[15px] font-semibold text-ink">
-                    {group.title} <span className="text-sm text-ink-muted">({group.events.length})</span>
+        <section aria-label="공고별 일정" className="mt-4 min-h-[736px]">
+          {filteredNoticeEvents.length > 0 ? (
+            <div className="space-y-4">
+              {sortNoticeGroups(groupEventsByProgram(filteredNoticeEvents, savedPrograms), todayKey).map((group) => (
+                <section key={group.key} className="w-full overflow-hidden rounded-[12px] border border-field-border">
+                  <h3 className="flex items-center justify-start gap-3 bg-item-hover px-5 py-2 text-[15px] font-semibold text-ink">
+                    <span className="min-w-0 truncate">{group.title}</span>
+                    <span className="shrink-0 text-sm font-medium text-ink-muted">{group.events.length}</span>
+                    <button
+                      type="button"
+                      aria-label={`${group.title} 일정 추가`}
+                      onClick={() => openAddDialog(undefined, "", "toolbar", group.key)}
+                      className="ml-auto flex size-7 shrink-0 items-center justify-center rounded-[6px] text-lg font-normal leading-none text-ink-muted hover:text-ink"
+                    >
+                      <Plus aria-hidden="true" className="size-4" strokeWidth={2} />
+                    </button>
                   </h3>
-                  <div className="divide-y divide-field-border">
-                    {group.events.map((calendarEvent) => (
-                <button
-                  key={calendarEvent.id}
-                  type="button"
-                  onClick={() => setSelectedEvent(calendarEvent)}
-                  className="flex w-full items-center gap-8 px-3 py-4 text-left hover:bg-item-hover"
-                >
-                  <time className="w-32 shrink-0 text-sm font-semibold text-brand">
-                    {formatKoreanDate(calendarEvent.date)}
-                  </time>
-                  <span className="min-w-0 flex-1 truncate text-[15px] font-semibold text-ink">
-                    {calendarEvent.title}
-                  </span>
-                </button>
+                  <div className="divide-y divide-muted">
+                    {groupEventsByDate(group.events).map(([date, dateEvents]) => (
+                      <div key={date} className="grid grid-cols-[180px_minmax(0,1fr)] bg-surface">
+                        <time className="flex items-start px-5 py-4 text-sm font-medium text-ink-muted">
+                          <span
+                            className={cn(
+                              date === todayKey && "rounded-[4px]",
+                            )}
+                            style={
+                              date === todayKey
+                              ? (() => {
+                                  const highlightColor = getSoftEventColor(dateEvents[0]?.color);
+                                  return {
+                                    backgroundColor: highlightColor,
+                                    boxShadow: `2px 0 0 ${highlightColor}, -2px 0 0 ${highlightColor}`,
+                                  };
+                                })()
+                                : undefined
+                            }
+                          >
+                            {dateEvents[0]?.endDate && dateEvents[0].endDate !== date
+                              ? formatCompactDateRange(date, dateEvents[0].endDate)
+                              : formatCompactDate(date)}
+                          </span>
+                        </time>
+                        <div className="flex h-full flex-col justify-center">
+                          {dateEvents.map((calendarEvent) => (
+                            <button
+                              key={calendarEvent.id}
+                              type="button"
+                              onClick={() => setSelectedEvent(calendarEvent)}
+                              className="group flex w-full min-w-0 items-center gap-2 px-5 py-3 text-left"
+                            >
+                              <span className="min-w-0 truncate text-[15px] font-medium text-ink group-hover:underline group-hover:decoration-[1px] group-hover:underline-offset-2">{calendarEvent.title}</span>
+                              {(calendarEvent.eventType === "application_deadline" || calendarEvent.title.startsWith("[접수 마감일]") || calendarEvent.title.startsWith("[접수 마감]")) && getDeadlineBadgeLabel(calendarEvent.date) ? (
+                                <span className="inline-flex h-[22px] shrink-0 items-center rounded-[6px] bg-deadline-surface px-1.5 text-[12px] font-semibold leading-none text-deadline">
+                                  {getDeadlineBadgeLabel(calendarEvent.date)}
+                                </span>
+                              ) : null}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
                     ))}
                   </div>
                 </section>
@@ -2202,7 +2352,7 @@ function CalendarPage() {
         </section>
       )}
 
-      {isGoogleCalendarBannerVisible && (
+      {isGoogleCalendarBannerVisible && view !== "notice" && (
         <div className="mt-3 flex h-11 w-full items-center justify-between rounded-[10px] bg-item-hover px-3">
           <Button
             type="button"
@@ -3154,7 +3304,7 @@ function CalendarPage() {
               ) : null}
             </DialogDescription>
             <DialogTitle className="mt-3 line-clamp-2 text-[24px] font-bold leading-8 text-ink">
-              {selectedEvent?.url && selectedEvent.title.startsWith("[접수 마감]") ? (
+              {selectedEvent?.url && selectedEvent.title.startsWith("[접수 마감일]") ? (
                 <a
                   href={selectedEvent.url}
                   target="_blank"

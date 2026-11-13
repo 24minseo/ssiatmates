@@ -76,7 +76,12 @@ export function groupEventsByProgram<T extends LinkedEvent>(events: T[], program
     }
     group.events.push(event);
   }
-  return [...groups.values()].sort((a, b) =>
-    a.key === "unlinked" ? 1 : b.key === "unlinked" ? -1 : a.title.localeCompare(b.title, "ko"));
+  return [...groups.values()].sort((a, b) => {
+    if (a.key === "unlinked") return 1;
+    if (b.key === "unlinked") return -1;
+    const aDate = a.events[0]?.date ?? "9999-12-31";
+    const bDate = b.events[0]?.date ?? "9999-12-31";
+    return aDate.localeCompare(bDate) || a.title.localeCompare(b.title, "ko");
+  });
 }
 
