@@ -46,6 +46,7 @@ import { mutateCalendarEvent } from "@/services/calendarEventMutationApi";
 import { getCalendarEvents } from "@/services/calendarEventsApi";
 import { normalizeCalendarEvents, upsertCalendarEvent } from "@/services/calendarEventModel";
 import { savedNoticesApi, type SavedNotice } from "@/services/savedNoticesApi";
+import { findEventProgram, groupEventsByProgram, programLinkInput, savedProgramKey } from "@/services/calendarNoticeLink";
 
 export const Route = createFileRoute("/calendar/")({
   head: () => ({
@@ -1312,29 +1313,7 @@ function CalendarPage() {
     if (!selectedEvent) return;
     const isDeadlineEvent = selectedEvent.eventType === "application_deadline" || selectedEvent.title.startsWith("[접수 마감]");
     setIsAutoDeadlineEdit(isDeadlineEvent);
-    const linkedNoticeId = typeof selectedEvent.linkedNotice?.notice_id === "string"
-      ? selectedEvent.linkedNotice.notice_id
-      : null;
-    const linkedProgram = savedPrograms.find((program) =>
-      (selectedEvent.savedNoticeId && program.saved_notice_id === selectedEvent.savedNoticeId) ||
-      (linkedNoticeId && program.notice_id === linkedNoticeId),
-    ) ?? (selectedEvent.savedNoticeId && typeof selectedEvent.linkedNotice?.title === "string"
-      ? {
-          notice_id: linkedNoticeId ?? selectedEvent.savedNoticeId,
-          saved_notice_id: selectedEvent.savedNoticeId,
-          title: selectedEvent.linkedNotice.title,
-          organization: typeof selectedEvent.linkedNotice.organization === "string" ? selectedEvent.linkedNotice.organization : "",
-          url: typeof selectedEvent.linkedNotice.url === "string" ? selectedEvent.linkedNotice.url : null,
-          field: null,
-          region: null,
-          deadline: selectedEvent.date,
-          deadline_label: null,
-          recruitment_status: null,
-          status_label: null,
-          days_until_deadline: null,
-          is_closed: false,
-        } satisfies SavedNotice
-      : null);
+    const linkedProgram = findEventProgram(selectedEvent, savedPrograms);
     setSelectedProgram(linkedProgram);
     calendarAddOriginRef.current = "calendar";
     setEditingEventId(selectedEvent.id);
@@ -1627,11 +1606,14 @@ function CalendarPage() {
     setIsSavingEvent(true);
     setSaveError(null);
     try {
+      const linkInput = programLinkInput(selectedProgram);
       const result = await withFreshAccessToken((accessToken) => {
         if (editingEventId !== null) {
           return mutateCalendarEventFn({ data: {
             eventId: editingEventId,
             action: "update",
+            savedNoticeId: linkInput.saved_notice_id,
+            linkedNotice: linkInput.linked_notice,
             title,
             startDate: eventDate,
             endDate,
@@ -1657,7 +1639,7 @@ function CalendarPage() {
           content_mode: contentMode,
           checklist_items: checklistItems,
           reminders,
-          saved_notice_id: selectedProgram?.saved_notice_id ?? null,
+          ...linkInput,
           color: eventColor || "#6B7280",
         };
         if (ownerIdRef.current !== ownerId) throw new Error("캘린더를 다시 열어주세요.");
@@ -2186,8 +2168,14 @@ function CalendarPage() {
       ) : (
         <section aria-label="공고별 일정" className="mt-4 min-h-[736px] rounded-[12px] border border-field-border bg-surface p-6">
           {sortedEvents.length > 0 ? (
-            <div className="divide-y divide-field-border">
-              {sortedEvents.map((calendarEvent) => (
+            <div className="space-y-6">
+              {groupEventsByProgram(sortedEvents, savedPrograms).map((group) => (
+                <section key={group.key} className="rounded-[12px] border border-field-border">
+                  <h3 className="border-b border-field-border px-3 py-4 text-[15px] font-semibold text-ink">
+                    {group.title} <span className="text-sm text-ink-muted">({group.events.length})</span>
+                  </h3>
+                  <div className="divide-y divide-field-border">
+                    {group.events.map((calendarEvent) => (
                 <button
                   key={calendarEvent.id}
                   type="button"
@@ -2201,6 +2189,9 @@ function CalendarPage() {
                     {calendarEvent.title}
                   </span>
                 </button>
+                    ))}
+                  </div>
+                </section>
               ))}
             </div>
           ) : (
@@ -2408,23 +2399,23 @@ function CalendarPage() {
                   ) : (
                       savedPrograms.filter((program) => matchesSavedProgram(program, programSearch)).map((program) => (
                         <button
-                          key={program.notice_id}
+                          key={savedProgramKey(program) ?? program.saved_notice_id}
                           type="button"
-                          onMouseEnter={() => setHoveredProgramId(program.notice_id)}
+                          onMouseEnter={() => setHoveredProgramId(savedProgramKey(program))}
                           onMouseLeave={() => {
                             if (!selectedProgram) setHoveredProgramId(null);
                           }}
                           onClick={() => {
                             setSelectedProgram((current) =>
-                              current?.notice_id === program.notice_id ? null : program,
+                              savedProgramKey(current) === savedProgramKey(program) ? null : program,
                             );
                             setProgramPickerOpen(false);
                           }}
-                          aria-pressed={selectedProgram?.notice_id === program.notice_id}
+                          aria-pressed={savedProgramKey(selectedProgram) === savedProgramKey(program)}
                           className={cn(
                             "flex w-full flex-col items-start gap-1 rounded-[8px] border border-transparent px-3 py-2 text-left hover:bg-item-hover",
-                            hoveredProgramId === program.notice_id ||
-                            (selectedProgram?.notice_id === program.notice_id && hoveredProgramId === null)
+                            hoveredProgramId === savedProgramKey(program) ||
+                            (savedProgramKey(selectedProgram) === savedProgramKey(program) && hoveredProgramId === null)
                               ? "bg-item-hover"
                               : "bg-transparent",
                           )}
@@ -2432,7 +2423,7 @@ function CalendarPage() {
                           <span
                             className={cn(
                               "w-full truncate text-[14px] font-medium",
-                              selectedProgram?.notice_id === program.notice_id
+                              savedProgramKey(selectedProgram) === savedProgramKey(program)
                                 ? "text-brand"
                                 : "text-ink",
                             )}
