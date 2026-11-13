@@ -366,9 +366,11 @@ export function AppHeader({
           <DialogContent
             onOpenAutoFocus={(event) => {
               event.preventDefault();
-              if (document.activeElement instanceof HTMLElement) {
-                document.activeElement.blur();
-              }
+              window.requestAnimationFrame(() => {
+                if (document.activeElement instanceof HTMLElement) {
+                  document.activeElement.blur();
+                }
+              });
             }}
             closeClassName="right-5 top-7 flex size-9 items-center justify-center rounded-lg text-ink-muted opacity-100 transition-colors hover:bg-item-hover hover:text-ink focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-focus-soft [&_svg]:size-6"
             className="h-[620px] max-h-[calc(100vh-32px)] w-[520px] max-w-[calc(100vw-32px)] overflow-hidden rounded-[20px] border-0 bg-surface p-8"
