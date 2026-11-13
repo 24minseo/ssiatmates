@@ -2170,7 +2170,9 @@ function CalendarPage() {
                           </button>
                         ) : null}
                       </div>
-                    ) : null}
+                    ) : (
+                      <span aria-hidden="true" className="ml-auto block size-7 shrink-0" />
+                    )}
                   </div>
                 );
               })}
@@ -2286,17 +2288,19 @@ function CalendarPage() {
             <div className="space-y-4">
               {sortNoticeGroups(groupEventsByProgram(filteredNoticeEvents, savedPrograms), todayKey).map((group) => (
                 <section key={group.key} className="w-full overflow-hidden rounded-[12px] border border-field-border">
-                  <h3 className="flex items-center justify-start gap-3 bg-item-hover px-5 py-2 text-[15px] font-semibold text-ink">
+                  <h3 className="flex min-h-11 items-center justify-start gap-3 bg-item-hover px-5 py-2 text-[15px] font-semibold text-ink">
                     <span className="min-w-0 truncate">{group.title}</span>
                     <span className="shrink-0 text-sm font-medium text-ink-muted">{group.events.length}</span>
-                    <button
-                      type="button"
-                      aria-label={`${group.title} 일정 추가`}
-                      onClick={() => openAddDialog(undefined, "", "toolbar", group.key)}
-                      className="ml-auto flex size-7 shrink-0 items-center justify-center rounded-[6px] text-lg font-normal leading-none text-ink-muted hover:text-ink"
-                    >
-                      <Plus aria-hidden="true" className="size-4" strokeWidth={2} />
-                    </button>
+                    {noticeFilterKey === "all" ? (
+                      <button
+                        type="button"
+                        aria-label={`${group.title} 일정 추가`}
+                        onClick={() => openAddDialog(undefined, "", "toolbar", group.key)}
+                        className="ml-auto flex size-7 shrink-0 items-center justify-center rounded-[6px] text-lg font-normal leading-none text-ink-muted hover:text-ink"
+                      >
+                        <Plus aria-hidden="true" className="size-4" strokeWidth={2} />
+                      </button>
+                    ) : null}
                   </h3>
                   <div className="divide-y divide-muted">
                     {groupEventsByDate(group.events).map(([date, dateEvents]) => (
