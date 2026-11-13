@@ -256,7 +256,7 @@ function groupEventsByDate<T extends { date: string }>(events: T[]) {
   return [...groups.entries()].sort(([a], [b]) => a.localeCompare(b));
 }
 
-function sortNoticeGroups<T extends { events: Array<{ date: string; endDate?: string }>; title: string }>(groups: T[], todayKey: string) {
+function sortNoticeGroups<T extends { key: string; events: Array<{ date: string; endDate?: string }>; title: string }>(groups: T[], todayKey: string) {
   const getGroupRank = (group: T) => {
     const relevantDates = group.events
       .map((event) => {
@@ -268,6 +268,8 @@ function sortNoticeGroups<T extends { events: Array<{ date: string; endDate?: st
     return { isPast: relevantDates.length === 0, date: relevantDates[0] ?? "9999-12-31" };
   };
   return [...groups].sort((a, b) => {
+    if (a.key === "unlinked") return 1;
+    if (b.key === "unlinked") return -1;
     const aRank = getGroupRank(a);
     const bRank = getGroupRank(b);
     return Number(aRank.isPast) - Number(bRank.isPast)
