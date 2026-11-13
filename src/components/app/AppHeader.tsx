@@ -80,6 +80,7 @@ export function AppHeader({
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [accountDialogOpen, setAccountDialogOpen] = useState(false);
+  const [accountSettingsTab, setAccountSettingsTab] = useState<"account" | "services">("account");
   const [withdrawalDialogOpen, setWithdrawalDialogOpen] = useState(false);
   const [isWithdrawing, setIsWithdrawing] = useState(false);
   const [withdrawalError, setWithdrawalError] = useState<string | null>(null);
@@ -349,7 +350,7 @@ export function AppHeader({
               className="cursor-pointer px-[10px] text-ink hover:bg-dropdown-hover data-[highlighted]:bg-dropdown-hover focus:bg-dropdown-hover focus:text-ink"
               onSelect={() => setAccountDialogOpen(true)}
             >
-              계정 정보
+              계정 설정
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
@@ -364,14 +365,52 @@ export function AppHeader({
         <Dialog open={accountDialogOpen} onOpenChange={setAccountDialogOpen}>
           <DialogContent
             closeClassName="right-5 top-7 flex size-9 items-center justify-center rounded-lg text-ink-muted opacity-100 transition-colors hover:bg-item-hover hover:text-ink focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-focus-soft [&_svg]:size-6"
-            className="w-[520px] max-w-[calc(100vw-32px)] rounded-[20px] border-0 bg-surface p-8"
+            className="h-[620px] max-h-[calc(100vh-32px)] w-[520px] max-w-[calc(100vw-32px)] overflow-hidden rounded-[20px] border-0 bg-surface p-8"
           >
-            <DialogHeader className="space-y-2 text-left">
-              <DialogTitle className="pr-8 text-[20px] font-bold leading-7 text-ink">
-                계정 정보
-              </DialogTitle>
+            <DialogHeader className="shrink-0 space-y-1 text-left">
+              <DialogTitle className="pr-8 text-[20px] font-bold leading-7 text-ink">계정 설정</DialogTitle>
             </DialogHeader>
-            <dl className="mt-6 grid gap-y-5">
+            <div className="absolute left-3 right-3 top-[74px] h-12 shrink-0">
+              <div aria-hidden className="pointer-events-none absolute bottom-[3px] left-1/2 h-px w-[456px] -translate-x-1/2 bg-field-border" />
+              <div className="absolute inset-x-0 top-0 flex h-12 items-start gap-[10px] pl-[8px]">
+              <button
+                type="button"
+                onClick={() => setAccountSettingsTab("account")}
+                className={`relative flex h-12 w-max shrink-0 cursor-pointer flex-col items-start gap-[5px] rounded-[10px] px-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand ${
+                  accountSettingsTab === "account"
+                    ? "text-brand"
+                    : "text-ink-muted"
+                }`}
+              >
+                <span className={`inline-flex items-center justify-center whitespace-nowrap rounded-[10px] px-3 py-2 text-[15px] transition-colors ${accountSettingsTab === "account" ? "font-semibold hover:bg-[rgba(234,241,236,0.5)]" : "font-normal hover:bg-item-hover"}`}>
+                  계정 정보
+                </span>
+                <span aria-hidden className="flex h-[3px] w-full items-start overflow-hidden px-3">
+                  <span className={`absolute bottom-[3px] left-3 right-3 h-[2.5px] rounded-none bg-brand transition-opacity ${accountSettingsTab === "account" ? "opacity-100" : "opacity-0"}`} />
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setAccountSettingsTab("services")}
+                className={`relative flex h-12 w-max shrink-0 cursor-pointer flex-col items-start gap-[5px] rounded-[10px] px-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand ${
+                  accountSettingsTab === "services"
+                    ? "text-brand"
+                    : "text-ink-muted"
+                }`}
+              >
+                <span className={`inline-flex items-center justify-center whitespace-nowrap rounded-[10px] px-3 py-2 text-[15px] transition-colors ${accountSettingsTab === "services" ? "font-semibold hover:bg-[rgba(234,241,236,0.5)]" : "font-normal hover:bg-item-hover"}`}>
+                  외부 서비스 연동
+                </span>
+                <span aria-hidden className="flex h-[3px] w-full items-start overflow-hidden px-3">
+                  <span className={`absolute bottom-[3px] left-3 right-3 h-[2.5px] rounded-none bg-brand transition-opacity ${accountSettingsTab === "services" ? "opacity-100" : "opacity-0"}`} />
+                </span>
+              </button>
+              </div>
+            </div>
+            <div aria-hidden className="h-2 shrink-0" />
+            {accountSettingsTab === "account" ? <>
+            <div className="contents">
+            <dl className="mt-0 grid gap-y-5">
               <div className="flex flex-col gap-2">
                 <dt className="text-sm font-semibold text-submenu-text">이메일</dt>
                 <dd aria-disabled="true" className="flex h-11 min-w-0 items-center truncate rounded-[12px] border border-field-border bg-field-border/25 px-3.5 text-[15px] text-[#A8B4B0]">{user?.email ?? "-"}</dd>
@@ -426,6 +465,33 @@ export function AppHeader({
                 탈퇴하면 SSIAT 계정과 저장한 지원사업, 캘린더 일정, 알림 등 서비스 정보가 삭제되며 복구할 수 없어요.
               </p>
             </div>
+            </div>
+            </> : (<div className="absolute left-8 right-8 top-[144px] flex flex-col gap-7">
+              <section className="order-2 p-0">
+                <div className="flex items-center gap-3">
+                  <span className="flex size-12 shrink-0 items-center justify-center rounded-[10px] border border-field-border bg-surface">
+                    <img src="/assets/calendar/google-calendar-2026.png" alt="" aria-hidden="true" className="size-8" />
+                  </span>
+                  <div className="min-w-0">
+                    <h3 className="text-[16px] font-semibold text-ink">Google Calendar</h3>
+                    <p className="mt-1 text-[14px] leading-5 text-ink-muted">SSIAT 일정을 Google Calendar에서 관리해요</p>
+                  </div>
+                  <button type="button" disabled className="ml-auto h-9 shrink-0 rounded-[9px] border border-field-border bg-surface px-3 text-[13px] font-semibold text-ink-muted">연결하기</button>
+                </div>
+              </section>
+              <section className="order-1 p-0">
+                <div className="flex items-center gap-3">
+                  <span className="flex size-12 shrink-0 items-center justify-center rounded-[10px] border border-field-border bg-surface text-ink">
+                    <img src="/assets/services/chatgpt.svg" alt="" aria-hidden="true" className="size-7" />
+                  </span>
+                  <div className="min-w-0">
+                    <h3 className="text-[16px] font-semibold text-ink">ChatGPT</h3>
+                    <p className="mt-1 text-[14px] leading-5 text-ink-muted">지원사업을 ChatGPT에서 정리해요</p>
+                  </div>
+                  <button type="button" disabled className="ml-auto h-9 shrink-0 rounded-[9px] border border-field-border bg-surface px-3 text-[13px] font-semibold text-ink-muted">연결하기</button>
+                </div>
+              </section>
+            </div>) }
           </DialogContent>
         </Dialog>
         <AlertDialog open={withdrawalDialogOpen} onOpenChange={setWithdrawalDialogOpen}>
