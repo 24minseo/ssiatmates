@@ -410,7 +410,7 @@ export function AppHeader({
             <div aria-hidden className="h-2 shrink-0" />
             {accountSettingsTab === "account" ? <>
             <div className="contents">
-            <dl className="mt-0 grid gap-y-5">
+            <dl className="mt-6 grid h-fit gap-y-5">
               <div className="flex flex-col gap-2">
                 <dt className="text-sm font-semibold text-submenu-text">이메일</dt>
                 <dd aria-disabled="true" className="flex h-11 min-w-0 items-center truncate rounded-[12px] border border-field-border bg-field-border/25 px-3.5 text-[15px] text-[#A8B4B0]">{user?.email ?? "-"}</dd>

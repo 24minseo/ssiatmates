@@ -1,7 +1,7 @@
 export function AppFooter() {
   return (
-    <footer className="mt-12 border-t border-field-border py-5 text-[13px] text-[#68716D]">
-      <div className="mx-auto flex w-full max-w-[1208px] items-center gap-6 px-6">
+    <footer className="mt-12 border-t border-field-border py-3 text-[13px] text-[#68716D]">
+      <div className="mx-auto flex w-full max-w-[1208px] items-center gap-6">
         <img
           src="/assets/sidebar/ssiat-logo.svg"
           alt="SSIAT"

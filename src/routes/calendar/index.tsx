@@ -942,6 +942,8 @@ function CalendarPage() {
   const mutationInFlightRef = useRef(false);
   const createRequestRef = useRef<{ key: string; id: string } | null>(null);
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [isGoogleCalendarConnectOpen, setIsGoogleCalendarConnectOpen] = useState(false);
+  const [isGoogleCalendarBannerVisible, setIsGoogleCalendarBannerVisible] = useState(true);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [editingEventId, setEditingEventId] = useState<CalendarEvent["id"] | null>(null);
@@ -1795,12 +1797,44 @@ function CalendarPage() {
 
   return (
     <section aria-labelledby="calendar-title" className="w-[1208px]">
-      <h1
-        id="calendar-title"
-        className="h-[33px] text-[28px] font-bold leading-[33px] text-ink"
+      <div className="flex h-[33px] items-center justify-between">
+        <h1
+          id="calendar-title"
+          className="text-[28px] font-bold leading-[33px] text-ink"
+        >
+          전체 캘린더
+        </h1>
+      </div>
+
+      <Dialog
+        open={isGoogleCalendarConnectOpen}
+        onOpenChange={setIsGoogleCalendarConnectOpen}
       >
-        전체 캘린더
-      </h1>
+        <DialogContent className="w-[calc(100vw-32px)] max-w-[420px] rounded-[20px] border-0 bg-surface p-8 text-ink shadow-[0_12px_16px_0_rgba(9,31,23,0.12)]">
+          <DialogHeader className="items-center space-y-3 text-center">
+            <img
+              src="/assets/calendar/google-calendar-2026.png"
+              alt="Google Calendar"
+              className="size-12"
+            />
+            <DialogTitle className="text-[20px] font-bold leading-7 text-ink">
+              Google Calendar 연결
+            </DialogTitle>
+            <DialogDescription className="text-[14px] leading-6 text-ink-muted">
+              메이츠 일정과 Google Calendar를 연결하는 기능을 준비하고 있어요.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-6 flex-row justify-center sm:space-x-0">
+            <Button
+              type="button"
+              onClick={() => setIsGoogleCalendarConnectOpen(false)}
+              className="h-11 rounded-[12px] bg-secondary-btn px-5 text-[15px] font-semibold text-secondary-btn-text shadow-none hover:bg-secondary-btn-hover hover:text-secondary-btn-text-hover"
+            >
+              확인
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <div className="mt-[18px] flex h-[42px] items-center justify-between">
         <div className="flex items-center gap-2">
@@ -2175,6 +2209,33 @@ function CalendarPage() {
             </div>
           )}
         </section>
+      )}
+
+      {isGoogleCalendarBannerVisible && (
+        <div className="mt-3 flex h-11 w-full items-center justify-between rounded-[10px] bg-item-hover px-3">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => setIsGoogleCalendarConnectOpen(true)}
+            className="h-full justify-start gap-2 px-0 text-[14px] font-semibold text-ink hover:bg-transparent hover:text-ink"
+          >
+            <img
+              src="/assets/calendar/google-calendar-2026.png"
+              alt=""
+              aria-hidden="true"
+              className="size-5"
+            />
+            Google Calendar 연결하기
+          </Button>
+          <button
+            type="button"
+            aria-label="Google Calendar 배너 닫기"
+            onClick={() => setIsGoogleCalendarBannerVisible(false)}
+            className="inline-flex size-5 shrink-0 items-center justify-center rounded-[4px] text-icon-muted transition-colors hover:bg-transparent hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+          >
+            <X className="size-4" aria-hidden="true" />
+          </button>
+        </div>
       )}
 
       <Dialog
