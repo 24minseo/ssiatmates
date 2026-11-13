@@ -18,6 +18,8 @@ export const mutateCalendarEvent = createServerFn({ method: "POST" }).validator(
     ...(data.contentMode !== undefined ? { content_mode: data.contentMode } : {}),
     ...(data.checklistItems !== undefined ? { checklist_items: data.checklistItems } : {}),
     ...(data.reminders !== undefined ? { reminders: data.reminders } : {}),
+    ...(data.savedNoticeId !== undefined ? { saved_notice_id: data.savedNoticeId } : {}),
+    ...(data.linkedNotice !== undefined ? { linked_notice: data.linkedNotice } : {}),
   } : action === "toggle_checklist" ? { item_id: itemId } : {};
   return callCalendarRpc("manage_my_calendar_task_v3", { p_action: action, p_event_id: eventId, p_input: patch, p_expected_updated_at: data.expectedUpdatedAt ?? null }, accessToken, "N8N_CALENDAR_EVENT_MUTATION_WEBHOOK_URL", { event_id: eventId, action, patch, expected_updated_at: data.expectedUpdatedAt ?? null });
 });
