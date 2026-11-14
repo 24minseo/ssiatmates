@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { AlertTriangle, CalendarClock, LogOut, Sparkles } from "lucide-react";
 
@@ -30,6 +30,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { deleteAccount } from "@/services/deleteAccountApi";
 import { useCalendarNotifications } from "@/hooks/useCalendarNotifications";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+import { connectGoogleCalendar, disconnectGoogleCalendar, getGoogleCalendarStatus } from "@/services/googleCalendarApi";
 
 export type NotificationType = "deadline" | "schedule" | "news";
 export type AppNotification = {
@@ -70,7 +72,7 @@ export function AppHeader({
   growthJournal = false,
   growthJournalExpanded = false,
 }: AppHeaderProps) {
-  const { user, profile, refreshProfile, signOut } = useAuth();
+  const { user, profile, session, refreshProfile, signOut } = useAuth();
   const { notifications: apiNotifications, unreadCount: apiUnread, refresh: refreshCalendarNotifications, markRead: markCalendarNotificationsRead } = useCalendarNotifications();
   const deleteAccountFn = useServerFn(deleteAccount);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
@@ -81,6 +83,42 @@ export function AppHeader({
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [accountDialogOpen, setAccountDialogOpen] = useState(false);
   const [accountSettingsTab, setAccountSettingsTab] = useState<"account" | "services">("account");
+  const [googleCalendarConnected, setGoogleCalendarConnected] = useState(false);
+  const [googleCalendarLoading, setGoogleCalendarLoading] = useState(false);
+  const accountTabsRef = useRef<HTMLDivElement>(null);
+  const accountTabRefs = useRef<Record<"account" | "services", HTMLButtonElement | null>>({ account: null, services: null });
+  const [accountIndicator, setAccountIndicator] = useState({ left: 20, width: 60 });
+
+  useLayoutEffect(() => {
+    const container = accountTabsRef.current;
+    const activeTab = accountTabRefs.current[accountSettingsTab];
+    if (!container || !activeTab) return;
+    const containerRect = container.getBoundingClientRect();
+    const tabRect = activeTab.getBoundingClientRect();
+    setAccountIndicator({ left: tabRect.left - containerRect.left + 12, width: tabRect.width - 24 });
+  }, [accountDialogOpen, accountSettingsTab, session?.access_token]);
+
+  useEffect(() => {
+    if (!accountDialogOpen || accountSettingsTab !== "services") return;
+    void getGoogleCalendarStatus(session?.access_token).then(setGoogleCalendarConnected).catch(() => setGoogleCalendarConnected(false));
+  }, [accountDialogOpen, accountSettingsTab]);
+
+  const handleGoogleCalendarToggle = async () => {
+    setGoogleCalendarLoading(true);
+    try {
+      if (googleCalendarConnected) {
+        await disconnectGoogleCalendar(session?.access_token);
+        setGoogleCalendarConnected(false);
+      } else {
+        const authorizationUrl = await connectGoogleCalendar(session?.access_token);
+        window.location.assign(authorizationUrl);
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Google Calendar 연결에 실패했어요.");
+    } finally {
+      setGoogleCalendarLoading(false);
+    }
+  };
   const [withdrawalDialogOpen, setWithdrawalDialogOpen] = useState(false);
   const [isWithdrawing, setIsWithdrawing] = useState(false);
   const [withdrawalError, setWithdrawalError] = useState<string | null>(null);
@@ -380,9 +418,10 @@ export function AppHeader({
             </DialogHeader>
             <div className="absolute left-3 right-3 top-[74px] h-12 shrink-0">
               <div aria-hidden className="pointer-events-none absolute bottom-[3px] left-1/2 h-px w-[456px] -translate-x-1/2 bg-field-border" />
-              <div className="absolute inset-x-0 top-0 flex h-12 items-start gap-[10px] pl-[8px]">
+              <div ref={accountTabsRef} className="absolute inset-x-0 top-0 flex h-12 items-start gap-[10px] pl-[8px]">
               <button
                 type="button"
+                ref={(element) => { accountTabRefs.current.account = element; }}
                 onClick={() => setAccountSettingsTab("account")}
                 className={`relative flex h-12 w-max shrink-0 cursor-pointer flex-col items-start gap-[5px] rounded-[10px] px-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand ${
                   accountSettingsTab === "account"
@@ -393,12 +432,11 @@ export function AppHeader({
                 <span className={`inline-flex items-center justify-center whitespace-nowrap rounded-[10px] px-3 py-2 text-[15px] transition-colors ${accountSettingsTab === "account" ? "font-semibold hover:bg-[rgba(234,241,236,0.5)]" : "font-normal hover:bg-item-hover"}`}>
                   계정 정보
                 </span>
-                <span aria-hidden className="flex h-[3px] w-full items-start overflow-hidden px-3">
-                  <span className={`absolute bottom-[3px] left-3 right-3 h-[2.5px] rounded-none bg-brand transition-opacity ${accountSettingsTab === "account" ? "opacity-100" : "opacity-0"}`} />
-                </span>
+                  <span aria-hidden className="h-[3px] w-full" />
               </button>
               <button
                 type="button"
+                ref={(element) => { accountTabRefs.current.services = element; }}
                 onClick={() => setAccountSettingsTab("services")}
                 className={`relative flex h-12 w-max shrink-0 cursor-pointer flex-col items-start gap-[5px] rounded-[10px] px-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand ${
                   accountSettingsTab === "services"
@@ -409,10 +447,16 @@ export function AppHeader({
                 <span className={`inline-flex items-center justify-center whitespace-nowrap rounded-[10px] px-3 py-2 text-[15px] transition-colors ${accountSettingsTab === "services" ? "font-semibold hover:bg-[rgba(234,241,236,0.5)]" : "font-normal hover:bg-item-hover"}`}>
                   외부 서비스 연동
                 </span>
-                <span aria-hidden className="flex h-[3px] w-full items-start overflow-hidden px-3">
-                  <span className={`absolute bottom-[3px] left-3 right-3 h-[2.5px] rounded-none bg-brand transition-opacity ${accountSettingsTab === "services" ? "opacity-100" : "opacity-0"}`} />
-                </span>
+                <span aria-hidden className="h-[3px] w-full" />
               </button>
+              <span
+                aria-hidden="true"
+                className={cn(
+                  "pointer-events-none absolute bottom-[3px] h-[2.5px] rounded-none bg-brand transition-[left,width] duration-200 ease-out motion-reduce:transition-none",
+                  "transition-[left,width] duration-200 ease-out motion-reduce:transition-none",
+                )}
+                style={{ left: accountIndicator.left, width: accountIndicator.width }}
+              />
               </div>
             </div>
             <div aria-hidden className="h-2 shrink-0" />
@@ -484,7 +528,14 @@ export function AppHeader({
                     <h3 className="text-[16px] font-semibold text-ink">Google Calendar</h3>
                     <p className="mt-1 text-[14px] leading-5 text-ink-muted">SSIAT 일정을 Google Calendar에서 관리해요</p>
                   </div>
-                  <button type="button" disabled className="ml-auto h-9 shrink-0 rounded-[9px] border border-field-border bg-surface px-3 text-[13px] font-semibold text-ink-muted">연결하기</button>
+                  <button
+                    type="button"
+                    disabled={googleCalendarLoading}
+                    onClick={() => void handleGoogleCalendarToggle()}
+                    className="ml-auto h-9 shrink-0 rounded-[9px] border border-field-border bg-surface px-3 text-[13px] font-semibold text-ink-muted transition-colors hover:border-brand hover:text-brand disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {googleCalendarLoading ? "처리 중..." : googleCalendarConnected ? "연결 해제" : "연결하기"}
+                  </button>
                 </div>
               </section>
               <section className="order-1 p-0">

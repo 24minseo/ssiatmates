@@ -47,6 +47,7 @@ import { getCalendarEvents } from "@/services/calendarEventsApi";
 import { normalizeCalendarEvents, upsertCalendarEvent } from "@/services/calendarEventModel";
 import { savedNoticesApi, type SavedNotice } from "@/services/savedNoticesApi";
 import { eventProgramKey, findEventProgram, groupEventsByProgram, programLinkInput, savedProgramKey } from "@/services/calendarNoticeLink";
+import { connectGoogleCalendar, disconnectGoogleCalendar, getGoogleCalendarStatus } from "@/services/googleCalendarApi";
 
 export const Route = createFileRoute("/calendar/")({
   head: () => ({
@@ -1001,6 +1002,9 @@ function CalendarPage() {
   const createRequestRef = useRef<{ key: string; id: string } | null>(null);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isGoogleCalendarConnectOpen, setIsGoogleCalendarConnectOpen] = useState(false);
+  const [isGoogleCalendarConnected, setIsGoogleCalendarConnected] = useState(false);
+  const [isGoogleCalendarLoading, setIsGoogleCalendarLoading] = useState(false);
+  const [googleCalendarError, setGoogleCalendarError] = useState<string | null>(null);
   const [isGoogleCalendarBannerVisible, setIsGoogleCalendarBannerVisible] = useState(true);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -1095,6 +1099,47 @@ function CalendarPage() {
 
   const today = useMemo(() => new Date(), []);
   const todayKey = toDateKey(today);
+
+  useEffect(() => {
+    if (authLoading || !user) return;
+    let cancelled = false;
+    void getGoogleCalendarStatus(session?.access_token)
+      .then((connected) => {
+        if (!cancelled) setIsGoogleCalendarConnected(connected);
+      })
+      .catch(() => {
+        if (!cancelled) setIsGoogleCalendarConnected(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [authLoading, user, session?.access_token]);
+
+  const handleGoogleCalendarConnect = async () => {
+    setIsGoogleCalendarLoading(true);
+    setGoogleCalendarError(null);
+    try {
+      const authorizationUrl = await connectGoogleCalendar(session?.access_token);
+      window.location.assign(authorizationUrl);
+    } catch (error) {
+      setGoogleCalendarError(error instanceof Error ? error.message : "Google Calendar 연결에 실패했어요.");
+    } finally {
+      setIsGoogleCalendarLoading(false);
+    }
+  };
+
+  const handleGoogleCalendarDisconnect = async () => {
+    setIsGoogleCalendarLoading(true);
+    setGoogleCalendarError(null);
+    try {
+      await disconnectGoogleCalendar(session?.access_token);
+      setIsGoogleCalendarConnected(false);
+    } catch (error) {
+      setGoogleCalendarError(error instanceof Error ? error.message : "Google Calendar 연결 해제에 실패했어요.");
+    } finally {
+      setIsGoogleCalendarLoading(false);
+    }
+  };
 
   const getFreshAccessToken = async () => {
     const { data, error } = await supabase.auth.getSession();
@@ -1882,16 +1927,26 @@ function CalendarPage() {
               Google Calendar 연결
             </DialogTitle>
             <DialogDescription className="text-[14px] leading-6 text-ink-muted">
-              메이츠 일정과 Google Calendar를 연결하는 기능을 준비하고 있어요.
+              {isGoogleCalendarConnected
+                ? "Google Calendar가 연결되어 있어요."
+                : "메이츠 일정을 Google Calendar에서 관리해요."}
             </DialogDescription>
           </DialogHeader>
+          {googleCalendarError ? <p role="alert" className="mt-3 text-center text-[13px] text-destructive">{googleCalendarError}</p> : null}
           <DialogFooter className="mt-6 flex-row justify-center sm:space-x-0">
             <Button
               type="button"
-              onClick={() => setIsGoogleCalendarConnectOpen(false)}
+              disabled={isGoogleCalendarLoading}
+              onClick={() => {
+                if (isGoogleCalendarConnected) {
+                  void handleGoogleCalendarDisconnect();
+                } else {
+                  void handleGoogleCalendarConnect();
+                }
+              }}
               className="h-11 rounded-[12px] bg-secondary-btn px-5 text-[15px] font-semibold text-secondary-btn-text shadow-none hover:bg-secondary-btn-hover hover:text-secondary-btn-text-hover"
             >
-              확인
+              {isGoogleCalendarLoading ? "처리 중..." : isGoogleCalendarConnected ? "연결 해제" : "연결하기"}
             </Button>
           </DialogFooter>
         </DialogContent>
