@@ -89,7 +89,7 @@ function NavigationIcon({
   selected: boolean;
 }) {
   if (src.includes("/ir-deck.svg")) {
-    return <img aria-hidden src={src} className="size-6 shrink-0" />;
+    return <img aria-hidden src={selected ? "/assets/sidebar/ir-deck-active.svg" : src} className="size-6 shrink-0" />;
   }
 
   const maskStyle = {
