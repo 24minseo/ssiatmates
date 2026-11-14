@@ -29,8 +29,8 @@ function IrDeckPage() {
   const [started, setStarted] = useState(false);
 
   if (screen === "home") return (
-    <main className="min-h-full bg-background px-8 pb-20 pt-8 xl:px-14">
-      <div className="mx-auto max-w-[1280px]">
+    <main className="min-h-full bg-background pb-20 pt-8">
+      <div>
         <header className="mb-10 flex items-start justify-between gap-6">
           <div><h1 className="text-[28px] font-bold leading-tight text-ink">AI IR 덱</h1><p className="mt-px text-base font-medium text-ink-muted">사업의 핵심을 투자자가 이해할 수 있는 이야기로 정리해 보세요.</p></div>
         </header>
@@ -41,12 +41,12 @@ function IrDeckPage() {
   );
 
   if (screen === "processing") return (
-    <main className="min-h-full bg-background px-8 pb-20 pt-8 xl:px-14"><div className="mx-auto max-w-[900px]"><header className="mb-8"><h1 className="text-[32px] font-bold text-ink">사업 내용 분석 중</h1><p className="mt-2 text-ink-muted">입력한 내용을 덱에 필요한 항목으로 정리하고 있어요.</p></header><StepBar current={2} /><section className="mt-7 rounded-2xl border border-field-border bg-surface p-12 text-center"><Sparkles className="mx-auto size-10 text-brand" /><h2 className="mt-5 text-xl font-semibold text-ink">사업 내용을 정리하고 있어요</h2><p className="mt-2 text-sm text-ink-muted">다음 화면에서 파악한 내용을 확인할 수 있습니다.</p><div className="mx-auto mt-7 h-2 max-w-md overflow-hidden rounded-full bg-background"><div className="h-full w-2/3 rounded-full bg-brand" /></div><button type="button" onClick={() => setScreen("review")} className="mt-8 rounded-[10px] bg-brand px-5 py-3 text-sm font-semibold text-white">분석 내용 확인하기</button></section></div></main>
+    <main className="min-h-full bg-background pb-20 pt-8"><div><header className="mb-8"><h1 className="text-[32px] font-bold text-ink">사업 내용 분석 중</h1><p className="mt-2 text-ink-muted">입력한 내용을 덱에 필요한 항목으로 정리하고 있어요.</p></header><StepBar current={2} /><section className="mt-7 rounded-2xl border border-field-border bg-surface p-12 text-center"><Sparkles className="mx-auto size-10 text-brand" /><h2 className="mt-5 text-xl font-semibold text-ink">사업 내용을 정리하고 있어요</h2><p className="mt-2 text-sm text-ink-muted">다음 화면에서 파악한 내용을 확인할 수 있습니다.</p><div className="mx-auto mt-7 h-2 max-w-md overflow-hidden rounded-full bg-background"><div className="h-full w-2/3 rounded-full bg-brand" /></div><button type="button" onClick={() => setScreen("review")} className="mt-8 rounded-[10px] bg-brand px-5 py-3 text-sm font-semibold text-white">분석 내용 확인하기</button></section></div></main>
   );
 
   return (
-    <main className="min-h-full bg-background px-8 pb-20 pt-8 xl:px-14">
-      <div className="mx-auto max-w-[1280px]">
+    <main className="min-h-full bg-background pb-20 pt-8">
+      <div>
         <header className="mb-8 flex items-start justify-between gap-6">
           <div>
             <div className="mb-3 flex items-center gap-2 text-sm font-medium text-brand">
