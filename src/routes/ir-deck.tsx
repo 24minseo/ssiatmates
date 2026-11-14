@@ -22,6 +22,7 @@ function StepBar({ current }: { current: number }) {
 
 function IrDeckPage() {
   const [screen, setScreen] = useState<"home" | "input" | "processing" | "review" | "themes">("home");
+  const [sort, setSort] = useState<"updated" | "created" | "viewed">("updated");
   const [source, setSource] = useState("");
   const [selectedTheme, setSelectedTheme] = useState("Precision Tech");
   const [started, setStarted] = useState(false);
@@ -33,7 +34,7 @@ function IrDeckPage() {
           <div><h1 className="text-[32px] font-bold tracking-[-0.04em] text-ink">AI IR Deck</h1><p className="mt-2 text-base text-ink-muted">사업의 핵심을 투자자가 이해할 수 있는 이야기로 정리해 보세요.</p></div>
           <button type="button" onClick={() => setScreen("input")} className="inline-flex items-center gap-2 rounded-[10px] bg-brand px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-brand/90"><Plus className="size-4" /> 새 IR Deck 만들기</button>
         </header>
-        <div className="mb-5 flex items-center justify-between"><h2 className="text-lg font-semibold text-ink">최근 IR Deck <span className="ml-1 text-sm font-normal text-ink-muted">0</span></h2><span className="text-sm text-ink-muted">최근 수정 순</span></div>
+        <div className="mb-5 flex items-center justify-between"><h2 className="text-lg font-semibold text-ink">최근 IR Deck <span className="ml-1 text-sm font-normal text-ink-muted">0</span></h2><label className="relative"><span className="sr-only">IR Deck 정렬</span><select value={sort} onChange={(event) => setSort(event.target.value as typeof sort)} className="h-9 appearance-none rounded-lg border border-field-border bg-surface py-1 pl-3 pr-8 text-sm text-ink outline-none transition-colors hover:bg-item-hover focus:border-brand"><option value="updated">최근 수정순</option><option value="created">최근 생성순</option><option value="viewed">최근 열람순</option></select><span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-ink-muted">⌄</span></label></div>
         <section className="grid min-h-[360px] place-items-center rounded-2xl border border-field-border bg-surface p-10"><div className="text-center"><Presentation className="mx-auto size-11 text-ink-muted/40" /><h2 className="mt-4 text-lg font-semibold text-ink">아직 만든 IR Deck이 없어요</h2><p className="mt-2 text-sm text-ink-muted">상단 버튼으로 첫 번째 IR Deck을 만들어 보세요.</p></div></section>
       </div>
     </main>
