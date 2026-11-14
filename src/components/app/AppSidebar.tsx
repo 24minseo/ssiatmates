@@ -88,6 +88,10 @@ function NavigationIcon({
   src: string;
   selected: boolean;
 }) {
+  if (src.includes("/ir-deck.svg")) {
+    return <img aria-hidden src={src} className="size-6 shrink-0" />;
+  }
+
   const maskStyle = {
     WebkitMaskImage: `url(${src})`,
     maskImage: `url(${src})`,
