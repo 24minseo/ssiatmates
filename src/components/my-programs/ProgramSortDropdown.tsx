@@ -11,17 +11,19 @@ export type ProgramSortOption = "deadline" | "fit" | "created";
 const sortLabelsByVariant = {
   explore: { deadline: "마감 임박순", created: "최근 등록순", fit: "추천순" },
   myPrograms: { created: "최근 추가순", deadline: "마감 임박순", fit: "진행 상태순" },
+  irDeck: { created: "최근 수정순", deadline: "최근 생성순", fit: "최근 열람순" },
 } satisfies Record<string, Record<ProgramSortOption, string>>;
 
 const disabledOptionsByVariant = {
   explore: ["created"],
   myPrograms: [],
-} satisfies Record<"explore" | "myPrograms", ProgramSortOption[]>;
+  irDeck: [],
+} satisfies Record<"explore" | "myPrograms" | "irDeck", ProgramSortOption[]>;
 
 type ProgramSortDropdownProps = {
   value: ProgramSortOption;
   onChange: (value: ProgramSortOption) => void;
-  variant?: "explore" | "myPrograms";
+  variant?: "explore" | "myPrograms" | "irDeck";
   preferenceActive?: boolean;
   hiddenOptions?: ProgramSortOption[];
 };

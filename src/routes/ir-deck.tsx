@@ -1,10 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ArrowRight, Check, FileText, Plus, Presentation, Sparkles } from "lucide-react";
+import { ArrowRight, FileText, Plus, Presentation, Sparkles } from "lucide-react";
 import { useState } from "react";
 
 import { cn } from "@/lib/utils";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { DropdownChevron } from "@/components/ui/DropdownChevron";
+import { ProgramSortDropdown, type ProgramSortOption } from "@/components/my-programs/ProgramSortDropdown";
 
 export const Route = createFileRoute("/ir-deck")({
   head: () => ({ meta: [{ title: "IR 덱 · 메이츠" }] }),
@@ -24,7 +23,7 @@ function StepBar({ current }: { current: number }) {
 
 function IrDeckPage() {
   const [screen, setScreen] = useState<"home" | "input" | "processing" | "review" | "themes">("home");
-  const [sort, setSort] = useState<"updated" | "created" | "viewed">("updated");
+  const [sort, setSort] = useState<ProgramSortOption>("created");
   const [source, setSource] = useState("");
   const [selectedTheme, setSelectedTheme] = useState("Precision Tech");
   const [started, setStarted] = useState(false);
@@ -35,7 +34,7 @@ function IrDeckPage() {
         <header className="mb-10 flex items-start justify-between gap-6">
           <div><h1 className="text-[32px] font-bold tracking-[-0.04em] text-ink">AI IR 덱</h1><p className="mt-2 text-base text-ink-muted">사업의 핵심을 투자자가 이해할 수 있는 이야기로 정리해 보세요.</p></div>
         </header>
-        <div className="mb-5 flex justify-end gap-4"><DropdownMenu><DropdownMenuTrigger asChild><button type="button" aria-label="IR Deck 정렬" className="group flex h-[42px] w-[136px] shrink-0 cursor-pointer items-center justify-between rounded-[12px] border border-field-border bg-surface px-[14px] text-[15px] font-medium text-ink shadow-none transition-colors hover:bg-item-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">{sort === "updated" ? "최근 수정순" : sort === "created" ? "최근 생성순" : "최근 열람순"}<DropdownChevron variant="muted" /></button></DropdownMenuTrigger><DropdownMenuContent align="end" className="min-w-[136px] rounded-[12px] border-0 bg-surface p-1" style={{ boxShadow: "var(--shadow-dropdown)" }}>{([["updated", "최근 수정순"], ["created", "최근 생성순"], ["viewed", "최근 열람순"]] as const).map(([value, label]) => <DropdownMenuItem key={value} onSelect={() => setSort(value)} className="min-h-10 cursor-pointer rounded-[8px] px-[10px] text-ink data-[highlighted]:bg-dropdown-hover"> <span className="flex-1">{label}</span>{sort === value ? <Check className="size-[18px] text-brand" /> : null}</DropdownMenuItem>)}</DropdownMenuContent></DropdownMenu><button type="button" onClick={() => setScreen("input")} className="inline-flex h-[42px] items-center rounded-[12px] bg-brand px-[26px] py-[10px] text-[15px] font-semibold text-white shadow-sm hover:bg-brand/90">새 IR 덱 생성</button></div>
+        <div className="mb-5 flex justify-end gap-4"><ProgramSortDropdown value={sort} onChange={setSort} variant="irDeck" /><button type="button" onClick={() => setScreen("input")} className="inline-flex h-[42px] items-center rounded-[12px] bg-brand px-[26px] py-[10px] text-[15px] font-semibold text-white shadow-sm hover:bg-brand/90">새 IR 덱 생성</button></div>
         <section className="grid min-h-[360px] place-items-center rounded-2xl border border-field-border bg-surface p-10"><div className="text-center"><Presentation className="mx-auto size-11 text-ink-muted/40" /><h2 className="mt-4 text-lg font-semibold text-ink">아직 만든 IR Deck이 없어요</h2><p className="mt-2 text-sm text-ink-muted">새 IR Deck을 만들어 첫 번째 덱을 시작해 보세요.</p></div></section>
       </div>
     </main>
