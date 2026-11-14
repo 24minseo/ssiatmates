@@ -151,7 +151,7 @@ function MenuItem({
   const childrenVisible = expanded && activeBranch && childrenCanEnter;
 
   return (
-    <li className="relative">
+    <li className="relative h-[46px] overflow-visible">
       <Link
         to={item.to}
         aria-current={isCurrent ? "page" : undefined}
