@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as FeedbackRouteImport } from './routes/feedback'
+import { Route as IrDeckRouteImport } from './routes/ir-deck'
 import { Route as MyProgramsRouteImport } from './routes/my-programs'
 import { Route as MyhomeRouteImport } from './routes/myhome'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
@@ -31,6 +32,11 @@ const IndexRoute = IndexRouteImport.update({
 const FeedbackRoute = FeedbackRouteImport.update({
   id: '/feedback',
   path: '/feedback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IrDeckRoute = IrDeckRouteImport.update({
+  id: '/ir-deck',
+  path: '/ir-deck',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MyProgramsRoute = MyProgramsRouteImport.update({
@@ -93,6 +99,7 @@ const CalendarGrowthJournalNewRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/feedback': typeof FeedbackRoute
+  '/ir-deck': typeof IrDeckRoute
   '/my-programs': typeof MyProgramsRoute
   '/myhome': typeof MyhomeRoute
   '/onboarding': typeof OnboardingRoute
@@ -108,6 +115,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/feedback': typeof FeedbackRoute
+  '/ir-deck': typeof IrDeckRoute
   '/my-programs': typeof MyProgramsRoute
   '/myhome': typeof MyhomeRoute
   '/onboarding': typeof OnboardingRoute
@@ -124,6 +132,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/feedback': typeof FeedbackRoute
+  '/ir-deck': typeof IrDeckRoute
   '/my-programs': typeof MyProgramsRoute
   '/myhome': typeof MyhomeRoute
   '/onboarding': typeof OnboardingRoute
@@ -141,6 +150,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/feedback'
+    | '/ir-deck'
     | '/my-programs'
     | '/myhome'
     | '/onboarding'
@@ -156,6 +166,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/feedback'
+    | '/ir-deck'
     | '/my-programs'
     | '/myhome'
     | '/onboarding'
@@ -171,6 +182,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/feedback'
+    | '/ir-deck'
     | '/my-programs'
     | '/myhome'
     | '/onboarding'
@@ -187,6 +199,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   FeedbackRoute: typeof FeedbackRoute
+  IrDeckRoute: typeof IrDeckRoute
   MyProgramsRoute: typeof MyProgramsRoute
   MyhomeRoute: typeof MyhomeRoute
   OnboardingRoute: typeof OnboardingRoute
@@ -212,6 +225,13 @@ declare module '@tanstack/react-router' {
       path: '/feedback'
       fullPath: '/feedback'
       preLoaderRoute: typeof FeedbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ir-deck': {
+      id: '/ir-deck'
+      path: '/ir-deck'
+      fullPath: '/ir-deck'
+      preLoaderRoute: typeof IrDeckRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/my-programs': {
@@ -312,6 +332,7 @@ const CalendarGrowthJournalRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   FeedbackRoute: FeedbackRoute,
+  IrDeckRoute: IrDeckRoute,
   MyProgramsRoute: MyProgramsRoute,
   MyhomeRoute: MyhomeRoute,
   OnboardingRoute: OnboardingRoute,
