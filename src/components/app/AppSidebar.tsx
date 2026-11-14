@@ -10,6 +10,7 @@ export type AppNavigationKey =
   | "programs"
   | "my-programs"
   | "calendar"
+  | "ir-deck"
   | "growth-journal";
 
 type AppSidebarProps = {
@@ -23,6 +24,7 @@ type AppRoute =
   | "/programs"
   | "/my-programs"
   | "/calendar"
+  | "/ir-deck"
   | "/calendar/growth-journal";
 
 type NavigationChild = {
@@ -70,6 +72,12 @@ const navigation: NavigationItem[] = [
         to: "/calendar/growth-journal",
       },
     ],
+  },
+  {
+    key: "ir-deck",
+    label: "IR 덱",
+    to: "/ir-deck",
+    icon: "/assets/sidebar/calendar.svg",
   },
 ];
 

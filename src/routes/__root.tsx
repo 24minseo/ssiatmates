@@ -137,6 +137,7 @@ function getAppNavigationKey(pathname: string): AppNavigationKey | null {
     return "growth-journal";
   }
   if (pathname === "/calendar" || pathname === "/calendar/") return "calendar";
+  if (pathname === "/ir-deck" || pathname.startsWith("/ir-deck/")) return "ir-deck";
   return null;
 }
 
