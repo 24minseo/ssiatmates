@@ -30,7 +30,7 @@ function IrDeckPage() {
     <main className="min-h-full bg-background px-8 pb-20 pt-8 xl:px-14">
       <div className="mx-auto max-w-[1280px]">
         <header className="mb-10 flex items-start justify-between gap-6">
-          <div><div className="mb-3 text-sm font-medium text-brand">AI IR Deck</div><h1 className="text-[32px] font-bold tracking-[-0.04em] text-ink">AI IR Deck</h1><p className="mt-2 text-base text-ink-muted">사업의 핵심을 투자자가 이해할 수 있는 이야기로 정리해 보세요.</p></div>
+          <div><h1 className="text-[32px] font-bold tracking-[-0.04em] text-ink">AI IR Deck</h1><p className="mt-2 text-base text-ink-muted">사업의 핵심을 투자자가 이해할 수 있는 이야기로 정리해 보세요.</p></div>
           <button type="button" onClick={() => setScreen("input")} className="inline-flex items-center gap-2 rounded-[10px] bg-brand px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-brand/90"><Plus className="size-4" /> 새 IR Deck 만들기</button>
         </header>
         <div className="mb-5 flex items-center justify-between"><h2 className="text-lg font-semibold text-ink">최근 IR Deck <span className="ml-1 text-sm font-normal text-ink-muted">0</span></h2><span className="text-sm text-ink-muted">최근 수정 순</span></div>
