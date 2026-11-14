@@ -183,7 +183,7 @@ function MenuItem({
         </span>
       </Link>
 
-      {item.children?.map((child) => {
+      {item.children?.map((child, childIndex) => {
         const childSelected = child.key === active;
 
         return (
@@ -193,11 +193,12 @@ function MenuItem({
             aria-current={childSelected ? "page" : undefined}
             aria-hidden={!childrenVisible}
             tabIndex={childrenVisible ? undefined : -1}
-            className={`group/submenu relative flex items-start overflow-hidden pl-12 pt-[2px] transition-[height,opacity] duration-100 ease-out motion-reduce:transition-none ${
+            className={`group/submenu ${childrenVisible ? "absolute left-0 z-20 w-full" : "relative"} flex items-start overflow-hidden pl-12 pt-[2px] transition-[height,opacity] duration-100 ease-out motion-reduce:transition-none ${
               childrenVisible
                 ? "h-[46px] opacity-100"
                 : "pointer-events-none h-0 opacity-0"
             }`}
+            style={childrenVisible ? { top: `${46 + childIndex * 46}px` } : undefined}
           >
             <span
               aria-hidden
