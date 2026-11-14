@@ -8,11 +8,14 @@ type GoogleCalendarResponse = {
 };
 
 async function invokeGoogleCalendar(action: "connect" | "status" | "disconnect", sessionAccessToken?: string) {
+  // Always re-read the client session immediately before invoking the function.
+  // The token captured by React can be stale while Supabase is rotating it.
   const { data: sessionData } = await supabase.auth.getSession();
-  let accessToken = sessionAccessToken ?? sessionData.session?.access_token;
-  if (!accessToken) {
-    const { data: refreshedSession } = await supabase.auth.refreshSession();
-    accessToken = refreshedSession.session?.access_token;
+  let accessToken = sessionData.session?.access_token ?? sessionAccessToken;
+  if (!accessToken || sessionData.session?.expires_at && sessionData.session.expires_at * 1000 <= Date.now() + 30_000) {
+    const { data: refreshedSession, error: refreshError } = await supabase.auth.refreshSession();
+    if (refreshError) throw refreshError;
+    accessToken = refreshedSession.session?.access_token ?? accessToken;
   }
   if (!accessToken) throw new Error("로그인이 필요합니다.");
 
