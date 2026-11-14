@@ -75,7 +75,7 @@ const navigation: NavigationItem[] = [
   },
   {
     key: "ir-deck",
-    label: "IR 덱",
+    label: "AI IR 덱",
     to: "/ir-deck",
     icon: "/assets/sidebar/ir-deck.svg",
   },
@@ -151,7 +151,10 @@ function MenuItem({
   const childrenVisible = expanded && activeBranch && childrenCanEnter;
 
   return (
-    <li className="relative h-[46px] overflow-visible">
+    <li
+      className="relative h-[46px] overflow-visible"
+      style={childrenVisible ? { height: `${46 + (item.children?.length ?? 0) * 46}px` } : undefined}
+    >
       <Link
         to={item.to}
         aria-current={isCurrent ? "page" : undefined}
