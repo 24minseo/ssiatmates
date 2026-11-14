@@ -32,7 +32,7 @@ function IrDeckPage() {
     <main className="min-h-full bg-background px-8 pb-20 pt-8 xl:px-14">
       <div className="mx-auto max-w-[1280px]">
         <header className="mb-10 flex items-start justify-between gap-6">
-          <div><h1 className="text-[32px] font-bold tracking-[-0.04em] text-ink">AI IR 덱</h1><p className="mt-2 text-base text-ink-muted">사업의 핵심을 투자자가 이해할 수 있는 이야기로 정리해 보세요.</p></div>
+          <div><h1 className="text-[28px] font-bold leading-tight text-ink">AI IR 덱</h1><p className="mt-px text-base font-medium text-ink-muted">사업의 핵심을 투자자가 이해할 수 있는 이야기로 정리해 보세요.</p></div>
         </header>
         <div className="mb-5 flex justify-end gap-4"><ProgramSortDropdown value={sort} onChange={setSort} variant="irDeck" /><button type="button" onClick={() => setScreen("input")} className="inline-flex h-[42px] items-center rounded-[12px] bg-brand px-[26px] py-[10px] text-[15px] font-semibold text-white shadow-sm hover:bg-brand/90">새 IR 덱 생성</button></div>
         <section className="grid min-h-[360px] place-items-center rounded-2xl border border-field-border bg-surface p-10"><div className="text-center"><Presentation className="mx-auto size-11 text-ink-muted/40" /><h2 className="mt-4 text-lg font-semibold text-ink">아직 만든 IR Deck이 없어요</h2><p className="mt-2 text-sm text-ink-muted">새 IR Deck을 만들어 첫 번째 덱을 시작해 보세요.</p></div></section>
