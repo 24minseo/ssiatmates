@@ -77,7 +77,7 @@ const navigation: NavigationItem[] = [
     key: "ir-deck",
     label: "IR 덱",
     to: "/ir-deck",
-    icon: "/assets/sidebar/calendar.svg",
+    icon: "/assets/sidebar/ir-deck.svg",
   },
 ];
 
