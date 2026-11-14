@@ -16,10 +16,32 @@ const themes = [
   { name: "Human Impact", description: "따뜻함 · 사람 중심 · 스토리텔링", tone: "bg-[#F7F2E8]" },
 ];
 
+function StepBar({ current }: { current: number }) {
+  return <div className="mb-7 flex flex-wrap items-center justify-center gap-3 text-sm text-ink-muted">{steps.map((step, index) => <div key={step} className={cn("flex items-center gap-2 rounded-full border border-field-border px-4 py-2", index + 1 === current && "border-brand bg-item-hover-selected font-semibold text-brand")}><span className={cn("grid size-6 place-items-center rounded-full bg-surface text-xs", index + 1 === current && "bg-brand text-white")}>{index + 1}</span>{step}</div>)}</div>;
+}
+
 function IrDeckPage() {
+  const [screen, setScreen] = useState<"home" | "input" | "processing" | "review" | "themes">("home");
   const [source, setSource] = useState("");
   const [selectedTheme, setSelectedTheme] = useState("Precision Tech");
   const [started, setStarted] = useState(false);
+
+  if (screen === "home") return (
+    <main className="min-h-full bg-background px-8 pb-20 pt-8 xl:px-14">
+      <div className="mx-auto max-w-[1280px]">
+        <header className="mb-10 flex items-start justify-between gap-6">
+          <div><div className="mb-3 text-sm font-medium text-brand">AI IR Deck</div><h1 className="text-[32px] font-bold tracking-[-0.04em] text-ink">AI IR Deck</h1><p className="mt-2 text-base text-ink-muted">사업의 핵심을 투자자가 이해할 수 있는 이야기로 정리해 보세요.</p></div>
+          <button type="button" onClick={() => setScreen("input")} className="inline-flex items-center gap-2 rounded-[10px] bg-brand px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-brand/90"><Plus className="size-4" /> 새 IR Deck 만들기</button>
+        </header>
+        <div className="mb-5 flex items-center justify-between"><h2 className="text-lg font-semibold text-ink">최근 IR Deck <span className="ml-1 text-sm font-normal text-ink-muted">0</span></h2><span className="text-sm text-ink-muted">최근 수정 순</span></div>
+        <section className="grid min-h-[360px] place-items-center rounded-2xl border border-field-border bg-surface p-10"><div className="text-center"><Presentation className="mx-auto size-11 text-ink-muted/40" /><h2 className="mt-4 text-lg font-semibold text-ink">아직 만든 IR Deck이 없어요</h2><p className="mt-2 text-sm text-ink-muted">첫 번째 IR Deck을 만들어 보세요.</p><button type="button" onClick={() => setScreen("input")} className="mt-6 inline-flex items-center gap-2 rounded-[10px] bg-brand px-5 py-3 text-sm font-semibold text-white"><Plus className="size-4" /> 새 IR Deck 만들기</button></div></section>
+      </div>
+    </main>
+  );
+
+  if (screen === "processing") return (
+    <main className="min-h-full bg-background px-8 pb-20 pt-8 xl:px-14"><div className="mx-auto max-w-[900px]"><header className="mb-8"><h1 className="text-[32px] font-bold text-ink">사업 내용 분석 중</h1><p className="mt-2 text-ink-muted">입력한 내용을 덱에 필요한 항목으로 정리하고 있어요.</p></header><StepBar current={2} /><section className="mt-7 rounded-2xl border border-field-border bg-surface p-12 text-center"><Sparkles className="mx-auto size-10 text-brand" /><h2 className="mt-5 text-xl font-semibold text-ink">사업 내용을 정리하고 있어요</h2><p className="mt-2 text-sm text-ink-muted">다음 화면에서 파악한 내용을 확인할 수 있습니다.</p><div className="mx-auto mt-7 h-2 max-w-md overflow-hidden rounded-full bg-background"><div className="h-full w-2/3 rounded-full bg-brand" /></div><button type="button" onClick={() => setScreen("review")} className="mt-8 rounded-[10px] bg-brand px-5 py-3 text-sm font-semibold text-white">분석 내용 확인하기</button></section></div></main>
+  );
 
   return (
     <main className="min-h-full bg-background px-8 pb-20 pt-8 xl:px-14">
@@ -32,19 +54,12 @@ function IrDeckPage() {
             <h1 className="text-[32px] font-bold tracking-[-0.04em] text-ink">AI IR Deck</h1>
             <p className="mt-2 text-base text-ink-muted">사업 자료를 바탕으로 투자자를 위한 IR 덱을 만들어보세요.</p>
           </div>
-          <button type="button" className="inline-flex items-center gap-2 rounded-[10px] bg-brand px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-brand/90">
+          <button type="button" onClick={() => setScreen("home")} className="inline-flex items-center gap-2 rounded-[10px] border border-field-border px-4 py-3 text-sm font-semibold text-ink hover:bg-item-hover">
             <Plus className="size-4" /> 새 IR 덱 만들기
           </button>
         </header>
 
-        <div className="mb-7 flex flex-wrap items-center justify-center gap-3 text-sm text-ink-muted">
-          {steps.map((step, index) => (
-            <div key={step} className={cn("flex items-center gap-2 rounded-full border border-field-border px-4 py-2", index === 0 && "border-brand bg-item-hover-selected font-semibold text-brand")}>
-              <span className={cn("grid size-6 place-items-center rounded-full bg-surface text-xs", index === 0 && "bg-brand text-white")}>{index + 1}</span>
-              {step}
-            </div>
-          ))}
-        </div>
+        <StepBar current={screen === "input" ? 1 : screen === "review" ? 2 : 3} />
 
         <section className="grid gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(300px,1fr)]">
           <div className="rounded-2xl border border-field-border bg-surface p-7 shadow-[0_5px_22px_rgba(23,61,49,0.04)]">
@@ -56,7 +71,7 @@ function IrDeckPage() {
             <textarea id="ir-source" value={source} onChange={(event) => setSource(event.target.value)} placeholder="사업/서비스명, 문제 인식, 핵심 고객, 시장 규모 등을 자유롭게 입력해 주세요." className="min-h-[250px] w-full resize-y rounded-xl border border-field-border bg-background p-4 text-sm leading-6 text-ink outline-none focus:border-brand focus:ring-2 focus:ring-brand/10" />
             <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
               <button type="button" className="inline-flex items-center gap-2 rounded-[10px] border border-field-border px-4 py-3 text-sm font-semibold text-ink hover:bg-item-hover"><FileText className="size-4" /> 사업계획서 업로드</button>
-              <button type="button" onClick={() => setStarted(true)} className="inline-flex items-center gap-2 rounded-[10px] bg-brand px-5 py-3 text-sm font-semibold text-white hover:bg-brand/90">분석 시작 <ArrowRight className="size-4" /></button>
+              <button type="button" onClick={() => { setStarted(true); setScreen("processing"); }} className="inline-flex items-center gap-2 rounded-[10px] bg-brand px-5 py-3 text-sm font-semibold text-white hover:bg-brand/90">분석 시작 <ArrowRight className="size-4" /></button>
             </div>
             {started && <p className="mt-4 rounded-lg bg-item-hover-selected px-4 py-3 text-sm text-brand">입력 내용을 확인했어요. 다음 단계에서 슬라이드 구성을 검토할 수 있습니다.</p>}
           </div>
