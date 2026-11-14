@@ -89,7 +89,7 @@ function NavigationIcon({
   selected: boolean;
 }) {
   if (src.includes("/ir-deck.svg")) {
-    return <img aria-hidden src={selected ? "/assets/sidebar/ir-deck-active-v2.svg" : src} className="size-6 shrink-0" />;
+    return <img aria-hidden src={src} className="size-6 shrink-0" style={selected ? { filter: "brightness(0) saturate(100%) invert(35%) sepia(36%) saturate(1050%) hue-rotate(118deg) brightness(86%) contrast(94%)" } : undefined} />;
   }
 
   const maskStyle = {
