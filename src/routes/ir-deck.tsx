@@ -34,7 +34,7 @@ function IrDeckPage() {
           <button type="button" onClick={() => setScreen("input")} className="inline-flex items-center gap-2 rounded-[10px] bg-brand px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-brand/90"><Plus className="size-4" /> 새 IR Deck 만들기</button>
         </header>
         <div className="mb-5 flex items-center justify-between"><h2 className="text-lg font-semibold text-ink">최근 IR Deck <span className="ml-1 text-sm font-normal text-ink-muted">0</span></h2><span className="text-sm text-ink-muted">최근 수정 순</span></div>
-        <section className="grid min-h-[360px] place-items-center rounded-2xl border border-field-border bg-surface p-10"><div className="text-center"><Presentation className="mx-auto size-11 text-ink-muted/40" /><h2 className="mt-4 text-lg font-semibold text-ink">아직 만든 IR Deck이 없어요</h2><p className="mt-2 text-sm text-ink-muted">첫 번째 IR Deck을 만들어 보세요.</p><button type="button" onClick={() => setScreen("input")} className="mt-6 inline-flex items-center gap-2 rounded-[10px] bg-brand px-5 py-3 text-sm font-semibold text-white"><Plus className="size-4" /> 새 IR Deck 만들기</button></div></section>
+        <section className="grid min-h-[360px] place-items-center rounded-2xl border border-field-border bg-surface p-10"><div className="text-center"><Presentation className="mx-auto size-11 text-ink-muted/40" /><h2 className="mt-4 text-lg font-semibold text-ink">아직 만든 IR Deck이 없어요</h2><p className="mt-2 text-sm text-ink-muted">상단 버튼으로 첫 번째 IR Deck을 만들어 보세요.</p></div></section>
       </div>
     </main>
   );
