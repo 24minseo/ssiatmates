@@ -1917,7 +1917,7 @@ function CalendarPage() {
         onOpenChange={setIsGoogleCalendarConnectOpen}
       >
         <DialogContent
-          closeClassName="right-5 top-5 flex size-9 items-center justify-center rounded-lg text-icon-muted opacity-100 transition-colors hover:bg-transparent hover:text-ink focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-focus-soft [&_svg]:size-5"
+          closeClassName="right-5 top-5 flex size-9 items-center justify-center rounded-lg text-icon-muted opacity-100 transition-colors hover:bg-item-hover hover:text-ink focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-focus-soft [&_svg]:size-5"
           className="w-[calc(100vw-32px)] max-w-[420px] rounded-[20px] border-0 bg-surface p-8 text-ink shadow-[0_12px_16px_0_rgba(9,31,23,0.12)]"
         >
           <DialogHeader className="items-center space-y-3 text-center">
