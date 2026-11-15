@@ -131,6 +131,7 @@ function LoginPage() {
             회원가입
           </Link>
         </p>
+
       </form>
     </AuthLayout>
   );
