@@ -28,6 +28,7 @@ function IrDeckPage() {
   const [source, setSource] = useState("");
   const [selectedTheme, setSelectedTheme] = useState("Precision Tech");
   const [started, setStarted] = useState(false);
+  const canAnalyze = source.trim().length > 0;
 
   if (screen === "home") return (
     <main className="min-h-full bg-background pb-20">
@@ -68,7 +69,7 @@ function IrDeckPage() {
       <div>
         <header className="mb-8 flex items-start justify-between gap-6">
           <div>
-            <h1 className="text-[32px] font-bold tracking-[-0.04em] text-ink">새 IR 덱 만들기</h1>
+            <h1 className="h-[33px] text-[28px] font-bold leading-[33px] text-ink">새 IR 덱 만들기</h1>
             <p className="mt-2 text-base text-ink-muted">사업계획서를 올리거나 사업 내용을 직접 입력해 주세요.</p>
           </div>
           <button type="button" onClick={() => setScreen("home")} className="inline-flex items-center gap-2 rounded-[10px] border border-field-border px-4 py-3 text-sm font-semibold text-ink hover:bg-item-hover">
@@ -88,7 +89,7 @@ function IrDeckPage() {
             <textarea id="ir-source" value={source} onChange={(event) => setSource(event.target.value)} placeholder="사업/서비스명, 문제 인식, 핵심 고객, 시장 규모 등을 자유롭게 입력해 주세요." className="min-h-[250px] w-full resize-y rounded-xl border border-field-border bg-background p-4 text-sm leading-6 text-ink outline-none focus:border-brand focus:ring-2 focus:ring-brand/10" />
             <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
               <button type="button" className="inline-flex items-center gap-2 rounded-[10px] border border-field-border px-4 py-3 text-sm font-semibold text-ink hover:bg-item-hover"><FileText className="size-4" /> 사업계획서 업로드</button>
-              <button type="button" onClick={() => { setStarted(true); setScreen("processing"); }} className="inline-flex items-center gap-2 rounded-[10px] bg-brand px-5 py-3 text-sm font-semibold text-white hover:bg-brand/90">분석 시작 <ArrowRight className="size-4" /></button>
+              <button type="button" disabled={!canAnalyze} onClick={() => { setStarted(true); setScreen("processing"); }} className="inline-flex items-center gap-2 rounded-[10px] bg-brand px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-brand/90 disabled:cursor-not-allowed disabled:bg-brand-disabled disabled:text-white/80">분석 시작 <ArrowRight className="size-4" /></button>
             </div>
             {started && <p className="mt-4 rounded-lg bg-item-hover-selected px-4 py-3 text-sm text-brand">입력 내용을 확인했어요. 다음 단계에서 슬라이드 구성을 검토할 수 있습니다.</p>}
           </div>
