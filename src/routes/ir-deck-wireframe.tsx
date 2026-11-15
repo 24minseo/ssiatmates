@@ -1,8 +1,10 @@
-import { ArrowLeft, ArrowRight, FileText, Plus, Trash2, Eye, Download, Check } from "lucide-react";
+import { ArrowLeft, ArrowRight, FileText, Plus, Trash2, Eye, Download, Check, MoreVertical } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { SlideCanvas } from "@/components/ir-deck/SlideCanvas";
 import { TextToolbar } from "@/components/ir-deck/TextToolbar";
 import {
@@ -76,6 +78,7 @@ export function IrDeckWireframe() {
   const [mediaFile, setMediaFile] = useState<File | null>(null);
   const [mediaError, setMediaError] = useState("");
   const [mediaBusy, setMediaBusy] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
   const { draft, projects } = workspace;
   const { source, theme, slides, activeSlide } = draft;
   const currentSlide = slides[activeSlide] || slides[0]!;
@@ -128,6 +131,21 @@ export function IrDeckWireframe() {
     setWorkspace((w) => ({ ...w, draft: newDraft() }));
     setActiveField("title");
     setScreen("input");
+  }
+  function deleteProject(projectId: string, title: string) {
+    setWorkspace((w) => {
+      const next = { ...w, projects: w.projects.filter((project) => project.id !== projectId) };
+      if (w.draft.projectId === projectId) next.draft = newDraft();
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(next));
+      } catch {
+        setMessage("덱을 삭제하지 못했습니다. 브라우저 저장소를 확인해 주세요.");
+      }
+      return next;
+    });
+  }
+  function requestDelete(projectId: string, title: string) {
+    setDeleteTarget({ id: projectId, title });
   }
   function analyze() {
     if (!source.trim() && !draft.fileName) {
@@ -281,6 +299,22 @@ export function IrDeckWireframe() {
             </div>,
             document.body,
           )}
+        <AlertDialog open={Boolean(deleteTarget)} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+          <AlertDialogContent className="w-[calc(100vw-32px)] max-w-[560px] rounded-[20px] border-0 bg-surface p-8">
+            <AlertDialogHeader className="space-y-2 text-left">
+              <AlertDialogTitle className="mb-2 pr-8 text-[20px] font-bold leading-7 text-ink">IR 덱을 삭제할까요?</AlertDialogTitle>
+              <AlertDialogDescription className="text-[14px] leading-6 text-ink-muted">삭제한 덱은 복구할 수 없습니다.</AlertDialogDescription>
+              <div className="mt-3 px-1 text-[14px] font-medium leading-5 text-submenu-text">삭제할 IR 덱</div>
+              <div className="mt-2 flex h-11 w-full min-w-0 items-center overflow-hidden rounded-[12px] border border-field-border px-3 text-[16px] font-semibold leading-6 text-ink" title={deleteTarget?.title}>
+                <span className="block min-w-0 truncate">{deleteTarget?.title}</span>
+              </div>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="mt-4 flex-row justify-end gap-2 sm:space-x-0">
+              <AlertDialogCancel className="mt-0 h-11 rounded-[12px] border-0 bg-secondary-btn px-5 text-[15px] font-semibold text-secondary-btn-text shadow-none hover:bg-secondary-btn-hover hover:text-secondary-btn-text-hover focus-visible:ring-1 focus-visible:ring-focus-soft">취소</AlertDialogCancel>
+              <AlertDialogAction className="h-11 rounded-[12px] border-0 bg-[#E95152] px-5 text-[15px] font-semibold text-white shadow-none hover:bg-[#E95152]/90 focus-visible:ring-1 focus-visible:ring-focus-soft" onClick={(event) => { event.preventDefault(); if (deleteTarget) { deleteProject(deleteTarget.id, deleteTarget.title); setDeleteTarget(null); } }}>삭제하기</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
         <Dialog
           open={media !== null}
           onOpenChange={(open) => {
@@ -353,7 +387,7 @@ export function IrDeckWireframe() {
         <div className="mb-5 flex justify-between border-b border-field-border pb-4">
           <span>
             전체{" "}
-            <span className="rounded-full bg-item-hover px-3 py-1 text-ink-muted">
+            <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-item-hover px-2 text-sm leading-none text-ink-muted">
               {projects.length}
             </span>
           </span>
@@ -364,10 +398,9 @@ export function IrDeckWireframe() {
             {[...projects]
               .sort((a, b) => b.updatedAt - a.updatedAt)
               .map((project) => (
-                <button
-                  type="button"
+                <div
                   key={project.id}
-                  className="overflow-hidden rounded-xl border border-field-border text-left hover:border-brand"
+                  className="overflow-visible rounded-xl border border-field-border text-left hover:border-brand"
                   onClick={() => {
                     setWorkspace((w) => ({
                       ...w,
@@ -378,7 +411,7 @@ export function IrDeckWireframe() {
                   }}
                 >
                   <div
-                    className="ir-deck-thumbnail relative aspect-video overflow-hidden bg-item-hover"
+                    className="ir-deck-thumbnail relative aspect-video overflow-hidden rounded-t-xl bg-item-hover"
                     aria-hidden="true"
                   >
                     <div className="absolute left-0 top-0 w-[900px] origin-top-left scale-[0.4]">
@@ -386,12 +419,32 @@ export function IrDeckWireframe() {
                     </div>
                   </div>
                   <div className="border-t border-field-border p-4">
-                    <strong className="block text-ink">{project.title}</strong>
+                    <div className="flex items-start justify-between gap-3">
+                      <button type="button" className="min-w-0 flex-1 text-left" onClick={() => {
+                        setWorkspace((w) => ({ ...w, draft: { ...structuredClone(project.draft), projectId: project.id } }));
+                        setActiveField("title");
+                        setScreen("editor");
+                      }}>
+                        <strong className="block truncate text-ink">{project.title}</strong>
+                      </button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button type="button" aria-label={`${project.title} 더보기`} className="rounded-md p-1.5 text-ink-muted hover:bg-item-hover" onClick={(event) => event.stopPropagation()}>
+                            <MoreVertical className="size-4" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" onClick={(event) => event.stopPropagation()} className="w-36 rounded-xl border-0 bg-surface p-1 shadow-none" style={{ boxShadow: "var(--shadow-dropdown)" }}>
+                          <DropdownMenuItem onSelect={() => requestDelete(project.id, project.title)} className="cursor-pointer px-[10px] text-destructive hover:bg-destructive-surface data-[highlighted]:bg-destructive-surface focus:bg-destructive-surface focus:text-destructive">
+                            <Trash2 className="size-4" />삭제하기
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                     <small className="text-ink-muted">
                       최근 수정 {new Date(project.updatedAt).toLocaleString("ko-KR")}
                     </small>
                   </div>
-                </button>
+                </div>
               ))}
           </div>
         ) : (
@@ -406,18 +459,9 @@ export function IrDeckWireframe() {
             </button>
           </div>
         )}
-        {(draft.source || draft.fileName || draft.slides.some((s) => s.elements.length)) && (
-          <button
-            type="button"
-            className={cn(button, "mt-6")}
-            onClick={() => setScreen(draft.projectId ? "editor" : "input")}
-          >
-            현재 작업 이어하기
-          </button>
-        )}
       </>,
       <button type="button" onClick={startNew} disabled={!loaded} className={primary}>
-        <Plus className="size-4" />새 IR 덱 생성
+        새 IR 덱 생성
       </button>,
     );
 
@@ -433,9 +477,6 @@ export function IrDeckWireframe() {
           <div className="mx-auto my-7 h-2 max-w-md overflow-hidden rounded-full bg-item-hover">
             <div className="ir-deck-progress h-full w-1/3 rounded-full bg-brand" />
           </div>
-          <p className={notice}>
-            와이어프레임 시연입니다. 실제 파일 분석과 AI 내용 정리는 연결되지 않았습니다.
-          </p>
           <div className="mt-8 flex justify-center gap-3">
             <button type="button" className={button} onClick={() => setScreen("input")}>
               입력 화면으로 돌아가기
@@ -456,11 +497,6 @@ export function IrDeckWireframe() {
         <Steps current={2} />
         <section className={panel}>
           <h2 className="text-xl font-semibold text-ink">AI가 이해한 사업</h2>
-          <p className="my-4 text-sm leading-6 text-ink-muted">
-            {draft.fileName && !source.trim()
-              ? "시연에서는 업로드한 파일을 읽지 못합니다. 아래 항목을 직접 작성해 주세요."
-              : "직접 입력한 글의 ‘문제 인식: …’ 같은 항목명을 인식합니다. 아래 수정 내용이 덱에 반영됩니다. 실제 AI 분석은 연결되지 않았습니다."}
-          </p>
           <div className="grid gap-3">
             {reviewFields.map(([name, destination]) => (
               <label key={name} className="rounded-xl border border-field-border p-5">
@@ -795,6 +831,7 @@ export function IrDeckWireframe() {
                   e.target.value = "";
                   return;
                 }
+                setMessage("");
                 patchDraft({ fileName: file.name });
               }}
             />
@@ -805,7 +842,7 @@ export function IrDeckWireframe() {
             </span>
             <textarea
               value={source}
-              onChange={(e) => patchDraft({ source: e.target.value })}
+              onChange={(e) => { setMessage(""); patchDraft({ source: e.target.value }); }}
               className={cn(input, "min-h-[220px]")}
               placeholder={"사업명: SSIAT\n문제 인식: …\n해결책: …\n시장규모: …"}
             />
@@ -815,23 +852,21 @@ export function IrDeckWireframe() {
           <button
             type="button"
             className={cn(button, "mt-3")}
-            onClick={() => patchDraft({ fileName: "" })}
+            onClick={() => { setMessage(""); patchDraft({ fileName: "" }); }}
           >
             선택한 파일 해제
           </button>
         )}
-        <p className={notice}>
-          프론트엔드 시연입니다. 업로드한 파일 읽기·실제 AI 분석은 연결되지 않았습니다. 직접 입력한
-          글의 항목명 또는 다음 화면의 수동 입력으로 덱을 구성합니다.
-        </p>
         <div className="mt-6 flex justify-end gap-3">
           <button type="button" className={button} onClick={() => setScreen("home")}>
             홈으로
           </button>
-          <button type="button" onClick={analyze} className={primary}>
-            사업 내용 분석하기
-            <ArrowRight className="size-4" />
-          </button>
+          {(draft.fileName || source.trim()) && (
+            <button type="button" onClick={analyze} className={primary}>
+              사업 내용 분석하기
+              <ArrowRight className="size-4" />
+            </button>
+          )}
         </div>
       </section>
     </>,

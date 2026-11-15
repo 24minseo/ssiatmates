@@ -753,7 +753,15 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle,
 
   const groups = useMemo<ReportGroup[]>(() => {
     if (currentReport?.report_display?.sections?.length) {
-      return currentReport.report_display.sections.map((section, index) => ({
+      const displaySections = currentReport.report_display.sections;
+      const hasDisplayedDocuments = displaySections.some((section) =>
+        normalizeReportLabel(section.label).replace(/\s+/g, "") === "제출서류",
+      );
+      const legacyDocuments = currentReport.report?.sections?.documents;
+      const fallbackDocuments = !hasDisplayedDocuments && legacyDocuments
+        ? [{ label: "제출서류", children: [] as StructuredNode[] }, ...displaySections]
+        : displaySections;
+      return fallbackDocuments.map((section, index) => ({
         title: section.label ?? `리포트 ${index + 1}`,
         key: section.label === "맞춤 조건"
           ? "matching_conditions"
@@ -769,7 +777,9 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle,
             children: child.children.map(structuredNodeToReportItem),
           })),
         },
-      }));
+      })).map((group) => group.title === "제출서류" && !hasDisplayedDocuments && legacyDocuments
+        ? { ...group, section: legacyDocuments }
+        : group);
     }
     const sections = currentReport?.report?.sections;
     const matchingConditions = currentReport?.report?.matching_conditions;
