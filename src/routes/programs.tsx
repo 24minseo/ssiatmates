@@ -360,6 +360,11 @@ function ProgramsPage() {
   const { session, profile } = useAuth();
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
+  const goToLogin = useCallback(() => {
+    if (session) return false;
+    void navigate({ to: "/" });
+    return true;
+  }, [navigate, session]);
   const [query, setQuery] = useState("");
   const [preferenceFeedback, setPreferenceFeedback] = useState<PreferenceFeedback | null>(null);
   const [preferenceFeedbackExiting, setPreferenceFeedbackExiting] = useState(false);
@@ -1050,6 +1055,7 @@ function ProgramsPage() {
   };
 
   const handleFavoriteToggle = async (program: MatchedProgram) => {
+    if (goToLogin()) return;
     if (savingNoticeIds.has(program.id)) return;
     const nextSaved = program.is_saved !== true;
     const isManual = manualPrograms.some((item) => item.id === program.id);
@@ -1189,6 +1195,7 @@ function ProgramsPage() {
     analysisResult?: { manual_notice_id: string } | null,
     sourceUrl?: string,
   ) {
+    if (goToLogin()) return;
     setManualSaving(true);
     try {
       if (!analysisResult?.manual_notice_id) throw new Error("먼저 공고 분석을 완료해주세요.");
@@ -1221,6 +1228,7 @@ function ProgramsPage() {
   }
 
   async function handleManualDelete(program: MatchedProgram) {
+    if (goToLogin()) return;
     setManualDeleteTarget(program);
   }
 
@@ -1249,6 +1257,7 @@ function ProgramsPage() {
     manualNoticeId: string,
     changes: Record<string, string | null>,
   ) {
+    if (goToLogin()) return;
     setManualSaving(true);
     try {
       const result = await manualUpdate.update(manualNoticeId, changes);
@@ -1288,6 +1297,7 @@ function ProgramsPage() {
   }
 
   function handleManualEdit(program: MatchedProgram) {
+    if (goToLogin()) return;
     setManualEditTarget(program);
     setManualFormOpen(true);
   }
@@ -1589,7 +1599,9 @@ function ProgramsPage() {
                 style={{ boxShadow: "var(--shadow-dropdown)" }}
               >
                 <DropdownMenuItem
-                  onSelect={() => setManualFormOpen(true)}
+                  onSelect={() => {
+                    if (!goToLogin()) setManualFormOpen(true);
+                  }}
                   className="min-h-10 w-auto cursor-pointer rounded-[8px] px-[14px] text-ink hover:bg-dropdown-hover data-[highlighted]:bg-dropdown-hover focus:bg-dropdown-hover"
                 >
                   <span className="whitespace-nowrap">수동 공고 추가</span>
@@ -1705,7 +1717,9 @@ function ProgramsPage() {
               </p>
               <button
                 type="button"
-                onClick={() => setManualFormOpen(true)}
+                onClick={() => {
+                  if (!goToLogin()) setManualFormOpen(true);
+                }}
                 className="mt-5 inline-flex h-11 items-center gap-2 rounded-[10px] bg-[#F2F7F4] px-5 text-[15px] font-semibold text-brand shadow-none transition-colors hover:bg-[#EAF1EC] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
               >
                 수동 공고 추가
