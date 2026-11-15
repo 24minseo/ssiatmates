@@ -100,17 +100,17 @@ export function AppHeader({
 
   useEffect(() => {
     if (!accountDialogOpen || accountSettingsTab !== "services") return;
-    void getGoogleCalendarStatus(session?.access_token).then(setGoogleCalendarConnected).catch(() => setGoogleCalendarConnected(false));
+    void getGoogleCalendarStatus().then(setGoogleCalendarConnected).catch(() => setGoogleCalendarConnected(false));
   }, [accountDialogOpen, accountSettingsTab]);
 
   const handleGoogleCalendarToggle = async () => {
     setGoogleCalendarLoading(true);
     try {
       if (googleCalendarConnected) {
-        await disconnectGoogleCalendar(session?.access_token);
+        await disconnectGoogleCalendar();
         setGoogleCalendarConnected(false);
       } else {
-        const authorizationUrl = await connectGoogleCalendar(session?.access_token);
+        const authorizationUrl = await connectGoogleCalendar();
         window.location.assign(authorizationUrl);
       }
     } catch (error) {
