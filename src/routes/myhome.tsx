@@ -246,7 +246,7 @@ function MyHomeProgramTabs({
   );
 }
 
-function MyHomePage() {
+export function MyHomePage() {
   const { user, profile } = useAuth();
   const [myProgramChangeItems, setMyProgramChangeItems] = useState<MatchedProgram[]>([]);
   const [changesLoading, setChangesLoading] = useState(false);
@@ -568,6 +568,12 @@ function MyHomePage() {
                     : {}
               }
               aria-label={`${card.label} 페이지로 이동`}
+              onClick={(event) => {
+                if (!user) {
+                  event.preventDefault();
+                  window.dispatchEvent(new Event("auth-required"));
+                }
+              }}
               className={card.featured ? `${cardClassName} cursor-pointer` : cardClassName}
             >
               {cardContent}
@@ -644,6 +650,12 @@ function MyHomePage() {
             {homeProgramTab === "newMatches" || myHomeSummary.myPrograms.total === 0 ? (
               <Link
                 to="/programs"
+                onClick={(event) => {
+                  if (!user) {
+                    event.preventDefault();
+                    window.dispatchEvent(new Event("auth-required"));
+                  }
+                }}
                 className="mt-5 inline-flex h-11 items-center rounded-[10px] bg-[#F2F7F4] px-5 text-[15px] font-semibold text-brand shadow-none transition-colors hover:bg-[#EAF1EC]"
               >
                 지원사업 탐색하기

@@ -2,13 +2,25 @@ import type { ReactNode } from "react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
-interface AuthLayoutProps {
-  children: ReactNode;
+export function runAuthTransition(update: () => void) {
+  const viewTransition = (document as Document & {
+    startViewTransition?: (callback: () => void) => unknown;
+  }).startViewTransition;
+  if (viewTransition) {
+    viewTransition.call(document, update);
+  } else {
+    update();
+  }
 }
 
-export function AuthLayout({ children }: AuthLayoutProps) {
+interface AuthLayoutProps {
+  children: ReactNode;
+  modal?: boolean;
+}
+
+export function AuthLayout({ children, modal = false }: AuthLayoutProps) {
   return (
-    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#F6F8F7] px-4 py-12">
+    <main className={modal ? "relative flex w-full items-center justify-center px-4" : "relative flex min-h-screen items-center justify-center overflow-hidden bg-[#F6F8F7] px-4 py-12"}>
       <section className="auth-card relative z-10 w-full max-w-[542px] rounded-[20px] bg-surface px-6 py-[38px] shadow-surface-card sm:px-12">
         {children}
       </section>

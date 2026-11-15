@@ -48,8 +48,9 @@ function AgreementRow({ checked, onCheckedChange, label, documentKind }: Agreeme
           </button>
         </DialogTrigger>
         <DialogContent
+          overlayClassName="z-[2147483648] !bg-transparent !backdrop-blur-0"
           closeClassName="right-8 top-8 flex size-9 items-center justify-center rounded-lg text-ink-muted opacity-100 transition-colors hover:bg-item-hover hover:text-ink hover:opacity-100 focus:outline-none focus:ring-0 focus:ring-offset-0 [&_svg]:size-6"
-          className="max-h-[85vh] max-w-[720px] overflow-y-auto rounded-[20px] border-field-border bg-surface p-8 gap-0"
+          className="z-[2147483649] max-h-[85vh] max-w-[720px] overflow-y-auto rounded-[20px] border-field-border bg-surface p-8 gap-0"
         >
           <DialogHeader>
             <DialogTitle className="sr-only">
@@ -79,7 +80,7 @@ function PasswordRequirement({ met, children }: { met: boolean; children: string
   );
 }
 
-function SignupPage() {
+export function SignupPage({ modal = false, onSwitchToLogin }: { modal?: boolean; onSwitchToLogin?: () => void }) {
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -161,7 +162,8 @@ function SignupPage() {
   };
 
   return (
-    <AuthLayout>
+    <div className={modal ? "fixed inset-0 z-[9999] flex items-center justify-center bg-overlay backdrop-blur-[2px] px-4" : ""}>
+    <AuthLayout modal={modal}>
       <div className="flex min-h-[55px] items-center">
         <h1 className="text-2xl font-bold leading-[29px] text-ink">회원가입</h1>
       </div>
@@ -264,15 +266,26 @@ function SignupPage() {
 
         <p className="mt-3 text-center text-[13px] font-normal text-ink-muted">
           이미 계정이 있으신가요?{" "}
-          <Link
-            to="/"
-            viewTransition
-            className="font-semibold text-brand underline decoration-1 underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-          >
-            로그인
-          </Link>
+          {onSwitchToLogin ? (
+            <button
+              type="button"
+              onClick={onSwitchToLogin}
+              className="font-semibold text-brand underline decoration-1 underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+            >
+              로그인
+            </button>
+          ) : (
+            <Link
+              to="/"
+              viewTransition
+              className="font-semibold text-brand underline decoration-1 underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+            >
+              로그인
+            </Link>
+          )}
         </p>
       </form>
     </AuthLayout>
+    </div>
   );
 }

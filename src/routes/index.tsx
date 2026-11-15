@@ -1,9 +1,12 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { AuthDivider, AuthField, AuthLayout, GoogleButton } from "@/components/auth/AuthLayout";
+import { AuthDivider, AuthField, AuthLayout, GoogleButton, runAuthTransition } from "@/components/auth/AuthLayout";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { MyHomePage } from "@/routes/myhome";
+import { SignupPage } from "@/routes/signup";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -15,10 +18,24 @@ export const Route = createFileRoute("/")({
       },
     ],
   }),
-  component: LoginPage,
+  component: LoginPageOverlay,
 });
 
-function LoginPage() {
+function LoginPageOverlay() {
+  const [mode, setMode] = useState<"login" | "signup">("login");
+  const content = (
+    <div className="fixed inset-0 z-[2147483647] flex items-center justify-center">
+      {mode === "login" ? (
+        <LoginPage modal includeBackground={false} onSwitchToSignup={() => runAuthTransition(() => setMode("signup"))} />
+      ) : (
+        <SignupPage modal onSwitchToLogin={() => runAuthTransition(() => setMode("login"))} />
+      )}
+    </div>
+  );
+  return typeof document === "undefined" ? content : createPortal(content, document.body);
+}
+
+export function LoginPage({ modal = false, includeBackground = !modal, onSwitchToSignup }: { modal?: boolean; includeBackground?: boolean; onSwitchToSignup?: () => void }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [emailTouched, setEmailTouched] = useState(false);
@@ -58,7 +75,10 @@ function LoginPage() {
   };
 
   return (
-    <AuthLayout>
+    <>
+      {includeBackground ? <MyHomePage /> : null}
+      <div className={modal ? "fixed inset-0 z-[9999] flex items-center justify-center bg-overlay backdrop-blur-[2px] px-4" : ""}>
+    <AuthLayout modal={modal}>
       <div className="flex min-h-[55px] items-center">
         <h1 className="text-2xl font-bold leading-[29px] text-ink">로그인</h1>
       </div>
@@ -127,12 +147,20 @@ function LoginPage() {
 
         <p className="mt-3 text-center text-[13px] font-normal text-ink-muted">
           계정이 없으신가요?{" "}
-          <Link to="/signup" viewTransition className="font-semibold text-brand underline decoration-1 underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
-            회원가입
-          </Link>
+          {onSwitchToSignup ? (
+            <button type="button" onClick={onSwitchToSignup} className="font-semibold text-brand underline decoration-1 underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
+              회원가입
+            </button>
+          ) : (
+            <Link to="/signup" viewTransition className="font-semibold text-brand underline decoration-1 underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand">
+              회원가입
+            </Link>
+          )}
         </p>
 
       </form>
     </AuthLayout>
+      </div>
+    </>
   );
 }

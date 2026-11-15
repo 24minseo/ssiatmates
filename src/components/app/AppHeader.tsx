@@ -309,7 +309,13 @@ export function AppHeader({
             aria-label="알림"
             aria-expanded={notificationsOpen}
             data-state={notificationsOpen ? "open" : "closed"}
-            onClick={() => (notificationsOpen ? setNotificationsOpen(false) : void openNotifications())}
+            onClick={() => {
+              if (!user) {
+                window.dispatchEvent(new Event("auth-required"));
+                return;
+              }
+              notificationsOpen ? setNotificationsOpen(false) : void openNotifications();
+            }}
             className={`group relative flex size-9 shrink-0 items-center justify-center text-icon-muted transition-colors duration-150 ease-out hover:text-ink-muted focus-visible:text-ink-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand motion-reduce:transition-none ${notificationsOpen ? "text-ink-muted" : ""}`}
           >
             <span
@@ -337,7 +343,7 @@ export function AppHeader({
           onOpenChange={(open) => {
             if (open && !user) {
               setProfileMenuOpen(false);
-              void navigate({ to: "/" });
+                window.dispatchEvent(new Event("auth-required"));
               return;
             }
             setProfileMenuOpen(open);

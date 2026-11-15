@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 
 import { getProfileTitle, useAuth } from "@/hooks/useAuth";
@@ -265,6 +265,7 @@ function MenuItem({
 export function AppSidebar({ active }: AppSidebarProps) {
   const { expanded, toggleSidebar } = useAppSidebar();
   const { profile, user, refreshProfile } = useAuth();
+  const navigate = useNavigate();
   const sidebarRef = useRef<HTMLElement>(null);
   const [useSafariLogo] = useState(() => {
     if (typeof navigator === "undefined") return false;
@@ -394,6 +395,10 @@ export function AppSidebar({ active }: AppSidebarProps) {
           type="button"
           aria-label="매칭 프로필 수정"
           onClick={(event) => {
+            if (!user) {
+              window.dispatchEvent(new Event("auth-required"));
+              return;
+            }
             if (
               expanded &&
               !(event.target as HTMLElement).closest("[data-profile-edit]")
