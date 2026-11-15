@@ -1103,7 +1103,7 @@ function CalendarPage() {
   useEffect(() => {
     if (authLoading || !user) return;
     let cancelled = false;
-    void getGoogleCalendarStatus(session?.access_token)
+    void getGoogleCalendarStatus()
       .then((connected) => {
         if (!cancelled) setIsGoogleCalendarConnected(connected);
       })
@@ -1119,7 +1119,7 @@ function CalendarPage() {
     setIsGoogleCalendarLoading(true);
     setGoogleCalendarError(null);
     try {
-      const authorizationUrl = await connectGoogleCalendar(session?.access_token);
+      const authorizationUrl = await connectGoogleCalendar();
       window.location.assign(authorizationUrl);
     } catch (error) {
       setGoogleCalendarError(error instanceof Error ? error.message : "Google Calendar 연결에 실패했어요.");
@@ -1132,7 +1132,7 @@ function CalendarPage() {
     setIsGoogleCalendarLoading(true);
     setGoogleCalendarError(null);
     try {
-      await disconnectGoogleCalendar(session?.access_token);
+      await disconnectGoogleCalendar();
       setIsGoogleCalendarConnected(false);
     } catch (error) {
       setGoogleCalendarError(error instanceof Error ? error.message : "Google Calendar 연결 해제에 실패했어요.");
