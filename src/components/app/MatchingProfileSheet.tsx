@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { X } from "lucide-react";
+import { toast } from "sonner";
 
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import {
@@ -19,6 +20,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { SquareAlertIcon } from "@/components/ui/square-alert-icon";
 import { supabase } from "@/integrations/supabase/client";
 import { markPreferenceProfileRefresh } from "@/services/preferenceTags";
+import { clearSupportFilterSession } from "@/lib/supportFilterSession";
+import { waitForCurrentProfileMatching } from "@/services/profileMatchingSync";
 
 type MatchingProfileSheetProps = {
   open: boolean;
@@ -175,7 +178,7 @@ export function MatchingProfileSheet({
     event.preventDefault();
     dismissNameHint();
 
-    if (!profile) return;
+    if (!profile || saving) return;
 
     setSaving(true);
     const stageCode = STARTUP_STAGE_CODES[startupStage] ?? startupStage;
@@ -213,33 +216,13 @@ export function MatchingProfileSheet({
       return;
     }
 
-    // 프로필 저장 트랜잭션 이후 매칭 작업이 완료될 때까지 확인한다.
-    // 완료 전에 목록을 갱신하면 이전 프로필 기준 공고가 다시 보일 수 있다.
+    // Drop an old explicit category filter before refreshing either screen.
+    clearSupportFilterSession(profile.id);
     try {
-      const deadline = Date.now() + 120_000;
-      let matchingCompleted = false;
-      while (Date.now() < deadline) {
-        const { data: status, error: statusError } = await supabase.rpc(
-          "get_my_profile_matching_status_v1",
-        );
-        if (statusError) throw statusError;
-        if (status?.user_id !== profile.id)
-          throw new Error("매칭 상태의 사용자가 일치하지 않습니다.");
-        if (status.status === "failed")
-          throw new Error("프로필은 저장됐지만 매칭 작업이 실패했습니다.");
-        if (["no_profile", "not_requested"].includes(status.status)) {
-          throw new Error("저장된 프로필의 매칭 작업이 등록되지 않았습니다.");
-        }
-        if (status.status === "completed" && status.profile_matches === true && status.revision) {
-          matchingCompleted = true;
-          break;
-        }
-        await new Promise((resolve) => window.setTimeout(resolve, 2_000));
-      }
-      if (!matchingCompleted)
-        throw new Error("프로필은 저장됐지만 매칭 완료 확인이 지연되고 있습니다.");
+      await waitForCurrentProfileMatching(supabase, profile.id);
     } catch (matchingError) {
       console.error("[matching-profile] 매칭 갱신 실패", matchingError);
+      toast.error(matchingError instanceof Error ? matchingError.message : "매칭 결과를 확인하지 못했어요.");
       setSaving(false);
       return;
     }

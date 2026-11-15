@@ -27,7 +27,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { ProgramReportDialog } from "@/components/programs/ProgramReportDialog";
-import { getSupportFilterSession, setSupportFilterSession } from "@/lib/supportFilterSession";
+import { getSupportFilterSession, setSupportFilterSession, matchingProfileKey } from "@/lib/supportFilterSession";
 import { applySavedStates, savedNoticesApi } from "@/services/savedNoticesApi";
 import {
   createPreferenceTags,
@@ -445,6 +445,7 @@ function ProgramsPage() {
   const [supportCategories, setSupportCategories] = useState<string[]>([SUPPORT_ALL]);
   const [usesProfileDefault, setUsesProfileDefault] = useState(true);
   const profileFilterInitializedFor = useRef<string | null>(null);
+  const initializedMatchingProfile = useRef<string | null>(null);
   const matchingRequestRef = useRef(0);
   const reviewRequestRef = useRef(0);
   const excludedRequestRef = useRef(0);
@@ -737,8 +738,12 @@ function ProgramsPage() {
   useEffect(() => {
     if (!profile) return;
 
+    const profileKey = matchingProfileKey(profile);
+    const profileChanged = initializedMatchingProfile.current !== null &&
+      initializedMatchingProfile.current !== profileKey;
     const profileCategories = profile.support_categories.filter(Boolean);
-    const savedCategories = search.source === "myhome" ? null : getSupportFilterSession(profile.id);
+    const savedCategories = search.source === "myhome" || profileChanged
+      ? null : getSupportFilterSession(profile.id, profileKey);
     if (savedCategories === null) {
       setUsesProfileDefault(true);
       setSupportCategories(profileCategories.length ? profileCategories : [SUPPORT_ALL]);
@@ -746,6 +751,8 @@ function ProgramsPage() {
       setUsesProfileDefault(false);
       setSupportCategories(savedCategories);
     }
+    if (profileChanged) setPage(1);
+    initializedMatchingProfile.current = profileKey;
     profileFilterInitializedFor.current = profile.id;
   }, [profile, search.source]);
 
@@ -1121,10 +1128,10 @@ function ProgramsPage() {
   };
 
   const resultsByTab = useMemo(() => {
-    const filterAndSort = (items: MatchedProgram[]) => {
+    const filterAndSort = (items: MatchedProgram[], filterCategories = true) => {
       const filtered = items.filter((item) => {
         const matchesCategory =
-          supportCategories.includes(SUPPORT_ALL) ||
+          !filterCategories || supportCategories.includes(SUPPORT_ALL) ||
           item.categories.some((category) => supportCategories.includes(category));
         return matchesCategory;
       });
@@ -1143,7 +1150,7 @@ function ProgramsPage() {
 
     const manualResults = filterAndSort(manualPrograms);
 
-    const recommendedResults = filterAndSort(matchedPrograms);
+    const recommendedResults = filterAndSort(matchedPrograms, false);
 
     return {
       recommended: hasPreferenceMatches
@@ -1380,7 +1387,7 @@ function ProgramsPage() {
             setSort("deadline");
             setUsesProfileDefault(false);
             setSupportCategories(next);
-            if (profile) setSupportFilterSession(profile.id, next);
+            if (profile) setSupportFilterSession(profile.id, next, matchingProfileKey(profile));
           }}
         />
         <div

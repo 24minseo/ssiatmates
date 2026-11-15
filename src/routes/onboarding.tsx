@@ -4,6 +4,9 @@ import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { clearSupportFilterSession } from "@/lib/supportFilterSession";
+import { markPreferenceProfileRefresh } from "@/services/preferenceTags";
+import { waitForCurrentProfileMatching } from "@/services/profileMatchingSync";
 import { StepBasicInfo } from "@/components/onboarding/StepBasicInfo";
 import { StepBusinessInfo } from "@/components/onboarding/StepBusinessInfo";
 import {
@@ -86,7 +89,18 @@ function OnboardingPage() {
       return;
     }
 
-    await refreshProfile();
+    clearSupportFilterSession(user.id);
+    try {
+      await waitForCurrentProfileMatching(supabase, user.id);
+      await refreshProfile();
+      markPreferenceProfileRefresh(user.id);
+      window.dispatchEvent(new CustomEvent("matching-profile-saved"));
+    } catch (error) {
+      setSaving(false);
+      toast.error(error instanceof Error ? error.message : "매칭 결과를 확인하지 못했어요.");
+      return;
+    }
+    setSaving(false);
     toast.success("정보 입력이 완료되었어요.");
     void navigate({ to: "/my-programs", replace: true });
   };
