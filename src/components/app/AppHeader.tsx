@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { useNavigate } from "@tanstack/react-router";
 import { AlertTriangle, CalendarClock, LogOut, Sparkles } from "lucide-react";
 
 import {
@@ -73,6 +74,7 @@ export function AppHeader({
   growthJournalExpanded = false,
 }: AppHeaderProps) {
   const { user, profile, session, refreshProfile, signOut } = useAuth();
+  const navigate = useNavigate();
   const { notifications: apiNotifications, unreadCount: apiUnread, refresh: refreshCalendarNotifications, markRead: markCalendarNotificationsRead } = useCalendarNotifications();
   const deleteAccountFn = useServerFn(deleteAccount);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
@@ -143,7 +145,7 @@ export function AppHeader({
     document.addEventListener("pointerdown", handlePointerDown);
     return () => document.removeEventListener("pointerdown", handlePointerDown);
   }, [notificationsOpen]);
-  const displayName = useMemo(() => getDisplayName(user, profile), [profile, user]);
+  const displayName = useMemo(() => (user ? getDisplayName(user, profile) : "로그인"), [profile, user]);
   const accountName = displayName.endsWith("님") ? displayName.slice(0, -1) : displayName;
 
   useEffect(() => {
@@ -333,6 +335,11 @@ export function AppHeader({
           modal={false}
           open={profileMenuOpen}
           onOpenChange={(open) => {
+            if (open && !user) {
+              setProfileMenuOpen(false);
+              void navigate({ to: "/" });
+              return;
+            }
             setProfileMenuOpen(open);
             if (open) setNotificationsOpen(false);
           }}
