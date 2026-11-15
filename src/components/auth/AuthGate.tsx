@@ -4,6 +4,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/useAuth";
 
 const AUTH_PAGES = ["/", "/signup"];
+const PUBLIC_PAGES = ["/myhome", "/privacy", "/terms"];
 const HOME_ROUTE = "/myhome";
 const ONBOARDING_ROUTE = "/onboarding";
 
@@ -30,9 +31,9 @@ export function AuthGate({ pathname, children }: { pathname: string; children: R
 
   let target: string | null = null;
   if (!loading) {
-    // App pages are readable without an account. User-specific actions guard
-    // themselves at the point of interaction and can send users to auth.
-    if (!session && isOnboarding) target = "/";
+    // The home and legal pages are public. Moving to any other app route
+    // requires an account and should show the login screen immediately.
+    if (!session && !isAuthPage && !PUBLIC_PAGES.includes(pathname)) target = "/";
     else if (session && profile) {
       if (isAuthPage) target = profile.is_onboarded ? HOME_ROUTE : ONBOARDING_ROUTE;
       else if (!profile.is_onboarded && !isOnboarding) target = ONBOARDING_ROUTE;

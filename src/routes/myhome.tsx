@@ -553,11 +553,7 @@ function MyHomePage() {
             </>
           );
 
-          return card.featured ? (
-            <article key={card.label} className={cardClassName}>
-              {cardContent}
-            </article>
-          ) : (
+          return (
             <Link
               key={card.label}
               to={card.href}
@@ -572,7 +568,7 @@ function MyHomePage() {
                     : {}
               }
               aria-label={`${card.label} 페이지로 이동`}
-              className={cardClassName}
+              className={card.featured ? `${cardClassName} cursor-pointer` : cardClassName}
             >
               {cardContent}
             </Link>
