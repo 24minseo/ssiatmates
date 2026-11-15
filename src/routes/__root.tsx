@@ -20,6 +20,8 @@ import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/hooks/useAuth";
 import { AuthGate } from "@/components/auth/AuthGate";
 
+const googleSiteVerification = import.meta.env.VITE_GOOGLE_SITE_VERIFICATION;
+
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -100,6 +102,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:site", content: "@ssiatmates" },
+      ...(googleSiteVerification
+        ? [{ name: "google-site-verification", content: googleSiteVerification }]
+        : []),
     ],
     links: [
       {

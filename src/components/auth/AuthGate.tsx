@@ -4,7 +4,6 @@ import { useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/useAuth";
 
 const AUTH_PAGES = ["/", "/signup"];
-const PUBLIC_LEGAL_PAGES = ["/privacy", "/terms"];
 const HOME_ROUTE = "/myhome";
 const ONBOARDING_ROUTE = "/onboarding";
 
@@ -26,13 +25,14 @@ export function AuthGate({ pathname, children }: { pathname: string; children: R
   const navigate = useNavigate();
 
   const isAuthPage = AUTH_PAGES.includes(pathname);
-  const isPublicLegalPage = PUBLIC_LEGAL_PAGES.includes(pathname);
   const isOnboarding = pathname === ONBOARDING_ROUTE;
   const isGrowthJournalComposer = pathname === "/calendar/growth-journal/new";
 
   let target: string | null = null;
   if (!loading) {
-    if (!session && !isAuthPage && !isPublicLegalPage) target = "/";
+    // App pages are readable without an account. User-specific actions guard
+    // themselves at the point of interaction and can send users to auth.
+    if (!session && isOnboarding) target = "/";
     else if (session && profile) {
       if (isAuthPage) target = profile.is_onboarded ? HOME_ROUTE : ONBOARDING_ROUTE;
       else if (!profile.is_onboarded && !isOnboarding) target = ONBOARDING_ROUTE;
