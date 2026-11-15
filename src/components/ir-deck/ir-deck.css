@@ -1,0 +1,54 @@
+.ir-deck-print {
+  display: none;
+}
+.ir-deck-text {
+  overflow-wrap: anywhere;
+}
+.ir-deck-progress {
+  animation: ir-deck-progress 2s ease-in-out infinite alternate;
+}
+@keyframes ir-deck-progress {
+  to {
+    transform: translateX(185%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ir-deck-progress {
+    animation: none;
+  }
+}
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 0;
+  }
+  body > :not(.ir-deck-print) {
+    display: none !important;
+  }
+  body > .ir-deck-print {
+    display: block !important;
+    color-adjust: exact;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  .ir-deck-print-page {
+    width: 297mm;
+    height: 210mm;
+    padding: 12mm;
+    display: flex;
+    align-items: center;
+    break-after: page;
+    overflow: hidden;
+  }
+  .ir-deck-print-page:last-child {
+    break-after: auto;
+  }
+  .ir-deck-print .ir-deck-slide {
+    box-shadow: none;
+    max-height: 186mm;
+    overflow: hidden;
+  }
+  .ir-deck-print .ir-deck-video {
+    display: none;
+  }
+}
