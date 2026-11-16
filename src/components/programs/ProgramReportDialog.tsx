@@ -11,6 +11,7 @@ import { SquareAlertIcon } from "@/components/ui/square-alert-icon";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { LoadingDots } from "@/components/ui/loading-dots";
+import PlanReviewResultView from "./PlanReviewResultView";
 
 type ReportItem = {
   label?: string | null | undefined;
@@ -653,6 +654,17 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle,
   const [analysisFilePhase, setAnalysisFilePhase] = useState<"uploading" | "success" | "ready">("ready");
   const [analysisStatus, setAnalysisStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [analysisMessage, setAnalysisMessage] = useState<string | null>(null);
+  const [analysisResult, setAnalysisResult] = useState<unknown>(null);
+  const analysisGeneration = useRef(0);
+  useEffect(() => {
+    analysisGeneration.current += 1;
+    setAnalysisResult(null);
+    setAnalysisStatus("idle");
+    setAnalysisMessage(null);
+    setAnalysisFile(null);
+    setAnalysisOpen(false);
+    return () => { analysisGeneration.current += 1; };
+  }, [noticeId, session?.user.id]);
   const [reportNoticeId, setReportNoticeId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -768,12 +780,18 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle,
     }
     setAnalysisStatus("loading");
     setAnalysisMessage(null);
+    setAnalysisResult(null);
+    const generation = analysisGeneration.current;
     try {
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       const session = sessionData.session;
       if (sessionError || !session) throw new Error("로그인 후 이용해주세요.");
       const headers = { Authorization: `Bearer ${session.access_token}` };
-      const invoke = (body: Record<string, unknown>) => supabase.functions.invoke("plan-review-api", { body, headers });
+      const invoke = async (body: Record<string, unknown>) => {
+        const response = await supabase.functions.invoke("plan-review-api", { body, headers });
+        if (generation !== analysisGeneration.current) throw new Error("평가 화면이 변경됐습니다.");
+        return response;
+      };
       const prepared = await invoke({ action: "prepare_upload", filename: analysisFile.name, size_bytes: analysisFile.size });
       if (prepared.error || !prepared.data?.document_id || prepared.data.bucket !== "business-plan-review-v1") {
         throw new Error(prepared.data?.message ?? "업로드 준비에 실패했어요.");
@@ -799,10 +817,12 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle,
         const review = await invoke({ action: "get_review", job_id: requested.data.job_id });
         if (review.error || !review.data?.status) throw new Error(review.data?.message ?? "평가 상태를 확인하지 못했어요.");
         if (terminalStatuses.has(review.data.status)) {
+          setAnalysisResult(review.data);
+          setAnalysisOpen(true);
           setAnalysisStatus(review.data.status === "completed" ? "done" : "error");
           setAnalysisMessage(
             review.data.status === "completed"
-              ? "평가가 완료됐어요. 리포트를 다시 열어 결과를 확인해주세요."
+              ? "평가가 완료됐어요. 점수와 보완할 사항을 확인해보세요."
               : review.data?.error?.message ?? "평가를 완료하지 못했어요.",
           );
           return;
@@ -811,6 +831,7 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle,
       setAnalysisStatus("error");
       setAnalysisMessage("평가가 오래 걸리고 있어요. 나중에 다시 상태를 확인해주세요.");
     } catch (error) {
+      if (generation !== analysisGeneration.current) return;
       setAnalysisStatus("error");
       setAnalysisMessage(error instanceof Error ? error.message : "평가 요청에 실패했어요.");
     }
@@ -1025,20 +1046,32 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle,
     <Dialog open={analysisOpen} onOpenChange={setAnalysisOpen}>
       <DialogContent
         closeClassName="right-5 top-5 flex size-9 items-center justify-center rounded-lg text-ink-muted opacity-100 transition-colors hover:bg-item-hover hover:text-ink hover:opacity-100 focus:outline-none focus:ring-0 focus:ring-offset-0 [&_svg]:size-6"
-        className="w-[600px] max-w-[calc(100vw-40px)] gap-0 rounded-[20px] border-0 bg-surface p-6"
+        className="w-[760px] max-w-[calc(100vw-40px)] max-h-[calc(100dvh-48px)] overflow-y-auto gap-0 rounded-[20px] border-0 bg-surface p-6 sm:p-8"
       >
         <DialogHeader className="space-y-2 text-left">
-          <DialogTitle className="text-[20px] font-bold leading-7 text-ink">사업 계획서 적합도 분석</DialogTitle>
+          <DialogTitle className="text-[20px] font-bold leading-7 text-ink">{analysisResult ? "사업계획서 분석 결과" : "사업 계획서 적합도 분석"}</DialogTitle>
+          {analysisResult ? <p className="pr-8 text-sm text-ink-muted">{displayNoticeTitle}</p> : null}
+          {!analysisResult && (
           <div className="flex h-11 min-w-0 w-full max-w-full items-center gap-1 overflow-hidden rounded-[12px] bg-item-hover px-3 py-2 text-left text-[14px] font-medium leading-5 text-ink-muted">
             <SquareAlertIcon className="size-4 shrink-0 text-icon-muted" aria-hidden="true" />
             <span>사업계획서 제출이 필요한 공고만 분석할 수 있어요.</span>
           </div>
+          )}
         </DialogHeader>
+        {analysisResult ? <>
+          <PlanReviewResultView review={analysisResult} />
+          <div className="mt-6 flex justify-end gap-2">
+            <button type="button" className="rounded-xl border border-field-border px-4 py-3 text-sm font-semibold" onClick={() => {
+              setAnalysisResult(null); setAnalysisMessage(null); setAnalysisStatus("idle"); setAnalysisFile(null);
+            }}>다른 PDF로 분석</button>
+            <button type="button" className="rounded-xl bg-brand px-5 py-3 text-sm font-semibold text-brand-foreground" onClick={() => setAnalysisOpen(false)}>닫기</button>
+          </div>
+        </> : (
         <section className="mt-6" aria-labelledby="plan-review-upload-title">
           <div>
             <h3 id="plan-review-upload-title" className="text-[16px] font-semibold text-ink">파일 업로드</h3>
             <ul className="mt-2 space-y-1 text-[14px] leading-5 text-ink-muted">
-              <li>• 해당 공고에서 제공한 사업계획서 양식으로만 분석할 수 있습니다.</li>
+              <li>• 공고의 요구 항목을 작성한 사업계획서를 올려주세요. 자율 양식 공고는 자유롭게 작성한 PDF도 가능합니다.</li>
               <li>• PDF 형식의 사업계획서만 등록할 수 있으며, 파일 1개당 크기는 30MB를 초과할 수 없습니다.</li>
             </ul>
           </div>
@@ -1052,6 +1085,7 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle,
             type="file"
             accept=".pdf,application/pdf"
             className="sr-only"
+            disabled={analysisStatus === "loading"}
             onChange={(event) => {
               const selected = event.target.files?.[0] ?? null;
               if (selected && (!/\.pdf$/i.test(selected.name) || selected.size > 30 * 1024 * 1024)) {
@@ -1095,6 +1129,7 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle,
                 <button
                   type="button"
                   aria-label="선택한 파일 삭제"
+                  disabled={analysisStatus === "loading"}
                   onClick={() => { setAnalysisFile(null); setAnalysisFilePhase("ready"); }}
                   className="relative flex size-5 shrink-0 items-center justify-center rounded-full bg-[#E5E8E7] text-[#25332E] opacity-70 transition-[background-color,opacity] hover:bg-[#D9DEDC] hover:opacity-100"
                 >
@@ -1136,8 +1171,10 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle,
           </p>
         ) : null}
         </section>
+        )}
       </DialogContent>
     </Dialog>
     </>
   );
 }
+
