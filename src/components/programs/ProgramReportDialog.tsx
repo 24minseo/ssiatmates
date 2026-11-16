@@ -1122,7 +1122,12 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle,
             onClick={() => void submitPlanReview()}
             className="h-11 rounded-[10px] bg-brand px-5 text-[15px] font-semibold text-brand-foreground transition-colors disabled:cursor-not-allowed disabled:bg-brand-disabled"
           >
-            {analysisStatus === "loading" ? "업로드·분석 요청 중…" : "분석하기"}
+            {analysisStatus === "loading" ? (
+              <span className="inline-flex items-center">
+                분석 요청 중
+                <LoadingDots />
+              </span>
+            ) : "분석하기"}
           </button>
         </div>
         {analysisMessage ? (
