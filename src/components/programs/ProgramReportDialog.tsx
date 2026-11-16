@@ -6,7 +6,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { AsyncErrorState } from "@/components/AsyncErrorState";
-import { ArrowUpRight, Loader2 } from "lucide-react";
+import { ArrowUpRight, Check, Loader2, Upload, X } from "lucide-react";
+import { SquareAlertIcon } from "@/components/ui/square-alert-icon";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { LoadingDots } from "@/components/ui/loading-dots";
@@ -647,6 +648,11 @@ function ObligationsGroupView({ section }: { section: ReportGroup["section"] }) 
 export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle, scrollToChanges = false, supportOverride }: ProgramReportDialogProps) {
   const { session } = useAuth();
   const [report, setReport] = useState<NoticeReport | null>(null);
+  const [analysisOpen, setAnalysisOpen] = useState(false);
+  const [analysisFile, setAnalysisFile] = useState<File | null>(null);
+  const [analysisFilePhase, setAnalysisFilePhase] = useState<"uploading" | "success" | "ready">("ready");
+  const [analysisStatus, setAnalysisStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
+  const [analysisMessage, setAnalysisMessage] = useState<string | null>(null);
   const [reportNoticeId, setReportNoticeId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -753,6 +759,63 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle,
     currentReport?.notice?.url ?? currentReport?.notice?.application_url,
   );
 
+  const submitPlanReview = async () => {
+    if (!analysisFile || !noticeUrl || analysisStatus === "loading") return;
+    if (!/\.pdf$/i.test(analysisFile.name) || analysisFile.size < 1 || analysisFile.size > 30 * 1024 * 1024) {
+      setAnalysisStatus("error");
+      setAnalysisMessage("30MB 이하의 PDF 파일을 선택해주세요.");
+      return;
+    }
+    setAnalysisStatus("loading");
+    setAnalysisMessage(null);
+    try {
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      const session = sessionData.session;
+      if (sessionError || !session) throw new Error("로그인 후 이용해주세요.");
+      const headers = { Authorization: `Bearer ${session.access_token}` };
+      const invoke = (body: Record<string, unknown>) => supabase.functions.invoke("plan-review-api", { body, headers });
+      const prepared = await invoke({ action: "prepare_upload", filename: analysisFile.name, size_bytes: analysisFile.size });
+      if (prepared.error || !prepared.data?.document_id || prepared.data.bucket !== "business-plan-review-v1") {
+        throw new Error(prepared.data?.message ?? "업로드 준비에 실패했어요.");
+      }
+      const upload = await supabase.storage.from(prepared.data.bucket).upload(prepared.data.object_path, analysisFile, {
+        contentType: "application/pdf",
+        upsert: false,
+      });
+      if (upload.error) throw new Error("사업계획서 업로드에 실패했어요.");
+      const confirmed = await invoke({ action: "confirm_upload", document_id: prepared.data.document_id });
+      if (confirmed.error || confirmed.data?.status !== "uploaded") throw new Error("파일 업로드 확인에 실패했어요.");
+      const requested = await invoke({
+        action: "request_review",
+        document_id: prepared.data.document_id,
+        notice_url: noticeUrl,
+        client_request_id: crypto.randomUUID(),
+      });
+      if (requested.error || !requested.data?.job_id) throw new Error(requested.data?.message ?? "평가 요청에 실패했어요.");
+      setAnalysisMessage("평가 요청이 접수됐어요. 결과를 준비하고 있습니다.");
+      const terminalStatuses = new Set(["completed", "failed", "submission_blocked", "needs_input", "cancelled"]);
+      for (let attempt = 0; attempt < 150; attempt += 1) {
+        await new Promise((resolve) => window.setTimeout(resolve, 4000));
+        const review = await invoke({ action: "get_review", job_id: requested.data.job_id });
+        if (review.error || !review.data?.status) throw new Error(review.data?.message ?? "평가 상태를 확인하지 못했어요.");
+        if (terminalStatuses.has(review.data.status)) {
+          setAnalysisStatus(review.data.status === "completed" ? "done" : "error");
+          setAnalysisMessage(
+            review.data.status === "completed"
+              ? "평가가 완료됐어요. 리포트를 다시 열어 결과를 확인해주세요."
+              : review.data?.error?.message ?? "평가를 완료하지 못했어요.",
+          );
+          return;
+        }
+      }
+      setAnalysisStatus("error");
+      setAnalysisMessage("평가가 오래 걸리고 있어요. 나중에 다시 상태를 확인해주세요.");
+    } catch (error) {
+      setAnalysisStatus("error");
+      setAnalysisMessage(error instanceof Error ? error.message : "평가 요청에 실패했어요.");
+    }
+  };
+
   const groups = useMemo<ReportGroup[]>(() => {
     if (currentReport?.report_display?.sections?.length) {
       const displaySections = currentReport.report_display.sections;
@@ -853,7 +916,8 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle,
   }, [currentReport, loading, open, scrollToChanges]);
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <>
+    <Dialog open={open && !analysisOpen} onOpenChange={onOpenChange}>
       <DialogContent
         closeClassName="right-8 top-8 flex size-9 items-center justify-center rounded-lg opacity-100 text-ink-muted hover:bg-item-hover hover:text-ink focus:outline-none focus:ring-0 focus:ring-offset-0 [&>svg]:size-6"
         className="flex min-h-[420px] max-h-[calc(100vh-48px)] w-[800px] max-w-[calc(100vw-32px)] flex-col overflow-hidden rounded-[20px] border-0 bg-surface p-0 transition-[height] duration-[240ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
@@ -865,14 +929,19 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle,
               <DialogTitle className="text-[24px] font-bold leading-10 text-ink">리포트</DialogTitle>
               <button
                 type="button"
-                className="inline-flex items-center gap-1 rounded-[8px] border-[1.2px] border-transparent pl-[9px] pr-[12px] py-[7px] text-xs font-semibold transition-colors hover:[--report-button-surface-start:#faf7ff] hover:[--report-button-surface-end:#faf7ff]"
+                onClick={() => {
+                  setAnalysisFile(null);
+                  setAnalysisFilePhase("ready");
+                  setAnalysisOpen(true);
+                }}
+                className="inline-flex items-center gap-1 rounded-[8px] border-[1.5px] border-transparent pl-[9px] pr-[12px] py-[7px] text-xs font-semibold transition-colors hover:[--report-button-surface-start:#faf7ff] hover:[--report-button-surface-end:#faf7ff]"
                 style={{
                   backgroundImage: "linear-gradient(var(--report-button-surface-start, #fff), var(--report-button-surface-end, #fff)), linear-gradient(139.3deg, #638aff 2.65%, #9e53ff 101.62%)",
                   backgroundOrigin: "border-box",
                   backgroundClip: "padding-box, border-box",
                 }}
               >
-                <img src="/assets/ai.svg" alt="" className="size-4" aria-hidden="true" />
+                <img src="/assets/ai.svg?v=2" alt="" className="size-4" aria-hidden="true" />
                 <span
                   className="text-transparent"
                   style={{
@@ -951,6 +1020,119 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle,
           </div>
         </div>
       </DialogContent>
+      </Dialog>
+
+    <Dialog open={analysisOpen} onOpenChange={setAnalysisOpen}>
+      <DialogContent
+        closeClassName="right-5 top-5 flex size-9 items-center justify-center rounded-lg text-ink-muted opacity-100 transition-colors hover:bg-item-hover hover:text-ink hover:opacity-100 focus:outline-none focus:ring-0 focus:ring-offset-0 [&_svg]:size-6"
+        className="w-[600px] max-w-[calc(100vw-40px)] gap-0 rounded-[20px] border-0 bg-surface p-6"
+      >
+        <DialogHeader className="space-y-2 text-left">
+          <DialogTitle className="text-[20px] font-bold leading-7 text-ink">사업 계획서 적합도 분석</DialogTitle>
+          <div className="flex h-11 min-w-0 w-full max-w-full items-center gap-1 overflow-hidden rounded-[12px] bg-item-hover px-3 py-2 text-left text-[14px] font-medium leading-5 text-ink-muted">
+            <SquareAlertIcon className="size-4 shrink-0 text-icon-muted" aria-hidden="true" />
+            <span>사업계획서 제출이 필요한 공고만 분석할 수 있어요.</span>
+          </div>
+        </DialogHeader>
+        <section className="mt-6" aria-labelledby="plan-review-upload-title">
+          <div>
+            <h3 id="plan-review-upload-title" className="text-[16px] font-semibold text-ink">파일 업로드</h3>
+            <ul className="mt-2 space-y-1 text-[14px] leading-5 text-ink-muted">
+              <li>• 해당 공고에서 제공한 사업계획서 양식으로만 분석할 수 있습니다.</li>
+              <li>• PDF 형식의 사업계획서만 등록할 수 있으며, 파일 1개당 크기는 30MB를 초과할 수 없습니다.</li>
+            </ul>
+          </div>
+          <label className="group mt-4 flex min-h-[142px] cursor-pointer flex-col items-center justify-center rounded-[4px] border border-dashed border-field-border bg-surface px-5 py-6 text-center transition-colors hover:border-brand hover:bg-item-hover/50">
+            <p className="text-[14px] text-ink-muted">파일을 여기에 끌어다 놓거나, 파일 선택 버튼을 눌러주세요.</p>
+            <span className="mt-3 inline-flex h-10 items-center justify-center gap-2 rounded-[10px] bg-secondary-btn px-4 text-[14px] font-semibold text-secondary-btn-text transition-colors group-hover:bg-secondary-btn-hover group-hover:text-secondary-btn-text-hover hover:bg-secondary-btn-hover hover:text-secondary-btn-text-hover">
+              <Upload className="size-4" aria-hidden="true" />
+              파일 선택
+            </span>
+          <input
+            type="file"
+            accept=".pdf,application/pdf"
+            className="sr-only"
+            onChange={(event) => {
+              const selected = event.target.files?.[0] ?? null;
+              if (selected && (!/\.pdf$/i.test(selected.name) || selected.size > 30 * 1024 * 1024)) {
+                setAnalysisFile(null);
+                setAnalysisStatus("error");
+                setAnalysisMessage("30MB 이하의 PDF 파일을 선택해주세요.");
+                return;
+              }
+              setAnalysisFile(selected);
+              setAnalysisFilePhase(selected ? "uploading" : "ready");
+              setAnalysisStatus("idle");
+              setAnalysisMessage(null);
+              event.currentTarget.value = "";
+              if (selected) {
+                window.setTimeout(() => setAnalysisFilePhase("success"), 350);
+                window.setTimeout(() => setAnalysisFilePhase("ready"), 850);
+              }
+            }}
+          />
+          </label>
+        <div className="mt-3 flex items-center justify-between text-[14px] font-semibold text-ink-muted">
+          <span>
+            <strong className="font-semibold text-brand">{analysisFile ? 1 : 0}개</strong> / 1개
+          </span>
+        </div>
+        {analysisFile ? (
+          <div className="mt-2 flex w-full items-center gap-3 rounded-[10px] border border-field-border bg-surface px-3 py-2.5">
+              <div className="min-w-0 flex-1 text-left">
+                <p className="truncate text-[13px] font-medium text-ink">{analysisFile.name}</p>
+                <p className="mt-0.5 text-[12px] text-ink-muted">PDF · {(analysisFile.size / (1024 * 1024)).toFixed(1)}MB</p>
+              </div>
+              {analysisFilePhase === "uploading" ? (
+                <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-[#F1F3F2]" aria-label="파일 확인 중">
+                  <Loader2 className="size-3.5 animate-spin text-[#2F80ED]" aria-hidden="true" />
+                </span>
+              ) : analysisFilePhase === "success" ? (
+                <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-[#F2F7F4] text-brand" aria-label="파일 추가 완료">
+                  <Check className="size-3.5 animate-upload-status-pop-in stroke-[3]" aria-hidden="true" />
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  aria-label="선택한 파일 삭제"
+                  onClick={() => { setAnalysisFile(null); setAnalysisFilePhase("ready"); }}
+                  className="relative flex size-5 shrink-0 items-center justify-center rounded-full bg-[#E5E8E7] text-[#25332E] opacity-70 transition-[background-color,opacity] hover:bg-[#D9DEDC] hover:opacity-100"
+                >
+                  <span className="absolute inset-0 flex items-center justify-center animate-upload-status-pop-out"><Check className="size-3.5 stroke-[3]" aria-hidden="true" /></span>
+                  <span className="absolute inset-0 flex items-center justify-center animate-upload-status-x-in"><X className="size-3.5 stroke-[2.5]" aria-hidden="true" /></span>
+                </button>
+              )}
+          </div>
+        ) : null}
+        <div className="mt-6 flex items-center justify-end gap-2">
+          <button
+            type="button"
+            disabled={analysisStatus === "loading"}
+            onClick={() => {
+              setAnalysisOpen(false);
+              setDialogHeight(null);
+            }}
+            className="h-11 rounded-[10px] border border-field-border bg-surface px-5 text-[15px] font-semibold text-ink transition-colors hover:bg-item-hover disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            뒤로가기
+          </button>
+          <button
+            type="button"
+            disabled={!analysisFile || analysisStatus === "loading"}
+            onClick={() => void submitPlanReview()}
+            className="h-11 rounded-[10px] bg-brand px-5 text-[15px] font-semibold text-brand-foreground transition-colors disabled:cursor-not-allowed disabled:bg-brand-disabled"
+          >
+            {analysisStatus === "loading" ? "업로드·분석 요청 중…" : "분석하기"}
+          </button>
+        </div>
+        {analysisMessage ? (
+          <p className={`mt-3 text-[13px] ${analysisStatus === "error" ? "text-destructive" : "text-brand"}`} role="status">
+            {analysisMessage}
+          </p>
+        ) : null}
+        </section>
+      </DialogContent>
     </Dialog>
+    </>
   );
 }
