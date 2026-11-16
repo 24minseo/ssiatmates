@@ -1,8 +1,13 @@
 type Json = Record<string, unknown>;
 const object = (value: unknown): Json => value && typeof value === "object" && !Array.isArray(value) ? value as Json : {};
 const list = (value: unknown): Json[] => Array.isArray(value) ? value.map(object) : [];
-const strings = (value: unknown): string[] => Array.isArray(value) ? value.filter((v): v is string => typeof v === "string" && !!v.trim()) : [];
-const text = (value: unknown, fallback = "") => typeof value === "string" ? value : fallback;
+const cleanDisplayText = (value: string) => value
+  .replace(/\s*[（(][^()（）]*(?:official_fit_availability|score_basis|diagnostic_code)\s*[:=][^()（）]*[)）]/g, "")
+  .replace(/\b(?:official_fit_availability|score_basis|diagnostic_code)\s*[:=]\s*[a-zA-Z0-9_]+/g, "")
+  .replace(/\b(?:user_plan:segment_\d+|source_\d+:(?:paragraph|segment|table)_\w+)\b/g, "")
+  .trim();
+const strings = (value: unknown): string[] => Array.isArray(value) ? value.filter((v): v is string => typeof v === "string" && !!v.trim()).map(cleanDisplayText).filter(Boolean) : [];
+const text = (value: unknown, fallback = "") => typeof value === "string" ? cleanDisplayText(value) : fallback;
 const number = (value: unknown) => typeof value === "number" && Number.isFinite(value) ? value : null;
 const labels: Record<string, string> = {
   problem_customer: "문제와 고객", solution_value: "해결방안과 차별성",
@@ -18,8 +23,8 @@ function Evidence({ title, value }: { title: string; value: unknown }) {
   return <details className="mt-3 rounded-lg bg-item-hover p-3">
     <summary className="cursor-pointer font-medium">{title} ({entries.length})</summary>
     {entries.map((e, i) => <blockquote key={i} className="mt-3 border-l-2 border-brand pl-3">
-      <p className="whitespace-pre-wrap break-words">{text(e.quote)}</p>
-      <p className="mt-1 text-xs text-ink-muted">근거 위치: {text(e.evidence_id, "위치 정보 없음")}</p>
+      <p className="whitespace-pre-wrap break-words">{typeof e.quote === "string" ? e.quote : ""}</p>
+      {number(e.page_number) !== null && Number.isInteger(e.page_number) && Number(e.page_number) > 0 && <p className="mt-1 text-xs text-ink-muted">문서 {Number(e.page_number)}페이지</p>}
     </blockquote>)}
   </details>;
 }
