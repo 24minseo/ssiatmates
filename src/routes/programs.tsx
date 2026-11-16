@@ -228,12 +228,51 @@ const PREFERENCE_FEEDBACK_BASE_CLASS =
   "relative flex min-h-6 items-start gap-1 border border-transparent px-[10px] py-1 text-[14px] font-semibold leading-5";
 const DEBUG_SHOW_PREFERENCE_FEEDBACK = false;
 
+// Share only a currently running request; completed/failed results are never cached.
+const supportBundleRequests = new Map<string, Promise<Record<string, unknown>>>();
+
+async function loadSupportMatchingPage(
+  supports: string[], view: "active" | "review", offset: number, limit: number, scope: string,
+) {
+  const normalized = supports.includes(SUPPORT_ALL)
+    ? [SUPPORT_ALL] : [...new Set(supports)].sort();
+  const key = JSON.stringify([scope, normalized, offset, limit]);
+  let pending = supportBundleRequests.get(key);
+  if (!pending) {
+    pending = (async () => {
+      const { data, error } = await supabase.rpc("get_my_support_notice_bundle_v1" as never, {
+        p_supports: normalized, p_limit: limit, p_offset: offset,
+      } as never);
+      if (error) throw error;
+      if (!data || typeof data !== "object" || !("active" in data) || !("review" in data)) {
+        throw new Error("재매칭 응답 형식이 올바르지 않습니다.");
+      }
+      return data as Record<string, unknown>;
+    })();
+    supportBundleRequests.set(key, pending);
+    const remove = () => {
+      if (supportBundleRequests.get(key) === pending) supportBundleRequests.delete(key);
+    };
+    void pending.then(remove, remove);
+  }
+  try {
+    return { data: (await pending)[view], error: null };
+  } catch (error) {
+    // Rolling deployment: old DB keeps working until the SQL migration is installed.
+    if ((error as { code?: string })?.code !== "PGRST202") throw error;
+    return supabase.rpc("get_my_support_notice_matches_v1" as never, {
+      p_supports: supports, p_view: view, p_limit: limit, p_offset: offset,
+    } as never);
+  }
+}
+
 async function loadMatchingNotices(
   view: MatchingView,
   selectedField: string | null,
   offset = 0,
   limit = PAGE_SIZE,
   supportOverride?: string[],
+  supportRequestScope = "",
 ): Promise<NoticeMatchesResponse> {
   if (view !== "active" && view !== "review" && view !== "excluded") {
     throw new Error("목록 구분이 잘못됐습니다.");
@@ -263,9 +302,7 @@ async function loadMatchingNotices(
   const invokeRpc = (name: string, args: typeof params) =>
     supabase.rpc(name as never, args as never);
   const { data, error } = supportOverride && view !== "excluded"
-    ? await supabase.rpc("get_my_support_notice_matches_v1" as never, {
-        p_supports: supportOverride, p_view: view, p_limit: limit, p_offset: offset,
-      } as never)
+    ? await loadSupportMatchingPage(supportOverride, view, offset, limit, supportRequestScope)
     : await invokeRpc(rpc, params);
   if (error) throw error;
 
@@ -283,6 +320,7 @@ async function loadAllMatchingNotices(
   view: MatchingView,
   selectedField: string | null,
   supportOverride?: string[],
+  supportRequestScope = "",
 ): Promise<NoticeMatchesResponse> {
   const limit = 100;
   const items: NoticeMatchItem[] = [];
@@ -290,7 +328,7 @@ async function loadAllMatchingNotices(
   let firstResponse: NoticeMatchesResponse | null = null;
 
   for (;;) {
-    const response = await loadMatchingNotices(view, selectedField, offset, limit, supportOverride);
+    const response = await loadMatchingNotices(view, selectedField, offset, limit, supportOverride, supportRequestScope);
     firstResponse ??= response;
     items.push(...response.items);
     offset += response.items.length;
@@ -821,12 +859,13 @@ function ProgramsPage() {
       try {
         const fields = usesProfileDefault ? getSelectedFields(supportCategories, true) : [null];
         const supportOverride = usesProfileDefault ? undefined : supportCategories;
+        const supportRequestScope = JSON.stringify([session.user.id, profile ? matchingProfileKey(profile) : null, profileMatchingEpoch]);
         const offset = hasPreferenceMatches ? 0 : (page - 1) * PAGE_SIZE;
         const [responses, savedState] = await Promise.all([
           Promise.all(fields.map((field) =>
             hasPreferenceMatches
-              ? loadAllMatchingNotices("active", field, supportOverride)
-              : loadMatchingNotices("active", field, offset, PAGE_SIZE, supportOverride),
+              ? loadAllMatchingNotices("active", field, supportOverride, supportRequestScope)
+              : loadMatchingNotices("active", field, offset, PAGE_SIZE, supportOverride, supportRequestScope),
           )),
           savedNoticesApi.getSavedStates().catch((error) => {
             console.error("[programs] 저장 상태 조회 실패", error);
@@ -953,9 +992,10 @@ function ProgramsPage() {
       try {
         const fields = usesProfileDefault ? getSelectedFields(supportCategories, true) : [null];
         const supportOverride = usesProfileDefault ? undefined : supportCategories;
+        const supportRequestScope = JSON.stringify([session.user.id, profile ? matchingProfileKey(profile) : null, profileMatchingEpoch]);
         const offset = (page - 1) * PAGE_SIZE;
         const [responses, savedState] = await Promise.all([
-          Promise.all(fields.map((field) => loadMatchingNotices("review", field, offset, PAGE_SIZE, supportOverride))),
+          Promise.all(fields.map((field) => loadMatchingNotices("review", field, offset, PAGE_SIZE, supportOverride, supportRequestScope))),
           savedNoticesApi.getSavedStates().catch((error) => {
             console.error("[programs] 저장 상태 조회 실패", error);
             return { items: [] };
