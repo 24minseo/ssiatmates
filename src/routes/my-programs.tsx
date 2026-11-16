@@ -96,6 +96,12 @@ function MyProgramsPage() {
   const savedRequestRef = useRef(0);
 
   useEffect(() => {
+    const refresh = () => { setRetryCount((count) => count + 1); };
+    window.addEventListener("saved-notices-changed", refresh);
+    return () => window.removeEventListener("saved-notices-changed", refresh);
+  }, []);
+
+  useEffect(() => {
     if (activeFilter !== "all" && sort === "fit") setSort("created");
   }, [activeFilter, sort]);
 
