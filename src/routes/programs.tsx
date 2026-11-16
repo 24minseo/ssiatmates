@@ -27,7 +27,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { ProgramReportDialog } from "@/components/programs/ProgramReportDialog";
-import { getSupportFilterSession, setSupportFilterSession, matchingProfileKey } from "@/lib/supportFilterSession";
+import { getSupportFilterSession, setSupportFilterSession, clearSupportFilterSession, matchingProfileKey } from "@/lib/supportFilterSession";
 import { applySavedStates, savedNoticesApi } from "@/services/savedNoticesApi";
 import {
   createPreferenceTags,
@@ -233,6 +233,7 @@ async function loadMatchingNotices(
   selectedField: string | null,
   offset = 0,
   limit = PAGE_SIZE,
+  supportOverride?: string[],
 ): Promise<NoticeMatchesResponse> {
   if (view !== "active" && view !== "review" && view !== "excluded") {
     throw new Error("목록 구분이 잘못됐습니다.");
@@ -261,7 +262,11 @@ async function loadMatchingNotices(
 
   const invokeRpc = (name: string, args: typeof params) =>
     supabase.rpc(name as never, args as never);
-  const { data, error } = await invokeRpc(rpc, params);
+  const { data, error } = supportOverride && view !== "excluded"
+    ? await supabase.rpc("get_my_support_notice_matches_v1" as never, {
+        p_supports: supportOverride, p_view: view, p_limit: limit, p_offset: offset,
+      } as never)
+    : await invokeRpc(rpc, params);
   if (error) throw error;
 
   const response = (data ?? {}) as Partial<NoticeMatchesResponse>;
@@ -277,6 +282,7 @@ async function loadMatchingNotices(
 async function loadAllMatchingNotices(
   view: MatchingView,
   selectedField: string | null,
+  supportOverride?: string[],
 ): Promise<NoticeMatchesResponse> {
   const limit = 100;
   const items: NoticeMatchItem[] = [];
@@ -284,7 +290,7 @@ async function loadAllMatchingNotices(
   let firstResponse: NoticeMatchesResponse | null = null;
 
   for (;;) {
-    const response = await loadMatchingNotices(view, selectedField, offset, limit);
+    const response = await loadMatchingNotices(view, selectedField, offset, limit, supportOverride);
     firstResponse ??= response;
     items.push(...response.items);
     offset += response.items.length;
@@ -446,6 +452,8 @@ function ProgramsPage() {
   const [usesProfileDefault, setUsesProfileDefault] = useState(true);
   const profileFilterInitializedFor = useRef<string | null>(null);
   const initializedMatchingProfile = useRef<string | null>(null);
+  const initializedSource = useRef<string | undefined>(undefined);
+  const [profileMatchingEpoch, setProfileMatchingEpoch] = useState(0);
   const matchingRequestRef = useRef(0);
   const reviewRequestRef = useRef(0);
   const excludedRequestRef = useRef(0);
@@ -737,24 +745,48 @@ function ProgramsPage() {
 
   useEffect(() => {
     if (!profile) return;
-
     const profileKey = matchingProfileKey(profile);
-    const profileChanged = initializedMatchingProfile.current !== null &&
-      initializedMatchingProfile.current !== profileKey;
-    const profileCategories = profile.support_categories.filter(Boolean);
-    const savedCategories = search.source === "myhome" || profileChanged
+    const firstLoad = initializedMatchingProfile.current === null;
+    const profileChanged = !firstLoad && initializedMatchingProfile.current !== profileKey;
+    const routeChanged = initializedSource.current !== search.source;
+    // Auth refreshes can create a new object with identical values: retain the applied override.
+    if (!firstLoad && !profileChanged && !routeChanged) return;
+    if (profileChanged) clearSupportFilterSession(profile.id);
+    const saved = profileChanged || search.source === "myhome"
       ? null : getSupportFilterSession(profile.id, profileKey);
-    if (savedCategories === null) {
-      setUsesProfileDefault(true);
-      setSupportCategories(profileCategories.length ? profileCategories : [SUPPORT_ALL]);
-    } else if (profileFilterInitializedFor.current !== profile.id) {
-      setUsesProfileDefault(false);
-      setSupportCategories(savedCategories);
-    }
-    if (profileChanged) setPage(1);
+    setUsesProfileDefault(saved === null);
+    setSupportCategories(saved ?? (profile.support_categories.length ? profile.support_categories : [SUPPORT_ALL]));
+    setPage(1);
+    matchingRequestRef.current += 1;
+    reviewRequestRef.current += 1;
+    excludedRequestRef.current += 1;
+    setReportTarget(null);
     initializedMatchingProfile.current = profileKey;
+    initializedSource.current = search.source;
     profileFilterInitializedFor.current = profile.id;
   }, [profile, search.source]);
+
+  const resetSupportToProfile = useCallback(() => {
+    if (!profile) return;
+    clearSupportFilterSession(profile.id);
+    matchingRequestRef.current += 1;
+    reviewRequestRef.current += 1;
+    excludedRequestRef.current += 1;
+    preferenceReapplyVersionRef.current += 1;
+    preferenceTags.clear();
+    stopPreferenceSearchUi();
+    setPreferenceFeedback(null);
+    setReportTarget(null);
+    setUsesProfileDefault(true);
+    setSupportCategories(profile.support_categories.length ? profile.support_categories : [SUPPORT_ALL]);
+    setPage(1);
+    setProfileMatchingEpoch(value => value + 1);
+  }, [profile, preferenceTags, stopPreferenceSearchUi]);
+
+  useEffect(() => {
+    window.addEventListener("matching-profile-saved", resetSupportToProfile);
+    return () => window.removeEventListener("matching-profile-saved", resetSupportToProfile);
+  }, [resetSupportToProfile]);
 
   useEffect(() => {
     let cancelled = false;
@@ -787,13 +819,14 @@ function ProgramsPage() {
       }
 
       try {
-        const fields = getSelectedFields(supportCategories, usesProfileDefault);
+        const fields = usesProfileDefault ? getSelectedFields(supportCategories, true) : [null];
+        const supportOverride = usesProfileDefault ? undefined : supportCategories;
         const offset = hasPreferenceMatches ? 0 : (page - 1) * PAGE_SIZE;
         const [responses, savedState] = await Promise.all([
           Promise.all(fields.map((field) =>
             hasPreferenceMatches
-              ? loadAllMatchingNotices("active", field)
-              : loadMatchingNotices("active", field, offset),
+              ? loadAllMatchingNotices("active", field, supportOverride)
+              : loadMatchingNotices("active", field, offset, PAGE_SIZE, supportOverride),
           )),
           savedNoticesApi.getSavedStates().catch((error) => {
             console.error("[programs] 저장 상태 조회 실패", error);
@@ -863,16 +896,12 @@ function ProgramsPage() {
         scheduleNoonRefresh();
       }
     };
-    const refreshAfterProfileSave = () => {
-      void loadMatches(true, true);
-    };
 
     void loadMatches();
     scheduleNoonRefresh();
     window.addEventListener("focus", refreshIfVisible);
     window.addEventListener("pageshow", refreshIfVisible);
     document.addEventListener("visibilitychange", refreshIfVisible);
-    window.addEventListener("matching-profile-saved", refreshAfterProfileSave);
 
     return () => {
       cancelled = true;
@@ -880,7 +909,6 @@ function ProgramsPage() {
       window.removeEventListener("focus", refreshIfVisible);
       window.removeEventListener("pageshow", refreshIfVisible);
       document.removeEventListener("visibilitychange", refreshIfVisible);
-      window.removeEventListener("matching-profile-saved", refreshAfterProfileSave);
     };
   }, [
     session?.user.id,
@@ -894,6 +922,8 @@ function ProgramsPage() {
     profile?.support_categories.join("|"),
     supportCategories.join("|"),
     usesProfileDefault,
+    profileMatchingEpoch,
+    profile ? matchingProfileKey(profile) : null,
     page,
     preferenceStorageKey,
     preferenceTags,
@@ -921,10 +951,11 @@ function ProgramsPage() {
       }
 
       try {
-        const fields = getSelectedFields(supportCategories, usesProfileDefault);
+        const fields = usesProfileDefault ? getSelectedFields(supportCategories, true) : [null];
+        const supportOverride = usesProfileDefault ? undefined : supportCategories;
         const offset = (page - 1) * PAGE_SIZE;
         const [responses, savedState] = await Promise.all([
-          Promise.all(fields.map((field) => loadMatchingNotices("review", field, offset))),
+          Promise.all(fields.map((field) => loadMatchingNotices("review", field, offset, PAGE_SIZE, supportOverride))),
           savedNoticesApi.getSavedStates().catch((error) => {
             console.error("[programs] 저장 상태 조회 실패", error);
             return { items: [] };
@@ -980,16 +1011,12 @@ function ProgramsPage() {
         scheduleNoonRefresh();
       }
     };
-    const refreshAfterProfileSave = () => {
-      void loadReviewMatches(true);
-    };
 
     void loadReviewMatches();
     scheduleNoonRefresh();
     window.addEventListener("focus", refreshIfVisible);
     window.addEventListener("pageshow", refreshIfVisible);
     document.addEventListener("visibilitychange", refreshIfVisible);
-    window.addEventListener("matching-profile-saved", refreshAfterProfileSave);
 
     return () => {
       cancelled = true;
@@ -997,7 +1024,6 @@ function ProgramsPage() {
       window.removeEventListener("focus", refreshIfVisible);
       window.removeEventListener("pageshow", refreshIfVisible);
       document.removeEventListener("visibilitychange", refreshIfVisible);
-      window.removeEventListener("matching-profile-saved", refreshAfterProfileSave);
     };
   }, [
     page,
@@ -1005,6 +1031,8 @@ function ProgramsPage() {
     profile?.id,
     supportCategories.join("|"),
     usesProfileDefault,
+    profileMatchingEpoch,
+    profile ? matchingProfileKey(profile) : null,
     preferenceTags,
   ]);
 
@@ -1379,12 +1407,19 @@ function ProgramsPage() {
         </DropdownMenu>
         <SupportCategorySelect
           value={supportCategories}
+          onReset={resetSupportToProfile}
           onChange={(next) => {
             preferenceReapplyVersionRef.current += 1;
             preferenceTags.clear();
             stopPreferenceSearchUi();
             setPreferenceFeedback(null);
             setSort("deadline");
+            matchingRequestRef.current += 1;
+            reviewRequestRef.current += 1;
+            excludedRequestRef.current += 1;
+            setReportTarget(null);
+            setPage(1);
+            setProfileMatchingEpoch(value => value + 1);
             setUsesProfileDefault(false);
             setSupportCategories(next);
             if (profile) setSupportFilterSession(profile.id, next, matchingProfileKey(profile));
@@ -1892,6 +1927,7 @@ function ProgramsPage() {
               setReportScrollToChanges(false);
             }
           }}
+          supportOverride={usesProfileDefault ? undefined : supportCategories}
           noticeId={reportTarget?.id ?? null}
           noticeTitle={reportTarget?.title ?? null}
           scrollToChanges={reportScrollToChanges}

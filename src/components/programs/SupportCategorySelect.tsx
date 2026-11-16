@@ -9,6 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 type SupportCategorySelectProps = {
   value: string[];
   onChange: (value: string[]) => void;
+  onReset?: () => void;
 };
 
 function normalizedValue(value: string[]) {
@@ -54,7 +55,7 @@ function SquareAlertIcon({
   );
 }
 
-export function SupportCategorySelect({ value, onChange }: SupportCategorySelectProps) {
+export function SupportCategorySelect({ value, onChange, onReset }: SupportCategorySelectProps) {
   const { profile } = useAuth();
   const [open, setOpen] = useState(false);
   const [showNotice, setShowNotice] = useState(true);
@@ -91,6 +92,8 @@ export function SupportCategorySelect({ value, onChange }: SupportCategorySelect
 
   const resetToProfile = () => {
     setDraftValue(profileSelection);
+    if (onReset) onReset(); else onChange(profileSelection);
+    setOpen(false);
   };
 
   return (
@@ -115,7 +118,7 @@ export function SupportCategorySelect({ value, onChange }: SupportCategorySelect
           <div className="mb-4 flex h-11 items-center gap-1 rounded-[12px] bg-item-hover px-3 py-2 text-[14px] font-medium leading-5 text-ink-muted">
             <SquareAlertIcon variant="fill" className="size-4 shrink-0 text-icon-muted" />
             <span className="min-w-0 flex-1 break-keep">
-              이번 탐색에만 적용되며, MY홈 추천 기준은 변하지 않습니다.
+              다른 프로필 조건은 유지하고 지원분야만 바꿔 재매칭합니다. 기본 프로필은 변경되지 않습니다.
             </span>
             <button
               type="button"

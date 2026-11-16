@@ -81,6 +81,7 @@ type ProgramReportDialogProps = {
   noticeId: string | null;
   noticeTitle?: string | null;
   scrollToChanges?: boolean;
+  supportOverride?: string[];
 };
 
 const sectionLabels: Record<string, string> = {
@@ -642,7 +643,7 @@ function ObligationsGroupView({ section }: { section: ReportGroup["section"] }) 
   );
 }
 
-export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle, scrollToChanges = false }: ProgramReportDialogProps) {
+export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle, scrollToChanges = false, supportOverride }: ProgramReportDialogProps) {
   const { session } = useAuth();
   const [report, setReport] = useState<NoticeReport | null>(null);
   const [reportNoticeId, setReportNoticeId] = useState<string | null>(null);
@@ -688,7 +689,7 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle,
         const isManual = currentNoticeId.startsWith("manual:");
         const reportId = isManual ? currentNoticeId.slice("manual:".length) : currentNoticeId;
         const { data, error: rpcError } = await supabase.functions.invoke("notice-report-display", {
-          body: isManual ? { kind: "manual", manual_notice_id: reportId } : { kind: "notice", notice_id: reportId },
+          body: isManual ? { kind: "manual", manual_notice_id: reportId } : { kind: "notice", notice_id: reportId, ...(supportOverride ? {support_override: supportOverride} : {}) },
         });
         if (!cancelled && session?.user.id === currentUserId && noticeId === currentNoticeId) {
           if (rpcError) {
@@ -743,7 +744,7 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle,
       window.removeEventListener("pageshow", refreshOnResume);
       document.removeEventListener("visibilitychange", refreshOnResume);
     };
-  }, [noticeId, open, session?.user.id]);
+  }, [noticeId, open, session?.user.id, JSON.stringify(supportOverride ?? null)]);
 
   const currentReport = reportNoticeId === noticeId ? report : null;
   const displayNoticeTitle = noticeTitle?.trim() || currentReport?.notice?.title?.trim() || null;
