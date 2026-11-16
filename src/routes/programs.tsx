@@ -1620,7 +1620,7 @@ function ProgramsPage() {
                 >
                   <span className="flex items-center gap-2 whitespace-nowrap">
                     제외된 공고 보기
-                    <span className="rounded-full bg-item-hover px-2 py-1 text-[12px] font-semibold leading-none text-ink-muted">
+                    <span className="inline-flex min-h-6 min-w-6 items-center justify-center rounded-full bg-item-hover px-2 text-[12px] font-semibold leading-none text-ink-muted">
                       {excludedCount}
                     </span>
                   </span>

@@ -142,10 +142,10 @@ export function ProgramCard({
                 <span aria-hidden className="flex size-6 flex-col items-center justify-center gap-[3px]"><span className="size-[2px] rounded-full bg-[#84968E] transition-colors group-hover/more:bg-ink" /><span className="size-[2px] rounded-full bg-[#84968E] transition-colors group-hover/more:bg-ink" /><span className="size-[2px] rounded-full bg-[#84968E] transition-colors group-hover/more:bg-ink" /></span>
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="status-actions-menu w-36 rounded-xl border-0 bg-surface p-1 shadow-none" style={{ boxShadow: "var(--shadow-dropdown)" }}>
+            <DropdownMenuContent align="end" className="status-actions-menu w-36 rounded-[12px] border-0 bg-surface p-1 shadow-none" style={{ boxShadow: "var(--shadow-dropdown)" }}>
               <DropdownMenuItem
                 disabled={!canOpenReport}
-                className="cursor-pointer px-[10px] text-ink hover:bg-dropdown-hover data-[highlighted]:bg-dropdown-hover focus:bg-dropdown-hover focus:text-ink"
+                className="cursor-pointer rounded-[8px] px-[10px] text-ink hover:bg-dropdown-hover data-[highlighted]:bg-dropdown-hover focus:bg-dropdown-hover focus:text-ink"
                 onSelect={() => {
                   if (canOpenReport) onReportClick?.(program);
                 }}
@@ -166,7 +166,7 @@ export function ProgramCard({
                   <DropdownMenuRadioItem
                     key={status}
                     value={status}
-                    className="pl-8 pr-[10px] text-[14px] text-ink hover:bg-dropdown-hover data-[state=checked]:bg-dropdown-hover data-[state=checked]:font-bold data-[state=checked]:text-ink data-[highlighted]:bg-dropdown-hover focus:bg-dropdown-hover"
+                    className="rounded-[8px] pl-8 pr-[10px] text-[14px] text-ink hover:bg-dropdown-hover data-[state=checked]:bg-dropdown-hover data-[state=checked]:font-bold data-[state=checked]:text-ink data-[highlighted]:bg-dropdown-hover focus:bg-dropdown-hover"
                   >
                     {PROGRAM_STATUS_LABEL[status]}
                   </DropdownMenuRadioItem>
@@ -174,7 +174,7 @@ export function ProgramCard({
               </DropdownMenuRadioGroup>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                className="cursor-pointer px-[10px] text-destructive hover:bg-destructive-surface data-[highlighted]:bg-destructive-surface focus:bg-destructive-surface focus:text-destructive"
+                className="cursor-pointer rounded-[8px] px-[10px] text-destructive hover:bg-destructive-surface data-[highlighted]:bg-destructive-surface focus:bg-destructive-surface focus:text-destructive"
                 onSelect={() => onDelete(program)}
               >
                 {isSavedNotice ? "저장 해제" : "삭제하기"}

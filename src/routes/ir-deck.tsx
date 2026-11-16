@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { ArrowRight, FileText, Plus, Presentation, Sparkles } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { cn } from "@/lib/utils";
 import { ProgramSortDropdown, type ProgramSortOption } from "@/components/my-programs/ProgramSortDropdown";
@@ -28,7 +28,20 @@ function IrDeckPage() {
   const [source, setSource] = useState("");
   const [selectedTheme, setSelectedTheme] = useState("Precision Tech");
   const [started, setStarted] = useState(false);
+  const [savedDeckCount, setSavedDeckCount] = useState(0);
   const canAnalyze = source.trim().length > 0;
+
+  useEffect(() => {
+    try {
+      const workspace = JSON.parse(localStorage.getItem("ssiat-ir-deck-workspace-v2") || "null");
+      const legacy = localStorage.getItem("ssiat-ir-deck");
+      setSavedDeckCount(
+        Array.isArray(workspace?.projects) ? workspace.projects.length : legacy ? 1 : 0,
+      );
+    } catch {
+      setSavedDeckCount(0);
+    }
+  }, [screen, started]);
 
   if (screen === "home") return (
     <main className="min-h-full bg-background pb-20">
@@ -36,7 +49,7 @@ function IrDeckPage() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="h-[33px] text-[28px] font-bold leading-[33px] text-ink">AI IR 덱</h1>
-            <span className="inline-flex h-8 min-w-8 items-center justify-center overflow-hidden rounded-full bg-item-hover px-2 text-[18px] font-semibold leading-none text-ink-muted">0</span>
+            <span className="inline-flex h-8 min-w-8 items-center justify-center overflow-hidden rounded-full bg-item-hover px-2 text-[18px] font-semibold leading-none text-ink-muted">{savedDeckCount}</span>
           </div>
           <div className="mt-[18px] flex items-center justify-end gap-3">
             <ProgramSortDropdown value={sort} onChange={setSort} variant="irDeck" />
@@ -110,7 +123,7 @@ function IrDeckPage() {
         </section>
 
         <section className="mt-8 rounded-2xl border border-field-border bg-surface p-7">
-          <div className="mb-5 flex items-center justify-between border-b border-field-border pb-4"><h2 className="text-lg font-semibold text-ink">최근 IR 덱</h2><span className="rounded-full bg-background px-3 py-1 text-xs text-ink-muted">0개</span></div>
+          <div className="mb-5 flex items-center justify-between border-b border-field-border pb-4"><h2 className="text-lg font-semibold text-ink">최근 IR 덱</h2><span className="rounded-full bg-background px-3 py-1 text-xs text-ink-muted">{savedDeckCount}개</span></div>
           <div className="grid min-h-[180px] place-items-center text-center"><div><Presentation className="mx-auto size-9 text-ink-muted/50" /><p className="mt-3 text-sm text-ink-muted">아직 저장된 IR 덱이 없어요.</p><p className="mt-1 text-xs text-ink-muted">사업 자료를 입력해 첫 번째 덱을 만들어보세요.</p></div></div>
         </section>
 

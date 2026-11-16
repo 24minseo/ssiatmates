@@ -31,6 +31,7 @@ export function SlideCanvas({
   onFocus,
   onText,
   onRemove,
+  className,
 }: {
   slide: Slide;
   theme: string;
@@ -39,9 +40,12 @@ export function SlideCanvas({
   onFocus?: (field: string) => void;
   onText?: (field: string, value: string) => void;
   onRemove?: (id: string) => void;
+  className?: string;
 }) {
+  const isEmptyState = slide.body.startsWith("문서에서 확인된 내용이 없습니다.");
   const block = (field: string, text: string) => {
     const style = textStyle(slide.formats[field] || defaultFormat(field));
+    const displayStyle = isEmptyState ? { ...style, textAlign: "center" as const } : style;
     return editable ? (
       <textarea
         aria-label={
@@ -55,14 +59,14 @@ export function SlideCanvas({
         onFocus={() => onFocus?.(field)}
         onChange={(e) => onText?.(field, e.target.value)}
         rows={Math.max(field === "title" ? 1 : 2, text.split("\n").length)}
-        style={style}
+        style={displayStyle}
         className={cn(
           "ir-deck-text w-full resize-y rounded bg-transparent outline-none focus:ring-2 focus:ring-brand",
           activeField === field && "ring-1 ring-brand",
         )}
       />
     ) : (
-      <div className="ir-deck-text whitespace-pre-wrap break-words" style={style}>
+      <div className="ir-deck-text whitespace-pre-wrap break-words" style={displayStyle}>
         {text}
       </div>
     );
@@ -71,10 +75,11 @@ export function SlideCanvas({
     <div
       className={cn(
         "ir-deck-slide mx-auto flex aspect-video w-full flex-col justify-center gap-4 border border-field-border p-[7%] shadow-sm",
-        themes.find(([name]) => name === theme)?.[2],
+        className,
+        isEmptyState ? "bg-surface text-ink" : themes.find(([name]) => name === theme)?.[2],
       )}
     >
-      <div className="h-1 w-10 shrink-0 bg-current opacity-70" />
+      <div className={cn("h-1 w-10 shrink-0 bg-current opacity-70", isEmptyState && "mx-auto")} />
       {block("title", slide.title)}
       {block("body", slide.body)}
       {slide.elements.map((element) => (

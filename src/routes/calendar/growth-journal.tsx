@@ -584,7 +584,7 @@ function GrowthJournalPage() {
                             >
                               <DropdownMenuItem
                                 asChild
-                                className="cursor-pointer px-[10px] text-ink hover:bg-dropdown-hover data-[highlighted]:bg-dropdown-hover focus:bg-dropdown-hover focus:text-ink"
+                                className="cursor-pointer rounded-[8px] px-[10px] text-ink hover:bg-dropdown-hover data-[highlighted]:bg-dropdown-hover focus:bg-dropdown-hover focus:text-ink"
                               >
                                 <Link
                                   to="/calendar/growth-journal/new"
@@ -603,7 +603,7 @@ function GrowthJournalPage() {
                                   setSelectedEntry(null);
                                   setDeleteTarget(entry);
                                 }}
-                                className="cursor-pointer px-[10px] text-destructive hover:bg-destructive-surface data-[highlighted]:bg-destructive-surface focus:bg-destructive-surface focus:text-destructive"
+                                className="cursor-pointer rounded-[8px] px-[10px] text-destructive hover:bg-destructive-surface data-[highlighted]:bg-destructive-surface focus:bg-destructive-surface focus:text-destructive"
                               >
                                 삭제하기
                               </DropdownMenuItem>

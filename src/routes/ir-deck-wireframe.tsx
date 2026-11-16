@@ -1,10 +1,12 @@
-import { ArrowLeft, ArrowRight, FileText, Plus, Trash2, Eye, Download, Check, MoreVertical } from "lucide-react";
+import { ArrowLeft, ArrowRight, ArrowUp, ArrowDown, Plus, Trash2, Eye, Download, Check, MoreVertical, Upload } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { ProgramSortDropdown, type ProgramSortOption } from "@/components/my-programs/ProgramSortDropdown";
+import { SquareAlertIcon } from "@/components/ui/square-alert-icon";
 import { SlideCanvas } from "@/components/ir-deck/SlideCanvas";
 import { TextToolbar } from "@/components/ir-deck/TextToolbar";
 import {
@@ -29,28 +31,46 @@ import {
 import "@/components/ir-deck/ir-deck.css";
 
 const steps = ["사업 내용 입력", "사업 내용 확인", "디자인 선택", "슬라이드 편집"];
-const Steps = ({ current }: { current: number }) => (
-  <div className="my-7 flex flex-wrap justify-center gap-3 text-sm text-ink-muted">
-    {steps.map((s, i) => (
-      <div
-        key={s}
-        className={cn(
-          "flex items-center gap-2 rounded-full border border-field-border px-4 py-2",
-          i + 1 === current && "border-brand bg-item-hover-selected font-semibold text-brand",
-        )}
-        aria-current={i + 1 === current ? "step" : undefined}
-      >
-        <span
-          className={cn(
-            "grid size-6 place-items-center rounded-full bg-background text-xs",
-            i + 1 === current && "bg-brand text-white",
-          )}
-        >
-          {i + 1 < current ? "✓" : i + 1}
-        </span>
-        {s}
-      </div>
-    ))}
+const trialStorageKey = "ssiat-ir-deck-trial-v1";
+const initialCredits = 100;
+const designCost = 30;
+type TrialState = { credits: number };
+const defaultTrialState: TrialState = { credits: initialCredits };
+const Steps = ({ current, align = "center" }: { current: number; align?: "center" | "start" }) => (
+  <div className={cn("my-5 flex w-full px-2 text-sm text-ink-muted", align === "center" ? "justify-center" : "justify-start")}>
+    <ol className="flex w-full max-w-[620px] items-start justify-between">
+      {steps.map((s, i) => {
+        const step = i + 1;
+        const active = step === current;
+        const complete = step < current;
+
+        return (
+          <li key={s} className="relative flex min-w-0 flex-1 justify-center" aria-current={active ? "step" : undefined}>
+            {step < steps.length && (
+              <span
+                aria-hidden="true"
+                className={cn(
+                  "absolute left-1/2 right-0 top-3 h-px bg-field-border",
+                  complete && "bg-brand/50",
+                )}
+              />
+            )}
+            <div className="relative z-10 flex min-w-0 flex-col items-center gap-1.5 bg-background px-2 text-center">
+              <span
+                className={cn(
+                  "grid size-6 place-items-center rounded-full border border-field-border bg-surface text-[11px] font-medium transition-colors",
+                  complete && "border-brand/40 text-brand",
+                  active && "border-brand bg-item-hover-selected font-semibold text-brand",
+                )}
+              >
+                {complete ? "✓" : step}
+              </span>
+              <span className={cn("truncate px-1 text-[11px] sm:text-xs", active && "font-semibold text-brand")}>{s}</span>
+            </div>
+          </li>
+        );
+      })}
+    </ol>
   </div>
 );
 const button =
@@ -59,7 +79,7 @@ const primary = cn(button, "border-brand bg-brand text-brand-foreground hover:bg
 const panel = "rounded-2xl border border-field-border bg-surface p-7";
 const input =
   "w-full rounded-xl border border-field-border bg-background p-4 text-sm text-ink outline-none focus:border-brand";
-const notice = "mt-5 rounded-xl bg-item-hover-selected p-4 text-sm leading-6 text-ink-muted";
+const notice = "mt-5 flex items-start gap-3 rounded-xl bg-item-hover p-4 text-sm leading-6 text-ink-muted";
 type Screen =
   "home" | "input" | "processing" | "review" | "themes" | "editor" | "preview" | "saved";
 
@@ -79,7 +99,14 @@ export function IrDeckWireframe() {
   const [mediaError, setMediaError] = useState("");
   const [mediaBusy, setMediaBusy] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
+  const [renameTarget, setRenameTarget] = useState<{ id: string; title: string } | null>(null);
+  const [renameTitle, setRenameTitle] = useState("");
+  const [sort, setSort] = useState<ProgramSortOption>("created");
+  const [devEmptyPreview, setDevEmptyPreview] = useState(false);
+  const [trial, setTrial] = useState<TrialState>(defaultTrialState);
+  const [billingOpen, setBillingOpen] = useState(false);
   const { draft, projects } = workspace;
+  const displayedProjects = devEmptyPreview ? [] : projects;
   const { source, theme, slides, activeSlide } = draft;
   const currentSlide = slides[activeSlide] || slides[0]!;
 
@@ -90,6 +117,16 @@ export function IrDeckWireframe() {
         localStorage.getItem("ssiat-ir-deck"),
       );
       if (restored) setWorkspace(restored);
+      const savedTrial = localStorage.getItem(trialStorageKey);
+      if (savedTrial) {
+        const parsed = JSON.parse(savedTrial) as Partial<TrialState>;
+        setTrial({
+          credits:
+            typeof parsed.credits === "number"
+              ? Math.max(0, parsed.credits)
+              : initialCredits,
+        });
+      }
     } catch {
       setStorageBlocked(true);
       setMessage(
@@ -97,6 +134,11 @@ export function IrDeckWireframe() {
       );
     }
     setLoaded(true);
+  }, []);
+  useEffect(() => {
+    if (import.meta.env.DEV && new URLSearchParams(window.location.search).get("empty") === "1") {
+      setDevEmptyPreview(true);
+    }
   }, []);
   useEffect(() => {
     if (!loaded || storageBlocked) return;
@@ -108,6 +150,14 @@ export function IrDeckWireframe() {
       );
     }
   }, [workspace, loaded, storageBlocked]);
+  useEffect(() => {
+    if (!loaded || storageBlocked) return;
+    try {
+      localStorage.setItem(trialStorageKey, JSON.stringify(trial));
+    } catch {
+      setMessage("무료 체험 상태를 저장하지 못했습니다. 브라우저 저장소를 확인해 주세요.");
+    }
+  }, [trial, loaded, storageBlocked]);
 
   function patchDraft(patch: Partial<Draft>) {
     setWorkspace((w) => ({ ...w, draft: { ...w.draft, ...patch } }));
@@ -127,10 +177,28 @@ export function IrDeckWireframe() {
     patchDraft({ activeSlide: index });
     setActiveField("title");
   }
+  function moveSlide(index: number, direction: -1 | 1) {
+    const nextIndex = index + direction;
+    if (nextIndex < 0 || nextIndex >= slides.length) return;
+    const nextSlides = [...slides];
+    [nextSlides[index], nextSlides[nextIndex]] = [nextSlides[nextIndex], nextSlides[index]];
+    patchDraft({
+      slides: nextSlides,
+      activeSlide: activeSlide === index ? nextIndex : activeSlide === nextIndex ? index : activeSlide,
+    });
+  }
   function startNew() {
     setWorkspace((w) => ({ ...w, draft: newDraft() }));
     setActiveField("title");
     setScreen("input");
+  }
+  function consumeDesignCredits() {
+    if (trial.credits < designCost) {
+      setBillingOpen(true);
+      return false;
+    }
+    setTrial((current) => ({ ...current, credits: current.credits - designCost }));
+    return true;
   }
   function deleteProject(projectId: string, title: string) {
     setWorkspace((w) => {
@@ -147,6 +215,41 @@ export function IrDeckWireframe() {
   function requestDelete(projectId: string, title: string) {
     setDeleteTarget({ id: projectId, title });
   }
+  function requestRename(projectId: string, title: string) {
+    setRenameTarget({ id: projectId, title });
+    setRenameTitle(title);
+  }
+  function renameProject() {
+    if (!renameTarget || !renameTitle.trim()) return;
+    const next = {
+      ...workspace,
+      projects: workspace.projects.map((project) =>
+        project.id === renameTarget.id
+          ? { ...project, title: renameTitle.trim(), updatedAt: Date.now() }
+          : project,
+      ),
+    };
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(next));
+      setWorkspace(next);
+      setRenameTarget(null);
+    } catch {
+      setMessage("제목을 저장하지 못했습니다. 브라우저 저장 공간·접근 권한을 확인해 주세요.");
+    }
+  }
+  function openProject(projectId: string) {
+    const project = projects.find((item) => item.id === projectId);
+    if (!project) return;
+    setWorkspace((w) => ({
+      ...w,
+      projects: w.projects.map((item) =>
+        item.id === projectId ? { ...item, lastViewedAt: Date.now() } : item,
+      ),
+      draft: { ...structuredClone(project.draft), projectId: project.id },
+    }));
+    setActiveField("title");
+    setScreen("editor");
+  }
   function analyze() {
     if (!source.trim() && !draft.fileName) {
       setMessage("사업계획서 파일을 선택하거나 사업 내용을 입력해 주세요.");
@@ -155,6 +258,15 @@ export function IrDeckWireframe() {
     setMessage("");
     patchDraft({ review: extractSections(source) });
     setScreen("processing");
+  }
+  function handlePlanFile(file: File | undefined) {
+    if (!file) return;
+    if (!/\.pdf$/i.test(file.name)) {
+      setMessage("PDF 파일을 선택해 주세요.");
+      return;
+    }
+    setMessage("");
+    patchDraft({ fileName: file.name });
   }
   function changeText(field: string, value: string) {
     patchSlide((slide) =>
@@ -187,14 +299,18 @@ export function IrDeckWireframe() {
     const id = draft.projectId || newId();
     const savedDraft = { ...draft, projectId: id };
     const previous = projects.find((p) => p.id === id);
+    const coverTitle = slides[0]?.title?.trim();
+    const shouldSyncCoverTitle =
+      !previous || previous.title === previous.draft.slides[0]?.title;
     const project = {
       id,
       title:
-        previous?.title ||
+        (shouldSyncCoverTitle ? coverTitle : previous?.title) ||
         draft.review["사업/서비스명"]?.trim() ||
-        slides[0]?.title ||
         "제목 없는 IR Deck",
       updatedAt: Date.now(),
+      createdAt: previous?.createdAt ?? Date.now(),
+      lastViewedAt: previous?.lastViewedAt ?? Date.now(),
       draft: structuredClone(savedDraft),
     };
     const next = { draft: savedDraft, projects: [...projects.filter((p) => p.id !== id), project] };
@@ -266,7 +382,7 @@ export function IrDeckWireframe() {
       setMediaBusy(false);
     }
   }
-  function page(title: string, subtitle: string, content: ReactNode, actions?: ReactNode) {
+  function page(title: string, subtitle: string, content: ReactNode, actions?: ReactNode, topContent?: ReactNode, titleClass = "text-[28px]") {
     return (
       <main className="ir-deck-workspace min-h-full bg-background pb-20" aria-busy={!loaded}>
         {message && (
@@ -280,12 +396,17 @@ export function IrDeckWireframe() {
             </button>
           </div>
         )}
+        {topContent && <div className="mb-5">{topContent}</div>}
         <header className="mb-7 flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="text-[28px] font-bold text-ink">{title}</h1>
-            <p className="mt-2 text-ink-muted">{subtitle}</p>
+            <h1 className={cn(titleClass, "font-bold leading-tight text-ink")}>{title}</h1>
+            {subtitle && title === "AI IR 덱" && (
+              <p className="mt-px text-base font-medium text-ink-muted">{subtitle}</p>
+            )}
           </div>
-          {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
+          </div>
         </header>
         {loaded ? content : <p role="status">저장된 덱을 불러오는 중입니다.</p>}
         {loaded &&
@@ -300,21 +421,101 @@ export function IrDeckWireframe() {
             document.body,
           )}
         <AlertDialog open={Boolean(deleteTarget)} onOpenChange={(open) => !open && setDeleteTarget(null)}>
-          <AlertDialogContent className="w-[calc(100vw-32px)] max-w-[560px] rounded-[20px] border-0 bg-surface p-8">
-            <AlertDialogHeader className="space-y-2 text-left">
-              <AlertDialogTitle className="mb-2 pr-8 text-[20px] font-bold leading-7 text-ink">IR 덱을 삭제할까요?</AlertDialogTitle>
-              <AlertDialogDescription className="text-[14px] leading-6 text-ink-muted">삭제한 덱은 복구할 수 없습니다.</AlertDialogDescription>
-              <div className="mt-3 px-1 text-[14px] font-medium leading-5 text-submenu-text">삭제할 IR 덱</div>
-              <div className="mt-2 flex h-11 w-full min-w-0 items-center overflow-hidden rounded-[12px] border border-field-border px-3 text-[16px] font-semibold leading-6 text-ink" title={deleteTarget?.title}>
-                <span className="block min-w-0 truncate">{deleteTarget?.title}</span>
+          <AlertDialogContent className="w-[calc(100vw-32px)] max-w-[560px] overflow-hidden rounded-[20px] border-0 bg-surface">
+            <AlertDialogHeader className="min-w-0 w-full max-w-full">
+              <AlertDialogTitle className="mb-4 text-[20px] font-bold leading-7 text-ink">IR 덱을 삭제할까요?</AlertDialogTitle>
+              <div className="min-h-10">
+                <AlertDialogDescription className="flex h-11 min-w-0 w-full max-w-full items-center gap-1 overflow-hidden rounded-[12px] bg-item-hover px-3 py-2 text-left text-[14px] font-medium leading-5 text-ink-muted">
+                  <SquareAlertIcon className="size-4 shrink-0 text-icon-muted" />
+                  <span className="min-w-0 truncate">삭제한 IR 덱은 복구할 수 없습니다.</span>
+                </AlertDialogDescription>
+              </div>
+              <div className="mt-2 min-h-12 min-w-0 w-full max-w-full text-left">
+                <p className="px-1 text-[14px] font-medium leading-5 text-submenu-text">삭제할 IR 덱</p>
+                <p className="mt-2 flex h-11 w-full min-w-0 max-w-full items-center overflow-hidden rounded-[12px] border border-field-border px-3 text-[16px] font-semibold leading-6 text-ink" title={deleteTarget?.title}>
+                  <span className="block min-w-0 truncate">{deleteTarget?.title}</span>
+                </p>
               </div>
             </AlertDialogHeader>
             <AlertDialogFooter className="mt-4 flex-row justify-end gap-2 sm:space-x-0">
               <AlertDialogCancel className="mt-0 h-11 rounded-[12px] border-0 bg-secondary-btn px-5 text-[15px] font-semibold text-secondary-btn-text shadow-none hover:bg-secondary-btn-hover hover:text-secondary-btn-text-hover focus-visible:ring-1 focus-visible:ring-focus-soft">취소</AlertDialogCancel>
-              <AlertDialogAction className="h-11 rounded-[12px] border-0 bg-[#E95152] px-5 text-[15px] font-semibold text-white shadow-none hover:bg-[#E95152]/90 focus-visible:ring-1 focus-visible:ring-focus-soft" onClick={(event) => { event.preventDefault(); if (deleteTarget) { deleteProject(deleteTarget.id, deleteTarget.title); setDeleteTarget(null); } }}>삭제하기</AlertDialogAction>
+              <AlertDialogAction className="h-11 rounded-[12px] border-0 bg-destructive px-5 text-[15px] font-semibold text-white shadow-none hover:bg-destructive/90 focus-visible:ring-1 focus-visible:ring-focus-soft" onClick={(event) => { event.preventDefault(); if (deleteTarget) { deleteProject(deleteTarget.id, deleteTarget.title); setDeleteTarget(null); } }}>삭제하기</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+        <Dialog
+          open={Boolean(renameTarget)}
+          onOpenChange={(open) => {
+            if (!open) setRenameTarget(null);
+          }}
+        >
+          <DialogContent
+            className="rounded-[20px] border-0 bg-surface p-7"
+            closeClassName="right-5 top-5 flex size-9 items-center justify-center rounded-lg text-ink-muted opacity-100 transition-colors hover:bg-item-hover hover:text-ink focus:outline-none focus:ring-1 focus:ring-focus-soft focus:ring-offset-0"
+          >
+            <DialogTitle className="text-[20px] font-bold text-ink">IR 덱 제목 수정</DialogTitle>
+            <DialogDescription className="text-sm text-ink-muted">
+              카드에 표시할 제목을 입력해 주세요.
+            </DialogDescription>
+            <input
+              autoFocus
+              value={renameTitle}
+              onChange={(event) => setRenameTitle(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") renameProject();
+              }}
+              className="h-11 rounded-[12px] border border-field-border bg-surface px-3 text-[15px] text-ink outline-none focus:border-brand focus:ring-2 focus:ring-focus-soft"
+              aria-label="IR 덱 제목"
+            />
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                className="h-11 rounded-[12px] border-0 bg-secondary-btn px-5 text-[15px] font-semibold text-secondary-btn-text shadow-none transition-colors hover:bg-secondary-btn-hover hover:text-secondary-btn-text-hover focus-visible:ring-1 focus-visible:ring-focus-soft"
+                onClick={() => setRenameTarget(null)}
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                className="h-11 rounded-[12px] border-0 bg-brand px-5 text-[15px] font-semibold text-brand-foreground shadow-none transition-colors hover:bg-brand/88 active:bg-brand-pressed disabled:cursor-not-allowed disabled:bg-brand-disabled disabled:text-brand-foreground disabled:opacity-100 focus-visible:ring-1 focus-visible:ring-focus-soft"
+                disabled={!renameTitle.trim()}
+                onClick={renameProject}
+              >
+                저장
+              </button>
+            </div>
+          </DialogContent>
+        </Dialog>
+        <Dialog open={billingOpen} onOpenChange={setBillingOpen}>
+          <DialogContent className="rounded-[20px] border-0 bg-surface p-7">
+            <DialogTitle className="text-[20px] font-bold text-ink">크레딧이 부족해요</DialogTitle>
+            <DialogDescription className="text-sm leading-6 text-ink-muted">
+              디자인 생성에는 {designCost}크레딧이 필요합니다. 크레딧을 충전하거나 Pro 플랜을 선택해 주세요.
+            </DialogDescription>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <button
+                type="button"
+                className="h-11 rounded-[12px] border border-field-border bg-surface px-4 text-sm font-semibold text-ink transition-colors hover:bg-item-hover focus-visible:ring-1 focus-visible:ring-focus-soft"
+                onClick={() => {
+                  setBillingOpen(false);
+                  setMessage("크레딧 충전 기능은 준비 중입니다.");
+                }}
+              >
+                크레딧 충전
+              </button>
+              <button
+                type="button"
+                className="h-11 rounded-[12px] border-0 bg-brand px-4 text-sm font-semibold text-brand-foreground transition-colors hover:bg-brand/90 focus-visible:ring-1 focus-visible:ring-focus-soft"
+                onClick={() => {
+                  setBillingOpen(false);
+                  setMessage("Pro 플랜은 준비 중입니다.");
+                }}
+              >
+                Pro 플랜 알아보기
+              </button>
+            </div>
+          </DialogContent>
+        </Dialog>
         <Dialog
           open={media !== null}
           onOpenChange={(open) => {
@@ -384,47 +585,58 @@ export function IrDeckWireframe() {
       "AI IR 덱",
       "사업의 핵심을 투자자가 이해할 수 있는 이야기로 정리해 보세요.",
       <>
-        <div className="mb-5 flex justify-between border-b border-field-border pb-4">
-          <span>
-            전체{" "}
-            <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-item-hover px-2 text-sm leading-none text-ink-muted">
-              {projects.length}
+        <div className="relative mb-5 h-[48px] w-full border-b border-field-border">
+          <span className="absolute left-0 top-0 inline-flex h-[42px] items-center justify-center gap-[6px] text-[18px] font-medium text-ink">
+            전체
+            <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-[13px] bg-item-hover px-[7px] py-1 text-[14px] font-medium text-ink-muted">
+            {displayedProjects.length}
             </span>
           </span>
-          <span className="text-sm text-ink-muted">최근 수정 순</span>
+          <div className="absolute right-0 top-[-1px]">
+            <ProgramSortDropdown value={sort} onChange={setSort} variant="irDeck" />
+          </div>
         </div>
-        {projects.length ? (
-          <div className="grid gap-5 md:grid-cols-3">
-            {[...projects]
-              .sort((a, b) => b.updatedAt - a.updatedAt)
+        <div className="grid gap-5 md:grid-cols-3">
+          <button
+            type="button"
+            onClick={startNew}
+            disabled={!loaded}
+            className="group flex min-h-[298px] flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-field-border bg-surface text-ink-muted transition-colors hover:bg-item-hover disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <span className="flex size-12 items-center justify-center rounded-full bg-item-hover text-ink-muted transition-colors group-hover:bg-brand group-hover:text-white">
+              <Plus className="size-6" />
+            </span>
+            <span className="text-[16px] font-semibold text-ink">새 IR 덱 만들기</span>
+          </button>
+          {[...displayedProjects]
+              .sort((a, b) => {
+                if (sort === "deadline") {
+                  return (b.createdAt ?? b.updatedAt) - (a.createdAt ?? a.updatedAt);
+                }
+                if (sort === "fit") {
+                  return (b.lastViewedAt ?? b.updatedAt) - (a.lastViewedAt ?? a.updatedAt);
+                }
+                return b.updatedAt - a.updatedAt;
+              })
               .map((project) => (
                 <div
                   key={project.id}
                   className="overflow-visible rounded-xl border border-field-border text-left hover:border-brand"
-                  onClick={() => {
-                    setWorkspace((w) => ({
-                      ...w,
-                      draft: { ...structuredClone(project.draft), projectId: project.id },
-                    }));
-                    setActiveField("title");
-                    setScreen("editor");
-                  }}
+                  onClick={() => openProject(project.id)}
                 >
                   <div
-                    className="ir-deck-thumbnail relative aspect-video overflow-hidden rounded-t-xl bg-item-hover"
+                    className="ir-deck-thumbnail relative aspect-video overflow-hidden rounded-t-xl bg-transparent"
                     aria-hidden="true"
                   >
-                    <div className="absolute left-0 top-0 w-[900px] origin-top-left scale-[0.4]">
-                      <SlideCanvas slide={project.draft.slides[0]!} theme={project.draft.theme} />
+                    <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+                      <div className="w-[250%] shrink-0 origin-center scale-[0.4]">
+                      <SlideCanvas className="border-0 shadow-none" slide={project.draft.slides[0]!} theme={project.draft.theme} />
+                      </div>
                     </div>
                   </div>
                   <div className="border-t border-field-border p-4">
                     <div className="flex items-start justify-between gap-3">
-                      <button type="button" className="min-w-0 flex-1 text-left" onClick={() => {
-                        setWorkspace((w) => ({ ...w, draft: { ...structuredClone(project.draft), projectId: project.id } }));
-                        setActiveField("title");
-                        setScreen("editor");
-                      }}>
+                      <button type="button" className="min-w-0 flex-1 text-left" onClick={() => openProject(project.id)}>
                         <strong className="block truncate text-ink">{project.title}</strong>
                       </button>
                       <DropdownMenu>
@@ -433,9 +645,12 @@ export function IrDeckWireframe() {
                             <MoreVertical className="size-4" />
                           </button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" onClick={(event) => event.stopPropagation()} className="w-36 rounded-xl border-0 bg-surface p-1 shadow-none" style={{ boxShadow: "var(--shadow-dropdown)" }}>
-                          <DropdownMenuItem onSelect={() => requestDelete(project.id, project.title)} className="cursor-pointer px-[10px] text-destructive hover:bg-destructive-surface data-[highlighted]:bg-destructive-surface focus:bg-destructive-surface focus:text-destructive">
-                            <Trash2 className="size-4" />삭제하기
+                        <DropdownMenuContent align="end" sideOffset={6} onClick={(event) => event.stopPropagation()} className="min-w-0 w-fit rounded-[12px] border-0 bg-surface p-1 shadow-none" style={{ boxShadow: "var(--shadow-dropdown)" }}>
+                          <DropdownMenuItem onSelect={() => requestRename(project.id, project.title)} className="min-h-10 w-auto cursor-pointer rounded-[8px] px-[14px] text-ink hover:bg-dropdown-hover data-[highlighted]:bg-dropdown-hover focus:bg-dropdown-hover focus:text-ink">
+                            제목 수정
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onSelect={() => requestDelete(project.id, project.title)} className="min-h-10 w-auto cursor-pointer rounded-[8px] px-[14px] text-destructive hover:bg-destructive-surface data-[highlighted]:bg-destructive-surface focus:bg-destructive-surface focus:text-destructive">
+                            덱 삭제
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -446,23 +661,8 @@ export function IrDeckWireframe() {
                   </div>
                 </div>
               ))}
-          </div>
-        ) : (
-          <div className="px-6 py-16 text-center">
-            <div className="mx-auto mb-2 flex h-[180px] w-[180px] items-center justify-center">
-              <img src="/assets/sidebar/ir-deck.svg" alt="" className="size-14 opacity-40" />
-            </div>
-            <p className="text-[18px] font-semibold text-ink">아직 만든 IR 덱이 없어요</p>
-            <p className="mt-1 text-[15px] text-ink-muted">첫 번째 IR 덱을 만들어 보세요.</p>
-            <button type="button" onClick={startNew} className={cn(primary, "mt-5")}>
-              새 IR 덱 만들기
-            </button>
-          </div>
-        )}
+        </div>
       </>,
-      <button type="button" onClick={startNew} disabled={!loaded} className={primary}>
-        새 IR 덱 생성
-      </button>,
     );
 
   if (screen === "processing")
@@ -492,11 +692,19 @@ export function IrDeckWireframe() {
   if (screen === "review")
     return page(
       "사업 분석 내용 확인",
-      "파악한 내용을 확인하고 필요한 부분을 직접 수정해 주세요.",
+      "",
       <>
         <Steps current={2} />
-        <section className={panel}>
-          <h2 className="text-xl font-semibold text-ink">AI가 이해한 사업</h2>
+        <section className="space-y-4">
+          <div className={cn(notice, "mt-0")}>
+            <SquareAlertIcon className="mt-1 size-4 shrink-0 text-icon-muted" aria-hidden="true" />
+            <div>
+              <strong className="block">슬라이드 구성 7개 미리보기</strong>
+              <p className="mt-0 leading-5 font-normal">
+                추가하고 싶은 주제는 슬라이드 편집 단계에서 직접 작성할 수 있어요.
+              </p>
+            </div>
+          </div>
           <div className="grid gap-3">
             {reviewFields.map(([name, destination]) => (
               <label key={name} className="rounded-xl border border-field-border p-5">
@@ -513,14 +721,6 @@ export function IrDeckWireframe() {
                 <small className="text-ink-muted">반영 위치: {destination}</small>
               </label>
             ))}
-          </div>
-          <div className={notice}>
-            <strong>슬라이드 구성 미리보기 · 7장</strong>
-            <p>{slideNames.join(" → ")}</p>
-            <p>비어 있는 장은 편집기에서 작성하거나 삭제할 수 있습니다.</p>
-            <p className="mt-3 font-semibold">
-              사업계획서에 없는 내용은 편집기에서 ＋ 슬라이드 추가를 눌러 직접 작성할 수 있어요.
-            </p>
           </div>
         </section>
         <div className="mt-6 flex justify-end gap-3">
@@ -564,9 +764,6 @@ export function IrDeckWireframe() {
             </button>
           ))}
         </section>
-        <p className="mt-4 text-sm text-ink-muted">
-          선택한 디자인은 편집 화면과 미리보기, PDF에 적용됩니다.
-        </p>
         <div className="mt-6 flex justify-end gap-3">
           <button type="button" className={button} onClick={() => setScreen("review")}>
             이전
@@ -574,13 +771,14 @@ export function IrDeckWireframe() {
           <button
             type="button"
             onClick={() => {
+              if (!consumeDesignCredits()) return;
               patchDraft({ slides: buildSlides(draft.review, source), activeSlide: 0 });
               setActiveField("title");
               setScreen("editor");
             }}
             className={primary}
           >
-            이 디자인으로 IR 덱 만들기
+            이 디자인으로 IR 덱 만들기 ({designCost}크레딧 소모)
             <ArrowRight className="size-4" />
           </button>
         </div>
@@ -598,13 +796,12 @@ export function IrDeckWireframe() {
         </h2>
         <p className="mt-3 text-ink-muted">최근 파일 목록에서 다시 열어 편집할 수 있습니다.</p>
         <div className="mt-7 flex justify-center gap-3">
-          <button type="button" className={primary} onClick={() => setScreen("home")}>
-            최근 파일에서 보기
-          </button>
           <button type="button" className={button} onClick={() => setScreen("editor")}>
             계속 편집
           </button>
-          {pdf}
+          <button type="button" className={primary} onClick={() => setScreen("home")}>
+            최근 파일에서 보기
+          </button>
         </div>
       </section>,
     );
@@ -613,26 +810,9 @@ export function IrDeckWireframe() {
     return page(
       "IR 덱 미리보기",
       "전체 슬라이드를 확인하고 PDF로 저장할 수 있습니다.",
-      <section className={cn(panel, "mx-auto max-w-5xl")}>
+      <section className="mx-auto max-w-5xl">
         <SlideCanvas slide={currentSlide} theme={theme} />
-        <div className="mt-6 flex flex-wrap justify-center gap-2">
-          {slides.map((slide, i) => (
-            <button
-              type="button"
-              key={slide.id}
-              aria-label={`${i + 1}번 슬라이드`}
-              aria-current={i === activeSlide ? "page" : undefined}
-              onClick={() => selectSlide(i)}
-              className={cn(
-                button,
-                i === activeSlide && "border-brand bg-item-hover-selected text-brand",
-              )}
-            >
-              {i + 1}
-            </button>
-          ))}
-        </div>
-        <div className="mt-4 flex items-center justify-center gap-3">
+        <div className="mt-6 flex items-center justify-center gap-3">
           <button
             type="button"
             className={button}
@@ -671,128 +851,141 @@ export function IrDeckWireframe() {
       `슬라이드 ${activeSlide + 1} / ${slides.length} · 슬라이드 내용을 클릭해 바로 수정하세요.`,
       <>
         <Steps current={4} />
-        <section className="grid gap-5 lg:grid-cols-[220px_1fr]">
-          <aside className={cn(panel, "p-4")}>
-            <h2 className="mb-4 font-semibold">슬라이드</h2>
-            {slides.map((slide, i) => (
-              <div
-                key={slide.id}
-                className={cn(
-                  "mb-2 flex items-center gap-2 rounded-lg border p-3 text-sm",
-                  i === activeSlide
-                    ? "border-brand bg-item-hover-selected text-brand"
-                    : "border-field-border",
-                )}
-              >
+        <section className="overflow-hidden rounded-2xl border border-field-border bg-background shadow-sm">
+          <div className="flex min-h-[680px] flex-col lg:flex-row">
+            <aside className="w-full shrink-0 border-b border-field-border bg-surface lg:w-[236px] lg:border-b-0 lg:border-r">
+              <div className="flex items-center justify-between border-b border-field-border px-4 py-3">
+                <div>
+                  <h2 className="font-semibold text-ink">슬라이드</h2>
+                  <p className="mt-0.5 text-xs text-ink-muted">{slides.length}개 슬라이드</p>
+                </div>
                 <button
                   type="button"
-                  className="min-w-0 flex-1 break-words text-left"
-                  onClick={() => selectSlide(i)}
-                  aria-current={i === activeSlide ? "true" : undefined}
-                >
-                  {i + 1} {slide.name}
-                </button>
-                <button
-                  type="button"
-                  aria-label={`${i + 1}번 슬라이드 삭제`}
-                  disabled={slides.length === 1}
-                  className="disabled:opacity-30"
+                  className="inline-flex size-9 items-center justify-center rounded-lg border border-field-border text-ink-muted transition-colors hover:bg-item-hover hover:text-ink"
+                  aria-label="슬라이드 추가"
                   onClick={() => {
-                    patchDraft({
-                      slides: slides.filter((_, n) => n !== i),
-                      activeSlide: Math.max(
-                        0,
-                        activeSlide > i
-                          ? activeSlide - 1
-                          : Math.min(activeSlide, slides.length - 2),
-                      ),
-                    });
+                    const next = [...slides];
+                    next.splice(activeSlide + 1, 0, newSlide());
+                    patchDraft({ slides: next, activeSlide: activeSlide + 1 });
                     setActiveField("title");
                   }}
                 >
-                  <Trash2 className="size-4" />
+                  <Plus className="size-4" />
                 </button>
               </div>
-            ))}
-            <button
-              type="button"
-              className={button}
-              onClick={() => {
-                const next = [...slides];
-                next.splice(activeSlide + 1, 0, newSlide());
-                patchDraft({ slides: next, activeSlide: activeSlide + 1 });
-                setActiveField("title");
-              }}
-            >
-              <Plus className="size-4" />
-              슬라이드 추가
-            </button>
-          </aside>
-          <div className="min-w-0">
-            <p className="mb-3 text-sm text-ink-muted">
-              수정할 글자 블록을 클릭한 뒤 서식을 바꾸세요. 서식은 해당 블록 전체에 적용됩니다.
-            </p>
-            <TextToolbar
-              format={currentSlide.formats[activeField] || defaultFormat(activeField)}
-              onChange={changeFormat}
-              onBullets={() => {
-                const lines = currentSlide.body.split("\n");
-                const remove = lines.every((line) => line.startsWith("• "));
-                patchSlide((slide) => ({
-                  ...slide,
-                  body: lines
-                    .map((line) =>
-                      remove ? line.slice(2) : line.startsWith("• ") ? line : `• ${line}`,
-                    )
-                    .join("\n"),
-                }));
-                setActiveField("body");
-              }}
-            />
-            <div className="mb-3 flex flex-wrap gap-2">
-              <button
-                type="button"
-                className={button}
-                onClick={() => addElement({ id: newId(), type: "text", text: "새 텍스트 상자" })}
-              >
-                ＋ 텍스트 상자
-              </button>
-              <button type="button" className={button} onClick={() => openMedia("image")}>
-                이미지 삽입
-              </button>
-              <button type="button" className={button} onClick={() => openMedia("video")}>
-                동영상 삽입
-              </button>
-            </div>
-            <div className={cn(panel, "p-5")}>
-              <SlideCanvas
-                slide={currentSlide}
-                theme={theme}
-                editable
-                activeField={activeField}
-                onFocus={setActiveField}
-                onText={changeText}
-                onRemove={(id) => {
-                  patchSlide((slide) => {
-                    const formats = { ...slide.formats };
-                    delete formats[`extra:${id}`];
-                    return {
-                      ...slide,
-                      formats,
-                      elements: slide.elements.filter((e) => e.id !== id),
-                    };
-                  });
-                  setActiveField("body");
-                }}
-              />
+              <div className="flex gap-2 overflow-x-auto p-3 lg:block lg:space-y-2 lg:overflow-visible">
+                {slides.map((slide, i) => (
+                  <div key={slide.id} className="group/slide relative flex shrink-0 items-center gap-2 lg:block">
+                    <button
+                      type="button"
+                      onClick={() => selectSlide(i)}
+                      aria-current={i === activeSlide ? "true" : undefined}
+                      className={cn(
+                        "group relative block w-[132px] rounded-xl border p-2 text-left transition-all lg:w-full",
+                        i === activeSlide
+                          ? "border-brand bg-item-hover-selected shadow-sm"
+                          : "border-field-border bg-surface hover:border-brand/50 hover:bg-item-hover",
+                      )}
+                    >
+                      <span className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-ink-muted">
+                        <span className={cn("inline-flex size-5 items-center justify-center rounded-md", i === activeSlide ? "bg-brand text-white" : "bg-item-hover text-ink-muted")}>
+                          {i + 1}
+                        </span>
+                        <span className="min-w-0 truncate">{slide.name}</span>
+                      </span>
+                      <span className="block aspect-video overflow-hidden rounded-md border border-field-border bg-background">
+                        <SlideCanvas slide={slide} theme={theme} className="pointer-events-none origin-top-left scale-[0.18] !w-[555%] !max-w-none !border-0 !p-[7%] text-[10px] shadow-none" />
+                      </span>
+                    </button>
+                    <div className="absolute right-2 top-2 z-20 hidden items-center gap-1 rounded-full bg-surface/95 p-0.5 shadow-md group-hover/slide:flex group-focus-within/slide:flex lg:flex lg:opacity-0 lg:transition-opacity lg:group-hover/slide:opacity-100 lg:group-focus-within/slide:opacity-100">
+                      <button
+                        type="button"
+                        aria-label={`${i + 1}번 슬라이드 위로 이동`}
+                        title="위로 이동"
+                        disabled={i === 0}
+                        className="grid size-6 place-items-center rounded-full text-ink-muted hover:bg-item-hover hover:text-ink disabled:opacity-30"
+                        onClick={() => moveSlide(i, -1)}
+                      >
+                        <ArrowUp className="size-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        aria-label={`${i + 1}번 슬라이드 아래로 이동`}
+                        title="아래로 이동"
+                        disabled={i === slides.length - 1}
+                        className="grid size-6 place-items-center rounded-full text-ink-muted hover:bg-item-hover hover:text-ink disabled:opacity-30"
+                        onClick={() => moveSlide(i, 1)}
+                      >
+                        <ArrowDown className="size-3.5" />
+                      </button>
+                    </div>
+                    <button
+                      type="button"
+                      aria-label={`${i + 1}번 슬라이드 삭제`}
+                      disabled={slides.length === 1}
+                      title="슬라이드 삭제"
+                      className="absolute bottom-2 right-2 z-20 hidden size-7 items-center justify-center rounded-full bg-surface/95 text-ink-muted shadow-md transition hover:bg-red-50 hover:text-destructive disabled:opacity-30 group-hover/slide:inline-flex group-focus-within/slide:inline-flex lg:inline-flex lg:opacity-0 lg:group-hover/slide:opacity-100 lg:group-focus-within/slide:opacity-100"
+                      onClick={() => {
+                        patchDraft({
+                          slides: slides.filter((_, n) => n !== i),
+                          activeSlide: Math.max(0, activeSlide > i ? activeSlide - 1 : Math.min(activeSlide, slides.length - 2)),
+                        });
+                        setActiveField("title");
+                      }}
+                    >
+                      <Trash2 className="size-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </aside>
+            <div className="min-w-0 flex-1">
+              <div className="border-b border-field-border bg-surface p-3">
+                <div className="mb-2 flex items-center justify-between gap-3">
+                  <p className="text-xs font-medium text-ink-muted">텍스트를 선택해 내용을 수정하세요</p>
+                  <span className="rounded-md bg-item-hover px-2 py-1 text-xs text-ink-muted">자동 저장 안 함 · 저장 버튼으로 확정</span>
+                </div>
+                <TextToolbar
+                  format={currentSlide.formats[activeField] || defaultFormat(activeField)}
+                  onChange={changeFormat}
+                  onBullets={() => {
+                    const lines = currentSlide.body.split("\n");
+                    const remove = lines.every((line) => line.startsWith("• "));
+                    patchSlide((slide) => ({ ...slide, body: lines.map((line) => remove ? line.slice(2) : line.startsWith("• ") ? line : `• ${line}`).join("\n") }));
+                    setActiveField("body");
+                  }}
+                />
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <button type="button" className={button} onClick={() => addElement({ id: newId(), type: "text", text: "새 텍스트 상자" })}>＋ 텍스트 상자</button>
+                  <button type="button" className={button} onClick={() => openMedia("image")}>이미지 삽입</button>
+                  <button type="button" className={button} onClick={() => openMedia("video")}>동영상 삽입</button>
+                </div>
+              </div>
+              <div className="min-h-[580px] bg-background p-4 sm:p-8 lg:p-12">
+                <div className="mx-auto max-w-4xl rounded-xl bg-white/75 p-3 shadow-inner sm:p-6">
+                  <SlideCanvas
+                    slide={currentSlide}
+                    theme={theme}
+                    editable
+                    activeField={activeField}
+                    onFocus={setActiveField}
+                    onText={changeText}
+                    onRemove={(id) => {
+                      patchSlide((slide) => {
+                        const formats = { ...slide.formats };
+                        delete formats[`extra:${id}`];
+                        return { ...slide, formats, elements: slide.elements.filter((e) => e.id !== id) };
+                      });
+                      setActiveField("body");
+                    }}
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </section>
       </>,
       <>
-        <button type="button" onClick={() => setScreen("home")} className={button}>
-          최근 파일
-        </button>
         <button type="button" onClick={() => setScreen("preview")} className={button}>
           <Eye className="size-4" />
           미리보기
@@ -805,34 +998,38 @@ export function IrDeckWireframe() {
     );
 
   return page(
-    "새 IR 덱 만들기",
+    "사업계획서를 바탕으로 IR 덱을 만들어 보세요",
     "사업계획서를 올리거나 사업 내용을 직접 입력해 주세요.",
     <>
-      <Steps current={1} />
       <section className={panel}>
         <div className="grid gap-6 lg:grid-cols-2">
-          <label className="relative cursor-pointer rounded-xl border border-dashed border-brand bg-background p-10 text-center focus-within:ring-2 focus-within:ring-brand">
-            <FileText className="mx-auto size-8 text-brand" />
-            <span className="mt-3 block font-semibold text-ink">사업계획서 업로드</span>
-            <span className="mt-1 block text-sm text-ink-muted">PDF, DOCX 파일을 선택하세요.</span>
-            <span className="mt-3 block break-all text-sm text-ink">
-              {draft.fileName || "클릭해서 파일을 선택하세요"}
+          <label
+            className="relative mt-0 flex min-h-[142px] cursor-pointer flex-col items-center justify-center rounded-[4px] border border-dashed border-field-border bg-surface px-5 py-6 text-center transition-colors hover:border-brand focus-within:border-brand focus-within:ring-[3.2px] focus-within:ring-focus-soft"
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => {
+              e.preventDefault();
+              handlePlanFile(e.dataTransfer.files?.[0]);
+            }}
+          >
+            <span className="block font-semibold text-ink">사업계획서 업로드</span>
+            <span className="mt-2 block text-sm text-ink-muted">
+              PDF 파일을 여기에 끌어다 놓거나, 파일 선택 버튼을 눌러주세요.
             </span>
+            <span className="mt-3 inline-flex h-10 items-center justify-center gap-2 rounded-[10px] border-0 bg-secondary-btn px-4 text-[14px] font-semibold text-secondary-btn-text shadow-none">
+              <Upload className="size-4" aria-hidden="true" />
+              파일 선택
+            </span>
+            {draft.fileName && (
+              <span className="mt-3 block break-all text-sm text-ink">{draft.fileName}</span>
+            )}
             <input
               className="sr-only"
               type="file"
-              accept=".pdf,.docx"
+              accept=".pdf,application/pdf"
               aria-label="사업계획서 파일 선택"
               onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (!file) return;
-                if (!/\.(pdf|docx)$/i.test(file.name)) {
-                  setMessage("PDF 또는 DOCX 파일을 선택해 주세요.");
-                  e.target.value = "";
-                  return;
-                }
-                setMessage("");
-                patchDraft({ fileName: file.name });
+                handlePlanFile(e.target.files?.[0]);
+                e.target.value = "";
               }}
             />
           </label>
@@ -861,14 +1058,23 @@ export function IrDeckWireframe() {
           <button type="button" className={button} onClick={() => setScreen("home")}>
             홈으로
           </button>
-          {(draft.fileName || source.trim()) && (
-            <button type="button" onClick={analyze} className={primary}>
-              사업 내용 분석하기
-              <ArrowRight className="size-4" />
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={analyze}
+            disabled={!draft.fileName && !source.trim()}
+            className={cn(
+              primary,
+              "disabled:border-brand-disabled disabled:bg-brand-disabled disabled:text-brand-foreground disabled:opacity-100",
+            )}
+          >
+            사업 내용 분석하기
+            <ArrowRight className="size-4" />
+          </button>
         </div>
       </section>
     </>,
+    undefined,
+    <Steps current={1} align="start" />,
+    "text-2xl",
   );
 }

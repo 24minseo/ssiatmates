@@ -21,7 +21,7 @@ export const reviewFields = [
   ],
 ] as const;
 export const themes = [
-  ["Precision Tech", "정교함 · 신뢰감 · 데이터 중심", "bg-[#F4F8F5] text-ink"],
+  ["Precision Tech", "정교함 · 신뢰감 · 데이터 중심", "bg-[#FAFAF9] text-ink"],
   ["Bold Momentum", "대담함 · 성장성 · 강한 대비", "bg-[#153E34] text-white"],
   ["Human Impact", "따뜻함 · 사람 중심 · 스토리텔링", "bg-[#F7F2E8] text-ink"],
 ] as const;
@@ -58,7 +58,14 @@ export type Draft = {
   activeSlide: number;
   projectId: string | null;
 };
-export type Project = { id: string; title: string; updatedAt: number; draft: Draft };
+export type Project = {
+  id: string;
+  title: string;
+  updatedAt: number;
+  createdAt?: number;
+  lastViewedAt?: number;
+  draft: Draft;
+};
 export type Workspace = { projects: Project[]; draft: Draft };
 export const storageKey = "ssiat-ir-deck-workspace-v2";
 export const newId = () => crypto.randomUUID();
