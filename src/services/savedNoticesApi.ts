@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
+import { notifySavedNoticesChanged } from "./savedNoticeEvents";
 
 export type SavedNoticeState = {
   notice_id: string;
@@ -125,8 +126,10 @@ export function createSavedNoticesApi(
         console.warn("[saved-notices] 리포트 부가정보 저장 생략", reportError);
       }
     }
+    if (response.is_saved !== isSaved) throw new Error("저장 상태 응답이 올바르지 않습니다.");
+    notifySavedNoticesChanged();
     return isManual
-      ? { notice_id: noticeId, is_saved: response.is_saved }
+      ? { notice_id: noticeId, is_saved: response.is_saved, saved_notice_id: response.saved_notice_id }
       : response;
   }
 

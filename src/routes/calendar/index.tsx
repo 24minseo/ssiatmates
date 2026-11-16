@@ -1587,6 +1587,12 @@ function CalendarPage() {
     setReminderError("");
   };
 
+  useEffect(() => {
+    const invalidateSavedPrograms = () => setSavedPrograms([]);
+    window.addEventListener("saved-notices-changed", invalidateSavedPrograms);
+    return () => window.removeEventListener("saved-notices-changed", invalidateSavedPrograms);
+  }, []);
+
   const openProgramPicker = async () => {
     setHoveredProgramId(null);
     setProgramPickerOpen(true);

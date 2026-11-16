@@ -1150,6 +1150,7 @@ function ProgramsPage() {
   const handleFavoriteToggle = async (program: MatchedProgram) => {
     if (goToLogin()) return;
     if (savingNoticeIds.has(program.id)) return;
+    manualView.clear(); // Ignore a pre-click list response with an old heart state.
     const nextSaved = program.is_saved !== true;
     const isManual = manualPrograms.some((item) => item.id === program.id);
     const savedId = isManual ? `manual:${program.id}` : program.id;
@@ -1297,12 +1298,14 @@ function ProgramsPage() {
       if (!analysisResult?.manual_notice_id) throw new Error("먼저 공고 분석을 완료해주세요.");
       const confirmed = await manualConfirm.confirm(analysisResult.manual_notice_id);
       if (confirmed.status === "stale") return;
+      manualView.clear(); // An earlier list request must not overwrite this saved result.
       setManualPrograms((current) => current.some((item) => item.id === confirmed.manual_notice_id)
-        ? current
+        ? current.map((item) => item.id === confirmed.manual_notice_id
+          ? { ...item, is_saved: confirmed.is_saved } : item)
         : [{
             id: confirmed.manual_notice_id,
             preference_matched: false,
-            is_saved: true,
+            is_saved: confirmed.is_saved,
             ...(safeNoticeUrl(sourceUrl ?? "") ? { url: safeNoticeUrl(sourceUrl ?? "")! } : {}),
             organization: input.organization,
             title: input.title,
