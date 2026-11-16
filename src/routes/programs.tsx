@@ -1176,7 +1176,8 @@ function ProgramsPage() {
       });
     };
 
-    const manualResults = filterAndSort(manualPrograms);
+    // 수동 공고는 프로필 재매칭 및 탐색 지원분야와 무관하게 유지합니다.
+    const manualResults = filterAndSort(manualPrograms, false);
 
     const recommendedResults = filterAndSort(matchedPrograms, false);
 
@@ -1209,8 +1210,10 @@ function ProgramsPage() {
 
   const results = resultsByTab[tab];
   const displayResults = results;
-  const currentLoading = tab === "review" ? isLoadingReview : isLoadingMatches;
-  const currentError = tab === "review" ? reviewError : matchError;
+  const currentLoading =
+    tab === "manual" ? false : tab === "review" ? isLoadingReview : isLoadingMatches;
+  const currentError =
+    tab === "manual" ? null : tab === "review" ? reviewError : matchError;
   const tabTotalCount =
     tab === "recommended"
       ? activeTotalCount
