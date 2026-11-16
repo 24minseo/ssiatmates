@@ -860,7 +860,30 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle,
       >
         <div ref={dialogHeaderRef} className="shrink-0">
           <DialogHeader className="px-8 pb-3 pt-8 pr-16 text-left">
-            <DialogTitle className="text-[24px] font-bold leading-10 text-ink">리포트</DialogTitle>
+            <div className="flex items-center gap-4">
+              <DialogTitle className="text-[24px] font-bold leading-10 text-ink">리포트</DialogTitle>
+              <button
+                type="button"
+                className="inline-flex items-center gap-1 rounded-[8px] border-[1.2px] border-transparent pl-[9px] pr-[12px] py-[7px] text-xs font-semibold transition-colors hover:[--report-button-surface-start:#faf7ff] hover:[--report-button-surface-end:#faf7ff]"
+                style={{
+                  backgroundImage: "linear-gradient(var(--report-button-surface-start, #fff), var(--report-button-surface-end, #fff)), linear-gradient(139.3deg, #638aff 2.65%, #9e53ff 101.62%)",
+                  backgroundOrigin: "border-box",
+                  backgroundClip: "padding-box, border-box",
+                }}
+              >
+                <img src="/assets/ai.svg" alt="" className="size-4" aria-hidden="true" />
+                <span
+                  className="text-transparent"
+                  style={{
+                    backgroundImage: "linear-gradient(139.3deg, #638aff 2.65%, #9e53ff 101.62%)",
+                    WebkitBackgroundClip: "text",
+                    backgroundClip: "text",
+                  }}
+                >
+                  사업 계획서 적합도 분석
+                </span>
+              </button>
+            </div>
           </DialogHeader>
         </div>
 
