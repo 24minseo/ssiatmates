@@ -71,7 +71,7 @@ export default function PlanReviewResultView({ review }: { review: unknown }) {
       </div>
     </div>}
     {text(error.message) && <p role="alert" className="rounded-xl bg-item-hover p-4 text-sm text-destructive">{text(error.message)}</p>}
-    {text(guidance.message) && <p className="text-sm">{text(guidance.message)}</p>}
+    {submission.status !== "passed" && text(guidance.message) && <p className="text-sm">{text(guidance.message)}</p>}
     {(data.status === "completed" || submission.status === "passed") && <div className="space-y-4">
       <Score title="사업계획서 완성도" value={data.completeness} />
       <Score title="공고 적합도" value={data.notice_fit} fit />
