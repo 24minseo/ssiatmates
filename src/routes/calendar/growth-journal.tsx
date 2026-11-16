@@ -2,6 +2,7 @@ import { Loader2, Search, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
+import { LoadingDots } from "@/components/ui/loading-dots";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -412,9 +413,9 @@ function GrowthJournalPage() {
           </Link>
         </div>
         {isLoading ? (
-          <div className="mt-[18px] flex min-h-[240px] items-center justify-center rounded-[12px] bg-transparent px-6 py-16 text-ink-muted" role="status">
+          <div className="mt-[18px] flex min-h-[240px] items-center justify-center rounded-[12px] bg-transparent px-6 py-16 text-[16px] text-ink-muted" role="status">
             <Loader2 className="mr-2 size-5 animate-spin" aria-hidden />
-            성장일지를 불러오는 중이에요…
+            <>성장일지를 불러오는 중이에요<LoadingDots /></>
           </div>
         ) : loadError ? (
           <div className="mt-[18px] rounded-[12px] bg-transparent px-6 py-16 text-center">

@@ -9,6 +9,7 @@ import { AsyncErrorState } from "@/components/AsyncErrorState";
 import { ArrowUpRight, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { LoadingDots } from "@/components/ui/loading-dots";
 
 type ReportItem = {
   label?: string | null | undefined;
@@ -916,9 +917,9 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle,
               </div>
             </div>
             {loading ? (
-              <div className="flex min-h-[180px] items-center justify-center py-16 text-[15px] text-ink-muted" role="status">
+              <div className="flex min-h-[180px] items-center justify-center py-16 text-[16px] text-ink-muted" role="status">
                 <Loader2 className="mr-2 size-5 animate-spin" aria-hidden />
-                리포트를 불러오는 중이에요…
+                <>리포트를 불러오는 중이에요<LoadingDots /></>
               </div>
             ) : error ? (
               <AsyncErrorState message={error} onRetry={() => window.location.reload()} />

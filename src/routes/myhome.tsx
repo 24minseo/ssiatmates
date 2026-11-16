@@ -13,6 +13,7 @@ import { createMyHomeSavedChangesApi } from "@/services/myHomeSavedChangesApi";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { createMyHomeSummaryApi } from "@/services/myHomeSummaryApi";
+import { LoadingDots } from "@/components/ui/loading-dots";
 import { SUPPORT_ALL } from "@/components/onboarding/constants";
 import { getSupportFilterSession } from "@/lib/supportFilterSession";
 
@@ -600,11 +601,11 @@ export function MyHomePage() {
         ) : null}
         {(homeProgramTab === "newMatches" ? recommendationsLoading : changesLoading) ? (
           <div
-            className="flex min-h-[260px] items-center justify-center text-[14px] text-ink-muted"
+            className="flex min-h-[260px] items-center justify-center text-[16px] text-ink-muted"
             role="status"
           >
             <Loader2 className="mr-2 size-4 animate-spin" aria-hidden />
-            불러오는 중…
+            <>불러오는 중<LoadingDots /></>
           </div>
         ) : homeProgramTab === "myProgramChanges" && changesError ? (
           <div role="alert" className="py-16 text-center text-[15px] text-ink-muted">지원사업 변동을 불러오지 못했어요. 잠시 후 다시 시도해주세요.</div>

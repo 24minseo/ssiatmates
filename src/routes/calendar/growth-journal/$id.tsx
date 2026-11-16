@@ -3,6 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { createElement, useEffect, useState, type ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
+import { LoadingDots } from "@/components/ui/loading-dots";
 import { supabase } from "@/integrations/supabase/client";
 
 const JOURNAL_IMAGE_BUCKET = "growth-journal-images";
@@ -139,7 +140,7 @@ function GrowthJournalDetailPage() {
     return (
       <div className="flex min-h-[240px] items-center justify-center py-16 text-ink-muted" role="status">
         <Loader2 className="mr-2 size-5 animate-spin" aria-hidden />
-        불러오는 중이에요…
+        <>불러오는 중이에요<LoadingDots /></>
       </div>
     );
 

@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { SquareAlertIcon } from "@/components/ui/square-alert-icon";
+import { LoadingDots } from "@/components/ui/loading-dots";
 import { ProgramCard } from "@/components/my-programs/ProgramCard";
 import {
   ProgramSortDropdown,
@@ -372,9 +373,9 @@ function MyProgramsPage() {
       </div>
 
       {loading ? (
-        <div className="flex min-h-[240px] items-center justify-center text-ink-muted" role="status">
+        <div className="flex min-h-[240px] items-center justify-center text-[16px] text-ink-muted" role="status">
           <Loader2 className="mr-2 size-5 animate-spin" aria-hidden />
-          불러오는 중…
+          <>불러오는 중<LoadingDots /></>
         </div>
       ) : loadError ? (
         <div className="rounded-[12px] bg-transparent px-6 py-16 text-center" role="alert">

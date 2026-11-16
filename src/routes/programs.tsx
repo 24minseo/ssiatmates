@@ -4,6 +4,7 @@ import { ArrowRight, Check, Loader2, MoreVertical, X } from "lucide-react";
 import { toast } from "sonner";
 import { createFileRoute } from "@tanstack/react-router";
 import { Pagination } from "@/components/ui/pagination";
+import { LoadingDots } from "@/components/ui/loading-dots";
 import {
   ProgramSortDropdown,
   type ProgramSortOption,
@@ -502,6 +503,7 @@ function ProgramsPage() {
   const [reviewTotalCount, setReviewTotalCount] = useState(0);
   const [excludedCount, setExcludedCount] = useState(0);
   const [isLoadingMatches, setIsLoadingMatches] = useState(true);
+  const [matchLoadingStage, setMatchLoadingStage] = useState(0);
   const [isLoadingReview, setIsLoadingReview] = useState(false);
   const [matchError, setMatchError] = useState<string | null>(null);
   const [reviewError, setReviewError] = useState<string | null>(null);
@@ -516,6 +518,22 @@ function ProgramsPage() {
   const [manualEditTarget, setManualEditTarget] = useState<MatchedProgram | null>(null);
   const [manualDeleteTarget, setManualDeleteTarget] = useState<MatchedProgram | null>(null);
   const [manualSaving, setManualSaving] = useState(false);
+
+  useEffect(() => {
+    if (!isLoadingMatches || tab !== "recommended") {
+      setMatchLoadingStage(0);
+      return;
+    }
+
+    setMatchLoadingStage(0);
+    const waitTimer = window.setTimeout(() => setMatchLoadingStage(1), 2500);
+    const finishTimer = window.setTimeout(() => setMatchLoadingStage(2), 4000);
+
+    return () => {
+      window.clearTimeout(waitTimer);
+      window.clearTimeout(finishTimer);
+    };
+  }, [isLoadingMatches, tab]);
   const manualAnalysis = useMemo(() => createManualNoticeAnalysisApi(supabase), []);
   const manualConfirm = useMemo(() => createManualNoticeConfirmApi(supabase), []);
   const manualDelete = useMemo(() => createManualNoticeDeleteApi(supabase), []);
@@ -1711,13 +1729,25 @@ function ProgramsPage() {
         <div className="mt-1 overflow-hidden rounded-sm">
           {currentLoading ? (
             <div
-              className="flex min-h-[240px] items-center justify-center bg-white px-8 py-16 text-ink-muted"
+              className="flex min-h-[240px] items-center justify-center bg-white px-8 py-16 text-[16px] text-ink-muted"
               role="status"
             >
               <Loader2 className="mr-2 size-5 animate-spin" aria-hidden />
-              {tab === "review"
-                ? "추가 검토 공고를 불러오는 중이에요…"
-                : "맞춤 공고를 불러오는 중이에요…"}
+              {tab === "review" ? (
+                <>
+                  추가 검토 공고를 불러오는 중이에요
+                  <LoadingDots />
+                </>
+              ) : (
+                <>
+                  {[
+                    "맞춤 공고를 불러오는 중이에요",
+                    "잠시만 기다려주세요. 맞춤 공고를 정리하고 있어요",
+                    "거의 완료됐어요",
+                  ][matchLoadingStage]}
+                  <LoadingDots />
+                </>
+              )}
             </div>
           ) : currentError ? (
             <div className="flex min-h-[360px] flex-col items-center justify-center bg-white px-8 py-16 text-center">
@@ -1911,7 +1941,7 @@ function ProgramsPage() {
                       role="status"
                     >
                       <Loader2 className="mr-2 size-5 animate-spin" aria-hidden />
-                      제외된 공고를 불러오는 중이에요…
+                      <>제외된 공고를 불러오는 중이에요<LoadingDots /></>
                     </div>
                   ) : excludedError ? (
                     <div className="px-8 py-16 text-center">

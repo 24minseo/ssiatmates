@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { X } from "lucide-react";
 import { toast } from "sonner";
+import { LoadingDots } from "@/components/ui/loading-dots";
 
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import {
@@ -506,7 +507,12 @@ export function MatchingProfileSheet({
               disabled={!canSave || saving}
               className="h-11 rounded-[10px] bg-brand px-5 text-[15px] font-semibold text-brand-foreground transition-colors hover:bg-brand/90 disabled:cursor-not-allowed disabled:bg-brand-disabled disabled:text-brand-foreground"
             >
-              {saving ? "매칭 갱신 중…" : "변경사항 저장"}
+              {saving ? (
+                <span className="inline-flex items-center">
+                  매칭 갱신 중
+                  <LoadingDots />
+                </span>
+              ) : "변경사항 저장"}
             </button>
           </SheetFooter>
         </div>
