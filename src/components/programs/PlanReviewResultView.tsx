@@ -33,12 +33,14 @@ function Score({ title, value, fit }: { title: string; value: unknown; fit?: boo
   const points = number(score.score);
   const ready = score.status === "completed" && points !== null;
   const items = list(report.items);
-  const own = report.uses_service_weights === true || report.score_basis === "service_weights";
+  const own = report.uses_service_weights === true || ["service_weights", "service_equal_weights_v1", "service_equal_weights_v2"].includes(text(report.score_basis));
+  const fitNotice = own
+    ? "공식 배점이 공개되지 않아 자체 배점으로 평가했습니다."
+    : text(report.display_notice) || (report.score_basis === "official_weights" ? "공고의 공식 배점을 적용한 AI 참고 평가입니다." : "공고 기준에 대한 AI 참고 평가입니다.");
   return <section className="rounded-xl border border-field-border p-4">
     <h4 className="text-lg font-bold">{title}</h4>
     <p className="my-2 text-3xl font-bold text-brand">{ready ? <>{points}<span className="text-sm font-normal text-ink-muted"> / 100점</span></> : <span className="text-base">{score.status === "unavailable" ? "평가 불가" : "점수 미제공"}</span>}</p>
-    <p className="text-sm text-ink-muted">{fit ? own ? "공식 배점이 없어 자체 배점으로 평가한 AI 참고 점수입니다." : report.score_basis === "official_weights" ? "공고의 공식 배점을 적용한 AI 참고 점수입니다." : "공고 기준에 대한 AI 참고 평가입니다." : "서비스의 사업계획서 완성도 기준을 적용한 AI 참고 점수입니다."}</p>
-    {text(report.display_notice) && <p className="mt-2 text-sm">{text(report.display_notice)}</p>}
+    <p className="text-sm text-ink-muted">{fit ? fitNotice : "서비스의 사업계획서 완성도 기준을 적용한 AI 참고 점수입니다."}</p>
     {!ready && <p className="mt-2 text-sm">{text(report.reason, "제공된 평가 결과에서 점수를 확인할 수 없습니다.")}</p>}
     {items.map((item, i) => <article key={i} className="mt-4 border-t border-field-border pt-4 text-sm leading-6">
       <h5 className="font-bold">{text(item.name) || (!fit && labels[text(item.criterion_id)]) || `평가 항목 ${i + 1}`}</h5>
