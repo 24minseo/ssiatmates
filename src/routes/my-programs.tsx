@@ -1,3 +1,4 @@
+import { clearRouteSnapshots, refreshRouteSnapshot } from "@/lib/routeSnapshots";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -98,7 +99,13 @@ function MyProgramsPage() {
   useEffect(() => {
     const refresh = () => { setRetryCount((count) => count + 1); };
     window.addEventListener("saved-notices-changed", refresh);
-    return () => window.removeEventListener("saved-notices-changed", refresh);
+    window.addEventListener("calendar-events-changed", refresh);
+    window.addEventListener("focus", refresh);
+    return () => {
+      window.removeEventListener("saved-notices-changed", refresh);
+      window.removeEventListener("calendar-events-changed", refresh);
+      window.removeEventListener("focus", refresh);
+    };
   }, []);
 
   useEffect(() => {
@@ -128,13 +135,13 @@ function MyProgramsPage() {
     setLoading(true);
     setLoadError(null);
 
-    Promise.all([
+    refreshRouteSnapshot(JSON.stringify(["saved", userId]), () => Promise.all([
       savedNoticesApi.getMySupportNotices(),
       savedNoticesApi.getMyProgress(),
       getCalendarEvents({ data: { accessToken: session.access_token } }).catch(() => ({ events: [] })),
-    ])
-      .then(([{ items, total_count }, { items: progressItems }, calendarResult]) => {
+    ]), ([{ items, total_count }, { items: progressItems }, calendarResult]) => {
         if (!mounted || savedRequestRef.current !== requestId) return;
+        setLoading(false);
         const calendarEvents = normalizeCalendarEvents(calendarResult.events);
         setSavedTotalCount(total_count ?? items.length);
         const savedStatuses = Object.fromEntries(
@@ -158,7 +165,7 @@ function MyProgramsPage() {
             };
           }),
         );
-      })
+      }, () => mounted && savedRequestRef.current === requestId)
       .catch((error) => {
         if (!mounted || savedRequestRef.current !== requestId) return;
         console.error("[my-programs] 저장 공고 조회 실패", error);
@@ -233,6 +240,7 @@ function MyProgramsPage() {
   }
 
   async function handleProgramSubmit(input: ProgramInput) {
+    clearRouteSnapshots();
     setSaving(true);
     try {
       const saved = editingProgram
@@ -254,6 +262,7 @@ function MyProgramsPage() {
   }
 
   async function handleDelete() {
+    clearRouteSnapshots();
     if (!deleteTarget) return;
     setSaving(true);
     try {
@@ -282,6 +291,7 @@ function MyProgramsPage() {
   }
 
   async function handleStatusChange(program: Program, status: ProgramStatus) {
+    clearRouteSnapshots();
     try {
       if (program.source === "saved") {
         if (!session?.user.id) throw new Error("로그인이 필요합니다.");
@@ -300,6 +310,7 @@ function MyProgramsPage() {
   }
 
   async function handleScheduleAdd(input: ScheduleInput) {
+    clearRouteSnapshots();
     if (!scheduleProgram) return;
     setSaving(true);
     try {
@@ -315,6 +326,7 @@ function MyProgramsPage() {
   }
 
   async function handleScheduleToggle(scheduleId: string) {
+    clearRouteSnapshots();
     if (!scheduleProgram) return;
     setSaving(true);
     try {
@@ -332,6 +344,7 @@ function MyProgramsPage() {
   }
 
   async function handleScheduleRemove(scheduleId: string) {
+    clearRouteSnapshots();
     if (!scheduleProgram) return;
     setSaving(true);
     try {
@@ -556,4 +569,5 @@ function MyProgramsPage() {
     </section>
   );
 }
+
 
