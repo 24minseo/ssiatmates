@@ -1,3 +1,4 @@
+import { formatProgramRegion } from "@/lib/programRegion";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { MatchedProgram } from "@/mocks/programSearchMock";
 
@@ -58,7 +59,7 @@ export function createMyHomeSavedChangesApi(supabase: Pick<SupabaseClient, "rpc"
         try { const parsed = new URL(item.url ?? ""); if (["http:", "https:"].includes(parsed.protocol)) url = parsed.href; } catch { /* No unsafe link. */ }
         return {
           id: item.notice_id, title: item.title, organization: item.organization,
-          ...(url ? { url } : {}), categories: [item.field, item.region].filter((v): v is string => Boolean(v)),
+          ...(url ? { url } : {}), categories: [item.field, formatProgramRegion(item.region)].filter((v): v is string => Boolean(v)),
           dDay: item.deadline_label || "공고 원문 확인", deadline: item.deadline ? dated(item.deadline) : "공고 원문 확인",
           is_saved: true, type: "default", matchLabel: "리포트 보기 〉",
           changes: formatMyHomeChanges(item),
@@ -68,3 +69,4 @@ export function createMyHomeSavedChangesApi(supabase: Pick<SupabaseClient, "rpc"
     },
   };
 }
+
