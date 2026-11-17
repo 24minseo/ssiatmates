@@ -1,3 +1,4 @@
+import { setRouteSnapshotUser } from "@/lib/routeSnapshots";
 import {
   createContext,
   useCallback,
@@ -171,6 +172,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const apply = async (next: Session | null) => {
       if (!active) return;
+      setRouteSnapshotUser(next?.user.id ?? null);
       setSession(next);
       if (next?.user) {
         const nextProfile = await ensureProfile(next.user);
@@ -217,6 +219,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = useCallback(async () => {
     clearSupportFilterSession(session?.user.id);
     await supabase.auth.signOut();
+    setRouteSnapshotUser(null);
     setSession(null);
     setProfile(null);
   }, [session?.user.id]);
@@ -241,3 +244,4 @@ export function useAuth(): AuthContextValue {
   if (!context) throw new Error("useAuth must be used within AuthProvider");
   return context;
 }
+

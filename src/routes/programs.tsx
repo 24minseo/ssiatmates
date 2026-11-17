@@ -1,3 +1,4 @@
+import { refreshRouteSnapshot } from "@/lib/routeSnapshots";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { ArrowRight, Check, Loader2, MoreVertical, X } from "lucide-react";
@@ -879,7 +880,7 @@ function ProgramsPage() {
         const supportOverride = usesProfileDefault ? undefined : supportCategories;
         const supportRequestScope = JSON.stringify([session.user.id, profile ? matchingProfileKey(profile) : null, profileMatchingEpoch]);
         const offset = hasPreferenceMatches ? 0 : (page - 1) * PAGE_SIZE;
-        const [responses, savedState] = await Promise.all([
+        const load = () => Promise.all([
           Promise.all(fields.map((field) =>
             hasPreferenceMatches
               ? loadAllMatchingNotices("active", field, supportOverride, supportRequestScope)
@@ -891,36 +892,39 @@ function ProgramsPage() {
           }),
         ]);
 
-        if (cancelled || matchingRequestRef.current !== requestId) return;
+        await refreshRouteSnapshot(JSON.stringify(["matching", "active", session.user.id, profile ? matchingProfileKey(profile) : null, usesProfileDefault, supportCategories, offset, hasPreferenceMatches]), load, ([responses, savedState]) => {
+          if (cancelled || matchingRequestRef.current !== requestId) return;
 
-        const uniqueItems = new Map<string, NoticeMatchItem>();
-        responses.forEach((response) => {
-          response.items.forEach((item) => uniqueItems.set(item.notice_id, item));
-        });
+          const uniqueItems = new Map<string, NoticeMatchItem>();
+          responses.forEach((response) => {
+            response.items.forEach((item) => uniqueItems.set(item.notice_id, item));
+          });
 
-        const itemsWithSavedState = applySavedStates(
-          Array.from(uniqueItems.values()),
-          savedState.items,
-        );
-        const nextPrograms = itemsWithSavedState.map(toMatchedProgram);
-        const nextProgramsWithPreferences = preferenceTags.apply(nextPrograms);
-        matchedProgramsRef.current = nextProgramsWithPreferences;
-        setMatchedPrograms(nextProgramsWithPreferences);
-        setSort(hasPreferenceMatches ? "fit" : "deadline");
-        setActiveTotalCount(
-          hasPreferenceMatches
-            ? uniqueItems.size
-            : responses.reduce(
-                (total, response) => total + (response.total_count ?? response.items.length),
-                0,
-              ),
-        );
-        setExcludedCount(
-          responses.reduce(
-            (total, response) => total + (response.excluded_count ?? response.closed_count ?? 0),
-            0,
-          ),
-        );
+          const itemsWithSavedState = applySavedStates(
+            Array.from(uniqueItems.values()),
+            savedState.items,
+          );
+          const nextPrograms = itemsWithSavedState.map(toMatchedProgram);
+          const nextProgramsWithPreferences = preferenceTags.apply(nextPrograms);
+          matchedProgramsRef.current = nextProgramsWithPreferences;
+          setMatchedPrograms(nextProgramsWithPreferences);
+          setSort(hasPreferenceMatches ? "fit" : "deadline");
+          setActiveTotalCount(
+            hasPreferenceMatches
+              ? uniqueItems.size
+              : responses.reduce(
+                  (total, response) => total + (response.total_count ?? response.items.length),
+                  0,
+                ),
+          );
+          setExcludedCount(
+            responses.reduce(
+              (total, response) => total + (response.excluded_count ?? response.closed_count ?? 0),
+              0,
+            ),
+          );
+          setIsLoadingMatches(false);
+        }, () => !cancelled && matchingRequestRef.current === requestId);
       } catch (error) {
         if (cancelled || matchingRequestRef.current !== requestId) return;
         console.error("[programs] 맞춤 공고 조회 실패", error);
@@ -954,6 +958,8 @@ function ProgramsPage() {
       }
     };
 
+    const refreshSaved = () => { void loadMatches(false, true); };
+    window.addEventListener("saved-notices-changed", refreshSaved);
     void loadMatches();
     scheduleNoonRefresh();
     window.addEventListener("focus", refreshIfVisible);
@@ -962,6 +968,7 @@ function ProgramsPage() {
 
     return () => {
       cancelled = true;
+      window.removeEventListener("saved-notices-changed", refreshSaved);
       if (noonTimer !== null) window.clearTimeout(noonTimer);
       window.removeEventListener("focus", refreshIfVisible);
       window.removeEventListener("pageshow", refreshIfVisible);
@@ -1000,6 +1007,7 @@ function ProgramsPage() {
     }
 
     async function loadReviewMatches(showLoading = true) {
+      if (!session?.user.id) return;
       const requestId = reviewRequestRef.current + 1;
       reviewRequestRef.current = requestId;
       if (showLoading) {
@@ -1012,7 +1020,7 @@ function ProgramsPage() {
         const supportOverride = usesProfileDefault ? undefined : supportCategories;
         const supportRequestScope = JSON.stringify([session.user.id, profile ? matchingProfileKey(profile) : null, profileMatchingEpoch]);
         const offset = (page - 1) * PAGE_SIZE;
-        const [responses, savedState] = await Promise.all([
+        const load = () => Promise.all([
           Promise.all(fields.map((field) => loadMatchingNotices("review", field, offset, PAGE_SIZE, supportOverride, supportRequestScope))),
           savedNoticesApi.getSavedStates().catch((error) => {
             console.error("[programs] 저장 상태 조회 실패", error);
@@ -1020,23 +1028,26 @@ function ProgramsPage() {
           }),
         ]);
 
-        if (cancelled || reviewRequestRef.current !== requestId) return;
+        await refreshRouteSnapshot(JSON.stringify(["matching", "review", session.user.id, profile ? matchingProfileKey(profile) : null, usesProfileDefault, supportCategories, offset, false]), load, ([responses, savedState]) => {
+          if (cancelled || reviewRequestRef.current !== requestId) return;
 
-        const uniqueItems = new Map<string, NoticeMatchItem>();
-        responses.forEach((response) => {
-          response.items.forEach((item) => uniqueItems.set(item.notice_id, item));
-        });
-        const itemsWithSavedState = applySavedStates(
-          Array.from(uniqueItems.values()),
-          savedState.items,
-        );
-        const nextReviewPrograms = preferenceTags.apply(itemsWithSavedState.map(toMatchedProgram));
-        setReviewPrograms(nextReviewPrograms);
-        const serverReviewTotal = responses.reduce(
-          (total, response) => total + (response.total_count ?? response.items.length),
-          0,
-        );
-        setReviewTotalCount(serverReviewTotal);
+          const uniqueItems = new Map<string, NoticeMatchItem>();
+          responses.forEach((response) => {
+            response.items.forEach((item) => uniqueItems.set(item.notice_id, item));
+          });
+          const itemsWithSavedState = applySavedStates(
+            Array.from(uniqueItems.values()),
+            savedState.items,
+          );
+          const nextReviewPrograms = preferenceTags.apply(itemsWithSavedState.map(toMatchedProgram));
+          setReviewPrograms(nextReviewPrograms);
+          const serverReviewTotal = responses.reduce(
+            (total, response) => total + (response.total_count ?? response.items.length),
+            0,
+          );
+          setReviewTotalCount(serverReviewTotal);
+          setIsLoadingReview(false);
+        }, () => !cancelled && reviewRequestRef.current === requestId);
       } catch (error) {
         if (cancelled || reviewRequestRef.current !== requestId) return;
         console.error("[programs] 추가 검토 공고 조회 실패", error);
@@ -1070,6 +1081,8 @@ function ProgramsPage() {
       }
     };
 
+    const refreshSaved = () => { void loadReviewMatches(false); };
+    window.addEventListener("saved-notices-changed", refreshSaved);
     void loadReviewMatches();
     scheduleNoonRefresh();
     window.addEventListener("focus", refreshIfVisible);
@@ -1078,6 +1091,7 @@ function ProgramsPage() {
 
     return () => {
       cancelled = true;
+      window.removeEventListener("saved-notices-changed", refreshSaved);
       if (noonTimer !== null) window.clearTimeout(noonTimer);
       window.removeEventListener("focus", refreshIfVisible);
       window.removeEventListener("pageshow", refreshIfVisible);
@@ -2068,3 +2082,4 @@ function ProgramsPage() {
     </section>
   );
 }
+

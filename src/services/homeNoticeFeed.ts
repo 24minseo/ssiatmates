@@ -1,3 +1,4 @@
+import { formatProgramRegion } from "@/lib/programRegion";
 import type { MatchedProgram } from "@/mocks/programSearchMock";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -123,7 +124,7 @@ export async function getHomeRecommendedNotices({ selectedField = null, offset =
         title: item.title,
         organization: item.organization,
         ...(url ? { url } : {}),
-        categories: [item.field, item.region].filter((value): value is string => Boolean(value?.trim())),
+        categories: [item.field, formatProgramRegion(item.region)].filter((value): value is string => Boolean(value?.trim())),
         dDay: item.deadline_label?.trim() || "공고 원문 확인",
         deadline: formatDeadline(item.deadline),
         reportAvailable: item.report_available !== false,
@@ -142,3 +143,4 @@ export async function getHomeRecommendedNotices({ selectedField = null, offset =
     totalCount: data.total_count,
   };
 }
+
