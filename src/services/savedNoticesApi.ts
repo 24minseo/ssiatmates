@@ -175,6 +175,7 @@ export function createSavedNoticesApi(
       if (error) throw error;
       const response = data as { progress_status?: SavedNoticeProgressStatus } | null;
       if (response?.progress_status !== status) throw new Error("진행 상태 응답을 확인해주세요.");
+      notifySavedNoticesChanged();
       return { notice_id: id, status };
     }
     const { data, error } = await client.rpc("set_my_saved_notice_progress_v1", {
@@ -182,6 +183,7 @@ export function createSavedNoticesApi(
       p_status: status,
     });
     if (error) throw error;
+    notifySavedNoticesChanged();
     return data as SavedNoticeProgress;
   }
 
@@ -200,4 +202,5 @@ export function applySavedStates<T extends { notice_id: string }>(
     is_saved: savedIds.has(item.notice_id),
   }));
 }
+
 
