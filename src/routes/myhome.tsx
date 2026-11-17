@@ -1,3 +1,5 @@
+import { refreshRouteSnapshot } from "@/lib/routeSnapshots";
+import { matchingProfileKey } from "@/lib/supportFilterSession";
 import { createFileRoute } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
@@ -287,89 +289,93 @@ export function MyHomePage() {
     }
     setSummaryError(false);
 
-    const [summaryResult, pageResult, savedResult, progressResult] = await Promise.allSettled([
+    const load = () => Promise.allSettled([
         createMyHomeSummaryApi(supabase).loadSummary(),
         isNewTab ? getHomeRecommendedNotices() : createMyHomeSavedChangesApi(supabase).loadSavedChanges(),
         savedNoticesApi.getSavedStates(),
         savedNoticesApi.getMyProgress(),
       ]);
 
-    if (requestId !== homeRequestRef.current) return;
+    const key = JSON.stringify(["home", user.id, profile ? matchingProfileKey(profile) : null, tab]);
+    await refreshRouteSnapshot(key, load, ([summaryResult, pageResult, savedResult, progressResult]) => {
+      if (requestId !== homeRequestRef.current) return;
 
-    if (summaryResult.status === "fulfilled") {
-      const summary = summaryResult.value;
-      const progressCounts = progressResult.status === "fulfilled"
-        ? progressResult.value.items.reduce(
-            (counts, item) => {
-              if (item.status === "not_started") counts.not_started += 1;
-              if (item.status === "preparing") counts.preparing += 1;
-              if (item.status === "submitted") counts.submitted += 1;
-              return counts;
-            },
-            { not_started: 0, preparing: 0, submitted: 0 },
-          )
-        : null;
-      setMyHomeSummary((current) => ({
-        ...current,
-        todayNews: {
-          total: summary.counts.today_new,
-          newMatches: summary.new_matching_count,
-          myProgramChanges: summary.saved_change_count,
-        },
-        recommendedPrograms: { total: summary.counts.matched },
-        reviewPrograms: { total: summary.counts.review },
-        myPrograms: progressCounts
-          ? {
-              total: summary.counts.saved,
-              beforeStart: progressCounts.not_started,
-              preparing: progressCounts.preparing,
-              submitted: progressCounts.submitted,
-            }
-          : { ...current.myPrograms, total: summary.counts.saved },
-      }));
-      setSummaryError(false);
-    } else {
-      console.error("[myhome] 요약 조회 실패", summaryResult.reason);
-      setSummaryError(true);
-    }
-
-    if (savedResult.status === "fulfilled") {
-      setSavedNoticeIds(new Set(savedResult.value.items.map((item) => item.notice_id)));
-    } else {
-      console.error("[myhome] 저장 상태 조회 실패", savedResult.reason);
-    }
-    if (progressResult.status === "rejected") {
-      console.error("[myhome] 지원사업 진행 상태 조회 실패", progressResult.reason);
-    }
-
-    if (pageResult.status === "fulfilled") {
-      if (isNewTab) {
-        setRecommendedNotices(pageResult.value.items);
-        setRecommendationsError(false);
+      if (summaryResult.status === "fulfilled") {
+        const summary = summaryResult.value;
+        const progressCounts = progressResult.status === "fulfilled"
+          ? progressResult.value.items.reduce(
+              (counts, item) => {
+                if (item.status === "not_started") counts.not_started += 1;
+                if (item.status === "preparing") counts.preparing += 1;
+                if (item.status === "submitted") counts.submitted += 1;
+                return counts;
+              },
+              { not_started: 0, preparing: 0, submitted: 0 },
+            )
+          : null;
+        setMyHomeSummary((current) => ({
+          ...current,
+          todayNews: {
+            total: summary.counts.today_new,
+            newMatches: summary.new_matching_count,
+            myProgramChanges: summary.saved_change_count,
+          },
+          recommendedPrograms: { total: summary.counts.matched },
+          reviewPrograms: { total: summary.counts.review },
+          myPrograms: progressCounts
+            ? {
+                total: summary.counts.saved,
+                beforeStart: progressCounts.not_started,
+                preparing: progressCounts.preparing,
+                submitted: progressCounts.submitted,
+              }
+            : { ...current.myPrograms, total: summary.counts.saved },
+        }));
+        setSummaryError(false);
       } else {
-        setMyProgramChangeItems(pageResult.value.items);
-        setChangesError(false);
+        console.error("[myhome] 요약 조회 실패", summaryResult.reason);
+        setSummaryError(true);
       }
-    } else {
-      console.error("[myhome] 목록 조회 실패", pageResult.reason);
-      if (isNewTab) {
-        setRecommendedNotices([]);
-        setRecommendationsError(true);
-      } else {
-        setMyProgramChangeItems([]);
-        setChangesError(true);
-      }
-    }
 
-    if (isNewTab) {
-      setRecommendationsLoading(false);
-    } else {
-      setChangesLoading(false);
-    }
-  }, [homeProgramTab, user?.id]);
+      if (savedResult.status === "fulfilled") {
+        setSavedNoticeIds(new Set(savedResult.value.items.map((item) => item.notice_id)));
+      } else {
+        console.error("[myhome] 저장 상태 조회 실패", savedResult.reason);
+      }
+      if (progressResult.status === "rejected") {
+        console.error("[myhome] 지원사업 진행 상태 조회 실패", progressResult.reason);
+      }
+
+      if (pageResult.status === "fulfilled") {
+        if (isNewTab) {
+          setRecommendedNotices(pageResult.value.items);
+          setRecommendationsError(false);
+        } else {
+          setMyProgramChangeItems(pageResult.value.items);
+          setChangesError(false);
+        }
+      } else {
+        console.error("[myhome] 목록 조회 실패", pageResult.reason);
+        if (isNewTab) {
+          setRecommendedNotices([]);
+          setRecommendationsError(true);
+        } else {
+          setMyProgramChangeItems([]);
+          setChangesError(true);
+        }
+      }
+
+      if (isNewTab) {
+        setRecommendationsLoading(false);
+      } else {
+        setChangesLoading(false);
+      }
+    }, () => requestId === homeRequestRef.current);
+  }, [homeProgramTab, user?.id, profile ? matchingProfileKey(profile) : null]);
 
   useEffect(() => {
     void refreshHomeData();
+    return () => { homeRequestRef.current += 1; };
   }, [refreshHomeData]);
 
   useEffect(() => {
@@ -409,6 +415,7 @@ export function MyHomePage() {
     window.addEventListener("focus", refreshIfVisible);
     window.addEventListener("pageshow", refreshIfVisible);
     window.addEventListener("matching-profile-saved", refreshAfterProfileSave);
+    window.addEventListener("saved-notices-changed", refreshAfterProfileSave);
     document.addEventListener("visibilitychange", refreshIfVisible);
     scheduleBoundaryRefresh();
     return () => {
@@ -417,6 +424,7 @@ export function MyHomePage() {
       window.removeEventListener("focus", refreshIfVisible);
       window.removeEventListener("pageshow", refreshIfVisible);
       window.removeEventListener("matching-profile-saved", refreshAfterProfileSave);
+      window.removeEventListener("saved-notices-changed", refreshAfterProfileSave);
       document.removeEventListener("visibilitychange", refreshIfVisible);
     };
   }, [refreshHomeData, user?.id]);
@@ -688,3 +696,4 @@ export function MyHomePage() {
     </>
   );
 }
+
