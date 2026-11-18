@@ -8,7 +8,7 @@ const hit = {
   cache_hit: true,
   status: "ready",
   manual_notice_id: id,
-  notice: { title: "����" },
+  notice: { title: "공고" },
   report: { matching_conditions: {}, sections: {} },
   is_confirmed: false,
 };
