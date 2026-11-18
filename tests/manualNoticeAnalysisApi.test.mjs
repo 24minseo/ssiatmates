@@ -20,7 +20,9 @@ test("cache integration and existing analysis fallback", async () => {
     error = null,
     wait = null,
     lookupCount = 0;
-  globalThis.fetch = async () => {
+  let sentBody;
+  globalThis.fetch = async (_url, init) => {
+    sentBody = JSON.parse(init.body);
     webhooks++;
     return Response.json(hit);
   };
@@ -53,18 +55,24 @@ test("cache integration and existing analysis fallback", async () => {
     value = { cache_hit: false };
     await api.analyze({ url });
     assert.equal(webhooks, 1);
+    assert.equal(sentBody.cache_diagnostic.outcome, "cache_miss");
     value = hit;
-    error = { message: "RPC missing" };
+    error = { code: "PGRST202", message: "PRIVATE ERROR TEXT" };
     await api.analyze({ url });
     assert.equal(webhooks, 2);
+    assert.equal(sentBody.cache_diagnostic.outcome, "rpc_error");
+    assert.equal(sentBody.cache_diagnostic.error_code, "PGRST202");
+    assert.ok(!JSON.stringify(sentBody).includes("PRIVATE ERROR TEXT"));
     error = null;
     value = { ...hit, report: [] };
     await api.analyze({ url });
     assert.equal(webhooks, 3);
+    assert.equal(sentBody.cache_diagnostic.outcome, "invalid_response");
     value = hit;
     const before = lookupCount;
     await api.analyze({ url, forceRefresh: true });
     assert.equal(lookupCount, before);
+    assert.equal(sentBody.cache_diagnostic.outcome, "force_refresh");
     assert.equal(webhooks, 4);
     let release;
     wait = new Promise((r) => (release = r));
