@@ -35,7 +35,7 @@ export class ManualNoticeAnalysisError extends Error {
 
 function validateNoticeUrl(inputUrl: string): URL {
   if (typeof inputUrl !== "string" || !inputUrl.trim()) {
-    throw new Error("���� URL�� �Է����ּ���.");
+    throw new Error("공고 URL을 입력해주세요.");
   }
 
   try {
@@ -45,7 +45,7 @@ function validateNoticeUrl(inputUrl: string): URL {
     }
     return url;
   } catch {
-    throw new Error("http �Ǵ� https ���� �������� �ּҸ� �Է����ּ���.");
+    throw new Error("http 또는 https 공고 상세페이지 주소를 입력해주세요.");
   }
 }
 
@@ -96,7 +96,7 @@ export function createManualNoticeAnalysisApi(supabase: SupabaseClient) {
 
     const session = data.session;
     if (error || !session?.access_token || !session.user?.id) {
-      throw new Error("�α��� �� �ٽ� �õ����ּ���.");
+      throw new Error("로그인 후 다시 시도해주세요.");
     }
 
     const sourceKey = url.href;
@@ -168,7 +168,7 @@ export function createManualNoticeAnalysisApi(supabase: SupabaseClient) {
           const failure = new ManualNoticeAnalysisError(
             typeof result?.message === "string"
               ? result.message
-              : "���� �м� ����� Ȯ������ ���߽��ϴ�.",
+              : "공고 분석 결과를 확인하지 못했습니다.",
           );
           failure.requestId = requestId;
           failure.httpStatus = response.status;
@@ -188,7 +188,7 @@ export function createManualNoticeAnalysisApi(supabase: SupabaseClient) {
           throw error;
         }
         const failure = new ManualNoticeAnalysisError(
-          "�м� ������ Ȯ������ ���߽��ϴ�. ���������� ó���� ��ӵ� �� ������ ���� ����� ���� Ȯ�����ּ���.",
+          "분석 응답을 확인하지 못했습니다. 서버에서는 처리가 계속될 수 있으니 실행 결과를 먼저 확인해주세요.",
         );
         failure.requestId = requestId;
         throw failure;
