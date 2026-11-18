@@ -929,7 +929,7 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle,
         : `unavailable-${currentReport?.status ?? "unknown"}`;
 
   useLayoutEffect(() => {
-    if (!open) return;
+    if (!open || analysisOpen) return;
 
     const updateDialogHeight = () => {
       const headerHeight = dialogHeaderRef.current?.offsetHeight ?? 0;
@@ -955,7 +955,7 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle,
       observer.disconnect();
       window.removeEventListener("resize", updateDialogHeight);
     };
-  }, [open, reportContentKey]);
+  }, [analysisOpen, open, reportContentKey]);
 
   useEffect(() => {
     if (!open || !scrollToChanges || loading || !currentReport) return;
