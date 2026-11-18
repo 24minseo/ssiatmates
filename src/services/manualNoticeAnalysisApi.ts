@@ -49,11 +49,46 @@ function validateNoticeUrl(inputUrl: string): URL {
   }
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function readCachedAnalysis(value: unknown): ManualNoticeAnalysisResult | null {
+  if (
+    !isRecord(value) ||
+    value.cache_hit !== true ||
+    value.success !== true ||
+    (value.status !== "ready" && value.status !== "confirmed") ||
+    typeof value.manual_notice_id !== "string" ||
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+      value.manual_notice_id,
+    ) ||
+    value.is_confirmed !== (value.status === "confirmed") ||
+    !isRecord(value.notice) ||
+    typeof value.notice.title !== "string" ||
+    !value.notice.title.trim() ||
+    !isRecord(value.report) ||
+    !isRecord(value.report.matching_conditions) ||
+    !isRecord(value.report.sections)
+  )
+    return null;
+  return {
+    status: value.status,
+    manual_notice_id: value.manual_notice_id,
+    notice: value.notice,
+    report: value.report,
+    ...(typeof value.request_id === "string" ? { request_id: value.request_id } : {}),
+  };
+}
+
 export function createManualNoticeAnalysisApi(supabase: SupabaseClient) {
   const pending = new Map<string, Promise<ManualNoticeAnalysisOutcome>>();
   let generation = 0;
 
-  async function analyze(input: { url: string }): Promise<ManualNoticeAnalysisOutcome> {
+  async function analyze(input: {
+    url: string;
+    forceRefresh?: boolean;
+  }): Promise<ManualNoticeAnalysisOutcome> {
     const url = validateNoticeUrl(input.url);
     const started = generation;
     const { data, error } = await supabase.auth.getSession();
@@ -65,13 +100,38 @@ export function createManualNoticeAnalysisApi(supabase: SupabaseClient) {
     }
 
     const sourceKey = url.href;
-    const key = JSON.stringify([session.user.id, sourceKey]);
+    const key = JSON.stringify([session.user.id, sourceKey, input.forceRefresh === true]);
     const existing = pending.get(key);
     if (existing) return existing;
 
     const requestId = crypto.randomUUID();
     const promise = Promise.resolve().then(async () => {
       try {
+        if (!input.forceRefresh) {
+          let cached: unknown;
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 2500);
+          try {
+            const lookup = await supabase
+              .rpc("get_my_manual_notice_url_cache_v1", { p_url: url.href })
+              .abortSignal(controller.signal);
+            if (!lookup.error) cached = lookup.data;
+          } catch {
+            // A missing/unavailable cache must not prevent the existing analysis route.
+          } finally {
+            clearTimeout(timeout);
+          }
+          const current = await supabase.auth.getSession();
+          if (
+            started !== generation ||
+            current.error ||
+            current.data.session?.user?.id !== session.user.id
+          )
+            return { status: "stale" as const };
+          const hit = readCachedAnalysis(cached);
+          if (hit) return hit;
+        }
+
         const response = await fetch(MANUAL_NOTICE_ANALYSIS_ENDPOINT, {
           method: "POST",
           headers: {
