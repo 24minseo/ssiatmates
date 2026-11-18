@@ -107,7 +107,16 @@ export function createManualNoticeAnalysisApi(supabase: SupabaseClient) {
     const requestId = crypto.randomUUID();
     const promise = Promise.resolve().then(async () => {
       try {
+        // Operational metadata only: never include tokens, report text, or raw errors.
+        const cacheDiagnostic = {
+          version: "manual-url-cache-v2",
+          outcome: input.forceRefresh ? "force_refresh" : "not_checked",
+          elapsed_ms: 0,
+          http_status: null as number | null,
+          error_code: null as string | null,
+        };
         if (!input.forceRefresh) {
+          const lookupStarted = Date.now();
           let cached: unknown;
           const controller = new AbortController();
           const timeout = setTimeout(() => controller.abort(), 2500);
@@ -115,11 +124,22 @@ export function createManualNoticeAnalysisApi(supabase: SupabaseClient) {
             const lookup = await supabase
               .rpc("get_my_manual_notice_url_cache_v1", { p_url: url.href })
               .abortSignal(controller.signal);
-            if (!lookup.error) cached = lookup.data;
+            cacheDiagnostic.http_status = lookup.status ?? null;
+            if (lookup.error) {
+              cacheDiagnostic.outcome = controller.signal.aborted ? "timeout" : "rpc_error";
+              const code = lookup.error.code;
+              cacheDiagnostic.error_code =
+                typeof code === "string" && /^[A-Za-z0-9_]{1,40}$/.test(code) ? code : null;
+            } else {
+              cached = lookup.data;
+              cacheDiagnostic.outcome =
+                isRecord(cached) && cached.cache_hit === false ? "cache_miss" : "invalid_response";
+            }
           } catch {
-            // A missing/unavailable cache must not prevent the existing analysis route.
+            cacheDiagnostic.outcome = controller.signal.aborted ? "timeout" : "request_failed";
           } finally {
             clearTimeout(timeout);
+            cacheDiagnostic.elapsed_ms = Date.now() - lookupStarted;
           }
           const current = await supabase.auth.getSession();
           if (
@@ -138,7 +158,11 @@ export function createManualNoticeAnalysisApi(supabase: SupabaseClient) {
             "Content-Type": "application/json",
             Authorization: `Bearer ${session.access_token}`,
           },
-          body: JSON.stringify({ url: url.href, request_id: requestId }),
+          body: JSON.stringify({
+            url: url.href,
+            request_id: requestId,
+            cache_diagnostic: cacheDiagnostic,
+          }),
         });
         const result = (await response
           .json()
