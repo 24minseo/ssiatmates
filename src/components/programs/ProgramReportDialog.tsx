@@ -1099,7 +1099,13 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle,
       </DialogContent>
       </Dialog>
 
-    <Dialog open={analysisOpen} onOpenChange={setAnalysisOpen}>
+    <Dialog
+      open={analysisOpen}
+      onOpenChange={(nextOpen) => {
+        setAnalysisOpen(nextOpen);
+        if (!nextOpen) setDialogHeight(null);
+      }}
+    >
       <DialogContent
         closeClassName="right-5 top-5 flex size-9 items-center justify-center rounded-lg text-ink-muted opacity-100 transition-colors hover:bg-item-hover hover:text-ink hover:opacity-100 focus:outline-none focus:ring-0 focus:ring-offset-0 [&_svg]:size-6"
         className="w-[760px] max-w-[calc(100vw-40px)] max-h-[calc(100dvh-48px)] overflow-y-auto gap-0 rounded-[20px] border-0 bg-surface p-6 sm:p-8"
@@ -1196,17 +1202,6 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle,
           </div>
         ) : null}
         <div className="mt-6 flex items-center justify-end gap-2">
-          <button
-            type="button"
-            disabled={analysisStatus === "loading"}
-            onClick={() => {
-              setAnalysisOpen(false);
-              setDialogHeight(null);
-            }}
-            className="h-11 rounded-[10px] border border-field-border bg-surface px-5 text-[15px] font-semibold text-ink transition-colors hover:bg-item-hover disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            뒤로가기
-          </button>
           <button
             type="button"
             disabled={!analysisFile || analysisStatus === "loading"}
