@@ -39,7 +39,7 @@ create or replace function public.get_my_manual_notice_url_cache_v1(p_url text)
 returns jsonb language plpgsql stable security definer set search_path='' as $$
 declare me uuid:=auth.uid(); cache_key text; n manual_notice_private.manual_notices_v1%rowtype;
 begin
-  if me is null then raise exception using errcode='42501',message='�α����� �ʿ��մϴ�.'; end if;
+  if me is null then raise exception using errcode='42501',message='로그인이 필요합니다.'; end if;
   cache_key:=manual_notice_private.url_cache_key_v1(p_url);
   if cache_key is null then return jsonb_build_object('cache_hit',false); end if;
   select * into n from manual_notice_private.manual_notices_v1 x
