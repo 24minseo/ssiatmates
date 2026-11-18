@@ -123,6 +123,34 @@ function collectItems(section: ReportSection | Record<string, ReportSection> | u
   );
 }
 
+function reportNodeText(node: StructuredNode | ReportItem | null | undefined): string {
+  if (!node) return "";
+  const value = "value" in node ? node.value : node.detail;
+  const children = Array.isArray(node.children) ? node.children.map(reportNodeText).join(" ") : "";
+  return [node.label, value, children].filter(Boolean).join(" ");
+}
+
+function hasSubmissionDocuments(report: NoticeReport | null): boolean {
+  if (!report || report.status !== "ready") return false;
+
+  const displaySection = report.report_display?.sections?.find(
+    (section) => normalizeReportLabel(section.label).replace(/\s+/g, "") === "제출서류",
+  );
+  if (displaySection) {
+    const text = displaySection.children.map(reportNodeText).join(" ").replace(/\s+/g, "");
+    return text.length > 0 && !text.includes("미표시");
+  }
+
+  const legacySection = report.report?.sections?.documents;
+  const legacyItems = collectItems(legacySection);
+  if (!legacyItems.length) return false;
+  const text = legacyItems
+    .map((item) => [item.detail, ...(item.children ?? []).map(reportNodeText)].filter(Boolean).join(" "))
+    .join(" ")
+    .replace(/\s+/g, "");
+  return text.length > 0 && !text.includes("미표시");
+}
+
 function formatReportDetail(detail: string) {
   return normalizeReportDisplayText(detail).replace(/(^|\n)\s*☞\s?/g, "$1");
 }
@@ -770,6 +798,7 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle,
   const noticeUrl = safeNoticeUrl(
     currentReport?.notice?.url ?? currentReport?.notice?.application_url,
   );
+  const canAnalyzePlan = hasSubmissionDocuments(currentReport);
 
   const submitPlanReview = async () => {
     if (!analysisFile || !noticeUrl || analysisStatus === "loading") return;
@@ -948,32 +977,59 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle,
           <DialogHeader className="px-8 pb-3 pt-8 pr-16 text-left">
             <div className="flex items-center gap-4">
               <DialogTitle className="text-[24px] font-bold leading-10 text-ink">리포트</DialogTitle>
-              <button
-                type="button"
-                onClick={() => {
-                  setAnalysisFile(null);
-                  setAnalysisFilePhase("ready");
-                  setAnalysisOpen(true);
-                }}
-                className="inline-flex items-center gap-1 rounded-[8px] border-[1.5px] border-transparent pl-[9px] pr-[12px] py-[7px] text-xs font-semibold transition-colors hover:[--report-button-surface-start:#faf7ff] hover:[--report-button-surface-end:#faf7ff]"
-                style={{
-                  backgroundImage: "linear-gradient(var(--report-button-surface-start, #fff), var(--report-button-surface-end, #fff)), linear-gradient(139.3deg, #638aff 2.65%, #9e53ff 101.62%)",
-                  backgroundOrigin: "border-box",
-                  backgroundClip: "padding-box, border-box",
-                }}
+              <span
+                title={canAnalyzePlan ? undefined : "사업계획서 제출이 요구되지 않는 공고입니다."}
+                className="group relative inline-flex"
               >
-                <img src="/assets/ai.svg?v=2" alt="" className="size-4" aria-hidden="true" />
-                <span
-                  className="text-transparent"
+                <button
+                  type="button"
+                  disabled={!canAnalyzePlan}
+                  aria-label={canAnalyzePlan ? "사업 계획서 적합도 분석" : "사업계획서 제출이 요구되지 않는 공고입니다."}
+                  onClick={() => {
+                    if (!canAnalyzePlan) return;
+                    setAnalysisFile(null);
+                    setAnalysisFilePhase("ready");
+                    setAnalysisOpen(true);
+                  }}
+                  className="inline-flex items-center gap-1 rounded-[8px] border-[1.5px] border-transparent pl-[9px] pr-[12px] py-[7px] text-xs font-semibold transition-colors hover:[--report-button-surface-start:#faf7ff] hover:[--report-button-surface-end:#faf7ff] disabled:cursor-not-allowed disabled:border-field-border disabled:bg-transparent disabled:text-content-disabled disabled:[background-image:none]"
                   style={{
-                    backgroundImage: "linear-gradient(139.3deg, #638aff 2.65%, #9e53ff 101.62%)",
+                    backgroundImage: canAnalyzePlan
+                      ? "linear-gradient(var(--report-button-surface-start, #fff), var(--report-button-surface-end, #fff)), linear-gradient(139.3deg, #638aff 2.65%, #9e53ff 101.62%)"
+                      : undefined,
+                    backgroundOrigin: "border-box",
+                    backgroundClip: "padding-box, border-box",
+                  }}
+                >
+                {canAnalyzePlan ? (
+                  <img src="/assets/ai.svg?v=2" alt="" className="size-4" aria-hidden="true" />
+                ) : (
+                  <span
+                    className="size-4 bg-content-disabled"
+                    style={{
+                      maskImage: "url('/assets/ai.svg?v=2')",
+                      WebkitMaskImage: "url('/assets/ai.svg?v=2')",
+                      maskRepeat: "no-repeat",
+                      WebkitMaskRepeat: "no-repeat",
+                      maskPosition: "center",
+                      WebkitMaskPosition: "center",
+                      maskSize: "contain",
+                      WebkitMaskSize: "contain",
+                    }}
+                    aria-hidden="true"
+                  />
+                )}
+                <span
+                  className={canAnalyzePlan ? "text-transparent" : "text-content-disabled"}
+                  style={{
+                    backgroundImage: canAnalyzePlan ? "linear-gradient(139.3deg, #638aff 2.65%, #9e53ff 101.62%)" : undefined,
                     WebkitBackgroundClip: "text",
                     backgroundClip: "text",
                   }}
                 >
                   사업 계획서 적합도 분석
                 </span>
-              </button>
+                </button>
+              </span>
             </div>
           </DialogHeader>
         </div>
