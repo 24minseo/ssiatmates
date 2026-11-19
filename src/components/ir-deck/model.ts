@@ -54,6 +54,9 @@ export type Draft = {
   fileName: string;
   review: Record<string, string>;
   theme: string;
+  primaryColor?: string;
+  primaryColor2?: string;
+  colorMode?: "light" | "dark";
   slides: Slide[];
   activeSlide: number;
   projectId: string | null;
@@ -90,7 +93,9 @@ export const newDraft = (): Draft => ({
   source: "",
   fileName: "",
   review: {},
-  theme: "Precision Tech",
+  theme: "Custom",
+  primaryColor: "#1F8064",
+  colorMode: "light",
   slides: slideNames.map((name, i) =>
     newSlide(
       name,
@@ -173,7 +178,7 @@ function validDraft(value: unknown): value is Draft {
     !record(value) ||
     typeof value["source"] !== "string" ||
     typeof value["fileName"] !== "string" ||
-    !themes.some(([name]) => name === value["theme"]) ||
+    (value["theme"] !== "Custom" && !themes.some(([name]) => name === value["theme"])) ||
     !record(value["review"]) ||
     !Object.values(value["review"]).every((v) => typeof v === "string") ||
     !Number.isInteger(value["activeSlide"]) ||
@@ -182,6 +187,11 @@ function validDraft(value: unknown): value is Draft {
   )
     return false;
   if (value["projectId"] !== null && typeof value["projectId"] !== "string") return false;
+  if (value["primaryColor"] !== undefined && typeof value["primaryColor"] !== "string") return false;
+  if (value["primaryColor2"] !== undefined && typeof value["primaryColor2"] !== "string") return false;
+  if (value["secondaryColor"] !== undefined && typeof value["secondaryColor"] !== "string") return false;
+  if (value["colorMode"] !== undefined && value["colorMode"] !== "light" && value["colorMode"] !== "dark")
+    return false;
   return value["slides"].every(
     (slide) =>
       record(slide) &&
@@ -204,15 +214,25 @@ function validDraft(value: unknown): value is Draft {
       ),
   );
 }
+function migrateDraftColors(draft: Draft): Draft {
+  const legacyColor = (draft as Draft & { secondaryColor?: unknown }).secondaryColor;
+  if (!draft.primaryColor2 && typeof legacyColor === "string") draft.primaryColor2 = legacyColor;
+  return draft;
+}
 // Keep the previous implementation's key intact and import its saved deck once.
 export function restoreWorkspace(current: string | null, legacy: string | null): Workspace | null {
   if (current) {
-    const data: unknown = JSON.parse(current);
+    let data: unknown = null;
+    try {
+      data = JSON.parse(current);
+    } catch {
+      data = null;
+    }
     if (
-      !record(data) ||
-      !validDraft(data["draft"]) ||
-      !Array.isArray(data["projects"]) ||
-      !data["projects"].every(
+      record(data) &&
+      validDraft(data["draft"]) &&
+      Array.isArray(data["projects"]) &&
+      data["projects"].every(
         (p) =>
           record(p) &&
           typeof p["id"] === "string" &&
@@ -220,19 +240,25 @@ export function restoreWorkspace(current: string | null, legacy: string | null):
           typeof p["updatedAt"] === "number" &&
           validDraft(p["draft"]),
       )
-    )
-      throw new Error("저장 형식을 읽을 수 없습니다.");
-    const workspace = data as Workspace;
-    workspace.draft.activeSlide = Math.max(
-      0,
-      Math.min(workspace.draft.activeSlide, workspace.draft.slides.length - 1),
-    );
-    return workspace;
+    ) {
+      const workspace = data as Workspace;
+      migrateDraftColors(workspace.draft);
+      workspace.projects.forEach((project) => migrateDraftColors(project.draft));
+      workspace.draft.activeSlide = Math.max(
+        0,
+        Math.min(workspace.draft.activeSlide, workspace.draft.slides.length - 1),
+      );
+      return workspace;
+    }
   }
   if (!legacy) return null;
-  const old: unknown = JSON.parse(legacy);
-  if (!record(old) || typeof old["source"] !== "string")
-    throw new Error("이전 저장 내용을 읽을 수 없습니다.");
+  let old: unknown = null;
+  try {
+    old = JSON.parse(legacy);
+  } catch {
+    return null;
+  }
+  if (!record(old) || typeof old["source"] !== "string") return null;
   const draft = newDraft();
   draft.source = old["source"];
   draft.review = extractSections(old["source"]);

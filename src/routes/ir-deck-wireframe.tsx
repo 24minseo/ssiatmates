@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, ArrowUp, ArrowDown, Plus, Trash2, Eye, Download, Check, MoreVertical, ChevronRight, Presentation, Upload } from "lucide-react";
+import { ArrowLeft, ArrowRight, ArrowUp, ArrowDown, Plus, Trash2, Eye, Check, MoreVertical, ChevronRight, Presentation, Upload } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
@@ -21,7 +21,6 @@ import {
   reviewFields,
   slideNames,
   storageKey,
-  themes,
   type Draft,
   type Slide,
   type SlideElement,
@@ -46,8 +45,8 @@ function Steps({ current }: { current: number }) {
           <li key={label} aria-current={active ? "step" : undefined} className="flex items-center gap-3">
             {index > 0 && <ChevronRight aria-hidden="true" className="size-3.5 text-ink-muted/50" />}
             <span className={cn("inline-flex items-center gap-2 whitespace-nowrap text-ink-muted", step > current && "text-ink-muted/70", active && "font-semibold text-ink")}>
-              <span className={cn("grid size-6 place-items-center rounded-full bg-item-hover text-xs font-semibold tabular-nums", step > current && "bg-item-hover/60", active && "text-brand")}>
-                {step < current ? <Check aria-label="완료" className="size-3.5 text-brand" /> : step}
+              <span className={cn("grid size-6 place-items-center rounded-full bg-item-hover text-xs font-semibold tabular-nums", step > current && "bg-item-hover/60", active && "text-brand", step < current && "bg-item-hover text-ink")}>
+                {step < current ? <Check aria-label="완료" className="size-3.5 text-brand" strokeWidth={2.5} /> : step}
               </span>
               {label}
             </span>
@@ -60,6 +59,7 @@ function Steps({ current }: { current: number }) {
 const button =
   "inline-flex items-center justify-center gap-2 rounded-[10px] border border-field-border px-4 py-3 text-sm font-semibold text-ink hover:bg-item-hover disabled:cursor-not-allowed disabled:opacity-40";
 const primary = cn(button, "border-brand bg-brand text-brand-foreground hover:bg-brand/90");
+const brandSecondaryButton = "inline-flex h-[42px] items-center justify-center gap-2 rounded-[12px] bg-item-hover px-5 text-[15px] font-semibold text-brand shadow-none transition-colors hover:bg-item-hover-selected active:bg-brand-pressed active:text-brand-foreground focus-visible:ring-1 focus-visible:ring-focus-soft";
 const panel = "rounded-2xl border border-field-border bg-surface p-7";
 const input =
   "w-full rounded-xl border border-field-border bg-background p-4 text-sm text-ink outline-none focus:border-brand";
@@ -84,6 +84,7 @@ export function IrDeckWireframe() {
   const [mediaError, setMediaError] = useState("");
   const [mediaBusy, setMediaBusy] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
+  const [cancelAnalysisOpen, setCancelAnalysisOpen] = useState(false);
   const [renameTarget, setRenameTarget] = useState<{ id: string; title: string } | null>(null);
   const [renameTitle, setRenameTitle] = useState("");
   const [sort, setSort] = useState<ProgramSortOption>("created");
@@ -92,7 +93,7 @@ export function IrDeckWireframe() {
   const [billingOpen, setBillingOpen] = useState(false);
   const { draft, projects } = workspace;
   const displayedProjects = devEmptyPreview ? [] : projects;
-  const { source, theme, slides, activeSlide } = draft;
+  const { source, theme, primaryColor, primaryColor2, colorMode, slides, activeSlide } = draft;
   const currentSlide = slides[activeSlide] || slides[0]!;
 
   useEffect(() => {
@@ -399,7 +400,7 @@ export function IrDeckWireframe() {
             <div className="ir-deck-print" aria-hidden="true">
               {slides.map((slide) => (
                 <section className="ir-deck-print-page" key={slide.id}>
-                  <SlideCanvas slide={slide} theme={theme} />
+                  <SlideCanvas slide={slide} theme={theme} primaryColor={primaryColor} primaryColor2={primaryColor2} colorMode={colorMode} />
                 </section>
               ))}
             </div>,
@@ -425,6 +426,20 @@ export function IrDeckWireframe() {
             <AlertDialogFooter className="mt-4 flex-row justify-end gap-2 sm:space-x-0">
               <AlertDialogCancel className="mt-0 h-11 rounded-[12px] border-0 bg-secondary-btn px-5 text-[15px] font-semibold text-secondary-btn-text shadow-none hover:bg-secondary-btn-hover hover:text-secondary-btn-text-hover focus-visible:ring-1 focus-visible:ring-focus-soft">취소</AlertDialogCancel>
               <AlertDialogAction className="h-11 rounded-[12px] border-0 bg-destructive px-5 text-[15px] font-semibold text-white shadow-none hover:bg-destructive/90 focus-visible:ring-1 focus-visible:ring-focus-soft" onClick={(event) => { event.preventDefault(); if (deleteTarget) { deleteProject(deleteTarget.id, deleteTarget.title); setDeleteTarget(null); } }}>삭제하기</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+        <AlertDialog open={cancelAnalysisOpen} onOpenChange={setCancelAnalysisOpen}>
+          <AlertDialogContent className="w-[calc(100vw-32px)] max-w-[480px] rounded-[20px] border-0 bg-surface p-7">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-[20px] font-bold leading-7 text-ink">분석을 취소할까요?</AlertDialogTitle>
+              <AlertDialogDescription className="mt-2 text-[16px] leading-6 text-ink-muted">
+                진행 중인 사업 내용 분석이 취소되고 입력 화면으로 돌아갑니다. 입력한 내용은 유지됩니다.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="mt-5 flex-row justify-end gap-2 sm:space-x-0">
+              <AlertDialogCancel className="mt-0 h-11 rounded-[12px] border-0 bg-brand px-5 text-[15px] font-semibold text-brand-foreground shadow-none hover:bg-brand/88 active:bg-brand-pressed focus-visible:ring-1 focus-visible:ring-focus-soft">계속 분석하기</AlertDialogCancel>
+              <AlertDialogAction className="h-11 rounded-[12px] border-0 bg-secondary-btn px-5 text-[15px] font-semibold text-secondary-btn-text shadow-none hover:bg-secondary-btn-hover hover:text-secondary-btn-text-hover focus-visible:ring-1 focus-visible:ring-focus-soft" onClick={() => { setCancelAnalysisOpen(false); setScreen("input"); }}>분석 취소하고 돌아가기</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
@@ -559,9 +574,8 @@ export function IrDeckWireframe() {
     );
   }
   const pdf = (
-    <button type="button" className={button} onClick={() => window.print()}>
-      <Download className="size-4" />
-      PDF 저장
+    <button type="button" className="inline-flex h-[42px] items-center justify-center gap-2 rounded-[12px] border border-field-border bg-surface px-5 text-[15px] font-semibold text-ink shadow-none transition-colors hover:bg-item-hover focus-visible:ring-1 focus-visible:ring-focus-soft" onClick={() => window.print()}>
+      PDF로 내보내기
     </button>
   );
 
@@ -627,7 +641,7 @@ export function IrDeckWireframe() {
                   >
                     <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
                       <div className="w-[250%] shrink-0 origin-center scale-[0.4]">
-                      <SlideCanvas className="border-0 shadow-none" slide={project.draft.slides[0]!} theme={project.draft.theme} />
+                      <SlideCanvas className="border-0 shadow-none" slide={project.draft.slides[0]!} theme={project.draft.theme} primaryColor={project.draft.primaryColor} primaryColor2={project.draft.primaryColor2} colorMode={project.draft.colorMode} />
                       </div>
                     </div>
                   </div>
@@ -668,7 +682,6 @@ export function IrDeckWireframe() {
       "사업 내용 분석 중",
       "입력한 내용을 덱에 필요한 항목으로 정리하는 흐름입니다.",
       <>
-        <Steps current={2} />
         <section className={cn(panel, "p-16 text-center")}>
           <img src="/assets/sidebar/ir-deck-active.svg" alt="" className="mx-auto size-10" />
           <h2 className="mt-5 text-xl font-semibold text-ink">사업 내용을 정리하고 있어요</h2>
@@ -676,15 +689,17 @@ export function IrDeckWireframe() {
             <div className="ir-deck-progress h-full w-1/3 rounded-full bg-brand" />
           </div>
           <div className="mt-8 flex justify-center gap-3">
-            <button type="button" className={button} onClick={() => setScreen("input")}>
+            <button type="button" className="inline-flex h-12 items-center justify-center rounded-[12px] bg-secondary-btn px-5 text-[16px] font-semibold text-secondary-btn-text shadow-none transition-colors hover:bg-secondary-btn-hover hover:text-secondary-btn-text-hover focus-visible:ring-1 focus-visible:ring-focus-soft" onClick={() => setCancelAnalysisOpen(true)}>
               입력 화면으로 돌아가기
             </button>
-            <button type="button" onClick={() => setScreen("review")} className={primary}>
+            <button type="button" onClick={() => setScreen("review")} className="inline-flex h-12 items-center justify-center rounded-[12px] bg-brand px-5 text-[16px] font-semibold text-brand-foreground shadow-none transition-colors hover:bg-brand/88 active:bg-brand-pressed focus-visible:ring-1 focus-visible:ring-focus-soft">
               분석 내용 확인하기
             </button>
           </div>
         </section>
       </>,
+      undefined,
+      <Steps current={2} />,
     );
 
   if (screen === "review")
@@ -692,7 +707,6 @@ export function IrDeckWireframe() {
       "사업 분석 내용 확인",
       "",
       <>
-        <Steps current={2} />
         <section className="space-y-4">
           <div className={cn(notice, "mt-0")}>
             <SquareAlertIcon className="mt-1 size-4 shrink-0 text-icon-muted" aria-hidden="true" />
@@ -722,65 +736,113 @@ export function IrDeckWireframe() {
           </div>
         </section>
         <div className="mt-6 flex justify-end gap-3">
-          <button type="button" className={button} onClick={() => setScreen("input")}>
+          <button type="button" className="inline-flex h-12 items-center justify-center rounded-[12px] bg-secondary-btn px-5 text-[16px] font-semibold text-secondary-btn-text shadow-none transition-colors hover:bg-secondary-btn-hover hover:text-secondary-btn-text-hover focus-visible:ring-1 focus-visible:ring-focus-soft" onClick={() => setScreen("input")}>
             입력 화면으로 돌아가기
           </button>
-          <button type="button" onClick={() => setScreen("themes")} className={primary}>
+          <button type="button" onClick={() => setScreen("themes")} className="inline-flex h-12 items-center justify-center gap-2 rounded-[12px] bg-brand px-5 text-[16px] font-semibold text-brand-foreground shadow-none transition-colors hover:bg-brand/88 active:bg-brand-pressed focus-visible:ring-1 focus-visible:ring-focus-soft">
             디자인 방향 선택
             <ArrowRight className="size-4" />
           </button>
         </div>
       </>,
+      undefined,
+      <Steps current={2} />,
     );
 
   if (screen === "themes")
     return page(
       "디자인 방향 선택",
-      "확인한 사업 내용에 어울리는 디자인을 선택해 주세요.",
+      "브랜드 색상은 최대 2개까지 지정하고, 발표 화면의 명암 모드를 선택해 주세요.",
       <>
-        <Steps current={3} />
-        <section className="grid gap-4 md:grid-cols-3">
-          {themes.map(([name, desc, tone]) => (
-            <button
-              type="button"
-              key={name}
-              onClick={() => patchDraft({ theme: name })}
-              aria-pressed={theme === name}
-              className={cn(
-                "rounded-2xl border bg-surface p-5 text-left",
-                theme === name ? "border-brand bg-item-hover-selected" : "border-field-border",
-              )}
-            >
-              <div className={cn("mb-4 flex h-24 items-end rounded-xl p-4", tone)}>
-                <b>사업을 설명하는 한 문장</b>
+        <section className="grid gap-4 lg:grid-cols-2">
+          <div className="rounded-2xl border border-field-border bg-surface p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="font-semibold text-ink">색상 선택</h2>
+                <p className="mt-1 text-sm text-ink-muted">브랜드 색상을 최대 2개까지 추가해주세요</p>
               </div>
-              <b>
-                {theme === name && "✓ "}
-                {name}
-              </b>
-              <p className="mt-1 text-sm text-ink-muted">{desc}</p>
-            </button>
-          ))}
+              <span className="rounded-md bg-item-hover px-2 py-1 text-xs font-medium text-ink-muted">최대 2개</span>
+            </div>
+            <div className="mt-6 grid gap-4 sm:grid-cols-2">
+              <label className="rounded-xl border border-field-border p-4">
+                  <span className="block text-sm font-semibold text-ink">주 색상 1</span>
+                <div className="mt-3 flex items-center gap-3">
+                  <input
+                    type="color"
+                    value={primaryColor || "#1F8064"}
+                    onChange={(event) => patchDraft({ theme: "Custom", primaryColor: event.target.value })}
+                    className="size-10 cursor-pointer rounded-lg border-0 bg-transparent p-0"
+                    aria-label="주 색상 선택"
+                  />
+                  <code className="text-sm font-medium text-ink-muted">{primaryColor || "#1F8064"}</code>
+                </div>
+              </label>
+              <div className="rounded-xl border border-field-border p-4">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="block text-sm font-semibold text-ink">주 색상 2</span>
+                  {primaryColor2 && (
+                    <button
+                      type="button"
+                      onClick={() => patchDraft({ theme: "Custom", primaryColor2: undefined })}
+                      className="text-xs font-medium text-ink-muted underline-offset-2 hover:text-ink hover:underline"
+                    >
+                      제거
+                    </button>
+                  )}
+                </div>
+                <div className="mt-3 flex items-center gap-3">
+                  <input
+                    type="color"
+                    value={primaryColor2 || primaryColor || "#1F8064"}
+                    onChange={(event) => patchDraft({ theme: "Custom", primaryColor2: event.target.value })}
+                    className="size-10 cursor-pointer rounded-lg border-0 bg-transparent p-0"
+                    aria-label="주 색상 2 선택"
+                  />
+                  <code className="text-sm font-medium text-ink-muted">{primaryColor2 || "선택하지 않음"}</code>
+                </div>
+                {!primaryColor2 && <span className="mt-2 block text-xs text-ink-muted">선택 사항</span>}
+              </div>
+            </div>
+          </div>
+          <div className="rounded-2xl border border-field-border bg-surface p-6">
+            <h2 className="font-semibold text-ink">화면 모드</h2>
+            <p className="mt-1 text-sm text-ink-muted">배경 색을 골라주세요</p>
+            <div className="mt-5 grid grid-cols-2 gap-3">
+              {(["light", "dark"] as const).map((mode) => (
+                <button
+                  type="button"
+                  key={mode}
+                  aria-pressed={(colorMode || "light") === mode}
+                  onClick={() => patchDraft({ theme: "Custom", colorMode: mode })}
+                  className={cn("rounded-xl border p-4 text-left transition-colors", (colorMode || "light") === mode ? "border-brand bg-item-hover-selected" : "border-field-border hover:bg-item-hover")}
+                >
+                  <span className={cn("mb-3 block h-14 rounded-lg border", mode === "dark" ? "border-[#303936] bg-[#151A18]" : "border-field-border bg-white")} />
+                  <b>{mode === "light" ? "라이트" : "다크"}</b>
+                </button>
+              ))}
+            </div>
+          </div>
         </section>
         <div className="mt-6 flex justify-end gap-3">
-          <button type="button" className={button} onClick={() => setScreen("review")}>
+          <button type="button" className="inline-flex h-12 items-center justify-center rounded-[12px] bg-secondary-btn px-5 text-[16px] font-semibold text-secondary-btn-text shadow-none transition-colors hover:bg-secondary-btn-hover hover:text-secondary-btn-text-hover focus-visible:ring-1 focus-visible:ring-focus-soft" onClick={() => setScreen("review")}>
             이전
           </button>
           <button
             type="button"
             onClick={() => {
-              if (!consumeDesignCredits()) return;
               patchDraft({ slides: buildSlides(draft.review, source), activeSlide: 0 });
               setActiveField("title");
               setScreen("editor");
             }}
-            className={primary}
+            className="inline-flex h-12 items-center justify-center gap-2 rounded-[12px] bg-brand px-5 text-[16px] font-semibold text-brand-foreground shadow-none transition-colors hover:bg-brand/88 active:bg-brand-pressed focus-visible:ring-1 focus-visible:ring-focus-soft"
           >
-            이 디자인으로 IR 덱 만들기 ({designCost}크레딧 소모)
+            이 디자인으로 IR 덱 만들기
             <ArrowRight className="size-4" />
           </button>
         </div>
       </>,
+      undefined,
+      <Steps current={3} />,
     );
 
   if (screen === "saved")
@@ -809,7 +871,7 @@ export function IrDeckWireframe() {
       "IR 덱 미리보기",
       "전체 슬라이드를 확인하고 PDF로 저장할 수 있습니다.",
       <section className="mx-auto max-w-5xl">
-        <SlideCanvas slide={currentSlide} theme={theme} />
+        <SlideCanvas slide={currentSlide} theme={theme} primaryColor={primaryColor} primaryColor2={primaryColor2} colorMode={colorMode} />
         <div className="mt-6 flex items-center justify-center gap-3">
           <button
             type="button"
@@ -848,7 +910,6 @@ export function IrDeckWireframe() {
       "IR 덱 편집",
       `슬라이드 ${activeSlide + 1} / ${slides.length} · 슬라이드 내용을 클릭해 바로 수정하세요.`,
       <>
-        <Steps current={4} />
         <section className="overflow-hidden rounded-2xl border border-field-border bg-background shadow-sm">
           <div className="flex min-h-[680px] flex-col lg:flex-row">
             <aside className="w-full shrink-0 border-b border-field-border bg-surface lg:w-[236px] lg:border-b-0 lg:border-r">
@@ -892,7 +953,7 @@ export function IrDeckWireframe() {
                         <span className="min-w-0 truncate">{slide.name}</span>
                       </span>
                       <span className="block aspect-video overflow-hidden rounded-md border border-field-border bg-background">
-                        <SlideCanvas slide={slide} theme={theme} className="pointer-events-none origin-top-left scale-[0.18] !w-[555%] !max-w-none !border-0 !p-[7%] text-[10px] shadow-none" />
+                        <SlideCanvas slide={slide} theme={theme} primaryColor={primaryColor} primaryColor2={primaryColor2} colorMode={colorMode} className="pointer-events-none origin-top-left scale-[0.18] !w-[555%] !max-w-none !border-0 !p-[7%] text-[10px] shadow-none" />
                       </span>
                     </button>
                     <div className="absolute right-2 top-2 z-20 hidden items-center gap-1 rounded-full bg-surface/95 p-0.5 shadow-md group-hover/slide:flex group-focus-within/slide:flex lg:flex lg:opacity-0 lg:transition-opacity lg:group-hover/slide:opacity-100 lg:group-focus-within/slide:opacity-100">
@@ -939,10 +1000,6 @@ export function IrDeckWireframe() {
             </aside>
             <div className="min-w-0 flex-1">
               <div className="border-b border-field-border bg-surface p-3">
-                <div className="mb-2 flex items-center justify-between gap-3">
-                  <p className="text-xs font-medium text-ink-muted">텍스트를 선택해 내용을 수정하세요</p>
-                  <span className="rounded-md bg-item-hover px-2 py-1 text-xs text-ink-muted">자동 저장 안 함 · 저장 버튼으로 확정</span>
-                </div>
                 <TextToolbar
                   format={currentSlide.formats[activeField] || defaultFormat(activeField)}
                   onChange={changeFormat}
@@ -964,6 +1021,9 @@ export function IrDeckWireframe() {
                   <SlideCanvas
                     slide={currentSlide}
                     theme={theme}
+                    primaryColor={primaryColor}
+                    primaryColor2={primaryColor2}
+                    colorMode={colorMode}
                     editable
                     activeField={activeField}
                     onFocus={setActiveField}
@@ -984,15 +1044,21 @@ export function IrDeckWireframe() {
         </section>
       </>,
       <>
-        <button type="button" onClick={() => setScreen("preview")} className={button}>
+        <button type="button" onClick={() => setScreen("themes")} className="inline-flex h-[42px] items-center justify-center rounded-[12px] bg-secondary-btn px-5 text-[15px] font-semibold text-secondary-btn-text shadow-none transition-colors hover:bg-secondary-btn-hover hover:text-secondary-btn-text-hover focus-visible:ring-1 focus-visible:ring-focus-soft">
+          이전
+        </button>
+        <button type="button" onClick={() => setScreen("preview")} className="inline-flex h-[42px] items-center justify-center gap-2 rounded-[12px] border border-field-border bg-surface px-5 text-[15px] font-semibold text-ink shadow-none transition-colors hover:bg-item-hover focus-visible:ring-1 focus-visible:ring-focus-soft">
           <Eye className="size-4" />
           미리보기
         </button>
         {pdf}
-        <button type="button" onClick={save} className={primary}>
+        <button type="button" onClick={save} className="inline-flex h-[42px] items-center justify-center rounded-[12px] bg-brand px-5 text-[15px] font-semibold text-brand-foreground shadow-none transition-colors hover:bg-brand/88 active:bg-brand-pressed focus-visible:ring-1 focus-visible:ring-focus-soft">
           저장
         </button>
       </>,
+      undefined,
+      <Steps current={4} />,
+      "text-[24px]",
     );
 
   return page(
@@ -1002,7 +1068,7 @@ export function IrDeckWireframe() {
       <section className={panel}>
         <div className="grid gap-6 lg:grid-cols-2">
           <label
-            className={cn("relative mt-0 flex min-h-[142px] cursor-pointer flex-col items-center justify-center rounded-[4px] border border-dashed border-field-border bg-surface px-5 py-6 text-center transition-colors hover:border-brand focus-within:border-brand focus-within:ring-[3.2px] focus-within:ring-focus-soft", draggingPlan && "border-brand bg-item-hover-selected")}
+            className={cn("relative mt-0 flex min-h-[142px] cursor-pointer flex-col items-center justify-center rounded-[8px] border border-dashed border-field-border bg-surface px-5 py-6 text-center transition-colors hover:border-brand focus-within:border-brand focus-within:ring-[3.2px] focus-within:ring-focus-soft", draggingPlan && "border-brand bg-item-hover-selected")}
             onDragOver={(e) => {
               e.preventDefault();
               if (e.dataTransfer.types.includes("Files")) {
@@ -1065,7 +1131,7 @@ export function IrDeckWireframe() {
           </button>
         )}
         <div className="mt-6 flex justify-end gap-3">
-          <button type="button" className="inline-flex items-center justify-center rounded-[10px] bg-secondary-btn px-4 py-3 text-sm font-semibold text-secondary-btn-text transition-colors hover:bg-secondary-btn-hover hover:text-secondary-btn-text-hover" onClick={() => setScreen("home")}>
+          <button type="button" className="inline-flex h-12 items-center justify-center rounded-[12px] bg-secondary-btn px-5 text-[16px] font-semibold text-secondary-btn-text shadow-none transition-colors hover:bg-secondary-btn-hover hover:text-secondary-btn-text-hover focus-visible:ring-1 focus-visible:ring-focus-soft" onClick={() => setScreen("home")}>
             이전
           </button>
           <button
@@ -1074,6 +1140,7 @@ export function IrDeckWireframe() {
             disabled={!draft.fileName && !source.trim()}
             className={cn(
               primary,
+              "h-12 rounded-[12px] px-5 text-[16px] shadow-none",
               "disabled:border-brand-disabled disabled:bg-brand-disabled disabled:text-brand-foreground disabled:opacity-100",
             )}
           >

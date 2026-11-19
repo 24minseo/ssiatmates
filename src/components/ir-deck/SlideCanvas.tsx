@@ -26,6 +26,9 @@ function textStyle(format: TextFormat): CSSProperties {
 export function SlideCanvas({
   slide,
   theme,
+  primaryColor = "#1F8064",
+  primaryColor2,
+  colorMode = "light",
   editable = false,
   activeField,
   onFocus,
@@ -35,6 +38,9 @@ export function SlideCanvas({
 }: {
   slide: Slide;
   theme: string;
+  primaryColor?: string;
+  primaryColor2?: string;
+  colorMode?: "light" | "dark";
   editable?: boolean;
   activeField?: string;
   onFocus?: (field: string) => void;
@@ -43,6 +49,15 @@ export function SlideCanvas({
   className?: string;
 }) {
   const isEmptyState = slide.body.startsWith("문서에서 확인된 내용이 없습니다.");
+  const isCustomTheme = theme === "Custom";
+  const accentColor = primaryColor2 || primaryColor;
+  const customStyle: CSSProperties | undefined = isCustomTheme
+    ? {
+        backgroundColor: colorMode === "dark" ? "#151A18" : "#FFFFFF",
+        color: colorMode === "dark" ? "#FFFFFF" : primaryColor,
+        borderColor: accentColor,
+      }
+    : undefined;
   const block = (field: string, text: string) => {
     const style = textStyle(slide.formats[field] || defaultFormat(field));
     const displayStyle = isEmptyState ? { ...style, textAlign: "center" as const } : style;
@@ -76,10 +91,11 @@ export function SlideCanvas({
       className={cn(
         "ir-deck-slide mx-auto flex aspect-video w-full flex-col justify-center gap-4 border border-field-border p-[7%] shadow-sm",
         className,
-        isEmptyState ? "bg-surface text-ink" : themes.find(([name]) => name === theme)?.[2],
+        isEmptyState ? "bg-surface text-ink" : !isCustomTheme && themes.find(([name]) => name === theme)?.[2],
       )}
+      style={customStyle}
     >
-      <div className={cn("h-1 w-10 shrink-0 bg-current opacity-70", isEmptyState && "mx-auto")} />
+      <div className={cn("h-1 w-10 shrink-0 opacity-70", isEmptyState && "mx-auto")} style={{ backgroundColor: isCustomTheme ? accentColor : undefined }} />
       {block("title", slide.title)}
       {block("body", slide.body)}
       {slide.elements.map((element) => (
