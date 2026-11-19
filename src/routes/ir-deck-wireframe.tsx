@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, ArrowUp, ArrowDown, Plus, Trash2, Eye, Check, MoreVertical, ChevronRight, Presentation, Upload } from "lucide-react";
+import { ArrowLeft, ArrowRight, ArrowUp, ArrowDown, Plus, Trash2, Eye, Check, MoreVertical, ChevronRight, Presentation, Upload, X } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
@@ -584,19 +584,25 @@ export function IrDeckWireframe() {
   if (screen === "home")
     return page(
       "AI IR 덱",
-      "사업의 핵심을 투자자가 이해할 수 있는 이야기로 정리해 보세요.",
+      "",
       <>
         {analysis.canResume && <div className={cn(notice, "mb-5 mt-0 items-center justify-between")}>
           <span>작성 중인 사업 내용이 있어요.</span>
           <button type="button" className="shrink-0 font-semibold text-brand underline" onClick={() => setScreen("input")}>이어서 확인하기</button>
         </div>}
-        <div className="relative mb-5 h-[48px] w-full border-b border-field-border">
-          <span className="absolute left-0 top-0 inline-flex h-[42px] items-center justify-center gap-[6px] text-[18px] font-medium text-ink">
-            전체
-            <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-[13px] bg-item-hover px-[7px] py-1 text-[14px] font-medium text-ink-muted">
-            {displayedProjects.length}
-            </span>
-          </span>
+        <div className="relative -mt-2.5 mb-5 h-[48px] w-full">
+          <div className="absolute left-[-12px] top-0 flex items-start">
+            <div className="flex h-[48px] w-max shrink-0 cursor-default flex-col items-start gap-[5px]">
+              <span className="inline-flex items-center justify-center gap-[6px] overflow-hidden rounded-[10px] pl-3 pr-1.5 py-2 text-[18px] font-medium whitespace-nowrap text-ink">
+                전체
+                <span className="inline-flex h-6 min-w-6 shrink-0 items-center justify-center overflow-hidden rounded-[13px] bg-item-hover px-[7px] py-1 text-[14px] font-medium text-ink-muted">
+                  {displayedProjects.length}
+                </span>
+              </span>
+              <span aria-hidden="true" className="flex h-[3px] w-full items-start overflow-hidden px-3" />
+            </div>
+          </div>
+          <div aria-hidden="true" className="pointer-events-none absolute left-0 top-[47px] h-px w-full bg-field-border" />
           <div className="absolute right-0 top-[-1px]">
             <ProgramSortDropdown value={sort} onChange={setSort} variant="irDeck" />
           </div>
@@ -886,61 +892,104 @@ export function IrDeckWireframe() {
     "사업계획서를 바탕으로 IR 덱을 만들어 보세요",
     "사업계획서를 업로드해 7개 슬라이드 구성으로 정리해 보세요.",
     <>
-      <section className={panel}>
-        <label
-          className={cn("relative mt-0 flex min-h-[280px] cursor-pointer flex-col items-center justify-center rounded-[8px] border border-dashed border-field-border bg-surface px-5 py-6 text-center transition-colors hover:border-brand focus-within:border-brand focus-within:ring-[3.2px] focus-within:ring-focus-soft", draggingPlan && "border-brand bg-item-hover-selected")}
-          onDragOver={(e) => {
-            e.preventDefault();
-            if (e.dataTransfer.types.includes("Files")) {
-              e.dataTransfer.dropEffect = "copy";
-              setDraggingPlan(true);
-            }
-          }}
-          onDragLeave={(e) => {
-            if (!(e.relatedTarget instanceof Node && e.currentTarget.contains(e.relatedTarget))) setDraggingPlan(false);
-          }}
-          onDrop={(e) => {
-            e.preventDefault();
-            setDraggingPlan(false);
-            const file = e.dataTransfer.files[0] ?? Array.from(e.dataTransfer.items).find(item => item.kind === "file")?.getAsFile();
-            if (file) analysis.chooseFile(file);
-            else setMessage("파일을 받지 못했어요. 파일 선택 버튼으로 PDF를 선택해 주세요.");
-          }}
-        >
-          <span className="block font-semibold text-ink">사업계획서 업로드</span>
-          <span className="mt-2 block text-sm text-ink-muted">
-            {draggingPlan ? "여기에 PDF 파일을 놓아주세요." : "PDF 파일을 여기에 끌어다 놓거나, 파일 선택 버튼을 눌러주세요."}
-          </span>
-          <span className="mt-3 inline-flex h-10 items-center justify-center gap-2 rounded-[10px] border-0 bg-secondary-btn px-4 text-[14px] font-semibold text-secondary-btn-text shadow-none">
-            <Upload className="size-4" aria-hidden="true" />
-            파일 선택
-          </span>
-          {draft.fileName && (
-            <span className="mt-3 block break-all text-sm text-ink">{draft.fileName}</span>
-          )}
-          <input
-            className="sr-only"
-            type="file"
-            accept=".pdf,application/pdf"
-            disabled={analysis.submitting}
-            aria-label="사업계획서 파일 선택"
-            onChange={(e) => {
-              analysis.chooseFile(e.target.files?.[0]);
-              e.target.value = "";
+      <section className="rounded-2xl border-0 bg-surface p-7">
+        <div className="mx-auto w-full max-w-4xl rounded-xl border border-[rgba(64,72,66,0.08)] bg-surface p-6 shadow-[0_8px_30px_0_rgba(0,13,59,0.1)]">
+            <h2 className="font-semibold text-ink">이런 내용이 있으면 좋아요</h2>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <span className="inline-flex h-8 items-center whitespace-nowrap rounded-full bg-item-hover px-3 text-sm font-normal text-ink-muted">
+                사업·서비스 소개
+              </span>
+              <span className="inline-flex h-8 items-center whitespace-nowrap rounded-full bg-item-hover px-3 text-sm font-normal text-ink-muted">
+                문제와 핵심 고객
+              </span>
+              <span className="inline-flex h-8 items-center whitespace-nowrap rounded-full bg-item-hover px-3 text-sm font-normal text-ink-muted">
+                해결책과 차별점
+              </span>
+              <span className="inline-flex h-8 items-center whitespace-nowrap rounded-full bg-item-hover px-3 text-sm font-normal text-ink-muted">
+                시장·수익 모델
+              </span>
+            </div>
+          <label
+            className={cn(
+              "relative mt-6 flex min-h-[220px] w-full flex-col items-center justify-center rounded-[8px] border border-dashed border-field-border bg-surface px-5 py-6 text-center transition-colors focus-within:border-brand focus-within:ring-[3.2px] focus-within:ring-focus-soft",
+              !draft.fileName && "cursor-pointer hover:border-brand",
+              draggingPlan && "border-brand bg-item-hover-selected",
+              draft.fileName && "cursor-not-allowed bg-item-hover/40",
+            )}
+            onDragOver={(e) => {
+              e.preventDefault();
+              if (draft.fileName) return;
+              if (e.dataTransfer.types.includes("Files")) {
+                e.dataTransfer.dropEffect = "copy";
+                setDraggingPlan(true);
+              }
             }}
-          />
-        </label>
-        {draft.fileName && (
-          <button
-            type="button"
-            className={cn(button, "mt-3")}
-            disabled={analysis.submitting}
-            onClick={analysis.clearFile}
+            onDragLeave={(e) => {
+              if (!(e.relatedTarget instanceof Node && e.currentTarget.contains(e.relatedTarget))) setDraggingPlan(false);
+            }}
+            onDrop={(e) => {
+              e.preventDefault();
+              if (draft.fileName) return;
+              setDraggingPlan(false);
+              const file = e.dataTransfer.files[0] ?? Array.from(e.dataTransfer.items).find(item => item.kind === "file")?.getAsFile();
+              if (file) analysis.chooseFile(file);
+              else setMessage("파일을 받지 못했어요. 파일 선택 버튼으로 PDF를 선택해 주세요.");
+            }}
           >
-            선택한 파일 해제
-          </button>
-        )}
-        <div className="mt-6 flex justify-end gap-3">
+            <span className="block font-semibold text-ink">사업계획서 업로드</span>
+            <span className="mt-2 block text-sm text-ink-muted">
+              {draft.fileName
+                ? "파일을 해제하면 다른 PDF를 업로드할 수 있어요."
+                : draggingPlan
+                  ? "여기에 PDF 파일을 놓아주세요."
+                  : "PDF 파일 1개를 여기에 끌어다 놓거나, 파일 선택 버튼을 눌러주세요."}
+            </span>
+            <span
+              className={cn(
+                "mt-3 inline-flex h-10 items-center justify-center gap-2 rounded-[10px] border-0 bg-secondary-btn px-4 text-[14px] font-semibold text-secondary-btn-text shadow-none",
+                draft.fileName && "cursor-not-allowed opacity-40",
+              )}
+              aria-disabled={draft.fileName ? true : undefined}
+            >
+              <Upload className="size-4" aria-hidden="true" />
+              {draft.fileName ? "파일 1개 선택됨" : "파일 선택"}
+            </span>
+            <input
+              className="sr-only"
+              type="file"
+              accept=".pdf,application/pdf"
+              disabled={analysis.submitting || Boolean(draft.fileName)}
+              aria-label="사업계획서 파일 선택"
+              onChange={(e) => {
+                analysis.chooseFile(e.target.files?.[0]);
+                e.target.value = "";
+              }}
+            />
+          </label>
+          {draft.fileName && (
+            <div className="mt-2 flex w-full items-center gap-3 rounded-[10px] border border-field-border bg-surface px-3 py-2.5">
+              <div className="min-w-0 flex-1 text-left">
+                <p className="truncate text-[13px] font-medium text-ink">{draft.fileName}</p>
+                <p className="mt-0.5 text-[12px] text-ink-muted">PDF</p>
+              </div>
+              <button
+                type="button"
+                aria-label="선택한 파일 삭제"
+                title="파일 삭제"
+                className="relative flex size-5 shrink-0 items-center justify-center rounded-full bg-[#E5E8E7] text-[#25332E] opacity-70 transition-[background-color,opacity] hover:bg-[#D9DEDC] hover:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-focus-soft disabled:cursor-not-allowed disabled:opacity-40"
+                disabled={analysis.submitting}
+                onClick={analysis.clearFile}
+              >
+                <span className="absolute inset-0 flex items-center justify-center animate-upload-status-pop-out">
+                  <Check className="size-3.5 stroke-[3]" aria-hidden="true" />
+                </span>
+                <span className="absolute inset-0 flex items-center justify-center animate-upload-status-x-in">
+                  <X className="size-3.5 stroke-[2.5]" aria-hidden="true" />
+                </span>
+              </button>
+            </div>
+          )}
+          <div className="mt-6 flex justify-end gap-3">
           <button type="button" className="inline-flex h-12 items-center justify-center rounded-[12px] bg-secondary-btn px-5 text-[16px] font-semibold text-secondary-btn-text shadow-none transition-colors hover:bg-secondary-btn-hover hover:text-secondary-btn-text-hover focus-visible:ring-1 focus-visible:ring-focus-soft" onClick={() => setScreen("home")}>
             이전
           </button>
@@ -957,6 +1006,7 @@ export function IrDeckWireframe() {
             사업 내용 분석하기
             <ArrowRight className="size-4" />
           </button>
+          </div>
         </div>
       </section>
     </>,

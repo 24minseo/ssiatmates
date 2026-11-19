@@ -49,7 +49,7 @@ export function useBusinessAnalysis(options: Options) {
     latest.current.patchDraft({ analysis: next });
   }
   function chooseFile(next: File | undefined) {
-    if (busy.current) return;
+    if (busy.current || options.draft.fileName) return;
     if (!next) return;
     if (
       !/\.pdf$/i.test(next.name) ||
