@@ -679,8 +679,8 @@ export function IrDeckWireframe() {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter className="mt-5 flex-row justify-end gap-2 sm:space-x-0">
-              <AlertDialogCancel className="mt-0 h-11 rounded-[12px] border-0 bg-brand px-5 text-[15px] font-semibold text-brand-foreground shadow-none hover:bg-brand/88 active:bg-brand-pressed focus-visible:ring-1 focus-visible:ring-focus-soft">계속 분석하기</AlertDialogCancel>
-              <AlertDialogAction className="h-11 rounded-[12px] border-0 bg-secondary-btn px-5 text-[15px] font-semibold text-secondary-btn-text shadow-none hover:bg-secondary-btn-hover hover:text-secondary-btn-text-hover focus-visible:ring-1 focus-visible:ring-focus-soft" onClick={() => { setCancelAnalysisOpen(false); setScreen("input"); }}>입력 화면으로 돌아가기</AlertDialogAction>
+              <AlertDialogCancel className="mt-0 h-11 rounded-[12px] border-0 bg-secondary-btn px-5 text-[15px] font-semibold text-secondary-btn-text shadow-none hover:bg-secondary-btn-hover hover:text-secondary-btn-text-hover focus-visible:ring-1 focus-visible:ring-focus-soft">계속 분석하기</AlertDialogCancel>
+              <AlertDialogAction className="h-11 rounded-[12px] border-0 bg-brand px-5 text-[15px] font-semibold text-brand-foreground shadow-none hover:bg-brand/88 active:bg-brand-pressed focus-visible:ring-1 focus-visible:ring-focus-soft" onClick={() => { setCancelAnalysisOpen(false); setScreen("input"); }}>입력 화면으로 돌아가기</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
@@ -692,12 +692,9 @@ export function IrDeckWireframe() {
         >
           <DialogContent
             className="rounded-[20px] border-0 bg-surface p-7"
-            closeClassName="right-5 top-5 flex size-9 items-center justify-center rounded-lg text-ink-muted opacity-100 transition-colors hover:bg-item-hover hover:text-ink focus:outline-none focus:ring-1 focus:ring-focus-soft focus:ring-offset-0"
+            closeClassName="right-5 top-5 flex size-9 items-center justify-center rounded-lg text-icon-muted opacity-100 transition-colors hover:bg-item-hover hover:text-ink hover:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-focus-soft focus-visible:ring-offset-0 [&_svg]:size-6"
           >
             <DialogTitle className="text-[20px] font-bold text-ink">IR 덱 제목 수정</DialogTitle>
-            <DialogDescription className="text-sm text-ink-muted">
-              카드에 표시할 제목을 입력해 주세요.
-            </DialogDescription>
             <input
               autoFocus
               value={renameTitle}
