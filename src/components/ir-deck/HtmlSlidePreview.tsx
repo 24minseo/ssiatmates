@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { HtmlSlide, HtmlView, ImageSlot } from "./html-api";
+import { cn } from "@/lib/utils";
 
 import { previewHtml } from "./html-preview";
 
@@ -9,12 +10,14 @@ export function HtmlSlidePreview({
   urls,
   mediaOrigin,
   onSelect,
+  className,
 }: {
   slide: HtmlSlide;
   view: HtmlView;
   urls: Record<string, string>;
   mediaOrigin: string;
   onSelect?: ((slot: ImageSlot | null, point: { x: number; y: number }) => void) | undefined;
+  className?: string;
 }) {
   const host = useRef<HTMLDivElement>(null),
     frame = useRef<HTMLIFrameElement>(null);
@@ -62,7 +65,10 @@ export function HtmlSlidePreview({
   return (
     <div
       ref={host}
-      className="relative aspect-video w-full overflow-hidden rounded-xl border border-field-border bg-surface"
+      className={cn(
+        "relative aspect-video w-full overflow-hidden rounded-xl border border-field-border bg-surface",
+        className,
+      )}
     >
       <iframe
         ref={frame}

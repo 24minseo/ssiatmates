@@ -82,6 +82,7 @@ function ProjectThumbnail({ project }: { project: { draft: Draft } }) {
         view={view}
         urls={urls}
         mediaOrigin={mediaBase()}
+        className="rounded-none border-0"
       />
     );
   }
