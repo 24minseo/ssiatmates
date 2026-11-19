@@ -3,7 +3,7 @@ import { timingSafeEqual } from "node:crypto";
 import type { Browser } from "puppeteer-core";
 
 type Slide = { slideId: string; html: string; css: string };
-type DeckDocument = {
+export type DeckDocument = {
   schemaVersion: string;
   canvas: { width: number; height: number };
   designTokens: { colors: Record<string, string | null> };
@@ -70,7 +70,7 @@ async function jsonResponse<T>(response: Response, limit: number): Promise<T> {
     new TextDecoder("utf-8", { fatal: true }).decode(await readBytes(response.body, limit)),
   ) as T;
 }
-async function defaultFonts(): Promise<string> {
+export async function defaultFonts(): Promise<string> {
   if (!fontsPromise)
     fontsPromise = (async () => {
       const faces = await Promise.all(
@@ -96,7 +96,7 @@ async function defaultFonts(): Promise<string> {
     });
   return fontsPromise;
 }
-async function defaultBrowser(env: Env): Promise<Browser> {
+export async function defaultBrowser(env: Env): Promise<Browser> {
   const { default: puppeteer } = await import("puppeteer-core");
   if (env["IR_HTML_LOCAL_CHROME"])
     return puppeteer.launch({

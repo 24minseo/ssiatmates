@@ -46,6 +46,25 @@ try {
   );
   assert.equal(response.status, 400);
   assert.equal((await response.json()).error_code, "INVALID_REQUEST");
+  const exportUrl = "https://local.test/api/internal/ir-html-export-v1";
+  const exportGet = await server.fetch(new Request(exportUrl), {}, {});
+  assert.equal(exportGet.status, 405);
+  const exportNoKey = await server.fetch(
+    new Request(exportUrl, { method: "POST", body: "{}" }),
+    {},
+    {},
+  );
+  assert.equal(exportNoKey.status, 403);
+  const exportInvalid = await server.fetch(
+    new Request(exportUrl, {
+      method: "POST",
+      headers: { "X-IR-Render-Secret": process.env.IR_HTML_RENDER_SECRET },
+      body: "{}",
+    }),
+    {},
+    {},
+  );
+  assert.equal(exportInvalid.status, 400);
   assert.equal(externalRequests, 0);
 } finally {
   globalThis.fetch = previousFetch;
@@ -61,6 +80,8 @@ async function checkClient(dir) {
         "IR_HTML_RENDER_SECRET",
         "chromium-v153.0.0-pack",
         "handleIrHtmlRender",
+        "handleIrHtmlExport",
+        "finish_ir_html_export_v1",
       ]) {
         assert.ok(!text.includes(marker), `Server renderer marker leaked into ${entry.name}`);
       }
