@@ -55,6 +55,34 @@ function Steps({ current }: { current: number }) {
     </ol>
   );
 }
+
+function IrDeckEmptyStateArtwork() {
+  return (
+    <div
+      aria-hidden="true"
+      className="relative mx-auto mb-4 h-[144px] w-[163px] saturate-[0.1]"
+    >
+      <img
+        src="/assets/empty/ir-deck/bubble-1.svg"
+        alt=""
+        draggable={false}
+        className="animate-empty-speech-bubble absolute left-0 top-0 block h-auto w-[52.55px] max-w-none"
+      />
+      <img
+        src="/assets/empty/ir-deck/chart-v2.svg"
+        alt=""
+        draggable={false}
+        className="absolute left-[29.5px] top-[73.41px] block h-auto w-[104.03px] max-w-none"
+      />
+      <img
+        src="/assets/empty/ir-deck/bubble-2.svg"
+        alt=""
+        draggable={false}
+        className="animate-empty-speech-bubble animate-empty-review-bubble-delay absolute left-[104.43px] top-[32.44px] block h-auto w-[52.55px] max-w-none"
+      />
+    </div>
+  );
+}
 const button =
   "inline-flex items-center justify-center gap-2 rounded-[10px] border border-field-border px-4 py-3 text-sm font-semibold text-ink hover:bg-item-hover disabled:cursor-not-allowed disabled:opacity-40";
 const primary = cn(button, "border-brand bg-brand text-brand-foreground hover:bg-brand/90");
@@ -653,9 +681,7 @@ export function IrDeckWireframe() {
         </div>
         {!loaded ? <p role="status" className="py-16 text-center text-ink-muted">덱을 불러오는 중이에요.</p> : displayedProjects.length === 0 ? (
         <section className="flex flex-col items-center px-6 py-16 text-center">
-          <div className="mb-4 grid size-20 place-items-center rounded-full bg-item-hover">
-            <Presentation aria-hidden="true" className="size-10 text-ink-muted" strokeWidth={1.5} />
-          </div>
+          <IrDeckEmptyStateArtwork />
           <h2 className="text-[18px] font-semibold text-ink">아직 만든 IR 덱이 없어요</h2>
           <p className="mt-1 text-[15px] text-ink-muted">내 사업의 핵심을 담아 IR 덱의 구성부터 디자인까지 완성해 보세요.</p>
           <button type="button" onClick={startNew} className="mt-5 h-11 rounded-[10px] bg-item-hover px-5 text-[15px] font-semibold text-brand transition-colors hover:bg-item-hover-selected">
