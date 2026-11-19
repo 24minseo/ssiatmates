@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, ArrowUp, ArrowDown, Plus, Trash2, Eye, Download, Check, MoreVertical, Upload } from "lucide-react";
+import { ArrowLeft, ArrowRight, ArrowUp, ArrowDown, Plus, Trash2, Eye, Download, Check, MoreVertical, ChevronRight, Presentation, Upload } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
@@ -36,43 +36,27 @@ const initialCredits = 100;
 const designCost = 30;
 type TrialState = { credits: number };
 const defaultTrialState: TrialState = { credits: initialCredits };
-const Steps = ({ current, align = "center" }: { current: number; align?: "center" | "start" }) => (
-  <div className={cn("my-5 flex w-full px-2 text-sm text-ink-muted", align === "center" ? "justify-center" : "justify-start")}>
-    <ol className="flex w-full max-w-[620px] items-start justify-between">
-      {steps.map((s, i) => {
-        const step = i + 1;
+function Steps({ current }: { current: number }) {
+  return (
+    <ol aria-label="IR 덱 제작 단계" className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
+      {steps.map((label, index) => {
+        const step = index + 1;
         const active = step === current;
-        const complete = step < current;
-
         return (
-          <li key={s} className="relative flex min-w-0 flex-1 justify-center" aria-current={active ? "step" : undefined}>
-            {step < steps.length && (
-              <span
-                aria-hidden="true"
-                className={cn(
-                  "absolute left-1/2 right-0 top-3 h-px bg-field-border",
-                  complete && "bg-brand/50",
-                )}
-              />
-            )}
-            <div className="relative z-10 flex min-w-0 flex-col items-center gap-1.5 bg-background px-2 text-center">
-              <span
-                className={cn(
-                  "grid size-6 place-items-center rounded-full border border-field-border bg-surface text-[11px] font-medium transition-colors",
-                  complete && "border-brand/40 text-brand",
-                  active && "border-brand bg-item-hover-selected font-semibold text-brand",
-                )}
-              >
-                {complete ? "✓" : step}
+          <li key={label} aria-current={active ? "step" : undefined} className="flex items-center gap-3">
+            {index > 0 && <ChevronRight aria-hidden="true" className="size-3.5 text-ink-muted/50" />}
+            <span className={cn("inline-flex items-center gap-2 whitespace-nowrap text-ink-muted", step > current && "text-ink-muted/70", active && "font-semibold text-ink")}>
+              <span className={cn("grid size-6 place-items-center rounded-full bg-item-hover text-xs font-semibold tabular-nums", step > current && "bg-item-hover/60", active && "text-brand")}>
+                {step < current ? <Check aria-label="완료" className="size-3.5 text-brand" /> : step}
               </span>
-              <span className={cn("truncate px-1 text-[11px] sm:text-xs", active && "font-semibold text-brand")}>{s}</span>
-            </div>
+              {label}
+            </span>
           </li>
         );
       })}
     </ol>
-  </div>
-);
+  );
+}
 const button =
   "inline-flex items-center justify-center gap-2 rounded-[10px] border border-field-border px-4 py-3 text-sm font-semibold text-ink hover:bg-item-hover disabled:cursor-not-allowed disabled:opacity-40";
 const primary = cn(button, "border-brand bg-brand text-brand-foreground hover:bg-brand/90");
@@ -89,6 +73,7 @@ export function IrDeckWireframe() {
     projects: [],
     draft: newDraft(),
   }));
+  const [draggingPlan, setDraggingPlan] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [storageBlocked, setStorageBlocked] = useState(false);
   const [message, setMessage] = useState("");
@@ -596,6 +581,18 @@ export function IrDeckWireframe() {
             <ProgramSortDropdown value={sort} onChange={setSort} variant="irDeck" />
           </div>
         </div>
+        {!loaded ? <p role="status" className="py-16 text-center text-ink-muted">덱을 불러오는 중이에요.</p> : displayedProjects.length === 0 ? (
+        <section className="flex flex-col items-center px-6 py-16 text-center">
+          <div className="mb-4 grid size-20 place-items-center rounded-full bg-item-hover">
+            <Presentation aria-hidden="true" className="size-10 text-ink-muted" strokeWidth={1.5} />
+          </div>
+          <h2 className="text-[18px] font-semibold text-ink">아직 만든 IR 덱이 없어요</h2>
+          <p className="mt-1 text-[15px] text-ink-muted">내 사업의 핵심을 담아 IR 덱의 구성부터 디자인까지 완성해 보세요.</p>
+          <button type="button" onClick={startNew} className="mt-5 h-11 rounded-[10px] bg-item-hover px-5 text-[15px] font-semibold text-brand transition-colors hover:bg-item-hover-selected">
+            새 IR 덱 만들기
+          </button>
+        </section>
+        ) : (
         <div className="grid gap-5 md:grid-cols-3">
           <button
             type="button"
@@ -662,6 +659,7 @@ export function IrDeckWireframe() {
                 </div>
               ))}
         </div>
+        )}
       </>,
     );
 
@@ -1004,16 +1002,28 @@ export function IrDeckWireframe() {
       <section className={panel}>
         <div className="grid gap-6 lg:grid-cols-2">
           <label
-            className="relative mt-0 flex min-h-[142px] cursor-pointer flex-col items-center justify-center rounded-[4px] border border-dashed border-field-border bg-surface px-5 py-6 text-center transition-colors hover:border-brand focus-within:border-brand focus-within:ring-[3.2px] focus-within:ring-focus-soft"
-            onDragOver={(e) => e.preventDefault()}
+            className={cn("relative mt-0 flex min-h-[142px] cursor-pointer flex-col items-center justify-center rounded-[4px] border border-dashed border-field-border bg-surface px-5 py-6 text-center transition-colors hover:border-brand focus-within:border-brand focus-within:ring-[3.2px] focus-within:ring-focus-soft", draggingPlan && "border-brand bg-item-hover-selected")}
+            onDragOver={(e) => {
+              e.preventDefault();
+              if (e.dataTransfer.types.includes("Files")) {
+                e.dataTransfer.dropEffect = "copy";
+                setDraggingPlan(true);
+              }
+            }}
+            onDragLeave={(e) => {
+              if (!(e.relatedTarget instanceof Node && e.currentTarget.contains(e.relatedTarget))) setDraggingPlan(false);
+            }}
             onDrop={(e) => {
               e.preventDefault();
-              handlePlanFile(e.dataTransfer.files?.[0]);
+              setDraggingPlan(false);
+              const file = e.dataTransfer.files[0] ?? Array.from(e.dataTransfer.items).find(item => item.kind === "file")?.getAsFile();
+              if (file) handlePlanFile(file);
+              else setMessage("파일을 받지 못했어요. 파일 선택 버튼으로 PDF를 선택해 주세요.");
             }}
           >
             <span className="block font-semibold text-ink">사업계획서 업로드</span>
             <span className="mt-2 block text-sm text-ink-muted">
-              PDF 파일을 여기에 끌어다 놓거나, 파일 선택 버튼을 눌러주세요.
+              {draggingPlan ? "여기에 PDF 파일을 놓아주세요." : "PDF 파일을 여기에 끌어다 놓거나, 파일 선택 버튼을 눌러주세요."}
             </span>
             <span className="mt-3 inline-flex h-10 items-center justify-center gap-2 rounded-[10px] border-0 bg-secondary-btn px-4 text-[14px] font-semibold text-secondary-btn-text shadow-none">
               <Upload className="size-4" aria-hidden="true" />
@@ -1055,8 +1065,8 @@ export function IrDeckWireframe() {
           </button>
         )}
         <div className="mt-6 flex justify-end gap-3">
-          <button type="button" className={button} onClick={() => setScreen("home")}>
-            홈으로
+          <button type="button" className="inline-flex items-center justify-center rounded-[10px] bg-secondary-btn px-4 py-3 text-sm font-semibold text-secondary-btn-text transition-colors hover:bg-secondary-btn-hover hover:text-secondary-btn-text-hover" onClick={() => setScreen("home")}>
+            이전
           </button>
           <button
             type="button"
@@ -1074,7 +1084,7 @@ export function IrDeckWireframe() {
       </section>
     </>,
     undefined,
-    <Steps current={1} align="start" />,
+    <Steps current={1} />,
     "text-2xl",
   );
 }

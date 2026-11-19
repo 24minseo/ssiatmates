@@ -11,6 +11,7 @@ import { SquareAlertIcon } from "@/components/ui/square-alert-icon";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { LoadingDots } from "@/components/ui/loading-dots";
+import { cn } from "@/lib/utils";
 import PlanReviewResultView from "./PlanReviewResultView";
 
 type ReportItem = {
@@ -679,6 +680,7 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle,
   const [report, setReport] = useState<NoticeReport | null>(null);
   const [analysisOpen, setAnalysisOpen] = useState(false);
   const [analysisFile, setAnalysisFile] = useState<File | null>(null);
+  const [draggingAnalysisFile, setDraggingAnalysisFile] = useState(false);
   const [analysisFilePhase, setAnalysisFilePhase] = useState<"uploading" | "success" | "ready">("ready");
   const [analysisStatus, setAnalysisStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [analysisMessage, setAnalysisMessage] = useState<string | null>(null);
@@ -1137,9 +1139,33 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle,
               <li>• PDF 형식의 사업계획서만 등록할 수 있으며, 파일 1개당 크기는 30MB를 초과할 수 없습니다.</li>
             </ul>
           </div>
-          <label className="group mt-4 flex min-h-[142px] cursor-pointer flex-col items-center justify-center rounded-[4px] border border-dashed border-field-border bg-surface px-5 py-6 text-center transition-colors hover:border-brand hover:bg-item-hover/50">
-            <p className="text-[14px] text-ink-muted">파일을 여기에 끌어다 놓거나, 파일 선택 버튼을 눌러주세요.</p>
-            <span className="mt-3 inline-flex h-10 items-center justify-center gap-2 rounded-[10px] bg-secondary-btn px-4 text-[14px] font-semibold text-secondary-btn-text transition-colors group-hover:bg-secondary-btn-hover group-hover:text-secondary-btn-text-hover hover:bg-secondary-btn-hover hover:text-secondary-btn-text-hover">
+          <label
+            className={cn("relative mt-4 flex min-h-[142px] cursor-pointer flex-col items-center justify-center rounded-[8px] border border-dashed border-field-border bg-surface px-5 py-6 text-center transition-colors hover:border-brand focus-within:border-brand focus-within:ring-[3.2px] focus-within:ring-focus-soft", draggingAnalysisFile && "border-brand bg-item-hover-selected")}
+            onDragOver={(event) => { event.preventDefault(); if (analysisStatus !== "loading") setDraggingAnalysisFile(true); }}
+            onDragLeave={() => setDraggingAnalysisFile(false)}
+            onDrop={(event) => {
+              event.preventDefault();
+              setDraggingAnalysisFile(false);
+              if (analysisStatus === "loading") return;
+              const dropped = event.dataTransfer.files?.[0] ?? null;
+              if (dropped && (!/\.pdf$/i.test(dropped.name) || dropped.size > 30 * 1024 * 1024)) {
+                setAnalysisFile(null);
+                setAnalysisStatus("error");
+                setAnalysisMessage("30MB 이하의 PDF 파일을 선택해주세요.");
+                return;
+              }
+              setAnalysisFile(dropped);
+              setAnalysisFilePhase(dropped ? "uploading" : "ready");
+              setAnalysisStatus("idle");
+              setAnalysisMessage(null);
+              if (dropped) {
+                window.setTimeout(() => setAnalysisFilePhase("success"), 350);
+                window.setTimeout(() => setAnalysisFilePhase("ready"), 850);
+              }
+            }}
+          >
+            <p className="text-[14px] text-ink-muted">{draggingAnalysisFile ? "여기에 PDF 파일을 놓아주세요." : "파일을 여기에 끌어다 놓거나, 파일 선택 버튼을 눌러주세요."}</p>
+            <span className="mt-3 inline-flex h-10 items-center justify-center gap-2 rounded-[10px] bg-secondary-btn px-4 text-[14px] font-semibold text-secondary-btn-text">
               <Upload className="size-4" aria-hidden="true" />
               파일 선택
             </span>
