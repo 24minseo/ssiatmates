@@ -119,6 +119,8 @@ export function useBusinessAnalysis(options: Options) {
         throw new AnalysisError(
           "업로드할 PDF 파일을 다시 선택해 주세요. 파일 자체는 브라우저에 저장하지 않습니다.",
         );
+      if (ownerRef.current !== user.id)
+        throw new AnalysisError("로그인 상태가 변경됐습니다. 다시 요청해 주세요.");
       const reference: AnalysisReference =
         old && !old.failed && old.inputKind === kind && old.inputHash === hash
           ? old
@@ -165,7 +167,10 @@ export function useBusinessAnalysis(options: Options) {
       timer: ReturnType<typeof setTimeout> | undefined;
     let failures = 0;
     const started = Date.now();
-    const current = () => !stopped && latest.current.draft.analysis?.sourceId === sourceId;
+    const current = () =>
+      !stopped &&
+      ownerRef.current === ownerId &&
+      latest.current.draft.analysis?.sourceId === sourceId;
     const poll = async () => {
       if (!current()) return;
       if (Date.now() - started > 600000) {
@@ -256,7 +261,7 @@ export function useBusinessAnalysis(options: Options) {
       clearTimeout(timer);
     };
     // 읽기 중 요청/화면/로그인 사용자가 바뀌면 이전 응답은 적용하지 않습니다.
-  }, [watching, jobId, sourceId, watchEpoch]);
+  }, [watching, jobId, sourceId, ownerId, watchEpoch]);
 
   async function continueToDesign() {
     if (savingBusy.current) return;
