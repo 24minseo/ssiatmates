@@ -28,7 +28,6 @@ export function useBusinessAnalysis(options: Options) {
   const [file, setFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [ready, setReady] = useState(false);
   const [retryNeeded, setRetryNeeded] = useState(false);
   const [phase, setPhase] = useState("사업 내용을 정리하고 있어요");
   const [watchEpoch, setWatchEpoch] = useState(0);
@@ -62,10 +61,10 @@ export function useBusinessAnalysis(options: Options) {
       return;
     }
     setFile(next);
-    setReady(false);
     options.message("");
     options.patchDraft({
       fileName: next.name,
+      source: "",
       analysis:
         isAnalysisReference(options.draft.analysis) && options.draft.analysis.inputKind === "pdf"
           ? options.draft.analysis
@@ -75,13 +74,11 @@ export function useBusinessAnalysis(options: Options) {
   function clearFile() {
     if (busy.current) return;
     setFile(null);
-    setReady(false);
     options.message("");
     options.patchDraft({ fileName: "", analysis: undefined });
   }
   function changeSource(source: string) {
     if (busy.current) return;
-    setReady(false);
     options.message("");
     options.patchDraft({ source, analysis: undefined });
   }
@@ -95,7 +92,6 @@ export function useBusinessAnalysis(options: Options) {
     busy.current = true;
     setSubmitting(true);
     setRetryNeeded(false);
-    setReady(false);
     options.message("");
     try {
       const d = latest.current.draft,
@@ -223,13 +219,13 @@ export function useBusinessAnalysis(options: Options) {
           };
           updateReference(next);
           if (!dirty) latest.current.patchDraft({ slides: result.slides, activeSlide: 0 });
-          setReady(true);
           setRetryNeeded(false);
           setPhase("사업 내용 분석이 완료됐어요");
           if (conflict)
             latest.current.message(
               "다른 화면에서 확인 내용이 변경됐습니다. 현재 수정 내용은 유지했어요. 저장할 때 버전 충돌 여부를 확인합니다.",
             );
+          latest.current.navigate("review");
           return;
         }
         failures = 0;
@@ -331,7 +327,6 @@ export function useBusinessAnalysis(options: Options) {
     continueToDesign,
     submitting,
     saving,
-    ready,
     retryNeeded,
     phase,
     canResume: !!ref && ref.userId === user?.id,

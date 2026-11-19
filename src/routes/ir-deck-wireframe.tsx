@@ -91,7 +91,7 @@ export function IrDeckWireframe() {
   const [billingOpen, setBillingOpen] = useState(false);
   const { draft, projects } = workspace;
   const displayedProjects = devEmptyPreview ? [] : projects;
-  const { source, theme, primaryColor, primaryColor2, colorMode, slides, activeSlide } = draft;
+  const { theme, primaryColor, primaryColor2, colorMode, slides, activeSlide } = draft;
   const currentSlide = slides[activeSlide] || slides[0]!;
   const analysis = useBusinessAnalysis({ draft, screen, patchDraft, message: setMessage, navigate: setScreen });
 
@@ -679,9 +679,6 @@ export function IrDeckWireframe() {
               입력 화면으로 돌아가기
             </button>
             {analysis.retryNeeded && <button type="button" className={button} onClick={analysis.retry}>상태 다시 확인</button>}
-            <button type="button" disabled={!analysis.ready} onClick={() => setScreen("review")} className="inline-flex h-12 items-center justify-center rounded-[12px] bg-brand px-5 text-[16px] font-semibold text-brand-foreground shadow-none transition-colors hover:bg-brand/88 active:bg-brand-pressed focus-visible:ring-1 focus-visible:ring-focus-soft disabled:cursor-not-allowed disabled:opacity-40">
-              분석 내용 확인하기
-            </button>
           </div>
         </section>
       </>,
@@ -1077,66 +1074,52 @@ export function IrDeckWireframe() {
 
   return page(
     "사업계획서를 바탕으로 IR 덱을 만들어 보세요",
-    "사업계획서를 올리거나 사업 내용을 직접 입력해 주세요.",
+    "사업계획서를 업로드해 7개 슬라이드 구성으로 정리해 보세요.",
     <>
       <section className={panel}>
-        <div className="grid gap-6 lg:grid-cols-2">
-          <label
-            className={cn("relative mt-0 flex min-h-[142px] cursor-pointer flex-col items-center justify-center rounded-[8px] border border-dashed border-field-border bg-surface px-5 py-6 text-center transition-colors hover:border-brand focus-within:border-brand focus-within:ring-[3.2px] focus-within:ring-focus-soft", draggingPlan && "border-brand bg-item-hover-selected")}
-            onDragOver={(e) => {
-              e.preventDefault();
-              if (e.dataTransfer.types.includes("Files")) {
-                e.dataTransfer.dropEffect = "copy";
-                setDraggingPlan(true);
-              }
+        <label
+          className={cn("relative mt-0 flex min-h-[280px] cursor-pointer flex-col items-center justify-center rounded-[8px] border border-dashed border-field-border bg-surface px-5 py-6 text-center transition-colors hover:border-brand focus-within:border-brand focus-within:ring-[3.2px] focus-within:ring-focus-soft", draggingPlan && "border-brand bg-item-hover-selected")}
+          onDragOver={(e) => {
+            e.preventDefault();
+            if (e.dataTransfer.types.includes("Files")) {
+              e.dataTransfer.dropEffect = "copy";
+              setDraggingPlan(true);
+            }
+          }}
+          onDragLeave={(e) => {
+            if (!(e.relatedTarget instanceof Node && e.currentTarget.contains(e.relatedTarget))) setDraggingPlan(false);
+          }}
+          onDrop={(e) => {
+            e.preventDefault();
+            setDraggingPlan(false);
+            const file = e.dataTransfer.files[0] ?? Array.from(e.dataTransfer.items).find(item => item.kind === "file")?.getAsFile();
+            if (file) analysis.chooseFile(file);
+            else setMessage("파일을 받지 못했어요. 파일 선택 버튼으로 PDF를 선택해 주세요.");
+          }}
+        >
+          <span className="block font-semibold text-ink">사업계획서 업로드</span>
+          <span className="mt-2 block text-sm text-ink-muted">
+            {draggingPlan ? "여기에 PDF 파일을 놓아주세요." : "PDF 파일을 여기에 끌어다 놓거나, 파일 선택 버튼을 눌러주세요."}
+          </span>
+          <span className="mt-3 inline-flex h-10 items-center justify-center gap-2 rounded-[10px] border-0 bg-secondary-btn px-4 text-[14px] font-semibold text-secondary-btn-text shadow-none">
+            <Upload className="size-4" aria-hidden="true" />
+            파일 선택
+          </span>
+          {draft.fileName && (
+            <span className="mt-3 block break-all text-sm text-ink">{draft.fileName}</span>
+          )}
+          <input
+            className="sr-only"
+            type="file"
+            accept=".pdf,application/pdf"
+            disabled={analysis.submitting}
+            aria-label="사업계획서 파일 선택"
+            onChange={(e) => {
+              analysis.chooseFile(e.target.files?.[0]);
+              e.target.value = "";
             }}
-            onDragLeave={(e) => {
-              if (!(e.relatedTarget instanceof Node && e.currentTarget.contains(e.relatedTarget))) setDraggingPlan(false);
-            }}
-            onDrop={(e) => {
-              e.preventDefault();
-              setDraggingPlan(false);
-              const file = e.dataTransfer.files[0] ?? Array.from(e.dataTransfer.items).find(item => item.kind === "file")?.getAsFile();
-              if (file) analysis.chooseFile(file);
-              else setMessage("파일을 받지 못했어요. 파일 선택 버튼으로 PDF를 선택해 주세요.");
-            }}
-          >
-            <span className="block font-semibold text-ink">사업계획서 업로드</span>
-            <span className="mt-2 block text-sm text-ink-muted">
-              {draggingPlan ? "여기에 PDF 파일을 놓아주세요." : "PDF 파일을 여기에 끌어다 놓거나, 파일 선택 버튼을 눌러주세요."}
-            </span>
-            <span className="mt-3 inline-flex h-10 items-center justify-center gap-2 rounded-[10px] border-0 bg-secondary-btn px-4 text-[14px] font-semibold text-secondary-btn-text shadow-none">
-              <Upload className="size-4" aria-hidden="true" />
-              파일 선택
-            </span>
-            {draft.fileName && (
-              <span className="mt-3 block break-all text-sm text-ink">{draft.fileName}</span>
-            )}
-            <input
-              className="sr-only"
-              type="file"
-              accept=".pdf,application/pdf"
-              disabled={analysis.submitting}
-              aria-label="사업계획서 파일 선택"
-              onChange={(e) => {
-                analysis.chooseFile(e.target.files?.[0]);
-                e.target.value = "";
-              }}
-            />
-          </label>
-          <label>
-            <span className="mb-2 block font-semibold text-ink">
-              또는 사업 내용을 직접 입력하세요
-            </span>
-            <textarea
-              value={source}
-              disabled={analysis.submitting}
-              onChange={(e) => analysis.changeSource(e.target.value)}
-              className={cn(input, "min-h-[220px]")}
-              placeholder={"사업명: SSIAT\n문제 인식: …\n해결책: …\n시장규모: …"}
-            />
-          </label>
-        </div>
+          />
+        </label>
         {draft.fileName && (
           <button
             type="button"
@@ -1154,7 +1137,7 @@ export function IrDeckWireframe() {
           <button
             type="button"
             onClick={analysis.analyze}
-            disabled={analysis.submitting || (!draft.fileName && !source.trim())}
+            disabled={analysis.submitting || !draft.fileName}
             className={cn(
               primary,
               "h-12 rounded-[12px] px-5 text-[16px] shadow-none",
