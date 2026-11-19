@@ -17,6 +17,7 @@ type Options = {
   screen: string;
   patchDraft: (patch: Partial<Draft>) => void;
   message: (text: string) => void;
+  networkError: () => void;
   navigate: (screen: "input" | "processing" | "review" | "themes") => void;
 };
 export function useBusinessAnalysis(options: Options) {
@@ -141,6 +142,11 @@ export function useBusinessAnalysis(options: Options) {
       );
       setWatchEpoch((n) => n + 1);
     } catch (error) {
+      if (error instanceof AnalysisError && error.code === "NETWORK_UNCONFIRMED") {
+        options.networkError();
+        options.navigate("input");
+        return;
+      }
       options.message(
         error instanceof Error
           ? error.message
@@ -243,11 +249,14 @@ export function useBusinessAnalysis(options: Options) {
         if (failures >= 3) {
           setRetryNeeded(true);
           setPhase("분석 상태를 다시 확인해 주세요");
-          latest.current.message(
-            error instanceof Error
-              ? error.message
-              : "분석 상태를 확인하지 못했습니다. 다시 확인해 주세요.",
-          );
+          if (error instanceof AnalysisError && error.code === "NETWORK_UNCONFIRMED")
+            latest.current.networkError();
+          else
+            latest.current.message(
+              error instanceof Error
+                ? error.message
+                : "분석 상태를 확인하지 못했습니다. 다시 확인해 주세요.",
+            );
         } else timer = setTimeout(poll, 5000);
       }
     };

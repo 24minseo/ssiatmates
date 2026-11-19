@@ -76,6 +76,7 @@ export function IrDeckWireframe() {
   const [loaded, setLoaded] = useState(false);
   const [storageBlocked, setStorageBlocked] = useState(false);
   const [message, setMessage] = useState("");
+  const [analysisErrorOpen, setAnalysisErrorOpen] = useState(false);
   const [activeField, setActiveField] = useState("title");
   const [media, setMedia] = useState<"image" | "video" | null>(null);
   const [mediaSource, setMediaSource] = useState("");
@@ -94,7 +95,17 @@ export function IrDeckWireframe() {
   const displayedProjects = devEmptyPreview ? [] : projects;
   const { theme, primaryColor, primaryColor2, colorMode, slides, activeSlide } = draft;
   const currentSlide = slides[activeSlide] || slides[0]!;
-  const analysis = useBusinessAnalysis({ draft, screen, patchDraft, message: setMessage, navigate: setScreen });
+  const analysis = useBusinessAnalysis({
+    draft,
+    screen,
+    patchDraft,
+    message: setMessage,
+    networkError: () => {
+      setMessage("");
+      setAnalysisErrorOpen(true);
+    },
+    navigate: setScreen,
+  });
 
   useEffect(() => {
     try {
@@ -484,6 +495,39 @@ export function IrDeckWireframe() {
                 onClick={renameProject}
               >
                 저장
+              </button>
+            </div>
+          </DialogContent>
+        </Dialog>
+        <Dialog open={analysisErrorOpen} onOpenChange={setAnalysisErrorOpen}>
+          <DialogContent
+            className="w-[calc(100vw-32px)] max-w-[560px] rounded-[20px] border-0 bg-surface p-7"
+            closeClassName="right-5 top-5 flex size-9 items-center justify-center rounded-lg text-icon-muted opacity-100 transition-colors hover:bg-item-hover hover:text-ink hover:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-focus-soft focus-visible:ring-offset-0 [&_svg]:size-6"
+          >
+            <DialogTitle className="text-[20px] font-bold text-ink">앗, 분석 결과를 받아오지 못했어요</DialogTitle>
+            <DialogDescription className="-mt-2 text-[16px] leading-6 text-ink-muted">
+              분석 결과를 받아오지 못했어요. 입력 내용은 유지되니 다시 시도해주세요.
+            </DialogDescription>
+            <div className="mt-2 flex justify-end gap-2">
+              <button
+                type="button"
+                className="inline-flex h-12 items-center justify-center rounded-[12px] border-0 bg-secondary-btn px-5 text-[16px] font-semibold text-secondary-btn-text shadow-none transition-colors hover:bg-secondary-btn-hover hover:text-secondary-btn-text-hover focus-visible:ring-1 focus-visible:ring-focus-soft"
+                onClick={() => setAnalysisErrorOpen(false)}
+              >
+                닫기
+              </button>
+              <button
+                type="button"
+                className="inline-flex h-12 items-center justify-center rounded-[12px] border-0 bg-brand px-5 text-[16px] font-semibold text-brand-foreground shadow-none transition-colors hover:bg-brand/88 active:bg-brand-pressed focus-visible:ring-1 focus-visible:ring-focus-soft"
+                onClick={() => {
+                  setAnalysisErrorOpen(false);
+                  window.setTimeout(() => {
+                    if (analysis.retryNeeded) analysis.retry();
+                    else void analysis.analyze();
+                  }, 220);
+                }}
+              >
+                다시 시도
               </button>
             </div>
           </DialogContent>
