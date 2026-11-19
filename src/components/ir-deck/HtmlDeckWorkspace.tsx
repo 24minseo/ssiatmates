@@ -1,5 +1,19 @@
 import { useEffect, useRef, useState } from "react";
-import { ChevronDown, Download, ImagePlus, LoaderCircle, RefreshCw } from "lucide-react";
+import {
+  ArrowDownToLine,
+  ArrowLeft,
+  ArrowRight,
+  ArrowUpToLine,
+  ChevronDown,
+  Download,
+  ImagePlus,
+  LoaderCircle,
+  Redo2,
+  RefreshCw,
+  Trash2,
+  Undo2,
+} from "lucide-react";
+import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import {
@@ -27,8 +41,24 @@ import {
 const button =
   "inline-flex items-center justify-center gap-2 rounded-xl border border-field-border px-4 py-3 text-sm font-semibold text-ink hover:bg-item-hover disabled:cursor-not-allowed disabled:opacity-40";
 const primary = `${button} border-brand bg-brand text-brand-foreground hover:bg-brand/90`;
+const toolbarButton =
+  "inline-flex h-10 items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold text-ink-muted transition-colors hover:bg-item-hover disabled:cursor-not-allowed disabled:opacity-40";
+const historyButton =
+  "inline-flex size-10 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-item-hover disabled:cursor-not-allowed";
 const field =
   "w-full rounded-lg border border-field-border bg-background px-3 py-2 text-sm text-ink";
+
+function GrowthJournalImageIcon({ className }: { className?: string }) {
+  return (
+    <svg aria-hidden="true" className={className} viewBox="0 0 24 24" fill="none">
+      <path
+        d="M16.3525 2.00037C19.7294 2.00037 21.9989 4.36223 21.999 7.88806V16.1019C21.999 16.2529 21.9719 16.3885 21.9639 16.5345C21.9589 16.6195 21.9601 16.7045 21.9531 16.7894C21.9491 16.8274 21.9376 16.8628 21.9336 16.9008C21.9006 17.2145 21.8502 17.5143 21.7793 17.8051C21.7613 17.8831 21.7397 17.9585 21.7188 18.0345C21.6388 18.3164 21.5446 18.5852 21.4316 18.8422C21.3987 18.9141 21.3631 18.9832 21.3291 19.0541C21.2071 19.299 21.0749 19.5343 20.9219 19.7523C20.8749 19.8193 20.8234 19.8797 20.7744 19.9447C20.6154 20.1507 20.4487 20.3477 20.2607 20.5267C20.1998 20.5846 20.1313 20.6349 20.0674 20.6898C19.8744 20.8558 19.677 21.0148 19.46 21.1508C19.382 21.1997 19.2957 21.2357 19.2158 21.2797C18.995 21.4016 18.7721 21.5207 18.5293 21.6127C18.4293 21.6505 18.3179 21.6705 18.2139 21.7035C17.975 21.7774 17.7392 21.8548 17.4824 21.8988C17.2884 21.9328 17.077 21.9365 16.873 21.9535C16.699 21.9665 16.5335 22.0004 16.3525 22.0004H7.63672C7.26083 22.0003 6.90159 21.9626 6.55469 21.9056C6.5418 21.9037 6.52949 21.9018 6.51758 21.8998C5.1648 21.6667 4.04181 21.0135 3.25488 20.0287C3.24603 20.0286 3.24622 20.0181 3.2373 20.0092C2.4463 19.0132 1.99902 17.6739 1.99902 16.1019V7.88806C1.99915 4.36234 4.26998 2.00051 7.63672 2.00037H16.3525ZM7.63672 3.3949C5.05999 3.39504 3.39563 5.16234 3.39551 7.88806V16.1019C3.39551 16.8668 3.53733 17.55 3.78027 18.141C3.82106 18.092 5.72893 15.7658 5.75684 15.7347C6.44882 14.9448 7.74817 13.766 9.45312 14.4789C9.86298 14.6488 10.2228 14.8881 10.5527 15.098C11.1257 15.481 11.4635 15.6612 11.8135 15.6312C11.9582 15.6112 12.0939 15.5686 12.2227 15.4886C12.7807 15.1446 14.3581 12.8441 14.4531 12.7191C15.5431 11.2993 17.2231 10.9193 18.623 11.7592C18.811 11.8712 20.1585 12.8128 20.6045 13.1908V7.88806C20.6044 5.16223 18.9384 3.3949 16.3525 3.3949ZM8.47852 6.00037C9.17611 6.00042 9.80827 6.2931 10.2607 6.76111C10.7151 7.21275 11 7.83565 11 8.51501C10.9999 9.86979 9.8661 11.0001 8.50488 11.0004C7.30818 11.0004 6.28728 10.1256 6.05859 8.99353C6.02082 8.82371 6 8.64857 6 8.46814C6.00025 7.10375 7.10852 6.00037 8.47852 6.00037Z"
+        fill="currentColor"
+      />
+      <rect x="2" y="2" width="20" height="20" rx="5.9" fill="none" stroke="currentColor" strokeWidth="1.5" />
+    </svg>
+  );
+}
 
 function readableThumbnailNumberColor(colors: Record<string, string | null>) {
   const canvas = Object.entries(colors).find(([name]) => name.toLowerCase() === "canvas")?.[1];
@@ -46,6 +76,17 @@ function readableThumbnailNumberColor(colors: Record<string, string | null>) {
   const whiteContrast = 1.05 / (luminance + 0.05);
   const inkContrast = (luminance + 0.05) / 0.05;
   return whiteContrast >= inkContrast ? "#ffffff" : "#173d31";
+}
+
+type ImageHistoryEntry = {
+  before: ImageSlot | null;
+  after: ImageSlot | null;
+};
+
+function cloneImageSlot(slot: ImageSlot | null | undefined): ImageSlot | null {
+  return slot
+    ? { ...slot, placement: slot.placement ? { ...slot.placement } : slot.placement }
+    : null;
 }
 
 const states: Record<string, string> = {
@@ -172,8 +213,11 @@ export function HtmlDeckWorkspace({
     zIndex: 100,
   });
   const [fit, setFit] = useState<"contain" | "cover">("contain");
-  const [busy, setBusy] = useState(false),
-    [notice, setNotice] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [history, setHistory] = useState<{ past: ImageHistoryEntry[]; future: ImageHistoryEntry[] }>({
+    past: [],
+    future: [],
+  });
   const [preview, setPreview] = useState(false);
   const [pendingImage, setPendingImage] = useState<PendingImage | null>(null);
   const [exportBusy, setExportBusy] = useState(false),
@@ -192,11 +236,45 @@ export function HtmlDeckWorkspace({
     expiresAt: number;
   } | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
+  const thumbnailStrip = useRef<HTMLDivElement>(null);
+  const [thumbnailEdges, setThumbnailEdges] = useState({ left: false, right: false });
   const uploaded = useRef<{ file: File; assetId: string } | null>(null);
+  const draggingImage = useRef<{
+    slotId: string;
+    mode: "move" | "resize";
+    start: { x: number; y: number };
+    placement: Placement;
+    before: ImageSlot;
+  } | null>(null);
   const authorized = devPreview || user?.id === reference.userId;
   const current = view?.document.slides[selected];
   const selectedSlot = view?.imageSlots.find((s) => s.id === slotId) || null;
   const canMutate = !devPreview && authorized && !busy && !pendingImage;
+
+  useEffect(() => {
+    if (preview) return;
+    const strip = thumbnailStrip.current;
+    if (!strip) return;
+
+    const updateThumbnailEdges = () => {
+      setThumbnailEdges({
+        left: strip.scrollLeft > 1,
+        right: strip.scrollLeft + strip.clientWidth < strip.scrollWidth - 1,
+      });
+    };
+
+    updateThumbnailEdges();
+    strip.addEventListener("scroll", updateThumbnailEdges, { passive: true });
+    window.addEventListener("resize", updateThumbnailEdges);
+    return () => {
+      strip.removeEventListener("scroll", updateThumbnailEdges);
+      window.removeEventListener("resize", updateThumbnailEdges);
+    };
+  }, [preview, view?.document.slides.length]);
+
+  useEffect(() => {
+    setHistory({ past: [], future: [] });
+  }, [view?.document_id]);
 
   function remember(next: HtmlReference) {
     if (!alive.current || owner.current !== next.userId) return;
@@ -209,6 +287,17 @@ export function HtmlDeckWorkspace({
       alive.current = false;
     };
   }, []);
+
+  function switchSlideShortcut(key: "ArrowLeft" | "ArrowRight") {
+    if (busy || pendingImage) return;
+    if (key === "ArrowLeft" && selected > 0) {
+      setSelected((index) => index - 1);
+      setSlotId(null);
+    } else if (key === "ArrowRight" && selected < 6) {
+      setSelected((index) => index + 1);
+      setSlotId(null);
+    }
+  }
 
   useEffect(() => {
     function handleSlideShortcut(event: KeyboardEvent) {
@@ -223,12 +312,10 @@ export function HtmlDeckWorkspace({
         return;
       if (event.key === "ArrowLeft" && selected > 0) {
         event.preventDefault();
-        setSelected((index) => index - 1);
-        setSlotId(null);
+        switchSlideShortcut("ArrowLeft");
       } else if (event.key === "ArrowRight" && selected < 6) {
         event.preventDefault();
-        setSelected((index) => index + 1);
-        setSlotId(null);
+        switchSlideShortcut("ArrowRight");
       }
     }
     window.addEventListener("keydown", handleSlideShortcut);
@@ -332,7 +419,7 @@ export function HtmlDeckWorkspace({
         if (!cancelled && owner.current === reference.userId) setUrls(Object.fromEntries(entries));
       } catch {
         if (!cancelled)
-          setNotice("일부 이미지를 불러오지 못했습니다. 이미지 새로고침으로 다시 확인해 주세요.");
+          toast.error("일부 이미지를 불러오지 못했습니다. 이미지 새로고침으로 다시 확인해 주세요.");
       }
       if (!cancelled) timer = setTimeout(() => void renew(), 240000);
     }
@@ -359,11 +446,24 @@ export function HtmlDeckWorkspace({
     await refreshView();
     if (alive.current && owner.current === reference.userId) {
       setPendingImage(null);
-      setNotice("이미지 변경사항을 저장했어요.");
+      toast.success("이미지 변경사항을 저장했어요.");
       setDownload(null);
     }
   }
-  async function mutate(body: Json) {
+  function rememberImageChange(before: ImageSlot | null, after: ImageSlot | null) {
+    setHistory((currentHistory) => ({
+      past: [
+        ...currentHistory.past,
+        { before: cloneImageSlot(before), after: cloneImageSlot(after) },
+      ].slice(-30),
+      future: [],
+    }));
+  }
+  async function mutate(
+    body: Json,
+    historyEntry?: ImageHistoryEntry,
+    historyDirection?: "undo" | "redo",
+  ) {
     if (!view || !canMutate || busyLock.current) return;
     const pending = {
       body: {
@@ -377,12 +477,27 @@ export function HtmlDeckWorkspace({
     busyLock.current = true;
     setBusy(true);
     setPendingImage(pending);
-    setNotice("");
     try {
       await saveBinding(pending);
+      if (historyEntry && historyDirection) {
+        setHistory((currentHistory) => {
+          if (historyDirection === "undo") {
+            return {
+              past: currentHistory.past.slice(0, -1),
+              future: [...currentHistory.future, historyEntry],
+            };
+          }
+          return {
+            past: [...currentHistory.past, historyEntry],
+            future: currentHistory.future.slice(0, -1),
+          };
+        });
+      } else if (historyEntry) {
+        rememberImageChange(historyEntry.before, historyEntry.after);
+      }
     } catch (e) {
       if (alive.current)
-        setNotice(
+        toast.error(
           e instanceof Error
             ? e.message
             : "이미지를 저장하지 못했습니다. 같은 변경으로 다시 확인해 주세요.",
@@ -392,27 +507,61 @@ export function HtmlDeckWorkspace({
       if (alive.current) setBusy(false);
     }
   }
-  function binding(slot: ImageSlot, assetId: string | null, remove = false): Json {
+  function historyBody(slot: ImageSlot, next: ImageSlot | null): Json {
+    if (slot.origin === "generated") {
+      return {
+        action: "save_slot_image",
+        slot_id: slot.id,
+        asset_id: next?.assetId || null,
+        fit: next?.fit || slot.fit,
+      };
+    }
+    return {
+      action: "save_user_image",
+      slot_id: slot.id,
+      slide_id: next?.slideId || slot.slideId,
+      asset_id: next?.assetId || null,
+      placement: next?.placement || slot.placement,
+      fit: next?.fit || slot.fit,
+      delete: next === null,
+    };
+  }
+  async function applyHistory(direction: "undo" | "redo") {
+    if (!view || busy || pendingImage || !canMutate) return;
+    const entry = direction === "undo" ? history.past.at(-1) : history.future.at(-1);
+    if (!entry) return;
+    const next = direction === "undo" ? entry.before : entry.after;
+    const template = next || (direction === "undo" ? entry.after : entry.before);
+    if (!template) return;
+    await mutate(historyBody(template, next), entry, direction);
+  }
+  function binding(
+    slot: ImageSlot,
+    assetId: string | null,
+    remove = false,
+    nextPlacement = placement,
+    nextFit = fit,
+  ): Json {
     if (slot.origin === "generated")
-      return { action: "save_slot_image", slot_id: slot.id, asset_id: assetId, fit };
-    validatePlacement(placement);
+      return { action: "save_slot_image", slot_id: slot.id, asset_id: assetId, fit: nextFit };
+    validatePlacement(nextPlacement);
     return {
       action: "save_user_image",
       slot_id: slot.id,
       slide_id: slot.slideId,
       asset_id: assetId,
-      placement,
-      fit,
+      placement: nextPlacement,
+      fit: nextFit,
       delete: remove,
     };
   }
   async function upload(file: File) {
     if (!view || !current || !canMutate || busyLock.current) return;
     const target = selectedSlot;
+    const before = cloneImageSlot(target);
     const destinationSlide = current.slideId;
     busyLock.current = true;
     setBusy(true);
-    setNotice("");
     try {
       const p = {
         ...placement,
@@ -457,9 +606,10 @@ export function HtmlDeckWorkspace({
       setAdding(false);
       setPlacement(slot.placement || placement);
       await saveBinding(pending);
+      rememberImageChange(before, slot);
     } catch (e) {
       if (alive.current)
-        setNotice(
+        toast.error(
           e instanceof Error
             ? e.message
             : "이미지 업로드를 완료하지 못했습니다. 같은 파일로 다시 시도해 주세요.",
@@ -472,6 +622,7 @@ export function HtmlDeckWorkspace({
   function selectSlot(slot: ImageSlot | null, position: { x: number; y: number }) {
     if (busy || pendingImage) return;
     if (adding) {
+      if (devPreview) return;
       setSlotId(null);
       setPoint(position);
       fileInput.current?.click();
@@ -482,6 +633,110 @@ export function HtmlDeckWorkspace({
       setFit(slot.fit);
       if (slot.placement) setPlacement(slot.placement);
     }
+  }
+  function dragImage(
+    phase: "start" | "move" | "end",
+    mode: "move" | "resize",
+    slot: ImageSlot | null,
+    point: { x: number; y: number },
+  ) {
+    if (busy || pendingImage) return;
+    if (phase === "start") {
+      selectSlot(slot, point);
+      if (!slot || slot.origin !== "user" || !slot.placement || adding || !canMutate) return;
+      draggingImage.current = {
+        slotId: slot.id,
+        mode,
+        start: point,
+        placement: slot.placement,
+        before: cloneImageSlot(slot)!,
+      };
+      return;
+    }
+    const drag = draggingImage.current;
+    if (!drag || !slot || drag.slotId !== slot.id || slot.origin !== "user") return;
+    const deltaX = point.x - drag.start.x;
+    const deltaY = point.y - drag.start.y;
+    const width =
+      drag.mode === "resize"
+        ? (() => {
+            const ratio = drag.placement.width / drag.placement.height;
+            const maxWidth = Math.min(
+              1920 - drag.placement.x,
+              Math.floor((1080 - drag.placement.y) * ratio),
+            );
+            const minWidth = Math.min(80, maxWidth);
+            return Math.max(minWidth, Math.min(maxWidth, Math.round(drag.placement.width + deltaX)));
+          })()
+        : drag.placement.width;
+    const height =
+      drag.mode === "resize"
+        ? Math.max(1, Math.round(width / (drag.placement.width / drag.placement.height)))
+        : drag.placement.height;
+    const nextPlacement: Placement = {
+      ...drag.placement,
+      x:
+        drag.mode === "resize"
+          ? drag.placement.x
+          : Math.max(0, Math.min(1920 - drag.placement.width, drag.placement.x + deltaX)),
+      y:
+        drag.mode === "resize"
+          ? drag.placement.y
+          : Math.max(0, Math.min(1080 - drag.placement.height, drag.placement.y + deltaY)),
+      width,
+      height,
+    };
+    setPlacement(nextPlacement);
+    setView((currentView) =>
+      currentView
+        ? {
+            ...currentView,
+            imageSlots: currentView.imageSlots.map((imageSlot) =>
+              imageSlot.id === slot.id ? { ...imageSlot, placement: nextPlacement } : imageSlot,
+            ),
+          }
+        : currentView,
+    );
+    if (phase === "end") {
+      draggingImage.current = null;
+      const changed =
+        nextPlacement.x !== drag.placement.x ||
+        nextPlacement.y !== drag.placement.y ||
+        nextPlacement.width !== drag.placement.width ||
+        nextPlacement.height !== drag.placement.height;
+      if (changed) {
+        void mutate(
+          binding(slot, slot.assetId, false, nextPlacement),
+          {
+            before: drag.before,
+            after: { ...drag.before, placement: { ...nextPlacement } },
+          },
+        );
+      }
+    }
+  }
+  function saveSelectedPlacement(nextPlacement: Placement, nextFit = fit) {
+    if (!selectedSlot || selectedSlot.origin !== "user" || !selectedSlot.assetId) return;
+    try {
+      validatePlacement(nextPlacement);
+      setPlacement(nextPlacement);
+      setFit(nextFit);
+      void mutate(
+        binding(selectedSlot, selectedSlot.assetId, false, nextPlacement, nextFit),
+        {
+          before: cloneImageSlot(selectedSlot),
+          after: { ...selectedSlot, placement: { ...nextPlacement }, fit: nextFit },
+        },
+      );
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "이미지 설정을 확인해 주세요.");
+    }
+  }
+  function changeLayer(direction: "front" | "back") {
+    if (!selectedSlot?.placement || selectedSlot.origin !== "user") return;
+    const zIndex = direction === "front" ? 10000 : 0;
+    if (selectedSlot.placement.zIndex === zIndex) return;
+    saveSelectedPlacement({ ...selectedSlot.placement, zIndex });
   }
   const documentId = view?.document_id;
   useEffect(() => {
@@ -562,7 +817,8 @@ export function HtmlDeckWorkspace({
   async function downloadHtml() {
     if (!view || busy || pendingImage || exportBusy || htmlBusy) return;
     setHtmlBusy(true);
-    setNotice("HTML 파일을 준비하고 있어요.");
+    const htmlToastId = "ir-deck-html-download";
+    toast.loading("HTML 파일을 준비하고 있어요.", { id: htmlToastId });
     try {
       const assetIds = [
         ...new Set(view.imageSlots.flatMap((slot) => (slot.assetId ? [slot.assetId] : []))),
@@ -596,9 +852,11 @@ export function HtmlDeckWorkspace({
       link.download = "IR-deck.html";
       link.click();
       URL.revokeObjectURL(url);
-      setNotice("HTML 파일을 다운로드했어요.");
+      toast.success("HTML 파일을 다운로드했어요.", { id: htmlToastId });
     } catch (e) {
-      setNotice(e instanceof Error ? e.message : "HTML 파일을 만들지 못했습니다.");
+      toast.error(e instanceof Error ? e.message : "HTML 파일을 만들지 못했습니다.", {
+        id: htmlToastId,
+      });
     } finally {
       setHtmlBusy(false);
     }
@@ -662,12 +920,65 @@ export function HtmlDeckWorkspace({
     );
   const stale = view.input_status && Object.values(view.input_status).some((v) => !v);
   const thumbnailNumberColor = readableThumbnailNumberColor(view.document.designTokens.colors);
+  const thumbnailMask = thumbnailEdges.left && thumbnailEdges.right
+    ? "linear-gradient(90deg, transparent 0%, black 7%, black 93%, transparent 100%)"
+    : thumbnailEdges.left
+      ? "linear-gradient(90deg, transparent 0%, black 7%, black 100%)"
+      : thumbnailEdges.right
+        ? "linear-gradient(90deg, black 0%, black 93%, transparent 100%)"
+        : undefined;
   return (
-    <div className="space-y-5">
+    <div className="mx-auto w-full max-w-[1200px] space-y-5">
       <header className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-ink">IR 덱 {preview ? "미리보기" : "편집"}</h1>
-        </div>
+        {!preview && (
+          <div className="flex flex-wrap items-center gap-3">
+            <div
+              className="inline-flex w-fit items-center gap-0.5 rounded-xl border border-[rgba(64,72,66,0.08)] bg-surface p-1"
+              style={{ boxShadow: "0 4px 12px 0 rgba(64, 72, 66, 0.1)" }}
+            >
+              <div className="flex items-center gap-0">
+                <button
+                  className={historyButton}
+                  aria-label="되돌리기"
+                  title="되돌리기"
+                  disabled={!canMutate || history.past.length === 0}
+                  onClick={() => void applyHistory("undo")}
+                >
+                  <Undo2 className="size-4" strokeWidth={2} />
+                </button>
+                <button
+                  className={historyButton}
+                  aria-label="다시 실행"
+                  title="다시 실행"
+                  disabled={!canMutate || history.future.length === 0}
+                  onClick={() => void applyHistory("redo")}
+                >
+                  <Redo2 className="size-4" strokeWidth={2} />
+                </button>
+              </div>
+              <span className="h-5 w-px shrink-0 bg-field-border/70" aria-hidden="true" />
+              <button
+                className={toolbarButton}
+                disabled={!canMutate && !devPreview}
+                onClick={() => {
+                  setAdding(!adding);
+                  setSlotId(null);
+                }}
+              >
+                <GrowthJournalImageIcon className="size-3.5" />
+                {adding ? "추가 위치 선택 취소" : "이미지 추가"}
+              </button>
+              <button
+                className={toolbarButton}
+                disabled={busy}
+                onClick={() => setAttempt((a) => a + 1)}
+              >
+                <RefreshCw className="size-3.5" />
+                이미지 새로고침
+              </button>
+            </div>
+          </div>
+        )}
         <div className="flex flex-wrap gap-2">
           <button className={button} onClick={onHome}>
             최근 파일
@@ -689,6 +1000,12 @@ export function HtmlDeckWorkspace({
               style={{ boxShadow: "var(--shadow-dropdown)" }}
             >
               <DropdownMenuItem
+                onSelect={() => void downloadHtml()}
+                className="min-h-10 cursor-pointer rounded-[8px] px-[14px] text-ink hover:bg-dropdown-hover data-[highlighted]:bg-dropdown-hover"
+              >
+                HTML로 다운로드
+              </DropdownMenuItem>
+              <DropdownMenuItem
                 onSelect={() => requestExport("pdf")}
                 className="min-h-10 cursor-pointer rounded-[8px] px-[14px] text-ink hover:bg-dropdown-hover data-[highlighted]:bg-dropdown-hover"
               >
@@ -700,20 +1017,14 @@ export function HtmlDeckWorkspace({
               >
                 PPTX로 다운로드
               </DropdownMenuItem>
-              <DropdownMenuItem
-                onSelect={() => void downloadHtml()}
-                className="min-h-10 cursor-pointer rounded-[8px] px-[14px] text-ink hover:bg-dropdown-hover data-[highlighted]:bg-dropdown-hover"
-              >
-                HTML로 다운로드
-              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
           <button
-            className={cn(primary, "text-white")}
+            className={cn(primary, "px-5 text-white")}
             disabled={busy || !!pendingImage}
             onClick={() => {
               onSave();
-              setNotice("완성된 IR 덱을 최근 파일에 저장했어요.");
+              toast.success("완성된 IR 덱을 최근 파일에 저장했어요.");
             }}
           >
             저장
@@ -723,11 +1034,6 @@ export function HtmlDeckWorkspace({
       {stale && (
         <p className="rounded-xl bg-item-hover p-4 text-sm text-ink">
           원문 또는 디자인이 이후 변경됐어요. 현재 화면은 생성 당시의 완성본이에요.
-        </p>
-      )}
-      {notice && (
-        <p role="status" className="rounded-xl bg-item-hover p-4 text-sm text-ink">
-          {notice}
         </p>
       )}
       {pendingImage && !busy && (
@@ -741,7 +1047,7 @@ export function HtmlDeckWorkspace({
               try {
                 await saveBinding(pendingImage);
               } catch (e) {
-                setNotice(e instanceof Error ? e.message : "저장을 확인하지 못했습니다.");
+                toast.error(e instanceof Error ? e.message : "저장을 확인하지 못했습니다.");
               } finally {
                 busyLock.current = false;
                 if (alive.current) setBusy(false);
@@ -756,11 +1062,11 @@ export function HtmlDeckWorkspace({
               try {
                 await refreshView();
                 setPendingImage(null);
-                setNotice(
+                toast.success(
                   "서버의 최신 이미지 상태를 불러왔어요. 필요한 변경을 다시 선택해 주세요.",
                 );
               } catch (e) {
-                setNotice(e instanceof Error ? e.message : "조회하지 못했습니다.");
+                toast.error(e instanceof Error ? e.message : "조회하지 못했습니다.");
               }
             }}
           >
@@ -815,31 +1121,9 @@ export function HtmlDeckWorkspace({
         </div>
       )}
       <div>
-        <main className="min-w-0 space-y-4">
+        <main className="mx-auto w-full min-w-0 max-w-[1120px] space-y-4">
           {!preview && (
             <>
-              <div className="flex flex-wrap items-center gap-3">
-                <button
-                  className={button}
-                  disabled={!canMutate}
-                  onClick={() => {
-                    setAdding(!adding);
-                    setSlotId(null);
-                  }}
-                >
-                  <ImagePlus className="size-4" />
-                  {adding ? "추가 위치 선택 취소" : "이미지 추가"}
-                </button>
-                <button className={button} disabled={busy} onClick={() => setAttempt((a) => a + 1)}>
-                  <RefreshCw className="size-4" />
-                  이미지 새로고침
-                </button>
-                <span className="text-sm text-ink-muted">
-                  {adding
-                    ? "슬라이드에서 이미지를 넣을 위치를 클릭해 주세요."
-                    : "이미지 영역을 클릭하면 업로드·교체할 수 있어요."}
-                </span>
-              </div>
               <input
                 ref={fileInput}
                 type="file"
@@ -853,80 +1137,89 @@ export function HtmlDeckWorkspace({
                 }}
               />
               {selectedSlot && (
-                <section className="space-y-3 rounded-xl border border-field-border p-4">
-                  <h2 className="font-semibold text-ink">
+                <div
+                  className="inline-flex max-w-full flex-wrap items-center gap-1 rounded-xl border border-[rgba(64,72,66,0.08)] bg-surface p-1"
+                  style={{ boxShadow: "0 4px 12px 0 rgba(64, 72, 66, 0.1)" }}
+                >
+                  <span
+                    className="max-w-40 truncate px-2 text-xs font-semibold text-ink"
+                    title={selectedSlot.description || "선택한 이미지"}
+                  >
                     {selectedSlot.description || "선택한 이미지"}
-                  </h2>
-                  <div className="flex flex-wrap gap-3">
-                    <button
-                      className={button}
+                  </span>
+                  <button
+                    className={toolbarButton}
+                    disabled={!canMutate}
+                    onClick={() => fileInput.current?.click()}
+                  >
+                    <ImagePlus className="size-3.5" />
+                    {selectedSlot.assetId ? "교체" : "업로드"}
+                  </button>
+                  <label className="inline-flex h-8 items-center">
+                    <span className="sr-only">이미지 표시 방식</span>
+                    <select
+                      aria-label="이미지 표시 방식"
+                      className="h-8 rounded-lg border-0 bg-transparent px-2 text-xs font-semibold text-ink outline-none hover:bg-item-hover disabled:cursor-not-allowed disabled:opacity-40"
+                      value={fit}
                       disabled={!canMutate}
-                      onClick={() => fileInput.current?.click()}
-                    >
-                      {selectedSlot.assetId ? "이미지 교체" : "이미지 업로드"}
-                    </button>
-                    <label className="text-sm text-ink">
-                      표시 방식
-                      <select
-                        aria-label="이미지 표시 방식"
-                        className={`${field} mt-1`}
-                        value={fit}
-                        disabled={!canMutate}
-                        onChange={(e) => setFit(e.target.value as "cover" | "contain")}
-                      >
-                        <option value="contain">전체 보이기</option>
-                        <option value="cover">영역 채우기</option>
-                      </select>
-                    </label>
-                    {selectedSlot.assetId && (
-                      <button
-                        className={button}
-                        disabled={!canMutate}
-                        onClick={() =>
-                          void mutate(binding(selectedSlot, null, selectedSlot.origin === "user"))
-                        }
-                      >
-                        이미지 제거
-                      </button>
-                    )}
-                  </div>
-                  {selectedSlot.origin === "user" && (
-                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-                      {(["x", "y", "width", "height", "zIndex"] as const).map((key, i) => (
-                        <label key={key} className="text-sm text-ink">
-                          {["가로 위치", "세로 위치", "너비", "높이", "앞뒤 순서"][i]}
-                          <input
-                            aria-label={["가로 위치", "세로 위치", "너비", "높이", "앞뒤 순서"][i]}
-                            className={`${field} mt-1`}
-                            type="number"
-                            step="1"
-                            min={key === "width" || key === "height" ? 1 : 0}
-                            value={placement[key]}
-                            disabled={!canMutate}
-                            onChange={(e) =>
-                              setPlacement((p) => ({ ...p, [key]: Number(e.target.value) }))
-                            }
-                          />
-                        </label>
-                      ))}
-                    </div>
-                  )}
-                  {selectedSlot.assetId && (
-                    <button
-                      className={primary}
-                      disabled={!canMutate}
-                      onClick={() => {
-                        try {
-                          void mutate(binding(selectedSlot, selectedSlot.assetId));
-                        } catch (e) {
-                          setNotice(e instanceof Error ? e.message : "위치를 확인해 주세요.");
+                      onChange={(e) => {
+                        const nextFit = e.target.value as "cover" | "contain";
+                        if (selectedSlot.origin === "user" && selectedSlot.placement)
+                          saveSelectedPlacement(selectedSlot.placement, nextFit);
+                        else {
+                          setFit(nextFit);
+                          if (selectedSlot.assetId)
+                            void mutate(
+                              binding(selectedSlot, selectedSlot.assetId, false, placement, nextFit),
+                              {
+                                before: cloneImageSlot(selectedSlot),
+                                after: { ...selectedSlot, fit: nextFit },
+                              },
+                            );
                         }
                       }}
                     >
-                      이미지 설정 저장
+                      <option value="contain">전체 보이기</option>
+                      <option value="cover">영역 채우기</option>
+                    </select>
+                  </label>
+                  {selectedSlot.origin === "user" && (
+                    <>
+                      <button
+                        className={toolbarButton}
+                        disabled={!canMutate}
+                        onClick={() => changeLayer("front")}
+                      >
+                        <ArrowUpToLine className="size-3.5" />
+                        맨 앞으로
+                      </button>
+                      <button
+                        className={toolbarButton}
+                        disabled={!canMutate}
+                        onClick={() => changeLayer("back")}
+                      >
+                        <ArrowDownToLine className="size-3.5" />
+                        맨 뒤로
+                      </button>
+                    </>
+                  )}
+                  {selectedSlot.assetId && (
+                    <button
+                      className={`${toolbarButton} px-2 text-icon-muted hover:bg-destructive-surface hover:text-destructive`}
+                      aria-label="이미지 제거"
+                      title="이미지 제거"
+                      disabled={!canMutate}
+                      onClick={() =>
+                        void mutate(
+                          binding(selectedSlot, null, selectedSlot.origin === "user"),
+                          { before: cloneImageSlot(selectedSlot), after: null },
+                        )
+                      }
+                    >
+                      <Trash2 className="size-3.5" />
                     </button>
                   )}
-                </section>
+                </div>
               )}
             </>
           )}
@@ -937,6 +1230,8 @@ export function HtmlDeckWorkspace({
             urls={urls}
             mediaOrigin={new URL(mediaBase()).origin}
             onSelect={preview ? undefined : selectSlot}
+            onDrag={preview ? undefined : dragImage}
+            onSlideShortcut={preview ? undefined : switchSlideShortcut}
             className={cn(
               "rounded-none shadow-[0_2px_12px_rgba(0,13,59,0.08)]",
               !preview && "border-0",
@@ -945,38 +1240,67 @@ export function HtmlDeckWorkspace({
         </main>
       </div>
       {!preview && (
-        <section className="rounded-xl bg-item-hover p-2" aria-label="슬라이드 목록">
-          <div className="flex gap-2 overflow-x-auto">
-            {view.document.slides.map((slide, i) => (
-              <button
-                key={slide.slideId}
-                className={cn(
-                  "relative w-[156px] shrink-0 rounded-[4px] p-1.5 text-left",
-                  selected === i
-                    ? "ring-2 ring-inset ring-brand"
-                    : "ring-1 ring-inset ring-field-border",
-                )}
-                onClick={() => {
-                  setSelected(i);
-                  setSlotId(null);
-                  setAdding(false);
-                }}
-              >
-                <HtmlSlidePreview
-                  slide={slide}
-                  view={view}
-                  urls={urls}
-                  mediaOrigin={new URL(mediaBase()).origin}
-                  className="rounded-[4px] border-0"
-                />
-                <span
-                  className="pointer-events-none absolute bottom-2 left-3 text-lg font-bold leading-none"
-                  style={{ color: thumbnailNumberColor }}
+        <section
+          className="w-full rounded-xl p-2"
+          aria-label="슬라이드 목록"
+        >
+          <div className="relative">
+            <div
+              ref={thumbnailStrip}
+              className="flex max-w-full flex-nowrap gap-2 overflow-x-auto pb-1 pr-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              style={thumbnailMask ? { maskImage: thumbnailMask, WebkitMaskImage: thumbnailMask } : undefined}
+            >
+              {view.document.slides.map((slide, i) => (
+                <button
+                  key={slide.slideId}
+                  className={cn(
+                    "relative w-[176px] shrink-0 rounded-[4px] p-1 text-left",
+                    selected === i
+                      ? "ring-2 ring-inset ring-brand"
+                      : "ring-1 ring-inset ring-field-border",
+                  )}
+                  onClick={() => {
+                    setSelected(i);
+                    setSlotId(null);
+                    setAdding(false);
+                  }}
                 >
-                  {i + 1}
-                </span>
+                  <HtmlSlidePreview
+                    slide={slide}
+                    view={view}
+                    urls={urls}
+                    mediaOrigin={new URL(mediaBase()).origin}
+                    className="rounded-[4px] border-0"
+                  />
+                  <span
+                    className="pointer-events-none absolute bottom-2 left-3 text-lg font-bold leading-none"
+                    style={{ color: thumbnailNumberColor }}
+                  >
+                    {i + 1}
+                  </span>
+                </button>
+              ))}
+            </div>
+            {thumbnailEdges.left && (
+              <button
+                type="button"
+                aria-label="이전 슬라이드 더 보기"
+                onClick={() => thumbnailStrip.current?.scrollBy({ left: -180, behavior: "smooth" })}
+                className="absolute -left-4 top-1/2 z-10 flex size-9 -translate-y-1/2 items-center justify-center rounded-full border border-field-border/20 bg-surface text-icon-muted shadow-chip-arrow transition-colors hover:text-ink"
+              >
+                <ArrowLeft aria-hidden className="size-5" strokeWidth={2.25} />
               </button>
-            ))}
+            )}
+            {thumbnailEdges.right && (
+              <button
+                type="button"
+                aria-label="다음 슬라이드 더 보기"
+                onClick={() => thumbnailStrip.current?.scrollBy({ left: 180, behavior: "smooth" })}
+                className="absolute -right-4 top-1/2 z-10 flex size-9 -translate-y-1/2 items-center justify-center rounded-full border border-field-border/20 bg-surface text-icon-muted shadow-chip-arrow transition-colors hover:text-ink"
+              >
+                <ArrowRight aria-hidden className="size-5" strokeWidth={2.25} />
+              </button>
+            )}
           </div>
         </section>
       )}

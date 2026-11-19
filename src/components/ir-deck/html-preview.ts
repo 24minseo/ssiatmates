@@ -52,7 +52,7 @@ export function previewHtml(
       root.append(host);
     }
     if (!host) continue;
-    host.style.cursor = interactive ? "pointer" : "default";
+    host.style.cursor = interactive ? (slot.origin === "user" ? "move" : "pointer") : "default";
     host.setAttribute("aria-label", slot.description || "이미지 업로드");
     if (!slot.assetId) continue;
     host.querySelectorAll("[data-slot-placeholder-ui]").forEach((n) => n.remove());
@@ -76,6 +76,12 @@ export function previewHtml(
       maxHeight: "none",
     });
     host.append(img);
+    if (interactive && slot.origin === "user") {
+      const handle = parsed.createElement("div");
+      handle.dataset["imageResizeHandle"] = "true";
+      handle.setAttribute("aria-label", "이미지 크기 조절");
+      host.append(handle);
+    }
   }
   const vars = Object.entries(view.document.designTokens.colors)
     .filter(([, v]) => v !== null)
@@ -84,7 +90,56 @@ export function previewHtml(
   const csp = `default-src 'none'; script-src ${interactive ? `'nonce-${nonce}'` : "'none'"}; style-src 'unsafe-inline'; font-src https://cdn.jsdelivr.net; img-src ${mediaOrigin} data:; connect-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'`;
   const safeCss = slide.css.replaceAll("<", "\\3c ");
   const bridge = interactive
-    ? `<script nonce="${nonce}">document.addEventListener('click',function(e){e.preventDefault();var n=e.target.closest('[data-image-slot-id]');parent.postMessage({type:'ir-image-select',channel:${JSON.stringify(channel)},slideId:${JSON.stringify(slide.slideId)},slotId:n?n.getAttribute('data-image-slot-id'):null,x:Math.round(e.clientX),y:Math.round(e.clientY)},'*')});</script>`
+    ? `<script nonce="${nonce}">
+      (function(){
+        var active = null;
+        function send(type, node, event) {
+          parent.postMessage({
+            type:type,
+            channel:${JSON.stringify(channel)},
+            slideId:${JSON.stringify(slide.slideId)},
+            slotId:node ? node.getAttribute('data-image-slot-id') : null,
+            x:Math.round(event.clientX),
+            y:Math.round(event.clientY)
+          },'*');
+        }
+        document.addEventListener('pointerdown',function(e){
+          if(e.button !== 0) return;
+          var resize=e.target.closest('[data-image-resize-handle]');
+          var n=resize ? resize.closest('[data-image-slot-id]') : e.target.closest('[data-image-slot-id]');
+          e.preventDefault();
+          active=n ? {node:n, mode:resize ? 'resize' : 'move'} : null;
+          if(n && n.setPointerCapture) n.setPointerCapture(e.pointerId);
+          send(
+            n ? (resize ? 'ir-image-resize-start' : 'ir-image-drag-start') : 'ir-image-select',
+            n,
+            e,
+          );
+        });
+        document.addEventListener('pointermove',function(e){
+          if(!active) return;
+          e.preventDefault();
+          send(active.mode === 'resize' ? 'ir-image-resize-move' : 'ir-image-drag-move',active.node,e);
+        });
+        document.addEventListener('pointerup',function(e){
+          if(!active) return;
+          e.preventDefault();
+          send(active.mode === 'resize' ? 'ir-image-resize-end' : 'ir-image-drag-end',active.node,e);
+          active=null;
+        });
+        document.addEventListener('pointercancel',function(){ active=null; });
+        document.addEventListener('keydown',function(e){
+          if(e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+          e.preventDefault();
+          parent.postMessage({
+            type:'ir-slide-shortcut',
+            channel:${JSON.stringify(channel)},
+            slideId:${JSON.stringify(slide.slideId)},
+            key:e.key
+          },'*');
+        });
+      })();
+    </script>`
     : "";
-  return `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="${csp}"><style>${fontCss}:root{${vars}}*{box-sizing:border-box}html,body{margin:0;padding:0;width:1920px;height:1080px;overflow:hidden;background:var(--ir-canvas);font-family:Pretendard,sans-serif}.ir-host-page{position:relative;width:1920px;height:1080px;margin:0;padding:0;background:var(--ir-canvas)}section.ir-slide{width:1920px;height:1080px;position:relative;margin:0}:where([data-image-slot-id]){position:relative}${safeCss}</style></head><body><div class="ir-host-page">${root.outerHTML}</div>${bridge}</body></html>`;
+  return `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="${csp}"><style>${fontCss}:root{${vars}}*{box-sizing:border-box}html,body{margin:0;padding:0;width:1920px;height:1080px;overflow:hidden;background:var(--ir-canvas);font-family:Pretendard,sans-serif}.ir-host-page{position:relative;width:1920px;height:1080px;margin:0;padding:0;background:var(--ir-canvas)}section.ir-slide{width:1920px;height:1080px;position:relative;margin:0}:where([data-image-slot-id]){position:relative;touch-action:none}:where([data-image-resize-handle]){position:absolute;right:4px;bottom:4px;width:20px;height:20px;border:1px solid rgba(23,61,49,.18);border-radius:4px;background:rgba(255,255,255,.92);box-shadow:0 1px 4px rgba(0,13,59,.12);cursor:nwse-resize;opacity:0;pointer-events:none;transition:opacity 120ms ease}:where([data-image-slot-id]):hover [data-image-resize-handle]{opacity:1;pointer-events:auto}${safeCss}</style></head><body><div class="ir-host-page">${root.outerHTML}</div>${bridge}</body></html>`;
 }
