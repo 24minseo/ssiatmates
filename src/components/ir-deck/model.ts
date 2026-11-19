@@ -1,3 +1,5 @@
+import type { AnalysisReference } from "./analysis";
+
 export const slideNames = [
   "Business",
   "Problem",
@@ -12,7 +14,11 @@ export const reviewFields = [
   ["문제 인식", "Problem", /^(?:문제 인식|문제|고객 문제|pain point)\s*[:：-]/i],
   ["핵심 고객", "Target Customer", /^(?:고객|타깃 고객|핵심 고객|target)\s*[:：-]/i],
   ["해결책", "Solution", /^(?:해결책|해결 방안|솔루션|solution)\s*[:：-]/i],
-  ["제품·서비스", "Product & Service", /^(?:제품|서비스|제품\/서비스|제품·서비스|product)\s*[:：-]/i],
+  [
+    "제품·서비스",
+    "Product & Service",
+    /^(?:제품|서비스|제품\/서비스|제품·서비스|product)\s*[:：-]/i,
+  ],
   [
     "시장 분석",
     "Market Analysis",
@@ -50,6 +56,7 @@ export type Slide = {
   elements: SlideElement[];
 };
 export type Draft = {
+  analysis?: AnalysisReference | undefined;
   source: string;
   fileName: string;
   review: Record<string, string>;
@@ -175,10 +182,17 @@ function validDraft(value: unknown): value is Draft {
   )
     return false;
   if (value["projectId"] !== null && typeof value["projectId"] !== "string") return false;
-  if (value["primaryColor"] !== undefined && typeof value["primaryColor"] !== "string") return false;
-  if (value["primaryColor2"] !== undefined && typeof value["primaryColor2"] !== "string") return false;
-  if (value["secondaryColor"] !== undefined && typeof value["secondaryColor"] !== "string") return false;
-  if (value["colorMode"] !== undefined && value["colorMode"] !== "light" && value["colorMode"] !== "dark")
+  if (value["primaryColor"] !== undefined && typeof value["primaryColor"] !== "string")
+    return false;
+  if (value["primaryColor2"] !== undefined && typeof value["primaryColor2"] !== "string")
+    return false;
+  if (value["secondaryColor"] !== undefined && typeof value["secondaryColor"] !== "string")
+    return false;
+  if (
+    value["colorMode"] !== undefined &&
+    value["colorMode"] !== "light" &&
+    value["colorMode"] !== "dark"
+  )
     return false;
   return value["slides"].every(
     (slide) =>
@@ -216,7 +230,8 @@ function migrateSlideOrder(draft: Draft): Draft {
   };
   const existing = new Map(draft.slides.map((slide) => [slide.name, slide]));
   draft.slides = slideNames.map((name) => {
-    const slide = existing.get(name) || existing.get(legacyNames[name]);
+    const legacy = legacyNames[name];
+    const slide = existing.get(name) || (legacy ? existing.get(legacy) : undefined);
     if (slide) return { ...slide, name };
     const fresh = newSlide(name, name);
     if (name === "Target Customer" && draft.review["핵심 고객"]?.trim()) {

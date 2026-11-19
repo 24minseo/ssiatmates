@@ -9,10 +9,9 @@ import { ProgramSortDropdown, type ProgramSortOption } from "@/components/my-pro
 import { SquareAlertIcon } from "@/components/ui/square-alert-icon";
 import { SlideCanvas } from "@/components/ir-deck/SlideCanvas";
 import { TextToolbar } from "@/components/ir-deck/TextToolbar";
+import { useBusinessAnalysis } from "@/components/ir-deck/useBusinessAnalysis";
 import {
-  buildSlides,
   defaultFormat,
-  extractSections,
   mediaUrl,
   newDraft,
   newId,
@@ -94,6 +93,7 @@ export function IrDeckWireframe() {
   const displayedProjects = devEmptyPreview ? [] : projects;
   const { source, theme, primaryColor, primaryColor2, colorMode, slides, activeSlide } = draft;
   const currentSlide = slides[activeSlide] || slides[0]!;
+  const analysis = useBusinessAnalysis({ draft, screen, patchDraft, message: setMessage, navigate: setScreen });
 
   useEffect(() => {
     try {
@@ -234,25 +234,6 @@ export function IrDeckWireframe() {
     }));
     setActiveField("title");
     setScreen("editor");
-  }
-  function analyze() {
-    if (!source.trim() && !draft.fileName) {
-      setMessage("사업계획서 파일을 선택하거나 사업 내용을 입력해 주세요.");
-      return;
-    }
-    setMessage("");
-    const review = extractSections(source);
-    patchDraft({ review, slides: buildSlides(review, source), activeSlide: 0 });
-    setScreen("processing");
-  }
-  function handlePlanFile(file: File | undefined) {
-    if (!file) return;
-    if (!/\.pdf$/i.test(file.name)) {
-      setMessage("PDF 파일을 선택해 주세요.");
-      return;
-    }
-    setMessage("");
-    patchDraft({ fileName: file.name });
   }
   function changeText(field: string, value: string) {
     patchSlide((slide) =>
@@ -433,14 +414,14 @@ export function IrDeckWireframe() {
         <AlertDialog open={cancelAnalysisOpen} onOpenChange={setCancelAnalysisOpen}>
           <AlertDialogContent className="w-[calc(100vw-32px)] max-w-[480px] rounded-[20px] border-0 bg-surface p-7">
             <AlertDialogHeader>
-              <AlertDialogTitle className="text-[20px] font-bold leading-7 text-ink">분석을 취소할까요?</AlertDialogTitle>
+              <AlertDialogTitle className="text-[20px] font-bold leading-7 text-ink">입력 화면으로 돌아갈까요?</AlertDialogTitle>
               <AlertDialogDescription className="mt-2 text-[16px] leading-6 text-ink-muted">
-                진행 중인 사업 내용 분석이 취소되고 입력 화면으로 돌아갑니다. 입력한 내용은 유지됩니다.
+                입력한 내용은 유지됩니다. 접수된 분석은 서버에서 계속 진행되며, 같은 입력으로 분석하기를 누르면 기존 작업을 이어서 확인합니다.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter className="mt-5 flex-row justify-end gap-2 sm:space-x-0">
               <AlertDialogCancel className="mt-0 h-11 rounded-[12px] border-0 bg-brand px-5 text-[15px] font-semibold text-brand-foreground shadow-none hover:bg-brand/88 active:bg-brand-pressed focus-visible:ring-1 focus-visible:ring-focus-soft">계속 분석하기</AlertDialogCancel>
-              <AlertDialogAction className="h-11 rounded-[12px] border-0 bg-secondary-btn px-5 text-[15px] font-semibold text-secondary-btn-text shadow-none hover:bg-secondary-btn-hover hover:text-secondary-btn-text-hover focus-visible:ring-1 focus-visible:ring-focus-soft" onClick={() => { setCancelAnalysisOpen(false); setScreen("input"); }}>분석 취소하고 돌아가기</AlertDialogAction>
+              <AlertDialogAction className="h-11 rounded-[12px] border-0 bg-secondary-btn px-5 text-[15px] font-semibold text-secondary-btn-text shadow-none hover:bg-secondary-btn-hover hover:text-secondary-btn-text-hover focus-visible:ring-1 focus-visible:ring-focus-soft" onClick={() => { setCancelAnalysisOpen(false); setScreen("input"); }}>입력 화면으로 돌아가기</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
@@ -585,6 +566,10 @@ export function IrDeckWireframe() {
       "AI IR 덱",
       "사업의 핵심을 투자자가 이해할 수 있는 이야기로 정리해 보세요.",
       <>
+        {analysis.canResume && <div className={cn(notice, "mb-5 mt-0 items-center justify-between")}>
+          <span>작성 중인 사업 내용이 있어요.</span>
+          <button type="button" className="shrink-0 font-semibold text-brand underline" onClick={() => setScreen("input")}>이어서 확인하기</button>
+        </div>}
         <div className="relative mb-5 h-[48px] w-full border-b border-field-border">
           <span className="absolute left-0 top-0 inline-flex h-[42px] items-center justify-center gap-[6px] text-[18px] font-medium text-ink">
             전체
@@ -685,7 +670,7 @@ export function IrDeckWireframe() {
       <>
         <section className={cn(panel, "p-16 text-center")}>
           <img src="/assets/sidebar/ir-deck-active.svg" alt="" className="mx-auto size-10" />
-          <h2 className="mt-5 text-xl font-semibold text-ink">사업 내용을 정리하고 있어요</h2>
+          <h2 className="mt-5 text-xl font-semibold text-ink" role="status">{analysis.phase}</h2>
           <div className="mx-auto my-7 h-2 max-w-md overflow-hidden rounded-full bg-item-hover">
             <div className="ir-deck-progress h-full w-1/3 rounded-full bg-brand" />
           </div>
@@ -693,7 +678,8 @@ export function IrDeckWireframe() {
             <button type="button" className="inline-flex h-12 items-center justify-center rounded-[12px] bg-secondary-btn px-5 text-[16px] font-semibold text-secondary-btn-text shadow-none transition-colors hover:bg-secondary-btn-hover hover:text-secondary-btn-text-hover focus-visible:ring-1 focus-visible:ring-focus-soft" onClick={() => setCancelAnalysisOpen(true)}>
               입력 화면으로 돌아가기
             </button>
-            <button type="button" onClick={() => setScreen("review")} className="inline-flex h-12 items-center justify-center rounded-[12px] bg-brand px-5 text-[16px] font-semibold text-brand-foreground shadow-none transition-colors hover:bg-brand/88 active:bg-brand-pressed focus-visible:ring-1 focus-visible:ring-focus-soft">
+            {analysis.retryNeeded && <button type="button" className={button} onClick={analysis.retry}>상태 다시 확인</button>}
+            <button type="button" disabled={!analysis.ready} onClick={() => setScreen("review")} className="inline-flex h-12 items-center justify-center rounded-[12px] bg-brand px-5 text-[16px] font-semibold text-brand-foreground shadow-none transition-colors hover:bg-brand/88 active:bg-brand-pressed focus-visible:ring-1 focus-visible:ring-focus-soft disabled:cursor-not-allowed disabled:opacity-40">
               분석 내용 확인하기
             </button>
           </div>
@@ -731,6 +717,8 @@ export function IrDeckWireframe() {
                     <input
                       className={input}
                       aria-label={`${slideName} 제목 수정`}
+                      maxLength={240}
+                      disabled={analysis.saving}
                       placeholder="슬라이드 제목을 입력해 주세요."
                       value={slide.title}
                       onChange={(e) =>
@@ -744,6 +732,7 @@ export function IrDeckWireframe() {
                     <textarea
                       className={cn(input, "min-h-24")}
                       aria-label={`${slideName} 내용 수정`}
+                      disabled={analysis.saving}
                       placeholder="슬라이드 내용을 입력해 주세요."
                       value={slide.body}
                       onChange={(e) =>
@@ -764,8 +753,8 @@ export function IrDeckWireframe() {
           <button type="button" className="inline-flex h-12 items-center justify-center rounded-[12px] bg-secondary-btn px-5 text-[16px] font-semibold text-secondary-btn-text shadow-none transition-colors hover:bg-secondary-btn-hover hover:text-secondary-btn-text-hover focus-visible:ring-1 focus-visible:ring-focus-soft" onClick={() => setScreen("input")}>
             입력 화면으로 돌아가기
           </button>
-          <button type="button" onClick={() => setScreen("themes")} className="inline-flex h-12 items-center justify-center gap-2 rounded-[12px] bg-brand px-5 text-[16px] font-semibold text-brand-foreground shadow-none transition-colors hover:bg-brand/88 active:bg-brand-pressed focus-visible:ring-1 focus-visible:ring-focus-soft">
-            디자인 방향 선택
+          <button type="button" disabled={analysis.saving} onClick={analysis.continueToDesign} className="inline-flex h-12 items-center justify-center gap-2 rounded-[12px] bg-brand px-5 text-[16px] font-semibold text-brand-foreground shadow-none transition-colors hover:bg-brand/88 active:bg-brand-pressed focus-visible:ring-1 focus-visible:ring-focus-soft disabled:cursor-not-allowed disabled:opacity-40">
+            {analysis.saving ? "수정 내용 저장 중" : "디자인 방향 선택"}
             <ArrowRight className="size-4" />
           </button>
         </div>
@@ -1108,7 +1097,7 @@ export function IrDeckWireframe() {
               e.preventDefault();
               setDraggingPlan(false);
               const file = e.dataTransfer.files[0] ?? Array.from(e.dataTransfer.items).find(item => item.kind === "file")?.getAsFile();
-              if (file) handlePlanFile(file);
+              if (file) analysis.chooseFile(file);
               else setMessage("파일을 받지 못했어요. 파일 선택 버튼으로 PDF를 선택해 주세요.");
             }}
           >
@@ -1127,9 +1116,10 @@ export function IrDeckWireframe() {
               className="sr-only"
               type="file"
               accept=".pdf,application/pdf"
+              disabled={analysis.submitting}
               aria-label="사업계획서 파일 선택"
               onChange={(e) => {
-                handlePlanFile(e.target.files?.[0]);
+                analysis.chooseFile(e.target.files?.[0]);
                 e.target.value = "";
               }}
             />
@@ -1140,7 +1130,8 @@ export function IrDeckWireframe() {
             </span>
             <textarea
               value={source}
-              onChange={(e) => { setMessage(""); patchDraft({ source: e.target.value }); }}
+              disabled={analysis.submitting}
+              onChange={(e) => analysis.changeSource(e.target.value)}
               className={cn(input, "min-h-[220px]")}
               placeholder={"사업명: SSIAT\n문제 인식: …\n해결책: …\n시장규모: …"}
             />
@@ -1150,7 +1141,8 @@ export function IrDeckWireframe() {
           <button
             type="button"
             className={cn(button, "mt-3")}
-            onClick={() => { setMessage(""); patchDraft({ fileName: "" }); }}
+            disabled={analysis.submitting}
+            onClick={analysis.clearFile}
           >
             선택한 파일 해제
           </button>
@@ -1161,8 +1153,8 @@ export function IrDeckWireframe() {
           </button>
           <button
             type="button"
-            onClick={analyze}
-            disabled={!draft.fileName && !source.trim()}
+            onClick={analysis.analyze}
+            disabled={analysis.submitting || (!draft.fileName && !source.trim())}
             className={cn(
               primary,
               "h-12 rounded-[12px] px-5 text-[16px] shadow-none",
