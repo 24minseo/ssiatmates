@@ -8,7 +8,7 @@ export const slideNames = [
   "Revenue Model",
 ];
 export const reviewFields = [
-  ["사업/서비스명", "Business", /^(?:사업\/서비스명|사업명|서비스명|회사명|프로젝트명)\s*[:：-]/i],
+  ["제목", "Business", /^(?:제목|사업\/서비스명|사업명|서비스명|회사명|프로젝트명)\s*[:：-]/i],
   ["문제 인식", "Problem", /^(?:문제 인식|문제|고객 문제|pain point)\s*[:：-]/i],
   ["핵심 고객", "Target Customer", /^(?:고객|타깃 고객|핵심 고객|target)\s*[:：-]/i],
   ["해결책", "Solution", /^(?:해결책|해결 방안|솔루션|solution)\s*[:：-]/i],

@@ -18,7 +18,6 @@ import {
   newId,
   newSlide,
   restoreWorkspace,
-  reviewFields,
   slideNames,
   storageKey,
   type Draft,
@@ -242,7 +241,8 @@ export function IrDeckWireframe() {
       return;
     }
     setMessage("");
-    patchDraft({ review: extractSections(source) });
+    const review = extractSections(source);
+    patchDraft({ review, slides: buildSlides(review, source), activeSlide: 0 });
     setScreen("processing");
   }
   function handlePlanFile(file: File | undefined) {
@@ -292,6 +292,7 @@ export function IrDeckWireframe() {
       id,
       title:
         (shouldSyncCoverTitle ? coverTitle : previous?.title) ||
+        draft.review["제목"]?.trim() ||
         draft.review["사업/서비스명"]?.trim() ||
         "제목 없는 IR Deck",
       updatedAt: Date.now(),
@@ -718,21 +719,45 @@ export function IrDeckWireframe() {
             </div>
           </div>
           <div className="grid gap-3">
-            {reviewFields.map(([name, destination]) => (
-              <label key={name} className="rounded-xl border border-field-border p-5">
-                <span className="mb-3 block font-semibold text-ink">{name}</span>
-                <textarea
-                  className={cn(input, "min-h-24")}
-                  aria-label={`${name} 내용 수정`}
-                  placeholder="내용을 확인하고 수정해 주세요."
-                  value={draft.review[name] || ""}
-                  onChange={(e) =>
-                    patchDraft({ review: { ...draft.review, [name]: e.target.value } })
-                  }
-                />
-                <small className="text-ink-muted">반영 위치: {destination}</small>
-              </label>
-            ))}
+            {slideNames.map((slideName, index) => {
+              const slide = draft.slides[index] || newSlide(slideName, slideName);
+              return (
+                <div key={slideName} className="rounded-xl border border-field-border p-5">
+                  <div className="mb-4 flex items-center justify-between gap-3">
+                    <span className="font-semibold text-ink">{index + 1}. {slideName}</span>
+                    <small className="text-ink-muted">제목과 내용을 확인해 주세요</small>
+                  </div>
+                  <div className="grid gap-3">
+                    <input
+                      className={input}
+                      aria-label={`${slideName} 제목 수정`}
+                      placeholder="슬라이드 제목을 입력해 주세요."
+                      value={slide.title}
+                      onChange={(e) =>
+                        patchDraft({
+                          slides: draft.slides.map((item, i) =>
+                            i === index ? { ...item, title: e.target.value } : item,
+                          ),
+                        })
+                      }
+                    />
+                    <textarea
+                      className={cn(input, "min-h-24")}
+                      aria-label={`${slideName} 내용 수정`}
+                      placeholder="슬라이드 내용을 입력해 주세요."
+                      value={slide.body}
+                      onChange={(e) =>
+                        patchDraft({
+                          slides: draft.slides.map((item, i) =>
+                            i === index ? { ...item, body: e.target.value } : item,
+                          ),
+                        })
+                      }
+                    />
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </section>
         <div className="mt-6 flex justify-end gap-3">
@@ -830,7 +855,7 @@ export function IrDeckWireframe() {
           <button
             type="button"
             onClick={() => {
-              patchDraft({ slides: buildSlides(draft.review, source), activeSlide: 0 });
+              patchDraft({ activeSlide: 0 });
               setActiveField("title");
               setScreen("editor");
             }}
