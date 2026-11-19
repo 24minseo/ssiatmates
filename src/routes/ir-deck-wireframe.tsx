@@ -815,7 +815,7 @@ export function IrDeckWireframe() {
             className="group flex min-h-[298px] flex-col items-center justify-center gap-3 rounded-xl border border-field-border bg-surface text-ink-muted transition-[box-shadow,transform] duration-150 ease-out hover:-translate-y-px hover:shadow-[0_8px_30px_0_rgba(0,13,59,0.1)] motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-50"
           >
               <span className="flex size-12 items-center justify-center rounded-full bg-item-hover text-ink-muted">
-              <Plus className="size-6" />
+              <Plus className="size-6 transition-transform duration-200 ease-out group-hover:rotate-90 motion-reduce:transition-none" />
             </span>
             <span className="text-[16px] font-semibold text-ink">새 IR 덱 만들기</span>
           </button>
