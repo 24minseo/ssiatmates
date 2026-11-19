@@ -1928,7 +1928,7 @@ function ProgramsPage() {
         {excludedOpen &&
           createPortal(
             <div
-              className="fixed inset-0 z-[100] flex items-center justify-center bg-overlay !backdrop-blur-0 p-4"
+              className="fixed inset-0 z-[100] flex items-center justify-center bg-overlay backdrop-blur-[2px] p-4"
               onClick={() => setExcludedOpen(false)}
             >
               <div
