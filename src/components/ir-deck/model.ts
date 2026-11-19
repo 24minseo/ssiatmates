@@ -104,7 +104,7 @@ export const newDraft = (): Draft => ({
   fileName: "",
   review: {},
   theme: "Custom",
-  primaryColor: "#1F8064",
+  fontFamily: "Paperlogy",
   colorMode: "light",
   slides: slideNames.map((name, i) =>
     newSlide(

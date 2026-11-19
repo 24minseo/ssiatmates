@@ -4,6 +4,8 @@ import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownChevron } from "@/components/ui/DropdownChevron";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ProgramSortDropdown, type ProgramSortOption } from "@/components/my-programs/ProgramSortDropdown";
 import { SquareAlertIcon } from "@/components/ui/square-alert-icon";
 import { SlideCanvas } from "@/components/ir-deck/SlideCanvas";
@@ -34,6 +36,29 @@ const initialCredits = 100;
 const designCost = 30;
 type TrialState = { credits: number };
 const defaultTrialState: TrialState = { credits: initialCredits };
+function readableTextColor(hex: string) {
+  const value = hex.replace("#", "");
+  if (value.length !== 6) return "#FFFFFF";
+  const red = Number.parseInt(value.slice(0, 2), 16);
+  const green = Number.parseInt(value.slice(2, 4), 16);
+  const blue = Number.parseInt(value.slice(4, 6), 16);
+  const luminance = (0.299 * red + 0.587 * green + 0.114 * blue) / 255;
+  return luminance > 0.58 ? "#173D31" : "#FFFFFF";
+}
+function relativeLuminance(hex: string) {
+  const value = hex.replace("#", "");
+  if (value.length !== 6) return 0.4;
+  const channels = [0, 2, 4].map((offset) => Number.parseInt(value.slice(offset, offset + 2), 16) / 255);
+  const linear = channels.map((channel) => (channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4));
+  return 0.2126 * linear[0]! + 0.7152 * linear[1]! + 0.0722 * linear[2]!;
+}
+function contrastRatio(first: string, second: string) {
+  const firstLuminance = relativeLuminance(first);
+  const secondLuminance = relativeLuminance(second);
+  const lighter = Math.max(firstLuminance, secondLuminance);
+  const darker = Math.min(firstLuminance, secondLuminance);
+  return (lighter + 0.05) / (darker + 0.05);
+}
 function Steps({ current }: { current: number }) {
   return (
     <ol aria-label="IR 덱 제작 단계" className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
@@ -126,9 +151,11 @@ export function IrDeckWireframe() {
   const [devEmptyPreview, setDevEmptyPreview] = useState(false);
   const [trial, setTrial] = useState<TrialState>(defaultTrialState);
   const [billingOpen, setBillingOpen] = useState(false);
+  const [fontMenuOpen, setFontMenuOpen] = useState(false);
   const { draft, projects } = workspace;
   const displayedProjects = devEmptyPreview ? [] : projects;
   const { theme, primaryColor, primaryColor2, colorMode, slides, activeSlide } = draft;
+  const recommendedColorMode = primaryColor && Math.round(contrastRatio(primaryColor, "#FFFFFF") * 10) / 10 < 3 ? "dark" : "light";
   const currentSlide = slides[activeSlide] || slides[0]!;
   const analysis = useBusinessAnalysis({
     draft,
@@ -168,10 +195,21 @@ export function IrDeckWireframe() {
     setLoaded(true);
   }, []);
   useEffect(() => {
-    if (import.meta.env.DEV && new URLSearchParams(window.location.search).get("empty") === "1") {
+    const params = new URLSearchParams(window.location.search);
+    if (import.meta.env.DEV && params.get("empty") === "1") {
       setDevEmptyPreview(true);
     }
   }, []);
+  useEffect(() => {
+    if (!loaded || !import.meta.env.DEV) return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("preview") !== "themes") return;
+    setScreen("themes");
+    setWorkspace((current) => ({
+      ...current,
+      draft: { ...current.draft, primaryColor: undefined, primaryColor2: undefined, fontFamily: "Paperlogy" },
+    }));
+  }, [loaded]);
   useEffect(() => {
     if (!loaded || storageBlocked) return;
     try {
@@ -213,7 +251,11 @@ export function IrDeckWireframe() {
       return;
     }
     if (storageBlocked) { setMessage("생성 요청을 이어서 확인하려면 브라우저 저장소 접근을 먼저 확인해 주세요."); return; }
-    const reference: HtmlReference = { userId: source.userId, deckId: source.deckId, sourceId: source.sourceId, requestId: newId(), brandSaveId: newId(), businessRevision: source.businessRevision, settings: { brandColors: [draft.primaryColor || "#1F8064", ...(draft.primaryColor2 ? [draft.primaryColor2] : [])].map(c => c.toUpperCase()), theme: draft.colorMode || "light", fontFamily: draft.fontFamily || "Pretendard" } };
+    if (!draft.primaryColor) {
+      setMessage("주 색상을 선택해 주세요.");
+      return;
+    }
+    const reference: HtmlReference = { userId: source.userId, deckId: source.deckId, sourceId: source.sourceId, requestId: newId(), brandSaveId: newId(), businessRevision: source.businessRevision, settings: { brandColors: [draft.primaryColor || "#1F8064", ...(draft.primaryColor2 ? [draft.primaryColor2] : [])].map(c => c.toUpperCase()), theme: draft.colorMode || "light", fontFamily: draft.fontFamily || "Paperlogy" } };
     const id = draft.projectId || newId();
     const nextDraft = { ...draft, projectId: id, html: reference };
     const existing = projects.find(project => project.id === id);
@@ -805,7 +847,7 @@ export function IrDeckWireframe() {
             <div>
               <strong className="block">슬라이드 구성 7개 미리보기</strong>
               <p className="mt-0 leading-5 font-normal">
-                추가하고 싶은 주제는 슬라이드 편집 단계에서 직접 작성할 수 있어요.
+                제목과 내용을 확인하고 수정해주세요. 추가하고 싶은 주제는 슬라이드 편집 단계에서 직접 작성할 수 있어요.
               </p>
             </div>
           </div>
@@ -816,7 +858,6 @@ export function IrDeckWireframe() {
                 <div key={slideName} className="rounded-xl border border-field-border p-5">
                   <div className="mb-4 flex items-center justify-between gap-3">
                     <span className="font-semibold text-ink">{index + 1}. {slideName}</span>
-                    <small className="text-ink-muted">제목과 내용을 확인해 주세요</small>
                   </div>
                   <div className="grid gap-3">
                     <input
@@ -874,58 +915,103 @@ export function IrDeckWireframe() {
       "브랜드 색상은 최대 2개까지 지정하고, 발표 화면의 명암 모드를 선택해 주세요.",
       <>
         <section className="grid gap-4 lg:grid-cols-2">
-          <div className="rounded-2xl border border-field-border bg-surface p-6">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h2 className="font-semibold text-ink">색상 선택</h2>
-                <p className="mt-1 text-sm text-ink-muted">브랜드 색상을 최대 2개까지 추가해주세요</p>
-              </div>
-              <span className="rounded-md bg-item-hover px-2 py-1 text-xs font-medium text-ink-muted">최대 2개</span>
+          <div className="rounded-2xl border-0 bg-surface p-6">
+            <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-lg font-semibold text-ink">
+                    색상 선택<span aria-hidden="true" className="relative -top-px ml-0.5 text-brand">*</span>
+                  </h2>
+                  <span className="rounded bg-item-hover px-2 py-1 text-xs font-medium text-ink-muted">최대 2개</span>
+                </div>
+                <p className="mt-1 text-[15px] text-ink-muted">브랜드의 메인컬러를 추가해주세요.</p>
             </div>
-            <div className="mt-6 grid gap-4 sm:grid-cols-2">
-              <label className="rounded-xl border border-field-border p-4">
-                  <span className="block text-sm font-semibold text-ink">주 색상 1</span>
-                <div className="mt-3 flex items-center gap-3">
+            <div className="mt-5 grid gap-4 sm:grid-cols-2">
+              {primaryColor ? (
+                <label
+                  className="relative flex min-h-[144px] cursor-pointer items-end overflow-hidden rounded-xl border-[1.5px] border-transparent p-4 transition-[border-color,box-shadow] hover:shadow-[0_8px_30px_0_rgba(0,13,59,0.1)] focus-within:border-brand focus-within:ring-[3.2px] focus-within:ring-focus-soft"
+                  style={{ backgroundColor: primaryColor }}
+                >
+                  <span className="relative z-10 text-[15px] font-semibold" style={{ color: readableTextColor(primaryColor) }}>
+                    주 색상 1: {primaryColor}
+                  </span>
+                  <div className="absolute inset-0 z-0">
+                    <input
+                      type="color"
+                      value={primaryColor}
+                      onChange={(event) => patchDraft({ theme: "Custom", primaryColor: event.target.value })}
+                      className="h-full w-full cursor-pointer opacity-0"
+                      aria-label="주 색상 1 선택"
+                    />
+                  </div>
+                </label>
+              ) : (
+                <label className="flex min-h-[144px] cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-[1.5px] border-field-border p-4 text-center transition-[box-shadow] hover:shadow-[0_8px_30px_0_rgba(0,13,59,0.1)] focus-within:border-brand focus-within:ring-[3.2px] focus-within:ring-focus-soft">
                   <input
                     type="color"
-                    value={primaryColor || "#1F8064"}
+                    value="#1F8064"
                     onChange={(event) => patchDraft({ theme: "Custom", primaryColor: event.target.value })}
-                    className="size-10 cursor-pointer rounded-lg border-0 bg-transparent p-0"
-                    aria-label="주 색상 선택"
+                    className="sr-only"
+                    aria-label="주 색상 1 선택"
                   />
-                  <code className="text-sm font-medium text-ink-muted">{primaryColor || "#1F8064"}</code>
-                </div>
-              </label>
-              <div className="rounded-xl border border-field-border p-4">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="block text-sm font-semibold text-ink">주 색상 2</span>
-                  {primaryColor2 && (
+                  <span className="grid size-8 place-items-center rounded-full bg-item-hover text-brand">
+                    <Plus aria-hidden="true" className="size-4" />
+                  </span>
+                  <span className="text-sm font-semibold text-ink-muted">주 색상 1 추가</span>
+                </label>
+              )}
+              {primaryColor2 ? (
+                <div
+                  className="relative flex min-h-[144px] items-end overflow-hidden rounded-xl border-[1.5px] border-transparent p-4 transition-[border-color,box-shadow] hover:shadow-[0_8px_30px_0_rgba(0,13,59,0.1)] focus-within:border-brand focus-within:ring-[3.2px] focus-within:ring-focus-soft"
+                  style={{ backgroundColor: primaryColor2 }}
+                >
+                  <input
+                    type="color"
+                    value={primaryColor2}
+                    onChange={(event) => patchDraft({ theme: "Custom", primaryColor2: event.target.value })}
+                    className="absolute inset-0 z-0 h-full w-full cursor-pointer opacity-0"
+                    aria-label="주 색상 2 선택"
+                  />
+                  <div className="relative z-10 flex w-full items-center justify-between gap-2">
+                    <span className="text-[15px] font-semibold" style={{ color: readableTextColor(primaryColor2) }}>
+                      주 색상 2: {primaryColor2}
+                    </span>
                     <button
                       type="button"
                       onClick={() => patchDraft({ theme: "Custom", primaryColor2: undefined })}
-                      className="text-xs font-medium text-ink-muted underline-offset-2 hover:text-ink hover:underline"
+                      className="relative z-20 text-xs font-medium underline-offset-2 hover:underline"
+                      style={{ color: readableTextColor(primaryColor2) }}
                     >
                       제거
                     </button>
-                  )}
+                  </div>
                 </div>
-                <div className="mt-3 flex items-center gap-3">
+              ) : (
+                <label
+                  aria-disabled={!primaryColor}
+                  className={cn(
+                    "flex min-h-[144px] flex-col items-center justify-center gap-2 rounded-xl border-[1.5px] border-field-border p-4 text-center transition-[box-shadow]",
+                    primaryColor ? "cursor-pointer hover:shadow-[0_8px_30px_0_rgba(0,13,59,0.1)] focus-within:border-brand focus-within:ring-[3.2px] focus-within:ring-focus-soft" : "cursor-not-allowed bg-field-border/25 text-content-disabled",
+                  )}
+                >
                   <input
                     type="color"
-                    value={primaryColor2 || primaryColor || "#1F8064"}
+                    value={primaryColor || "#1F8064"}
                     onChange={(event) => patchDraft({ theme: "Custom", primaryColor2: event.target.value })}
-                    className="size-10 cursor-pointer rounded-lg border-0 bg-transparent p-0"
+                    disabled={!primaryColor}
+                    className="sr-only"
                     aria-label="주 색상 2 선택"
                   />
-                  <code className="text-sm font-medium text-ink-muted">{primaryColor2 || "선택하지 않음"}</code>
-                </div>
-                {!primaryColor2 && <span className="mt-2 block text-xs text-ink-muted">선택 사항</span>}
-              </div>
+                  <span className={cn("grid size-8 place-items-center rounded-full bg-item-hover", primaryColor ? "text-brand" : "text-content-disabled")}>
+                    <Plus aria-hidden="true" className="size-4" />
+                  </span>
+                  <span className={cn("text-sm font-semibold", primaryColor ? "text-ink-muted" : "text-content-disabled")}>주 색상 2 추가</span>
+                </label>
+              )}
             </div>
           </div>
-          <div className="rounded-2xl border border-field-border bg-surface p-6">
-            <h2 className="font-semibold text-ink">화면 모드</h2>
-            <p className="mt-1 text-sm text-ink-muted">배경 색을 골라주세요</p>
+          <div className="rounded-2xl border-0 bg-surface p-6">
+            <h2 className="text-lg font-semibold text-ink">화면 모드</h2>
+            <p className="mt-1 text-[15px] text-ink-muted">배경 색을 골라주세요.</p>
             <div className="mt-5 grid grid-cols-2 gap-3">
               {(["light", "dark"] as const).map((mode) => (
                 <button
@@ -933,20 +1019,68 @@ export function IrDeckWireframe() {
                   key={mode}
                   aria-pressed={(colorMode || "light") === mode}
                   onClick={() => patchDraft({ theme: "Custom", colorMode: mode })}
-                  className={cn("rounded-xl border p-4 text-left transition-colors", (colorMode || "light") === mode ? "border-brand bg-item-hover-selected" : "border-field-border hover:bg-item-hover")}
+                  className={cn("flex h-[144px] flex-col justify-end overflow-hidden rounded-xl border-[1.5px] bg-surface p-4 text-left transition-[border-color,box-shadow] hover:shadow-[0_8px_30px_0_rgba(0,13,59,0.1)] focus-visible:outline-none focus-visible:ring-[3.2px] focus-visible:ring-focus-soft", (colorMode || "light") === mode ? "border-2 border-brand" : "border-field-border")}
+                  style={{ backgroundColor: mode === "dark" ? "#151A18" : "#FFFFFF" }}
                 >
-                  <span className={cn("mb-3 block h-14 rounded-lg border", mode === "dark" ? "border-[#303936] bg-[#151A18]" : "border-field-border bg-white")} />
-                  <b>{mode === "light" ? "라이트" : "다크"}</b>
+                  <span className={cn("-mx-4 -mb-4 flex w-[calc(100%+2rem)] items-center gap-2 border-t border-field-border bg-white px-4 py-3 text-[15px] font-semibold", (colorMode || "light") === mode ? "font-bold text-brand" : "text-ink")}>
+                    <span>{mode === "light" ? "라이트" : "다크"}</span>
+                    {recommendedColorMode === mode && <span className="rounded-full bg-[#E2F8F0] px-2 py-1 text-xs font-medium text-brand">추천</span>}
+                  </span>
                 </button>
               ))}
             </div>
           </div>
         </section>
-        <label className="mt-5 block max-w-sm text-sm font-semibold text-ink">슬라이드 글꼴
-          <select className={cn(input, "mt-2")} value={draft.fontFamily || "Pretendard"} onChange={event => patchDraft({ fontFamily: event.target.value as "Paperlogy" | "Pretendard" })}>
-            <option value="Pretendard">Pretendard</option><option value="Paperlogy">Paperlogy 제목 + Pretendard 본문</option>
-          </select>
-        </label>
+        <div className="mt-5 block w-full max-w-sm rounded-2xl bg-surface p-6 text-lg font-semibold text-ink">
+          <span className="block">슬라이드 글꼴</span>
+          <Popover open={fontMenuOpen} onOpenChange={setFontMenuOpen}>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                role="combobox"
+                aria-label="슬라이드 글꼴 선택"
+                aria-expanded={fontMenuOpen}
+                className="mt-3 flex h-12 w-full items-center justify-between rounded-[12px] border border-field-border bg-surface px-4 text-left text-[15px] font-medium text-ink transition-colors focus:outline-none focus-visible:border-[1.5px] focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft"
+              >
+                <span className="truncate">{draft.fontFamily === "Paperlogy" ? "Paperlogy 제목 + Pretendard 본문" : "Pretendard"}</span>
+                <DropdownChevron open={fontMenuOpen} variant="muted" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent
+              align="start"
+              side="bottom"
+              sideOffset={4}
+              avoidCollisions={false}
+              className="w-[var(--radix-popover-trigger-width)] rounded-[12px] border-0 p-0 shadow-dropdown"
+            >
+              <div className="p-1">
+                {([
+                  ["Pretendard", "Pretendard"],
+                  ["Paperlogy", "Paperlogy 제목 + Pretendard 본문"],
+                ] as const).map(([value, label]) => {
+                  const selected = (draft.fontFamily || "Paperlogy") === value;
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      className={cn(
+                        "flex min-h-10 w-full items-center justify-between rounded-[8px] px-[14px] text-left text-[15px] text-ink transition-colors hover:bg-dropdown-hover focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-focus-soft",
+                        selected && "bg-dropdown-selected-hover font-semibold text-brand",
+                      )}
+                      onClick={() => {
+                        patchDraft({ fontFamily: value });
+                        setFontMenuOpen(false);
+                      }}
+                    >
+                      <span>{label}</span>
+                      {selected && <Check aria-hidden="true" className="size-4 text-brand" />}
+                    </button>
+                  );
+                })}
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
         <div className="mt-6 flex justify-end gap-3">
           <button type="button" className="inline-flex h-12 items-center justify-center rounded-[12px] bg-secondary-btn px-5 text-[16px] font-semibold text-secondary-btn-text shadow-none transition-colors hover:bg-secondary-btn-hover hover:text-secondary-btn-text-hover focus-visible:ring-1 focus-visible:ring-focus-soft" onClick={() => setScreen("review")}>
             이전
@@ -954,10 +1088,10 @@ export function IrDeckWireframe() {
           <button
             type="button"
             onClick={generateHtml}
-            className="inline-flex h-12 items-center justify-center gap-2 rounded-[12px] bg-brand px-5 text-[16px] font-semibold text-brand-foreground shadow-none transition-colors hover:bg-brand/88 active:bg-brand-pressed focus-visible:ring-1 focus-visible:ring-focus-soft"
+            disabled={!primaryColor}
+            className="inline-flex h-12 items-center justify-center gap-2 rounded-[12px] bg-brand px-5 text-[16px] font-semibold text-brand-foreground shadow-none transition-colors hover:bg-brand/88 active:bg-brand-pressed focus-visible:ring-1 focus-visible:ring-focus-soft disabled:cursor-not-allowed disabled:bg-brand-disabled disabled:text-brand-foreground disabled:opacity-100"
           >
             이 디자인으로 IR 덱 만들기
-            <ArrowRight className="size-4" />
           </button>
         </div>
       </>,
