@@ -46,6 +46,20 @@ function isH3SwallowedErrorBody(body: string): boolean {
 
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
+    if (new URL(request.url).pathname === "/api/internal/ir-html-export-v1") {
+      try {
+        const { handleIrHtmlExport } = await import("./lib/ir-html-export.server");
+        return await handleIrHtmlExport(request);
+      } catch {
+        return new Response(JSON.stringify({ ready: false, error_code: "EXPORT_RENDER_FAILED" }), {
+          status: 503,
+          headers: {
+            "content-type": "application/json; charset=utf-8",
+            "cache-control": "no-store",
+          },
+        });
+      }
+    }
     // 서버 전용 검사 API: 사용자 페이지/SSR 처리와 분리합니다.
     if (new URL(request.url).pathname === "/api/internal/ir-html-render-v1") {
       try {
