@@ -776,10 +776,14 @@ export function IrDeckWireframe() {
                     className="ir-deck-thumbnail relative aspect-video overflow-hidden rounded-t-xl bg-transparent"
                     aria-hidden="true"
                   >
-                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-item-hover text-brand">
-                      <Presentation className="size-10" />
-                      <span className="text-sm font-semibold">{project.draft.html?.documentId ? "HTML 슬라이드 7장" : project.draft.html ? "생성 상태 이어서 확인" : "사업내용 확인 후 생성"}</span>
-                    </div>
+                    <SlideCanvas
+                      slide={project.draft.slides[0] || newSlide("Business", "사업 소개")}
+                      theme={project.draft.theme}
+                      primaryColor={project.draft.primaryColor}
+                      primaryColor2={project.draft.primaryColor2}
+                      colorMode={project.draft.colorMode}
+                      className="h-full w-full rounded-none border-0 p-[7%] shadow-none"
+                    />
                   </div>
                   <div className="border-t border-field-border p-4">
                     <div className="flex items-start justify-between gap-3">
@@ -1221,7 +1225,6 @@ export function IrDeckWireframe() {
             )}
           >
             사업 내용 분석하기
-            <ArrowRight className="size-4" />
           </button>
           </div>
         </div>
