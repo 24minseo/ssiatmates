@@ -12,7 +12,9 @@ import { SlideCanvas } from "@/components/ir-deck/SlideCanvas";
 import { TextToolbar } from "@/components/ir-deck/TextToolbar";
 import { useBusinessAnalysis } from "@/components/ir-deck/useBusinessAnalysis";
 import { HtmlDeckWorkspace } from "@/components/ir-deck/HtmlDeckWorkspace";
-import type { HtmlReference } from "@/components/ir-deck/html-api";
+import { HtmlSlidePreview } from "@/components/ir-deck/HtmlSlidePreview";
+import { htmlCall, imageUrl, mediaBase } from "@/components/ir-deck/html-client";
+import { parseView, type HtmlReference, type HtmlView } from "@/components/ir-deck/html-api";
 import {
   defaultFormat,
   mediaUrl,
@@ -36,6 +38,66 @@ const initialCredits = 100;
 const designCost = 30;
 type TrialState = { credits: number };
 const defaultTrialState: TrialState = { credits: initialCredits };
+
+function ProjectThumbnail({ project }: { project: { draft: Draft } }) {
+  const reference = project.draft.html;
+  const [view, setView] = useState<HtmlView | null>(null);
+  const [urls, setUrls] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    let cancelled = false;
+    setView(null);
+    setUrls({});
+    if (!reference?.documentId) return () => { cancelled = true; };
+
+    void htmlCall("ir-deck-html-api-v1", {
+      action: "get_document",
+      document_id: reference.documentId,
+    })
+      .then((data) => {
+        if (cancelled) return;
+        const next = parseView(data, reference.deckId);
+        setView(next);
+        const firstSlideId = next.document.slides[0]?.slideId;
+        if (!firstSlideId) return;
+        return Promise.all(
+          next.imageSlots
+            .filter((slot) => slot.slideId === firstSlideId && slot.assetId)
+            .map(async (slot) => [slot.assetId!, await imageUrl(slot.assetId!)] as const),
+        ).then((entries) => {
+          if (!cancelled) setUrls(Object.fromEntries(entries));
+        });
+      })
+      .catch(() => {
+        // 완료 문서를 불러오지 못하면 브라우저에 저장된 초안 프리뷰를 유지한다.
+      });
+
+    return () => { cancelled = true; };
+  }, [reference?.deckId, reference?.documentId]);
+
+  if (view?.document.slides[0]) {
+    return (
+      <HtmlSlidePreview
+        slide={view.document.slides[0]}
+        view={view}
+        urls={urls}
+        mediaOrigin={mediaBase()}
+      />
+    );
+  }
+
+  return (
+    <SlideCanvas
+      slide={project.draft.slides[0] || newSlide("Business", "사업 소개")}
+      theme={project.draft.theme}
+      primaryColor={project.draft.primaryColor}
+      primaryColor2={project.draft.primaryColor2}
+      colorMode={project.draft.colorMode}
+      className="h-full w-full rounded-none border-0 p-[7%] shadow-none"
+    />
+  );
+}
+
 function readableTextColor(hex: string) {
   const value = hex.replace("#", "");
   if (value.length !== 6) return "#FFFFFF";
@@ -749,7 +811,7 @@ export function IrDeckWireframe() {
             type="button"
             onClick={startNew}
             disabled={!loaded}
-            className="group flex min-h-[298px] flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-field-border bg-surface text-ink-muted transition-[box-shadow] hover:shadow-[0_8px_30px_0_rgba(0,13,59,0.1)] disabled:cursor-not-allowed disabled:opacity-50"
+            className="group flex min-h-[298px] flex-col items-center justify-center gap-3 rounded-xl border border-field-border bg-surface text-ink-muted transition-[box-shadow,transform] duration-150 ease-out hover:-translate-y-px hover:shadow-[0_8px_30px_0_rgba(0,13,59,0.1)] motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-50"
           >
               <span className="flex size-12 items-center justify-center rounded-full bg-item-hover text-ink-muted">
               <Plus className="size-6" />
@@ -769,21 +831,14 @@ export function IrDeckWireframe() {
               .map((project) => (
                 <div
                   key={project.id}
-                  className="overflow-visible rounded-xl border border-field-border text-left transition-[box-shadow] hover:shadow-[0_8px_30px_0_rgba(0,13,59,0.1)]"
+                  className="overflow-visible rounded-xl border border-field-border text-left transition-[box-shadow,transform] duration-150 ease-out hover:-translate-y-px hover:shadow-[0_8px_30px_0_rgba(0,13,59,0.1)] motion-reduce:transition-none"
                   onClick={() => openProject(project.id)}
                 >
                   <div
                     className="ir-deck-thumbnail relative aspect-video overflow-hidden rounded-t-xl bg-transparent"
                     aria-hidden="true"
                   >
-                    <SlideCanvas
-                      slide={project.draft.slides[0] || newSlide("Business", "사업 소개")}
-                      theme={project.draft.theme}
-                      primaryColor={project.draft.primaryColor}
-                      primaryColor2={project.draft.primaryColor2}
-                      colorMode={project.draft.colorMode}
-                      className="h-full w-full rounded-none border-0 p-[7%] shadow-none"
-                    />
+                    <ProjectThumbnail project={project} />
                   </div>
                   <div className="border-t border-field-border p-4">
                     <div className="flex items-start justify-between gap-3">
