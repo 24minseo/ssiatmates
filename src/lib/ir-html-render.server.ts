@@ -1,5 +1,6 @@
 // 서버 전용. 프론트 컴포넌트에서 import하지 않습니다.
 import { timingSafeEqual } from "node:crypto";
+import { correctContrastInPage, acceptResidualContrast } from "./ir-html-contrast.server";
 import type { Browser } from "puppeteer-core";
 
 type Slide = { slideId: string; html: string; css: string };
@@ -25,6 +26,7 @@ type Candidate = {
     validator_version: string;
     security_checked: boolean;
     render_checked: boolean;
+    contrast_source_md5?: string;
   };
 };
 type Env = Record<string, string | undefined>;
@@ -123,7 +125,9 @@ function validCandidate(c: Candidate, body: RenderBody) {
     !object(c) ||
     c.job_id !== body.job_id ||
     c.document_id !== body.document_id ||
-    c.document_md5 !== body.document_md5 ||
+    (c.document_md5 !== body.document_md5 &&
+      c.validation?.contrast_source_md5 !== body.document_md5) ||
+    !/^[a-f0-9]{32}$/.test(c.document_md5) ||
     c.image_revision !== 0 ||
     c.validation?.validator_version !== "ir_html_static_v1" ||
     c.validation?.security_checked !== true ||
@@ -318,6 +322,7 @@ export async function inspectWithBrowser(
   browser: Browser,
   document: DeckDocument,
   fontCss: string,
+  correctContrast = false,
 ) {
   const page = await browser.newPage();
   try {
@@ -334,7 +339,11 @@ export async function inspectWithBrowser(
       waitUntil: "load",
       timeout: 25000,
     });
-    return await page.evaluate(measureInPage);
+    const correction = correctContrast
+      ? await page.evaluate(correctContrastInPage, document.designTokens.colors)
+      : null;
+    const report = await page.evaluate(measureInPage);
+    return { ...report, contrast_correction: correction };
   } finally {
     await page.close();
   }
@@ -429,7 +438,93 @@ export function createRenderHandler(
         document = validCandidate(candidate, body);
       const fontCss = await (deps.fonts ?? defaultFonts)();
       browser = await (deps.browser ?? (() => defaultBrowser(env)))();
-      const report = await inspectWithBrowser(browser, document, fontCss);
+      let currentDocument = document;
+      let currentMd5 = candidate.document_md5;
+      const inspected = await inspectWithBrowser(browser, document, fontCss, true);
+      const { contrast_correction: correction, ...initialReport } = inspected;
+      let rawReport = initialReport;
+      if (
+        correction &&
+        Array.isArray(correction.changedSlides) &&
+        correction.changedSlides.length > 0
+      ) {
+        const patched = {
+          ...document,
+          slides: document.slides.map((slide) => {
+            const change = correction.changedSlides.find((v) => v.slideId === slide.slideId);
+            return change ? { ...slide, html: change.html } : slide;
+          }),
+        };
+        const verifiedResponse = await fetcher(base + "/functions/v1/ir-deck-html-validate-v1", {
+          method: "POST",
+          headers: {
+            apikey: key,
+            Authorization: "Bearer " + key,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            job_id: body.job_id,
+            claim_token: body.claim_token,
+            document: patched,
+          }),
+          signal: AbortSignal.timeout(25000),
+          redirect: "error",
+        });
+        if (!verifiedResponse.ok) throw new Error("contrast_static_validation_unavailable");
+        const verified = await jsonResponse<{
+          valid: boolean;
+          job_id: string;
+          claim_token: string;
+          document: DeckDocument;
+        }>(verifiedResponse, 9 * 1024 * 1024);
+        if (
+          verified.valid !== true ||
+          verified.job_id !== body.job_id ||
+          verified.claim_token !== body.claim_token
+        )
+          throw new Error("contrast_static_validation_failed");
+        const savedResponse = await fetcher(base + "/rest/v1/rpc/save_ir_html_contrast_v2", {
+          method: "POST",
+          headers: {
+            apikey: key,
+            Authorization: "Bearer " + key,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            p_document_id: body.document_id,
+            p_claim_token: body.claim_token,
+            p_expected_document_md5: currentMd5,
+            p_document: verified.document,
+            p_audit: {
+              policy: "auto_then_accept_v2",
+              corrected_text_blocks: correction.correctedTextBlocks,
+              changed_slide_ids: correction.changedSlides.map((v) => v.slideId),
+            },
+          }),
+          signal: AbortSignal.timeout(20000),
+          redirect: "error",
+        });
+        if (!savedResponse.ok) throw new Error("contrast_save_failed");
+        const saved = await jsonResponse<{
+          saved: boolean;
+          document_id: string;
+          document_md5: string;
+          image_revision: number;
+        }>(savedResponse, 65536);
+        if (
+          saved.saved !== true ||
+          saved.document_id !== body.document_id ||
+          saved.image_revision !== 0 ||
+          !/^[a-f0-9]{32}$/.test(saved.document_md5)
+        )
+          throw new Error("contrast_save_identity");
+        currentDocument = verified.document;
+        currentMd5 = saved.document_md5;
+        const measured = await inspectWithBrowser(browser, currentDocument, fontCss);
+        const { contrast_correction: ignored, ...measuredReport } = measured;
+        rawReport = measuredReport;
+      }
+      const report = acceptResidualContrast(rawReport);
       const overflow = report.slides.some((s) =>
         s.issues.some((i) =>
           [
@@ -442,6 +537,12 @@ export function createRenderHandler(
       );
       return reply({
         ...identity,
+        document_md5: currentMd5,
+        source_document_md5: body.document_md5,
+        contrast_saved: currentMd5 !== body.document_md5,
+        ...(!report.passed && currentMd5 !== body.document_md5
+          ? { contrast_document: currentDocument }
+          : {}),
         render_ok: report.passed,
         render_checked: true,
         renderer_version: "ir_html_browser_v1",
