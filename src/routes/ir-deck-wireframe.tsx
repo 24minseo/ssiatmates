@@ -749,9 +749,9 @@ export function IrDeckWireframe() {
             type="button"
             onClick={startNew}
             disabled={!loaded}
-            className="group flex min-h-[298px] flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-field-border bg-surface text-ink-muted transition-colors hover:bg-item-hover disabled:cursor-not-allowed disabled:opacity-50"
+            className="group flex min-h-[298px] flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-field-border bg-surface text-ink-muted transition-[box-shadow] hover:shadow-[0_8px_30px_0_rgba(0,13,59,0.1)] disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <span className="flex size-12 items-center justify-center rounded-full bg-item-hover text-ink-muted transition-colors group-hover:bg-brand group-hover:text-white">
+              <span className="flex size-12 items-center justify-center rounded-full bg-item-hover text-ink-muted">
               <Plus className="size-6" />
             </span>
             <span className="text-[16px] font-semibold text-ink">새 IR 덱 만들기</span>
@@ -769,7 +769,7 @@ export function IrDeckWireframe() {
               .map((project) => (
                 <div
                   key={project.id}
-                  className="overflow-visible rounded-xl border border-field-border text-left hover:border-brand"
+                  className="overflow-visible rounded-xl border border-field-border text-left transition-[box-shadow] hover:shadow-[0_8px_30px_0_rgba(0,13,59,0.1)]"
                   onClick={() => openProject(project.id)}
                 >
                   <div
