@@ -1,6 +1,5 @@
 import { ArrowLeft, ArrowRight, ArrowUp, ArrowDown, Plus, Trash2, Eye, Check, MoreVertical, ChevronRight, Presentation, Upload } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
-import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -10,6 +9,8 @@ import { SquareAlertIcon } from "@/components/ui/square-alert-icon";
 import { SlideCanvas } from "@/components/ir-deck/SlideCanvas";
 import { TextToolbar } from "@/components/ir-deck/TextToolbar";
 import { useBusinessAnalysis } from "@/components/ir-deck/useBusinessAnalysis";
+import { HtmlDeckWorkspace } from "@/components/ir-deck/HtmlDeckWorkspace";
+import type { HtmlReference } from "@/components/ir-deck/html-api";
 import {
   defaultFormat,
   mediaUrl,
@@ -146,6 +147,36 @@ export function IrDeckWireframe() {
 
   function patchDraft(patch: Partial<Draft>) {
     setWorkspace((w) => ({ ...w, draft: { ...w.draft, ...patch } }));
+  }
+  function rememberHtml(reference: HtmlReference) {
+    setWorkspace(w => {
+      if (w.draft.analysis?.deckId !== reference.deckId) return w;
+      const id = w.draft.projectId || newId();
+      const nextDraft = { ...w.draft, html: reference, projectId: id };
+      const existing = w.projects.find(p => p.id === id);
+      const project = { id, title: existing?.title || w.draft.slides[0]?.body.split("\n")[0]?.slice(0, 60) || "IR 덱", createdAt: existing?.createdAt || Date.now(), updatedAt: Date.now(), draft: structuredClone(nextDraft) };
+      const next = { ...w, draft: nextDraft, projects: [project, ...w.projects.filter(p => p.id !== id)] };
+      return next;
+    });
+  }
+  function generateHtml() {
+    const source = draft.analysis;
+    if (!source?.deckId || source.businessRevision === undefined) {
+      setMessage("사업내용 확인 화면에서 내용을 저장한 뒤 생성해 주세요.");
+      setScreen("review");
+      return;
+    }
+    if (storageBlocked) { setMessage("생성 요청을 이어서 확인하려면 브라우저 저장소 접근을 먼저 확인해 주세요."); return; }
+    const reference: HtmlReference = { userId: source.userId, deckId: source.deckId, sourceId: source.sourceId, requestId: newId(), brandSaveId: newId(), businessRevision: source.businessRevision, settings: { brandColors: [draft.primaryColor || "#1F8064", ...(draft.primaryColor2 ? [draft.primaryColor2] : [])].map(c => c.toUpperCase()), theme: draft.colorMode || "light", fontFamily: draft.fontFamily || "Pretendard" } };
+    const id = draft.projectId || newId();
+    const nextDraft = { ...draft, projectId: id, html: reference };
+    const existing = projects.find(project => project.id === id);
+    const project = { id, title: existing?.title || draft.slides[0]?.title || "IR 덱", createdAt: existing?.createdAt || Date.now(), updatedAt: Date.now(), draft: structuredClone(nextDraft) };
+    const next = { ...workspace, draft: nextDraft, projects: [project, ...projects.filter(item => item.id !== id)] };
+    try { localStorage.setItem(storageKey, JSON.stringify(next)); }
+    catch { setMessage("생성 요청 번호를 저장하지 못했어요. 브라우저 저장소를 확인한 뒤 다시 시도해 주세요."); return; }
+    setWorkspace(next);
+    setScreen("editor");
   }
   function patchSlide(update: (slide: Slide) => Slide) {
     setWorkspace((w) => ({
@@ -377,17 +408,6 @@ export function IrDeckWireframe() {
           </div>
         </header>
         {loaded ? content : <p role="status">저장된 덱을 불러오는 중입니다.</p>}
-        {loaded &&
-          createPortal(
-            <div className="ir-deck-print" aria-hidden="true">
-              {slides.map((slide) => (
-                <section className="ir-deck-print-page" key={slide.id}>
-                  <SlideCanvas slide={slide} theme={theme} primaryColor={primaryColor} primaryColor2={primaryColor2} colorMode={colorMode} />
-                </section>
-              ))}
-            </div>,
-            document.body,
-          )}
         <AlertDialog open={Boolean(deleteTarget)} onOpenChange={(open) => !open && setDeleteTarget(null)}>
           <AlertDialogContent className="w-[calc(100vw-32px)] max-w-[560px] overflow-hidden rounded-[20px] border-0 bg-surface">
             <AlertDialogHeader className="min-w-0 w-full max-w-full">
@@ -625,10 +645,9 @@ export function IrDeckWireframe() {
                     className="ir-deck-thumbnail relative aspect-video overflow-hidden rounded-t-xl bg-transparent"
                     aria-hidden="true"
                   >
-                    <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
-                      <div className="w-[250%] shrink-0 origin-center scale-[0.4]">
-                      <SlideCanvas className="border-0 shadow-none" slide={project.draft.slides[0]!} theme={project.draft.theme} primaryColor={project.draft.primaryColor} primaryColor2={project.draft.primaryColor2} colorMode={project.draft.colorMode} />
-                      </div>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-item-hover text-brand">
+                      <Presentation className="size-10" />
+                      <span className="text-sm font-semibold">{project.draft.html?.documentId ? "HTML 슬라이드 7장" : project.draft.html ? "생성 상태 이어서 확인" : "사업내용 확인 후 생성"}</span>
                     </div>
                   </div>
                   <div className="border-t border-field-border p-4">
@@ -834,17 +853,18 @@ export function IrDeckWireframe() {
             </div>
           </div>
         </section>
+        <label className="mt-5 block max-w-sm text-sm font-semibold text-ink">슬라이드 글꼴
+          <select className={cn(input, "mt-2")} value={draft.fontFamily || "Pretendard"} onChange={event => patchDraft({ fontFamily: event.target.value as "Paperlogy" | "Pretendard" })}>
+            <option value="Pretendard">Pretendard</option><option value="Paperlogy">Paperlogy 제목 + Pretendard 본문</option>
+          </select>
+        </label>
         <div className="mt-6 flex justify-end gap-3">
           <button type="button" className="inline-flex h-12 items-center justify-center rounded-[12px] bg-secondary-btn px-5 text-[16px] font-semibold text-secondary-btn-text shadow-none transition-colors hover:bg-secondary-btn-hover hover:text-secondary-btn-text-hover focus-visible:ring-1 focus-visible:ring-focus-soft" onClick={() => setScreen("review")}>
             이전
           </button>
           <button
             type="button"
-            onClick={() => {
-              patchDraft({ activeSlide: 0 });
-              setActiveField("title");
-              setScreen("editor");
-            }}
+            onClick={generateHtml}
             className="inline-flex h-12 items-center justify-center gap-2 rounded-[12px] bg-brand px-5 text-[16px] font-semibold text-brand-foreground shadow-none transition-colors hover:bg-brand/88 active:bg-brand-pressed focus-visible:ring-1 focus-visible:ring-focus-soft"
           >
             이 디자인으로 IR 덱 만들기
@@ -856,221 +876,11 @@ export function IrDeckWireframe() {
       <Steps current={3} />,
     );
 
-  if (screen === "saved")
-    return page(
-      "저장 완료",
-      "IR 덱 작업 내용을 이 브라우저에 저장했어요.",
-      <section className={cn(panel, "py-20 text-center")}>
-        <Check className="mx-auto size-16 text-brand" />
-        <h2 className="mt-4 text-xl font-semibold">
-          {projects.find((p) => p.id === draft.projectId)?.title} 저장 완료
-        </h2>
-        <p className="mt-3 text-ink-muted">최근 파일 목록에서 다시 열어 편집할 수 있습니다.</p>
-        <div className="mt-7 flex justify-center gap-3">
-          <button type="button" className={button} onClick={() => setScreen("editor")}>
-            계속 편집
-          </button>
-          <button type="button" className={primary} onClick={() => setScreen("home")}>
-            최근 파일에서 보기
-          </button>
-        </div>
-      </section>,
-    );
+  if (screen === "editor" || screen === "preview" || screen === "saved") {
+    if (!draft.html) return page("IR 덱 생성", "이전 작업의 사업내용을 확인한 뒤 HTML 슬라이드를 생성해 주세요.", <button className={primary} onClick={() => setScreen(draft.analysis?.deckId ? "review" : "input")}>사업내용 확인하기</button>);
+    return page("", "", <HtmlDeckWorkspace key={draft.html.requestId} reference={draft.html} persist={rememberHtml} onHome={() => setScreen("home")} onBack={() => setScreen("themes")} onSave={() => { if (draft.html) rememberHtml(draft.html); }} />);
+  }
 
-  if (screen === "preview")
-    return page(
-      "IR 덱 미리보기",
-      "전체 슬라이드를 확인하고 PDF로 저장할 수 있습니다.",
-      <section className="mx-auto max-w-5xl">
-        <SlideCanvas slide={currentSlide} theme={theme} primaryColor={primaryColor} primaryColor2={primaryColor2} colorMode={colorMode} />
-        <div className="mt-6 flex items-center justify-center gap-3">
-          <button
-            type="button"
-            className={button}
-            aria-label="이전 슬라이드"
-            disabled={activeSlide === 0}
-            onClick={() => selectSlide(activeSlide - 1)}
-          >
-            <ArrowLeft className="size-4" />
-          </button>
-          <span>
-            {activeSlide + 1} / {slides.length}
-          </span>
-          <button
-            type="button"
-            className={button}
-            aria-label="다음 슬라이드"
-            disabled={activeSlide === slides.length - 1}
-            onClick={() => selectSlide(activeSlide + 1)}
-          >
-            <ArrowRight className="size-4" />
-          </button>
-        </div>
-      </section>,
-      <>
-        <button type="button" onClick={() => setScreen("editor")} className={button}>
-          <ArrowLeft className="size-4" />
-          편집으로 돌아가기
-        </button>
-        {pdf}
-      </>,
-    );
-
-  if (screen === "editor")
-    return page(
-      "IR 덱 편집",
-      `슬라이드 ${activeSlide + 1} / ${slides.length} · 슬라이드 내용을 클릭해 바로 수정하세요.`,
-      <>
-        <section className="overflow-hidden rounded-2xl border border-field-border bg-background shadow-sm">
-          <div className="flex min-h-[680px] flex-col lg:flex-row">
-            <aside className="w-full shrink-0 border-b border-field-border bg-surface lg:w-[236px] lg:border-b-0 lg:border-r">
-              <div className="flex items-center justify-between border-b border-field-border px-4 py-3">
-                <div>
-                  <h2 className="font-semibold text-ink">슬라이드</h2>
-                  <p className="mt-0.5 text-xs text-ink-muted">{slides.length}개 슬라이드</p>
-                </div>
-                <button
-                  type="button"
-                  className="inline-flex size-9 items-center justify-center rounded-lg border border-field-border text-ink-muted transition-colors hover:bg-item-hover hover:text-ink"
-                  aria-label="슬라이드 추가"
-                  onClick={() => {
-                    const next = [...slides];
-                    next.splice(activeSlide + 1, 0, newSlide());
-                    patchDraft({ slides: next, activeSlide: activeSlide + 1 });
-                    setActiveField("title");
-                  }}
-                >
-                  <Plus className="size-4" />
-                </button>
-              </div>
-              <div className="flex gap-2 overflow-x-auto p-3 lg:block lg:space-y-2 lg:overflow-visible">
-                {slides.map((slide, i) => (
-                  <div key={slide.id} className="group/slide relative flex shrink-0 items-center gap-2 lg:block">
-                    <button
-                      type="button"
-                      onClick={() => selectSlide(i)}
-                      aria-current={i === activeSlide ? "true" : undefined}
-                      className={cn(
-                        "group relative block w-[132px] rounded-xl border p-2 text-left transition-all lg:w-full",
-                        i === activeSlide
-                          ? "border-brand bg-item-hover-selected shadow-sm"
-                          : "border-field-border bg-surface hover:border-brand/50 hover:bg-item-hover",
-                      )}
-                    >
-                      <span className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-ink-muted">
-                        <span className={cn("inline-flex size-5 items-center justify-center rounded-md", i === activeSlide ? "bg-brand text-white" : "bg-item-hover text-ink-muted")}>
-                          {i + 1}
-                        </span>
-                        <span className="min-w-0 truncate">{slide.name}</span>
-                      </span>
-                      <span className="block aspect-video overflow-hidden rounded-md border border-field-border bg-background">
-                        <SlideCanvas slide={slide} theme={theme} primaryColor={primaryColor} primaryColor2={primaryColor2} colorMode={colorMode} className="pointer-events-none origin-top-left scale-[0.18] !w-[555%] !max-w-none !border-0 !p-[7%] text-[10px] shadow-none" />
-                      </span>
-                    </button>
-                    <div className="absolute right-2 top-2 z-20 hidden items-center gap-1 rounded-full bg-surface/95 p-0.5 shadow-md group-hover/slide:flex group-focus-within/slide:flex lg:flex lg:opacity-0 lg:transition-opacity lg:group-hover/slide:opacity-100 lg:group-focus-within/slide:opacity-100">
-                      <button
-                        type="button"
-                        aria-label={`${i + 1}번 슬라이드 위로 이동`}
-                        title="위로 이동"
-                        disabled={i === 0}
-                        className="grid size-6 place-items-center rounded-full text-ink-muted hover:bg-item-hover hover:text-ink disabled:opacity-30"
-                        onClick={() => moveSlide(i, -1)}
-                      >
-                        <ArrowUp className="size-3.5" />
-                      </button>
-                      <button
-                        type="button"
-                        aria-label={`${i + 1}번 슬라이드 아래로 이동`}
-                        title="아래로 이동"
-                        disabled={i === slides.length - 1}
-                        className="grid size-6 place-items-center rounded-full text-ink-muted hover:bg-item-hover hover:text-ink disabled:opacity-30"
-                        onClick={() => moveSlide(i, 1)}
-                      >
-                        <ArrowDown className="size-3.5" />
-                      </button>
-                    </div>
-                    <button
-                      type="button"
-                      aria-label={`${i + 1}번 슬라이드 삭제`}
-                      disabled={slides.length === 1}
-                      title="슬라이드 삭제"
-                      className="absolute bottom-2 right-2 z-20 hidden size-7 items-center justify-center rounded-full bg-surface/95 text-ink-muted shadow-md transition hover:bg-red-50 hover:text-destructive disabled:opacity-30 group-hover/slide:inline-flex group-focus-within/slide:inline-flex lg:inline-flex lg:opacity-0 lg:group-hover/slide:opacity-100 lg:group-focus-within/slide:opacity-100"
-                      onClick={() => {
-                        patchDraft({
-                          slides: slides.filter((_, n) => n !== i),
-                          activeSlide: Math.max(0, activeSlide > i ? activeSlide - 1 : Math.min(activeSlide, slides.length - 2)),
-                        });
-                        setActiveField("title");
-                      }}
-                    >
-                      <Trash2 className="size-4" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </aside>
-            <div className="min-w-0 flex-1">
-              <div className="border-b border-field-border bg-surface p-3">
-                <TextToolbar
-                  format={currentSlide.formats[activeField] || defaultFormat(activeField)}
-                  onChange={changeFormat}
-                  onBullets={() => {
-                    const lines = currentSlide.body.split("\n");
-                    const remove = lines.every((line) => line.startsWith("• "));
-                    patchSlide((slide) => ({ ...slide, body: lines.map((line) => remove ? line.slice(2) : line.startsWith("• ") ? line : `• ${line}`).join("\n") }));
-                    setActiveField("body");
-                  }}
-                />
-                <div className="mt-2 flex flex-wrap gap-2">
-                  <button type="button" className={button} onClick={() => addElement({ id: newId(), type: "text", text: "새 텍스트 상자" })}>＋ 텍스트 상자</button>
-                  <button type="button" className={button} onClick={() => openMedia("image")}>이미지 삽입</button>
-                  <button type="button" className={button} onClick={() => openMedia("video")}>동영상 삽입</button>
-                </div>
-              </div>
-              <div className="min-h-[580px] bg-background p-4 sm:p-8 lg:p-12">
-                <div className="mx-auto max-w-4xl rounded-xl bg-white/75 p-3 shadow-inner sm:p-6">
-                  <SlideCanvas
-                    slide={currentSlide}
-                    theme={theme}
-                    primaryColor={primaryColor}
-                    primaryColor2={primaryColor2}
-                    colorMode={colorMode}
-                    editable
-                    activeField={activeField}
-                    onFocus={setActiveField}
-                    onText={changeText}
-                    onRemove={(id) => {
-                      patchSlide((slide) => {
-                        const formats = { ...slide.formats };
-                        delete formats[`extra:${id}`];
-                        return { ...slide, formats, elements: slide.elements.filter((e) => e.id !== id) };
-                      });
-                      setActiveField("body");
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-      </>,
-      <>
-        <button type="button" onClick={() => setScreen("themes")} className="inline-flex h-[42px] items-center justify-center rounded-[12px] bg-secondary-btn px-5 text-[15px] font-semibold text-secondary-btn-text shadow-none transition-colors hover:bg-secondary-btn-hover hover:text-secondary-btn-text-hover focus-visible:ring-1 focus-visible:ring-focus-soft">
-          이전
-        </button>
-        <button type="button" onClick={() => setScreen("preview")} className="inline-flex h-[42px] items-center justify-center gap-2 rounded-[12px] border border-field-border bg-surface px-5 text-[15px] font-semibold text-ink shadow-none transition-colors hover:bg-item-hover focus-visible:ring-1 focus-visible:ring-focus-soft">
-          <Eye className="size-4" />
-          미리보기
-        </button>
-        {pdf}
-        <button type="button" onClick={save} className="inline-flex h-[42px] items-center justify-center rounded-[12px] bg-brand px-5 text-[15px] font-semibold text-brand-foreground shadow-none transition-colors hover:bg-brand/88 active:bg-brand-pressed focus-visible:ring-1 focus-visible:ring-focus-soft">
-          저장
-        </button>
-      </>,
-      undefined,
-      <Steps current={4} />,
-      "text-[24px]",
-    );
 
   return page(
     "사업계획서를 바탕으로 IR 덱을 만들어 보세요",

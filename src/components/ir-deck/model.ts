@@ -1,4 +1,5 @@
 import type { AnalysisReference } from "./analysis";
+import type { HtmlReference } from "./html-api";
 
 export const slideNames = [
   "Business",
@@ -56,6 +57,8 @@ export type Slide = {
   elements: SlideElement[];
 };
 export type Draft = {
+  html?: HtmlReference | undefined;
+  fontFamily?: "Paperlogy" | "Pretendard";
   analysis?: AnalysisReference | undefined;
   source: string;
   fileName: string;
