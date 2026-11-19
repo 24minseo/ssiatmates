@@ -1,6 +1,13 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, Download, ImagePlus, LoaderCircle, RefreshCw } from "lucide-react";
+import { ChevronDown, Download, ImagePlus, LoaderCircle, RefreshCw } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { cn } from "@/lib/utils";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { HtmlSlidePreview } from "./HtmlSlidePreview";
 import { htmlCall, imageUrl, mediaBase, uploadImage } from "./html-client";
 import {
@@ -21,6 +28,25 @@ const button =
 const primary = `${button} border-brand bg-brand text-brand-foreground hover:bg-brand/90`;
 const field =
   "w-full rounded-lg border border-field-border bg-background px-3 py-2 text-sm text-ink";
+
+function readableThumbnailNumberColor(colors: Record<string, string | null>) {
+  const canvas = Object.entries(colors).find(([name]) => name.toLowerCase() === "canvas")?.[1];
+  const match = canvas?.trim().match(/^#([\da-f]{3}|[\da-f]{6})$/i);
+  if (!match) return "#173d31";
+  const raw = match[1].length === 3 ? match[1].split("").map((v) => v + v).join("") : match[1];
+  const channels = [0, 2, 4].map(
+    (offset) => Number.parseInt(raw.slice(offset, offset + 2), 16) / 255,
+  );
+  const luminance = channels
+    .map((channel) =>
+      channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4,
+    )
+    .reduce((sum, channel, index) => sum + channel * [0.2126, 0.7152, 0.0722][index], 0);
+  const whiteContrast = 1.05 / (luminance + 0.05);
+  const inkContrast = (luminance + 0.05) / 0.05;
+  return whiteContrast >= inkContrast ? "#ffffff" : "#173d31";
+}
+
 const states: Record<string, string> = {
   queued: "생성 요청을 접수했어요",
   planning: "전체 발표 흐름과 핵심 메시지를 구성하고 있어요",
@@ -37,12 +63,16 @@ export function HtmlDeckWorkspace({
   onBack,
   onHome,
   onSave,
+  devPreview = false,
+  previewView,
 }: {
   reference: HtmlReference;
   persist: (ref: HtmlReference) => void;
   onBack: () => void;
   onHome: () => void;
   onSave: () => void;
+  devPreview?: boolean;
+  previewView?: HtmlView;
 }) {
   const { user, loading: authLoading } = useAuth();
   const ref = useRef(reference),
@@ -53,7 +83,7 @@ export function HtmlDeckWorkspace({
   const alive = useRef(true),
     loading = useRef(false),
     busyLock = useRef(false);
-  const [view, setView] = useState<HtmlView | null>(null);
+  const [view, setView] = useState<HtmlView | null>(devPreview ? previewView || null : null);
   const [state, setState] = useState("queued"),
     [error, setError] = useState("");
   const [attempt, setAttempt] = useState(0),
@@ -90,10 +120,10 @@ export function HtmlDeckWorkspace({
   } | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const uploaded = useRef<{ file: File; assetId: string } | null>(null);
-  const authorized = user?.id === reference.userId;
+  const authorized = devPreview || user?.id === reference.userId;
   const current = view?.document.slides[selected];
   const selectedSlot = view?.imageSlots.find((s) => s.id === slotId) || null;
-  const canMutate = authorized && !busy && !pendingImage;
+  const canMutate = !devPreview && authorized && !busy && !pendingImage;
 
   function remember(next: HtmlReference) {
     if (!alive.current || owner.current !== next.userId) return;
@@ -107,8 +137,38 @@ export function HtmlDeckWorkspace({
     };
   }, []);
 
+  useEffect(() => {
+    function handleSlideShortcut(event: KeyboardEvent) {
+      const target = event.target as HTMLElement | null;
+      if (
+        event.defaultPrevented ||
+        busy ||
+        pendingImage ||
+        target?.isContentEditable ||
+        ["INPUT", "TEXTAREA", "SELECT", "BUTTON"].includes(target?.tagName || "")
+      )
+        return;
+      if (event.key === "ArrowLeft" && selected > 0) {
+        event.preventDefault();
+        setSelected((index) => index - 1);
+        setSlotId(null);
+      } else if (event.key === "ArrowRight" && selected < 6) {
+        event.preventDefault();
+        setSelected((index) => index + 1);
+        setSlotId(null);
+      }
+    }
+    window.addEventListener("keydown", handleSlideShortcut);
+    return () => window.removeEventListener("keydown", handleSlideShortcut);
+  }, [busy, pendingImage, selected]);
+
   // 한 번에 하나의 상태 조회만 실행한다. 새로고침/응답 유실 시 저장된 요청 번호로 재개한다.
   useEffect(() => {
+    if (devPreview) {
+      setView(previewView || null);
+      setState("ready");
+      return;
+    }
     if (authLoading || !authorized) return;
     let cancelled = false,
       timer: ReturnType<typeof setTimeout> | undefined;
@@ -175,7 +235,7 @@ export function HtmlDeckWorkspace({
       cancelled = true;
       if (timer) clearTimeout(timer);
     };
-  }, [attempt, authorized, authLoading, reference.deckId, reference.userId]);
+  }, [attempt, authorized, authLoading, devPreview, previewView, reference.deckId, reference.userId]);
 
   const assetKey = view
     ? [...new Set(view.imageSlots.flatMap((s) => (s.assetId ? [s.assetId] : [])))].sort().join(",")
@@ -483,39 +543,49 @@ export function HtmlDeckWorkspace({
       </section>
     );
   const stale = view.input_status && Object.values(view.input_status).some((v) => !v);
+  const thumbnailNumberColor = readableThumbnailNumberColor(view.document.designTokens.colors);
   return (
     <div className="space-y-5">
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-ink">IR 덱 {preview ? "미리보기" : "편집"}</h1>
-          <p className="mt-2 text-sm text-ink-muted">
-            슬라이드 {selected + 1} / 7 · 이미지 변경사항은 서버에 저장돼요.
-          </p>
         </div>
         <div className="flex flex-wrap gap-2">
           <button className={button} onClick={onHome}>
             최근 파일
           </button>
           <button className={button} onClick={() => setPreview((v) => !v)}>
-            {preview ? "이미지 편집" : "미리보기"}
+            {preview ? "편집 화면으로 돌아가기" : "미리보기"}
           </button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className={button} disabled={busy || !!pendingImage || exportBusy}>
+                <Download className="size-4" />
+                다운로드
+                <ChevronDown className="size-4" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              className="min-w-[168px] rounded-[12px] border-0 bg-surface p-1 shadow-none"
+              style={{ boxShadow: "var(--shadow-dropdown)" }}
+            >
+              <DropdownMenuItem
+                onSelect={() => requestExport("pdf")}
+                className="min-h-10 cursor-pointer rounded-[8px] px-[14px] text-ink hover:bg-dropdown-hover data-[highlighted]:bg-dropdown-hover"
+              >
+                PDF로 다운로드
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onSelect={() => requestExport("pptx")}
+                className="min-h-10 cursor-pointer rounded-[8px] px-[14px] text-ink hover:bg-dropdown-hover data-[highlighted]:bg-dropdown-hover"
+              >
+                PPTX로 다운로드
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <button
-            className={button}
-            disabled={busy || !!pendingImage || exportBusy}
-            onClick={() => requestExport("pdf")}
-          >
-            <Download className="size-4" />
-            PDF로 내보내기
-          </button>
-          <button
-            className={button}
-            disabled={busy || !!pendingImage || exportBusy}
-            onClick={() => requestExport("pptx")}
-          >
-            PPTX 저장
-          </button>
-          <button
-            className={primary}
+            className={cn(primary, "text-white")}
             disabled={busy || !!pendingImage}
             onClick={() => {
               onSave();
@@ -620,33 +690,7 @@ export function HtmlDeckWorkspace({
           )}
         </div>
       )}
-      <div className={preview ? "" : "grid gap-5 lg:grid-cols-[230px_minmax(0,1fr)]"}>
-        {!preview && (
-          <aside className="space-y-3 rounded-2xl border border-field-border bg-surface p-4">
-            <h2 className="font-semibold text-ink">슬라이드</h2>
-            {view.document.slides.map((slide, i) => (
-              <button
-                key={slide.slideId}
-                className={`w-full rounded-xl border p-2 text-left ${selected === i ? "border-brand bg-item-hover-selected" : "border-field-border hover:bg-item-hover"}`}
-                onClick={() => {
-                  setSelected(i);
-                  setSlotId(null);
-                  setAdding(false);
-                }}
-              >
-                <span className="mb-2 block text-xs font-semibold text-ink">
-                  {i + 1} {slide.sectionLabel}
-                </span>
-                <HtmlSlidePreview
-                  slide={slide}
-                  view={view}
-                  urls={urls}
-                  mediaOrigin={new URL(mediaBase()).origin}
-                />
-              </button>
-            ))}
-          </aside>
-        )}
+      <div>
         <main className="min-w-0 space-y-4">
           {!preview && (
             <>
@@ -769,36 +813,49 @@ export function HtmlDeckWorkspace({
             urls={urls}
             mediaOrigin={new URL(mediaBase()).origin}
             onSelect={preview ? undefined : selectSlot}
+            className={cn(
+              "rounded-none shadow-[0_2px_12px_rgba(0,13,59,0.08)]",
+              !preview && "border-0",
+            )}
           />
-          <div className="flex justify-between">
-            <button
-              className={button}
-              disabled={selected === 0 || busy}
-              onClick={() => {
-                setSelected((i) => i - 1);
-                setSlotId(null);
-              }}
-            >
-              <ArrowLeft className="size-4" />
-              이전 슬라이드
-            </button>
-            <button
-              className={button}
-              disabled={selected === 6 || busy}
-              onClick={() => {
-                setSelected((i) => i + 1);
-                setSlotId(null);
-              }}
-            >
-              다음 슬라이드
-            </button>
-          </div>
-          <p className="text-xs leading-5 text-ink-muted">
-            PPTX는 슬라이드 이미지를 담은 발표 파일이에요. 텍스트·도형을 개별 편집하는 형식은
-            아니에요. 이미지가 없는 영역은 출력 시 업로드 안내 없이 비워져요.
-          </p>
         </main>
       </div>
+      {!preview && (
+        <section className="rounded-xl bg-item-hover p-2" aria-label="슬라이드 목록">
+          <div className="flex gap-2 overflow-x-auto">
+            {view.document.slides.map((slide, i) => (
+              <button
+                key={slide.slideId}
+                className={cn(
+                  "relative w-[156px] shrink-0 rounded-[4px] p-1.5 text-left",
+                  selected === i
+                    ? "ring-2 ring-inset ring-brand"
+                    : "ring-1 ring-inset ring-field-border",
+                )}
+                onClick={() => {
+                  setSelected(i);
+                  setSlotId(null);
+                  setAdding(false);
+                }}
+              >
+                <HtmlSlidePreview
+                  slide={slide}
+                  view={view}
+                  urls={urls}
+                  mediaOrigin={new URL(mediaBase()).origin}
+                  className="rounded-[4px] border-0"
+                />
+                <span
+                  className="pointer-events-none absolute bottom-2 left-3 text-lg font-bold leading-none"
+                  style={{ color: thumbnailNumberColor }}
+                >
+                  {i + 1}
+                </span>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

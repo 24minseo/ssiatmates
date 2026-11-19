@@ -14,7 +14,7 @@ import { useBusinessAnalysis } from "@/components/ir-deck/useBusinessAnalysis";
 import { HtmlDeckWorkspace } from "@/components/ir-deck/HtmlDeckWorkspace";
 import { HtmlSlidePreview } from "@/components/ir-deck/HtmlSlidePreview";
 import { htmlCall, imageUrl, mediaBase } from "@/components/ir-deck/html-client";
-import { parseView, type HtmlReference, type HtmlView } from "@/components/ir-deck/html-api";
+import { parseView, type HtmlReference, type HtmlSlide, type HtmlView } from "@/components/ir-deck/html-api";
 import {
   defaultFormat,
   mediaUrl,
@@ -38,6 +38,63 @@ const initialCredits = 100;
 const designCost = 30;
 type TrialState = { credits: number };
 const defaultTrialState: TrialState = { credits: initialCredits };
+
+const editorPreviewReference: HtmlReference = {
+  userId: "00000000-0000-4000-8000-000000000001",
+  deckId: "00000000-0000-4000-8000-000000000002",
+  sourceId: "00000000-0000-4000-8000-000000000003",
+  requestId: "00000000-0000-4000-8000-000000000004",
+  brandSaveId: "00000000-0000-4000-8000-000000000005",
+  businessRevision: 1,
+  brandRevision: 1,
+  documentId: "00000000-0000-4000-8000-000000000006",
+  settings: { brandColors: ["#1F8064"], theme: "dark", fontFamily: "Paperlogy" },
+};
+
+function editorPreviewSlide(
+  slideId: string,
+  sectionLabel: string,
+  headline: string,
+  body: string,
+  cover = false,
+): HtmlSlide {
+  return {
+    slideId,
+    sectionLabel,
+    headline,
+    html: `<section class="ir-slide" data-slide-id="${slideId}"><div class="preview-kicker">${sectionLabel}</div><h1>${headline}</h1><p>${body}</p>${cover ? '<div class="preview-meta"><span>씨앗(SSIAT)</span><span>메이츠(Mates)</span></div>' : ""}</section>`,
+    css: `.ir-slide{background:${cover ? "#121715" : "#FFFFFF"};color:${cover ? "#FFFFFF" : "#173D31"};padding:132px 144px;display:flex;flex-direction:column;justify-content:center}.preview-kicker{color:#58C6A5;font:700 24px/1.3 Paperlogy,sans-serif;letter-spacing:.02em}.ir-slide h1{margin:28px 0 0;font:700 ${cover ? "86px" : "68px"}/1.12 Paperlogy,sans-serif;letter-spacing:-.04em;max-width:1450px}.ir-slide p{margin:30px 0 0;color:${cover ? "#DCE8E2" : "#587067"};font:400 30px/1.55 Pretendard,sans-serif;max-width:1250px}.preview-meta{display:flex;gap:32px;margin-top:120px;color:#9CE8CF;font:600 22px/1.4 Pretendard,sans-serif}`,
+  };
+}
+
+function editorPreviewView(): HtmlView {
+  const labels = [
+    ["Business", "씨앗(SSIAT)", "청년의 다음 행동을 연결하는 AI 창업 파트너"],
+    ["Problem", "막막한 지원사업 탐색", "정보는 많지만 내 사업에 맞는 다음 행동은 선명하지 않습니다."],
+    ["Target Customer", "창업을 시작하는 청년", "사업 초기 단계에서 지원사업과 실행 순서를 찾는 팀"],
+    ["Solution", "매칭부터 실행까지", "사업 내용을 이해하고 필요한 지원과 다음 단계를 제안합니다."],
+    ["Product & Service", "AI 사업 파트너", "지원사업 매칭과 IR 덱 제작을 한 흐름으로 연결합니다."],
+    ["Market Analysis", "창업 지원 시장", "공공 지원 정보와 초기 창업 수요를 함께 살펴봅니다."],
+    ["Revenue Model", "지속 가능한 성장", "팀의 실행을 돕는 구독형 도구로 확장합니다."],
+  ] as const;
+  return {
+    document_id: editorPreviewReference.documentId!,
+    deck_id: editorPreviewReference.deckId,
+    image_revision: 0,
+    document: {
+      schemaVersion: "ir_html_v1",
+      canvas: { width: 1920, height: 1080 },
+      designTokens: { colors: { CANVAS: "#121715", BRAND: "#58C6A5", INK: "#173D31" } },
+      slides: labels.map(([section, headline, body], index) =>
+        editorPreviewSlide(`preview-${index + 1}`, section, headline, body, index === 0),
+      ),
+    },
+    imageSlots: [],
+    validation: { security_checked: true, original_html_render_checked: true },
+  };
+}
+
+const editorPreviewDocument = editorPreviewView();
 
 function ProjectThumbnail({ project }: { project: { draft: Draft } }) {
   const reference = project.draft.html;
@@ -272,6 +329,16 @@ export function IrDeckWireframe() {
       ...current,
       draft: { ...current.draft, primaryColor: undefined, primaryColor2: undefined, fontFamily: "Paperlogy" },
     }));
+  }, [loaded]);
+  useEffect(() => {
+    if (!loaded || !import.meta.env.DEV) return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("preview") !== "editor") return;
+    setWorkspace((current) => ({
+      ...current,
+      draft: { ...newDraft(), html: editorPreviewReference, projectId: "editor-preview" },
+    }));
+    setScreen("editor");
   }, [loaded]);
   useEffect(() => {
     if (!loaded || storageBlocked) return;
@@ -1161,7 +1228,8 @@ export function IrDeckWireframe() {
 
   if (screen === "editor" || screen === "preview" || screen === "saved") {
     if (!draft.html) return page("IR 덱 생성", "이전 작업의 사업내용을 확인한 뒤 HTML 슬라이드를 생성해 주세요.", <button className={primary} onClick={() => setScreen(draft.analysis?.deckId ? "review" : "input")}>사업내용 확인하기</button>);
-    return page("", "", <HtmlDeckWorkspace key={draft.html.requestId} reference={draft.html} persist={rememberHtml} onHome={() => setScreen("home")} onBack={() => setScreen("themes")} onSave={() => { if (draft.html) rememberHtml(draft.html); }} />);
+    const editorPreview = import.meta.env.DEV && new URLSearchParams(window.location.search).get("preview") === "editor";
+    return page("", "", <HtmlDeckWorkspace key={draft.html.requestId} reference={draft.html} persist={rememberHtml} onHome={() => setScreen("home")} onBack={() => setScreen("themes")} onSave={() => { if (draft.html) rememberHtml(draft.html); }} devPreview={editorPreview} previewView={editorPreviewDocument} />);
   }
 
 
