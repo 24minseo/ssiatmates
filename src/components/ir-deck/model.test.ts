@@ -16,14 +16,18 @@ test("recognized business fields populate their own slides without inventing mis
   review["해결책"] = "사용자가 수정한 해결책";
   const slides = buildSlides(review, source);
   assert.equal(slides.length, 7);
+  assert.deepEqual(
+    slides.map((slide) => slide.name),
+    ["Business", "Problem", "Target Customer", "Solution", "Product & Service", "Market Analysis", "Revenue Model"],
+  );
   assert.equal(slides[0]?.title, "SSIAT");
-  assert.equal(slides[1]?.body, "탐색의 어려움\n핵심 고객: 창업자");
-  assert.equal(slides[2]?.body, "디지털 전환");
+  assert.equal(slides[1]?.body, "탐색의 어려움");
+  assert.equal(slides[2]?.body, "창업자");
   assert.equal(slides[3]?.body, "사용자가 수정한 해결책");
   assert.match(slides[5]!.body, /문서에서 확인된 내용이 없습니다/);
 });
 test("a customer without a problem does not retain the missing-content placeholder", () => {
-  assert.equal(buildSlides({ "핵심 고객": "창업자" }, "")[1]?.body, "핵심 고객: 창업자");
+  assert.equal(buildSlides({ "핵심 고객": "창업자" }, "")[2]?.body, "창업자");
 });
 test("legacy string slides and their shared source are preserved during migration", () => {
   const legacy = JSON.stringify({
@@ -54,11 +58,9 @@ test("new workspace restores independent slide content, formatting and media", (
   assert.deepEqual(restoreWorkspace(JSON.stringify(workspace), null), workspace);
   assert.notEqual(draft.slides[0]!.body, draft.slides[1]!.body);
 });
-test("malformed current storage is rejected without silently replacing it with legacy data", () => {
-  assert.throws(() => restoreWorkspace("{broken", JSON.stringify({ source: "legacy" })));
-  assert.throws(() =>
-    restoreWorkspace(JSON.stringify({ draft: { slides: [] }, projects: [] }), null),
-  );
+test("malformed current storage is ignored without blocking the workspace", () => {
+  assert.equal(restoreWorkspace("{broken", JSON.stringify({ source: "legacy" }))?.draft.source, "legacy");
+  assert.equal(restoreWorkspace(JSON.stringify({ draft: { slides: [] }, projects: [] }), null), null);
 });
 test("media URLs accept web protocols and only embed known YouTube hosts", () => {
   assert.equal(mediaUrl("javascript:alert(1)"), null);

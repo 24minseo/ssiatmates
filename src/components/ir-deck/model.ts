@@ -1,24 +1,24 @@
 export const slideNames = [
-  "Cover",
+  "Business",
   "Problem",
-  "Why Now",
+  "Target Customer",
   "Solution",
-  "Product",
-  "Market",
-  "Business Model",
+  "Product & Service",
+  "Market Analysis",
+  "Revenue Model",
 ];
 export const reviewFields = [
-  ["사업/서비스명", "Cover", /^(?:사업\/서비스명|사업명|서비스명|회사명|프로젝트명)\s*[:：-]/i],
+  ["사업/서비스명", "Business", /^(?:사업\/서비스명|사업명|서비스명|회사명|프로젝트명)\s*[:：-]/i],
   ["문제 인식", "Problem", /^(?:문제 인식|문제|고객 문제|pain point)\s*[:：-]/i],
+  ["핵심 고객", "Target Customer", /^(?:고객|타깃 고객|핵심 고객|target)\s*[:：-]/i],
   ["해결책", "Solution", /^(?:해결책|해결 방안|솔루션|solution)\s*[:：-]/i],
-  ["핵심 고객", "Problem", /^(?:고객|타깃 고객|핵심 고객|target)\s*[:：-]/i],
-  ["제품·서비스", "Product", /^(?:제품|서비스|제품\/서비스|제품·서비스|product)\s*[:：-]/i],
-  ["수익 모델", "Business Model", /^(?:수익 모델|비즈니스 모델|bm|매출 모델)\s*[:：-]/i],
+  ["제품·서비스", "Product & Service", /^(?:제품|서비스|제품\/서비스|제품·서비스|product)\s*[:：-]/i],
   [
     "시장 분석",
-    "Market",
+    "Market Analysis",
     /^(?:시장 분석|시장|시장규모|시장 규모|시장변화|시장 변화|tam|sam)\s*[:：-]/i,
   ],
+  ["수익 모델", "Revenue Model", /^(?:수익 모델|비즈니스 모델|bm|매출 모델)\s*[:：-]/i],
 ] as const;
 export const themes = [
   ["Precision Tech", "정교함 · 신뢰감 · 데이터 중심", "bg-[#FAFAF9] text-ink"],
@@ -129,22 +129,10 @@ export function buildSlides(review: Record<string, string>, source: string): Sli
     const target = slides.find((slide) => slide.name === destination)!;
     const value = review[key]?.trim();
     if (!value) continue;
-    if (destination === "Cover") {
+    if (destination === "Business") {
       target.title = value;
       target.body = "사업의 핵심을 소개합니다.";
-    } else if (key === "핵심 고객")
-      target.body = (review["문제 인식"]?.trim() ? target.body + "\n" : "") + "핵심 고객: " + value;
-    else target.body = value;
-  }
-  const trend = source
-    .split(/\n+/)
-    .map((line) => line.trim())
-    .find((line) => /^(?:시장변화|시장 변화|왜 지금|시의성|why now)\s*[:：-]/i.test(line));
-  if (trend) {
-    const body = trend
-      .replace(/^(?:시장변화|시장 변화|왜 지금|시의성|why now)\s*[:：-]/i, "")
-      .trim();
-    if (body) slides.find((slide) => slide.name === "Why Now")!.body = body;
+    } else target.body = value;
   }
   return slides;
 }
@@ -219,6 +207,26 @@ function migrateDraftColors(draft: Draft): Draft {
   if (!draft.primaryColor2 && typeof legacyColor === "string") draft.primaryColor2 = legacyColor;
   return draft;
 }
+function migrateSlideOrder(draft: Draft): Draft {
+  const legacyNames: Record<string, string> = {
+    Business: "Cover",
+    "Product & Service": "Product",
+    "Market Analysis": "Market",
+    "Revenue Model": "Business Model",
+  };
+  const existing = new Map(draft.slides.map((slide) => [slide.name, slide]));
+  draft.slides = slideNames.map((name) => {
+    const slide = existing.get(name) || existing.get(legacyNames[name]);
+    if (slide) return { ...slide, name };
+    const fresh = newSlide(name, name);
+    if (name === "Target Customer" && draft.review["핵심 고객"]?.trim()) {
+      fresh.body = draft.review["핵심 고객"].trim();
+    }
+    return fresh;
+  });
+  draft.activeSlide = Math.max(0, Math.min(draft.activeSlide, draft.slides.length - 1));
+  return draft;
+}
 // Keep the previous implementation's key intact and import its saved deck once.
 export function restoreWorkspace(current: string | null, legacy: string | null): Workspace | null {
   if (current) {
@@ -243,7 +251,9 @@ export function restoreWorkspace(current: string | null, legacy: string | null):
     ) {
       const workspace = data as Workspace;
       migrateDraftColors(workspace.draft);
+      migrateSlideOrder(workspace.draft);
       workspace.projects.forEach((project) => migrateDraftColors(project.draft));
+      workspace.projects.forEach((project) => migrateSlideOrder(project.draft));
       workspace.draft.activeSlide = Math.max(
         0,
         Math.min(workspace.draft.activeSlide, workspace.draft.slides.length - 1),

@@ -46,7 +46,7 @@ function Steps({ current }: { current: number }) {
             {index > 0 && <ChevronRight aria-hidden="true" className="size-3.5 text-ink-muted/50" />}
             <span className={cn("inline-flex items-center gap-2 whitespace-nowrap text-ink-muted", step > current && "text-ink-muted/70", active && "font-semibold text-ink")}>
               <span className={cn("grid size-6 place-items-center rounded-full bg-item-hover text-xs font-semibold tabular-nums", step > current && "bg-item-hover/60", active && "text-brand", step < current && "bg-item-hover text-ink")}>
-                {step < current ? <Check aria-label="완료" className="size-3.5 text-brand" strokeWidth={2.5} /> : step}
+                {step < current ? <Check aria-label="완료" className="size-3.5 text-ink-muted" strokeWidth={2.5} /> : step}
               </span>
               {label}
             </span>
