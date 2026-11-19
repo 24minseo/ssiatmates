@@ -83,6 +83,13 @@ function IrDeckEmptyStateArtwork() {
     </div>
   );
 }
+
+function projectTitle(project: { title: string; draft: Draft }) {
+  const pdfTitle = project.draft.fileName.replace(/\.pdf$/i, "").trim();
+  const coverTitle = project.draft.slides[0]?.title?.trim();
+  return pdfTitle && project.title === coverTitle ? pdfTitle : project.title;
+}
+
 const button =
   "inline-flex items-center justify-center gap-2 rounded-[10px] border border-field-border px-4 py-3 text-sm font-semibold text-ink hover:bg-item-hover disabled:cursor-not-allowed disabled:opacity-40";
 const primary = cn(button, "border-brand bg-brand text-brand-foreground hover:bg-brand/90");
@@ -337,12 +344,13 @@ export function IrDeckWireframe() {
     const savedDraft = { ...draft, projectId: id };
     const previous = projects.find((p) => p.id === id);
     const coverTitle = slides[0]?.title?.trim();
+    const pdfTitle = draft.fileName.replace(/\.pdf$/i, "").trim();
     const shouldSyncCoverTitle =
       !previous || previous.title === previous.draft.slides[0]?.title;
     const project = {
       id,
       title:
-        (shouldSyncCoverTitle ? coverTitle : previous?.title) ||
+        (shouldSyncCoverTitle ? pdfTitle || coverTitle : previous?.title) ||
         draft.review["제목"]?.trim() ||
         draft.review["사업/서비스명"]?.trim() ||
         "제목 없는 IR Deck",
@@ -658,10 +666,6 @@ export function IrDeckWireframe() {
       "AI IR 덱",
       "",
       <>
-        {analysis.canResume && <div className={cn(notice, "mb-5 mt-0 items-center justify-between")}>
-          <span>작성 중인 사업 내용이 있어요.</span>
-          <button type="button" className="shrink-0 font-semibold text-brand underline" onClick={() => setScreen("input")}>이어서 확인하기</button>
-        </div>}
         <div className="relative -mt-2.5 mb-5 h-[48px] w-full">
           <div className="absolute left-[-12px] top-0 flex items-start">
             <div className="flex h-[48px] w-max shrink-0 cursor-default flex-col items-start gap-[5px]">
@@ -682,11 +686,20 @@ export function IrDeckWireframe() {
         {!loaded ? <p role="status" className="py-16 text-center text-ink-muted">덱을 불러오는 중이에요.</p> : displayedProjects.length === 0 ? (
         <section className="flex flex-col items-center px-6 py-16 text-center">
           <IrDeckEmptyStateArtwork />
-          <h2 className="text-[18px] font-semibold text-ink">아직 만든 IR 덱이 없어요</h2>
-          <p className="mt-1 text-[15px] text-ink-muted">내 사업의 핵심을 담아 IR 덱의 구성부터 디자인까지 완성해 보세요.</p>
-          <button type="button" onClick={startNew} className="mt-5 h-11 rounded-[10px] bg-item-hover px-5 text-[15px] font-semibold text-brand transition-colors hover:bg-item-hover-selected">
-            새 IR 덱 만들기
-          </button>
+          {analysis.canResume ? (
+            <>
+              <h2 className="text-[18px] font-semibold text-ink">작성 중인 사업 내용이 있어요</h2>
+              <p className="mt-1 text-[15px] text-ink-muted">분석이 완료되면 이곳에서 결과를 확인할 수 있어요.</p>
+            </>
+          ) : (
+            <>
+              <h2 className="text-[18px] font-semibold text-ink">아직 만든 IR 덱이 없어요</h2>
+              <p className="mt-1 text-[15px] text-ink-muted">내 사업의 핵심을 담아 IR 덱의 구성부터 디자인까지 완성해 보세요.</p>
+              <button type="button" onClick={startNew} className="mt-5 h-11 rounded-[10px] bg-item-hover px-5 text-[15px] font-semibold text-brand transition-colors hover:bg-item-hover-selected">
+                새 IR 덱 만들기
+              </button>
+            </>
+          )}
         </section>
         ) : (
         <div className="grid gap-5 md:grid-cols-3">
@@ -729,19 +742,19 @@ export function IrDeckWireframe() {
                   <div className="border-t border-field-border p-4">
                     <div className="flex items-start justify-between gap-3">
                       <button type="button" className="min-w-0 flex-1 text-left" onClick={() => openProject(project.id)}>
-                        <strong className="block truncate text-ink">{project.title}</strong>
+                        <strong className="block truncate text-ink">{projectTitle(project)}</strong>
                       </button>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <button type="button" aria-label={`${project.title} 더보기`} className="rounded-md p-1.5 text-ink-muted hover:bg-item-hover" onClick={(event) => event.stopPropagation()}>
+                          <button type="button" aria-label={`${projectTitle(project)} 더보기`} className="rounded-md p-1.5 text-ink-muted hover:bg-item-hover" onClick={(event) => event.stopPropagation()}>
                             <MoreVertical className="size-4" />
                           </button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" sideOffset={6} onClick={(event) => event.stopPropagation()} className="min-w-0 w-fit rounded-[12px] border-0 bg-surface p-1 shadow-none" style={{ boxShadow: "var(--shadow-dropdown)" }}>
-                          <DropdownMenuItem onSelect={() => requestRename(project.id, project.title)} className="min-h-10 w-auto cursor-pointer rounded-[8px] px-[14px] text-ink hover:bg-dropdown-hover data-[highlighted]:bg-dropdown-hover focus:bg-dropdown-hover focus:text-ink">
+                          <DropdownMenuItem onSelect={() => requestRename(project.id, projectTitle(project))} className="min-h-10 w-auto cursor-pointer rounded-[8px] px-[14px] text-ink hover:bg-dropdown-hover data-[highlighted]:bg-dropdown-hover focus:bg-dropdown-hover focus:text-ink">
                             제목 수정
                           </DropdownMenuItem>
-                          <DropdownMenuItem onSelect={() => requestDelete(project.id, project.title)} className="min-h-10 w-auto cursor-pointer rounded-[8px] px-[14px] text-destructive hover:bg-destructive-surface data-[highlighted]:bg-destructive-surface focus:bg-destructive-surface focus:text-destructive">
+                          <DropdownMenuItem onSelect={() => requestDelete(project.id, projectTitle(project))} className="min-h-10 w-auto cursor-pointer rounded-[8px] px-[14px] text-destructive hover:bg-destructive-surface data-[highlighted]:bg-destructive-surface focus:bg-destructive-surface focus:text-destructive">
                             덱 삭제
                           </DropdownMenuItem>
                         </DropdownMenuContent>

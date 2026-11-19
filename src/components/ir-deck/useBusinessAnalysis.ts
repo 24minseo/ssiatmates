@@ -143,6 +143,8 @@ export function useBusinessAnalysis(options: Options) {
       setWatchEpoch((n) => n + 1);
     } catch (error) {
       if (error instanceof AnalysisError && error.code === "NETWORK_UNCONFIRMED") {
+        const failed = latest.current.draft.analysis;
+        if (isAnalysisReference(failed)) updateReference({ ...failed, failed: true });
         options.networkError();
         options.navigate("input");
         return;
@@ -338,7 +340,7 @@ export function useBusinessAnalysis(options: Options) {
     saving,
     retryNeeded,
     phase,
-    canResume: !!ref && ref.userId === user?.id,
+    canResume: !!ref && ref.userId === user?.id && !!ref.jobId && !ref.failed,
     retry: () => {
       options.message("");
       setRetryNeeded(false);
