@@ -53,6 +53,13 @@ type DisplayChangeEvent = {
   time_note?: string | null;
 };
 
+type PlanReviewEligibility = {
+  business_plan_required: boolean | null;
+  analysis_status: string | null;
+  is_current: boolean;
+  reason: "required" | "not_required" | "unknown" | "pending" | "failed" | "stale" | string;
+};
+
 type NoticeReport = {
   status?: "ready" | "report_unavailable" | "not_found" | string;
   notice?: {
@@ -69,6 +76,7 @@ type NoticeReport = {
   change_display?: DisplayChangeEvent[];
   additional_links?: Array<{ label?: string | null; url?: string | null }>;
   report_display?: { version?: string; sections?: StructuredNode[] };
+  plan_review_eligibility?: PlanReviewEligibility | null;
   view_version?: string;
 };
 
@@ -131,25 +139,18 @@ function reportNodeText(node: StructuredNode | ReportItem | null | undefined): s
   return [node.label, value, children].filter(Boolean).join(" ");
 }
 
-function hasSubmissionDocuments(report: NoticeReport | null): boolean {
-  if (!report || report.status !== "ready") return false;
-
-  const displaySection = report.report_display?.sections?.find(
-    (section) => normalizeReportLabel(section.label).replace(/\s+/g, "") === "제출서류",
-  );
-  if (displaySection) {
-    const text = displaySection.children.map(reportNodeText).join(" ").replace(/\s+/g, "");
-    return text.length > 0 && !text.includes("미표시");
+function getPlanReviewDisabledReason(eligibility?: PlanReviewEligibility | null) {
+  if (eligibility?.reason === "stale") {
+    return "공고 정보가 변경되어 제출 여부를 다시 확인하고 있습니다.";
   }
-
-  const legacySection = report.report?.sections?.documents;
-  const legacyItems = collectItems(legacySection);
-  if (!legacyItems.length) return false;
-  const text = legacyItems
-    .map((item) => [item.detail, ...(item.children ?? []).map(reportNodeText)].filter(Boolean).join(" "))
-    .join(" ")
-    .replace(/\s+/g, "");
-  return text.length > 0 && !text.includes("미표시");
+  if (
+    eligibility?.analysis_status === "completed" &&
+    eligibility.is_current === true &&
+    eligibility.business_plan_required === false
+  ) {
+    return "사업계획서 제출이 필요하지 않은 공고입니다.";
+  }
+  return "사업계획서 제출 여부를 아직 확인하지 못했습니다.";
 }
 
 function formatReportDetail(detail: string) {
@@ -800,7 +801,13 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle,
   const noticeUrl = safeNoticeUrl(
     currentReport?.notice?.url ?? currentReport?.notice?.application_url,
   );
-  const canAnalyzePlan = hasSubmissionDocuments(currentReport);
+  const eligibility = currentReport?.plan_review_eligibility;
+  const canAnalyzePlan =
+    currentReport?.status === "ready" &&
+    eligibility?.analysis_status === "completed" &&
+    eligibility.is_current === true &&
+    eligibility.business_plan_required === true;
+  const planReviewDisabledReason = getPlanReviewDisabledReason(eligibility);
 
   const submitPlanReview = async () => {
     if (!analysisFile || !noticeUrl || analysisStatus === "loading") return;
@@ -980,13 +987,13 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle,
             <div className="flex items-center gap-4">
               <DialogTitle className="text-[24px] font-bold leading-10 text-ink">리포트</DialogTitle>
               <span
-                title={canAnalyzePlan ? undefined : "사업계획서 제출이 요구되지 않는 공고입니다."}
+                title={canAnalyzePlan ? undefined : planReviewDisabledReason}
                 className="group relative inline-flex"
               >
                 <button
                   type="button"
                   disabled={!canAnalyzePlan}
-                  aria-label={canAnalyzePlan ? "사업 계획서 적합도 분석" : "사업계획서 제출이 요구되지 않는 공고입니다."}
+                  aria-label={canAnalyzePlan ? "사업 계획서 적합도 분석" : planReviewDisabledReason}
                   onClick={() => {
                     if (!canAnalyzePlan) return;
                     setAnalysisFile(null);
