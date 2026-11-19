@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, ArrowUp, ArrowDown, Plus, Trash2, Eye, Check, MoreVertical, ChevronRight, Presentation, Upload, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, ArrowUp, ArrowDown, LoaderCircle, Plus, Trash2, Eye, Check, MoreVertical, ChevronRight, Presentation, Upload, X } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
@@ -100,11 +100,13 @@ function ProjectThumbnail({ project }: { project: { draft: Draft } }) {
   const reference = project.draft.html;
   const [view, setView] = useState<HtmlView | null>(null);
   const [urls, setUrls] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(Boolean(reference?.documentId));
 
   useEffect(() => {
     let cancelled = false;
     setView(null);
     setUrls({});
+    setLoading(Boolean(reference?.documentId));
     if (!reference?.documentId) return () => { cancelled = true; };
 
     void htmlCall("ir-deck-html-api-v1", {
@@ -116,21 +118,39 @@ function ProjectThumbnail({ project }: { project: { draft: Draft } }) {
         const next = parseView(data, reference.deckId);
         setView(next);
         const firstSlideId = next.document.slides[0]?.slideId;
-        if (!firstSlideId) return;
+        if (!firstSlideId) {
+          setLoading(false);
+          return;
+        }
         return Promise.all(
           next.imageSlots
             .filter((slot) => slot.slideId === firstSlideId && slot.assetId)
             .map(async (slot) => [slot.assetId!, await imageUrl(slot.assetId!)] as const),
         ).then((entries) => {
-          if (!cancelled) setUrls(Object.fromEntries(entries));
+          if (!cancelled) {
+            setUrls(Object.fromEntries(entries));
+            setLoading(false);
+          }
         });
       })
       .catch(() => {
         // 완료 문서를 불러오지 못하면 브라우저에 저장된 초안 프리뷰를 유지한다.
+        if (!cancelled) setLoading(false);
       });
 
     return () => { cancelled = true; };
   }, [reference?.deckId, reference?.documentId]);
+
+  if (loading) {
+    return (
+      <div
+        className="flex h-full w-full items-center justify-center bg-item-hover"
+        aria-label="썸네일 불러오는 중"
+      >
+        <LoaderCircle className="size-7 animate-spin text-ink-muted" />
+      </div>
+    );
+  }
 
   if (view?.document.slides[0]) {
     return (

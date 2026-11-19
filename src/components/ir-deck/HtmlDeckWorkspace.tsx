@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { HtmlSlidePreview } from "./HtmlSlidePreview";
 import { htmlCall, imageUrl, mediaBase, uploadImage } from "./html-client";
+import { previewHtml } from "./html-preview";
 import {
   parseView,
   signedUrl,
@@ -56,6 +57,77 @@ const states: Record<string, string> = {
   failed: "IR 덱 생성을 완료하지 못했어요",
 };
 type PendingImage = { body: Json; revision: number };
+
+async function imageUrlAsDataUrl(url: string) {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error("이미지를 불러오지 못했습니다.");
+  const blob = await response.blob();
+  return await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+function standaloneHtml(slides: string[]) {
+  const serializedSlides = JSON.stringify(slides).replaceAll("<", "\\u003c");
+  return `<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>IR 덱</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; background: #f1f4f2; color: #173d31; font-family: Arial, sans-serif; }
+    header { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 20px; background: rgba(255,255,255,.94); border-bottom: 1px solid #d8e1dd; backdrop-filter: blur(8px); }
+    header strong { font-size: 16px; }
+    header span { color: #587067; font-size: 14px; }
+    nav { display: flex; gap: 8px; }
+    button { border: 1px solid #d8e1dd; border-radius: 8px; padding: 8px 12px; background: #fff; color: #173d31; font: inherit; cursor: pointer; }
+    button:hover:not(:disabled) { background: #eaf1ec; }
+    button:disabled { cursor: default; opacity: .4; }
+    main { display: flex; justify-content: center; padding: 28px 20px 48px; }
+    iframe { width: min(92vw, 1280px); aspect-ratio: 16 / 9; border: 0; background: #fff; box-shadow: 0 2px 12px rgba(0,13,59,.08); }
+  </style>
+</head>
+<body>
+  <header>
+    <div><strong>IR 덱</strong> <span id="counter"></span></div>
+    <nav>
+      <button id="previous" type="button">이전</button>
+      <button id="next" type="button">다음</button>
+    </nav>
+  </header>
+  <main id="stage"></main>
+  <script>
+    const slides = ${serializedSlides};
+    let current = 0;
+    const stage = document.getElementById('stage');
+    const counter = document.getElementById('counter');
+    const previous = document.getElementById('previous');
+    const next = document.getElementById('next');
+    function render() {
+      const frame = document.createElement('iframe');
+      frame.title = 'IR 덱 슬라이드 ' + (current + 1);
+      frame.srcdoc = slides[current];
+      stage.replaceChildren(frame);
+      counter.textContent = (current + 1) + ' / ' + slides.length;
+      previous.disabled = current === 0;
+      next.disabled = current === slides.length - 1;
+    }
+    previous.addEventListener('click', () => { if (current > 0) { current -= 1; render(); } });
+    next.addEventListener('click', () => { if (current < slides.length - 1) { current += 1; render(); } });
+    window.addEventListener('keydown', (event) => {
+      if (event.key === 'ArrowLeft' && current > 0) { current -= 1; render(); }
+      if (event.key === 'ArrowRight' && current < slides.length - 1) { current += 1; render(); }
+    });
+    render();
+  </script>
+</body>
+</html>`;
+}
 
 export function HtmlDeckWorkspace({
   reference,
@@ -106,6 +178,7 @@ export function HtmlDeckWorkspace({
   const [pendingImage, setPendingImage] = useState<PendingImage | null>(null);
   const [exportBusy, setExportBusy] = useState(false),
     [exportError, setExportError] = useState("");
+  const [htmlBusy, setHtmlBusy] = useState(false);
   const [exportAttempt, setExportAttempt] = useState(0);
   const [exportState, setExportState] = useState<{
     format: "pdf" | "pptx";
@@ -485,6 +558,51 @@ export function HtmlDeckWorkspace({
     setExportError("");
     setExportState({ format, revision: view.image_revision, requestId: crypto.randomUUID() });
   }
+
+  async function downloadHtml() {
+    if (!view || busy || pendingImage || exportBusy || htmlBusy) return;
+    setHtmlBusy(true);
+    setNotice("HTML 파일을 준비하고 있어요.");
+    try {
+      const assetIds = [
+        ...new Set(view.imageSlots.flatMap((slot) => (slot.assetId ? [slot.assetId] : []))),
+      ];
+      const entries = await Promise.all(
+        assetIds.map(async (assetId) => {
+          const source = urls[assetId] || (await imageUrl(assetId));
+          try {
+            return [assetId, await imageUrlAsDataUrl(source)] as const;
+          } catch {
+            return [assetId, source] as const;
+          }
+        }),
+      );
+      const embeddedUrls = Object.fromEntries(entries);
+      const documents = view.document.slides.map((slide) =>
+        previewHtml(
+          slide,
+          view,
+          embeddedUrls,
+          crypto.randomUUID().replaceAll("-", ""),
+          crypto.randomUUID(),
+          mediaBase(),
+          false,
+        ),
+      );
+      const blob = new Blob([standaloneHtml(documents)], { type: "text/html;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "IR-deck.html";
+      link.click();
+      URL.revokeObjectURL(url);
+      setNotice("HTML 파일을 다운로드했어요.");
+    } catch (e) {
+      setNotice(e instanceof Error ? e.message : "HTML 파일을 만들지 못했습니다.");
+    } finally {
+      setHtmlBusy(false);
+    }
+  }
   if (!authorized)
     return (
       <section className="rounded-2xl border border-field-border bg-surface p-8">
@@ -559,7 +677,7 @@ export function HtmlDeckWorkspace({
           </button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className={button} disabled={busy || !!pendingImage || exportBusy}>
+              <button className={button} disabled={busy || !!pendingImage || exportBusy || htmlBusy}>
                 <Download className="size-4" />
                 다운로드
                 <ChevronDown className="size-4" />
@@ -581,6 +699,12 @@ export function HtmlDeckWorkspace({
                 className="min-h-10 cursor-pointer rounded-[8px] px-[14px] text-ink hover:bg-dropdown-hover data-[highlighted]:bg-dropdown-hover"
               >
                 PPTX로 다운로드
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onSelect={() => void downloadHtml()}
+                className="min-h-10 cursor-pointer rounded-[8px] px-[14px] text-ink hover:bg-dropdown-hover data-[highlighted]:bg-dropdown-hover"
+              >
+                HTML로 다운로드
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

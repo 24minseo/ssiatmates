@@ -59,7 +59,8 @@ export function previewHtml(
     host.style.setProperty("background", "transparent", "important");
     host.style.setProperty("border", "0", "important");
     const src = urls[slot.assetId];
-    if (!src || new URL(src).origin !== mediaOrigin) continue;
+    const isEmbeddedImage = /^data:image\//i.test(src || "");
+    if (!src || (!isEmbeddedImage && new URL(src).origin !== mediaOrigin)) continue;
     const img = parsed.createElement("img");
     img.src = src;
     img.alt = slot.description;
@@ -80,7 +81,7 @@ export function previewHtml(
     .filter(([, v]) => v !== null)
     .map(([k, v]) => `--ir-${k.toLowerCase().replaceAll("_", "-")}:${v};`)
     .join("");
-  const csp = `default-src 'none'; script-src ${interactive ? `'nonce-${nonce}'` : "'none'"}; style-src 'unsafe-inline'; font-src https://cdn.jsdelivr.net; img-src ${mediaOrigin}; connect-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'`;
+  const csp = `default-src 'none'; script-src ${interactive ? `'nonce-${nonce}'` : "'none'"}; style-src 'unsafe-inline'; font-src https://cdn.jsdelivr.net; img-src ${mediaOrigin} data:; connect-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'`;
   const safeCss = slide.css.replaceAll("<", "\\3c ");
   const bridge = interactive
     ? `<script nonce="${nonce}">document.addEventListener('click',function(e){e.preventDefault();var n=e.target.closest('[data-image-slot-id]');parent.postMessage({type:'ir-image-select',channel:${JSON.stringify(channel)},slideId:${JSON.stringify(slide.slideId)},slotId:n?n.getAttribute('data-image-slot-id'):null,x:Math.round(e.clientX),y:Math.round(e.clientY)},'*')});</script>`
