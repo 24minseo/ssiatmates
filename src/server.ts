@@ -46,6 +46,28 @@ function isH3SwallowedErrorBody(body: string): boolean {
 
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
+    // 서버 전용 검사 API: 사용자 페이지/SSR 처리와 분리합니다.
+    if (new URL(request.url).pathname === "/api/internal/ir-html-render-v1") {
+      try {
+        const { handleIrHtmlRender } = await import("./lib/ir-html-render.server");
+        return await handleIrHtmlRender(request);
+      } catch {
+        return new Response(
+          JSON.stringify({
+            render_ok: false,
+            error_code: "WORKFLOW_FAILED",
+            reason: "render_service_unavailable",
+          }),
+          {
+            status: 503,
+            headers: {
+              "content-type": "application/json; charset=utf-8",
+              "cache-control": "no-store",
+            },
+          },
+        );
+      }
+    }
     try {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
