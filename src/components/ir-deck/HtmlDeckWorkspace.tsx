@@ -174,7 +174,6 @@ function standaloneHtml(slides: string[]) {
 export function HtmlDeckWorkspace({
   reference,
   persist,
-  onBack,
   onHome,
   onSave,
   devPreview = false,
@@ -890,9 +889,6 @@ export function HtmlDeckWorkspace({
         <div className="mt-7 flex justify-center gap-3">
           <button className={button} onClick={onHome}>
             목록으로
-          </button>
-          <button className={button} onClick={onBack}>
-            디자인 선택으로
           </button>
           {error && (
             <button
