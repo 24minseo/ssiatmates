@@ -876,8 +876,8 @@ export function HtmlDeckWorkspace({
         <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-ink-muted">
           {state === "loading" ? "저장된 IR 덱과 슬라이드 정보를 불러오고 있어요." : (
             <>
-              사업계획서의 전체 맥락과 확인한 내용을 바탕으로 제목·핵심 문장·레이아웃을 구성해요.
-              검사까지 완료되면 7장 전체를 보여드려요.
+              선택한 디자인에 맞춰 7장 슬라이드를 만들고 있어요.
+              완료되면 편집 화면에서 확인할 수 있어요.
             </>
           )}
         </p>
