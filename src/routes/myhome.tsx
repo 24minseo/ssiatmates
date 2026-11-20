@@ -68,7 +68,7 @@ const summaryCards = (summary: MyHomeSummary) =>
       href: "/programs" as const,
     },
     {
-      label: "이름 변경 내역 검토",
+      label: "변경내역 검토",
       value: summary.reviewPrograms.total,
       description:
         summary.reviewPrograms.total === 0
@@ -572,7 +572,7 @@ export function MyHomePage() {
               search={
                 card.label === "맞춤 공고"
                   ? { tab: "recommended", source: "myhome" }
-                  : card.label === "이름 변경 내역 검토"
+                  : card.label === "변경내역 검토"
                     ? { tab: "review" }
                     : {}
               }

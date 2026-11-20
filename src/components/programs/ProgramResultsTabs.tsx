@@ -11,7 +11,7 @@ type ProgramResultsTabsProps = {
 
 const tabs: Array<{ value: ProgramResultsTab; label: string }> = [
   { value: "recommended", label: "맞춤 공고" },
-  { value: "review", label: "이름 변경 내역 검토" },
+  { value: "review", label: "변경내역 검토" },
   { value: "manual", label: "수동 공고" },
 ];
 

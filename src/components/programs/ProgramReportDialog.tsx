@@ -233,7 +233,7 @@ function ChangeHistoryView({ history }: { history: ReportChangeEvent[] }) {
 
   return (
     <section className="py-5">
-      <h3 className="mb-3 text-[18px] font-bold leading-7 text-ink">변경 내역</h3>
+      <h3 className="mb-3 text-[18px] font-bold leading-7 text-ink">변경내역 검토</h3>
       <div className="overflow-hidden border-b border-field-border text-[15px] leading-6 text-ink">
         <div className="grid grid-cols-2">
           <div className="border-b border-field-border bg-item-hover px-3 py-1 text-[13px] font-bold text-ink">

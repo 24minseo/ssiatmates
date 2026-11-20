@@ -78,7 +78,7 @@ export function ProgramResultRow({
             ) : program.title}
             {onChangeClick ? (
               <button type="button" onClick={() => onChangeClick(program)} className="shrink-0 rounded bg-deadline-surface/90 px-2 py-1 text-xs font-semibold text-deadline/90 transition-colors hover:bg-deadline-surface">
-                변경 내역 〉
+                변경내역 〉
               </button>
             ) : null}
           </h2>
