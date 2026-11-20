@@ -256,7 +256,18 @@ export function createAnalysisApi(transport: AnalysisTransport) {
         }
         return newSlide(slideNames[i]!, title, body);
       });
-      return { slides, revision: Number(business["revision"]), hash: await reviewHash(slides) };
+      return {
+        slides,
+        revision: Number(business["revision"]),
+        hash: await hashText(
+          JSON.stringify(
+            sections.map((section) => ({
+              section_id: section["section_id"],
+              body: section["body"],
+            })),
+          ),
+        ),
+      };
     },
     async save(
       ref: AnalysisReference,

@@ -34,6 +34,7 @@ export function useBusinessAnalysis(options: Options) {
   const [watchEpoch, setWatchEpoch] = useState(0);
   const busy = useRef(false),
     savingBusy = useRef(false);
+  const activeSave = useRef<Promise<void> | null>(null);
   const pendingSave = useRef<{
     ref: AnalysisReference;
     sections: ReturnType<typeof reviewSections>;
@@ -258,60 +259,110 @@ export function useBusinessAnalysis(options: Options) {
     // 읽기 중 요청/화면/로그인 사용자가 바뀌면 이전 응답은 적용하지 않습니다.
   }, [watching, jobId, sourceId, ownerId, watchEpoch]);
 
-  async function continueToDesign() {
-    if (savingBusy.current) return;
-    const current = latest.current.draft;
-    const active = current.analysis;
+  async function persistReview() {
+    const active = latest.current.draft.analysis;
     if (
       !isAnalysisReference(active) ||
-      active.userId !== user?.id ||
+      active.userId !== ownerRef.current ||
       active.businessRevision === undefined
-    ) {
-      options.message("사업 내용을 먼저 분석한 뒤 확인해 주세요.");
-      return;
+    )
+      throw new AnalysisError("사업 내용을 먼저 분석한 뒤 확인해 주세요.");
+    const matches = () =>
+      latest.current.draft.analysis?.sourceId === active.sourceId &&
+      ownerRef.current === active.userId;
+    let revision = active.businessRevision;
+    const pending = pendingSave.current;
+    if (pending && pending.ref.sourceId === active.sourceId) {
+      revision = await analysisApi.save(
+        pending.ref,
+        pending.sections,
+        pending.id,
+        pending.revision,
+      );
+      if (!matches()) return;
+      updateReference({ ...active, businessRevision: revision, savedReviewHash: pending.hash });
+      pendingSave.current = null;
     }
+    // Snapshot only after replaying an uncertain write. Preserve edits made during that write.
+    const slides = latest.current.draft.slides;
+    const hash = await reviewHash(slides);
+    if (!matches()) return;
+    if (hash !== latest.current.draft.analysis?.savedReviewHash) {
+      const save = {
+        ref: active,
+        sections: reviewSections(slides),
+        id: crypto.randomUUID(),
+        hash,
+        revision,
+      };
+      pendingSave.current = save;
+      revision = await analysisApi.save(active, save.sections, save.id, revision);
+      if (!matches()) return;
+      pendingSave.current = null;
+      updateReference({ ...active, businessRevision: revision, savedReviewHash: hash });
+    }
+  }
+  async function saveReview() {
+    // Serialize autosave and the final save. Reuse request IDs after a lost response.
+    while (activeSave.current) await activeSave.current;
+    const task = persistReview();
+    activeSave.current = task;
+    try {
+      await task;
+    } finally {
+      if (activeSave.current === task) activeSave.current = null;
+    }
+  }
+  const reviewValue = JSON.stringify(
+    options.draft.slides.map(({ title, body }) => ({ title, body })),
+  );
+  useEffect(() => {
+    if (
+      options.screen !== "review" ||
+      ref?.userId !== user?.id ||
+      ref?.businessRevision === undefined
+    )
+      return;
+    let stopped = false;
+    const timer = setTimeout(() => {
+      void saveReview().catch((error: unknown) => {
+        if (!stopped && latest.current.screen === "review")
+          latest.current.message(
+            error instanceof Error
+              ? error.message
+              : "자동저장하지 못했습니다. 수정 내용은 이 브라우저에 유지됩니다.",
+          );
+      });
+    }, 1000);
+    return () => {
+      stopped = true;
+      clearTimeout(timer);
+    };
+    // Persist after typing stops; revision updates never trigger another write by themselves.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [options.screen, sourceId, ownerId, user?.id, reviewValue]);
+
+  async function continueToDesign() {
+    if (savingBusy.current) return;
     savingBusy.current = true;
     setSaving(true);
     options.message("");
+    const source = latest.current.draft.analysis?.sourceId;
     try {
-      // 응답 유실이 있었다면 동일 저장 요청을 먼저 재확인합니다.
-      const pending = pendingSave.current;
-      let revision = active.businessRevision;
-      if (pending && pending.ref.sourceId === active.sourceId) {
-        revision = await analysisApi.save(
-          pending.ref,
-          pending.sections,
-          pending.id,
-          pending.revision,
-        );
-        updateReference({ ...active, businessRevision: revision, savedReviewHash: pending.hash });
-        pendingSave.current = null;
-      }
-      const hash = await reviewHash(current.slides);
-      if (hash !== latest.current.draft.analysis?.savedReviewHash) {
-        const save = {
-          ref: active,
-          sections: reviewSections(current.slides),
-          id: crypto.randomUUID(),
-          hash,
-          revision,
-        };
-        pendingSave.current = save;
-        revision = await analysisApi.save(active, save.sections, save.id, save.revision);
-        pendingSave.current = null;
-        updateReference({ ...active, businessRevision: revision, savedReviewHash: hash });
-      }
+      await saveReview();
       if (
-        latest.current.draft.analysis?.sourceId === active.sourceId &&
         latest.current.screen === "review" &&
-        active.userId === ownerRef.current
+        source === latest.current.draft.analysis?.sourceId &&
+        latest.current.draft.analysis?.userId === ownerRef.current &&
+        (await reviewHash(latest.current.draft.slides)) ===
+          latest.current.draft.analysis?.savedReviewHash
       )
-        options.navigate("themes");
+        latest.current.navigate("themes");
     } catch (error) {
-      options.message(
+      latest.current.message(
         error instanceof Error
           ? error.message
-          : "수정 내용을 저장하지 못했습니다. 내용은 유지되니 다시 시도해 주세요.",
+          : "수정 내용을 저장하지 못했습니다. 다시 시도해 주세요.",
       );
     } finally {
       savingBusy.current = false;
