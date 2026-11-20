@@ -392,6 +392,9 @@ export function MatchingProfileSheet({
                         )}
                         aria-invalid={birthError ? true : undefined}
                         value={birthDate}
+                        onBeforeInput={(event) => {
+                          if (event.data && /\D/.test(event.data)) event.preventDefault();
+                        }}
                         onChange={(event) => handleBirthChange(event.target.value, event.target.selectionStart)}
                         onBlur={() => {
                           if (!birth.valid) toast.error(birthDate ? "생년월일을 다시 확인해주세요." : "생년월일을 입력해주세요.");
