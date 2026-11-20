@@ -25,6 +25,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { markPreferenceProfileRefresh } from "@/services/preferenceTags";
 import { clearSupportFilterSession } from "@/lib/supportFilterSession";
 import { waitForCurrentProfileMatching } from "@/services/profileMatchingSync";
+import { cn } from "@/lib/utils";
 
 type MatchingProfileSheetProps = {
   open: boolean;
@@ -121,6 +122,7 @@ export function MatchingProfileSheet({
   }, [open, profile]);
 
   const birth = useMemo(() => validateBirthDate(birthDate), [birthDate]);
+  const birthError = birth.complete && !birth.valid ? birth.error ?? "생년월일을 다시 확인해주세요." : undefined;
 
   useLayoutEffect(() => {
     const caret = pendingBirthCaretRef.current;
@@ -378,13 +380,17 @@ export function MatchingProfileSheet({
 
                 <Section title="기본 정보">
                   <div className="flex flex-col gap-4">
-                    <FormField label="생년월일" required labelVariant="muted2">
+                    <FormField label="생년월일" required labelVariant="muted2" error={birthError}>
                       <Input
                         ref={birthInputRef}
                         inputMode="numeric"
                         maxLength={10}
                         placeholder="YYYY.MM.DD"
-                        className="h-12 rounded-[12px] border-field-border bg-surface px-4 text-[15px] text-ink shadow-none placeholder:text-guide-text focus-visible:border-[1.5px] focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft"
+                        className={cn(
+                          "h-12 rounded-[12px] border-field-border bg-surface px-4 text-[15px] text-ink shadow-none placeholder:text-guide-text focus-visible:border-[1.5px] focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft",
+                          birthError && "border-destructive focus-visible:border-destructive focus-visible:ring-destructive/20",
+                        )}
+                        aria-invalid={birthError ? true : undefined}
                         value={birthDate}
                         onChange={(event) => handleBirthChange(event.target.value, event.target.selectionStart)}
                         onBlur={() => {
