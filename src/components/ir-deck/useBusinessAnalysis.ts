@@ -180,9 +180,6 @@ export function useBusinessAnalysis(options: Options) {
       if (Date.now() - started > 600000) {
         setRetryNeeded(true);
         setPhase("분석 상태를 다시 확인해 주세요");
-        latest.current.message(
-          "분석이 오래 걸리고 있어요. 상태 다시 확인을 눌러 이어서 확인할 수 있습니다. 중복 분석을 요청하지 않습니다.",
-        );
         return;
       }
       if (document.visibilityState === "hidden") {
@@ -197,15 +194,6 @@ export function useBusinessAnalysis(options: Options) {
           updateReference({ ...active, failed: true });
           setRetryNeeded(true);
           setPhase("사업 내용 분석에 실패했어요");
-          const detail = status["error"];
-          latest.current.message(
-            detail &&
-              typeof detail === "object" &&
-              "message" in detail &&
-              typeof detail.message === "string"
-              ? detail.message.slice(0, 400)
-              : "분석에 실패했습니다. 입력 화면에서 다시 요청해 주세요.",
-          );
           return;
         }
         if (status["status"] === "completed") {
