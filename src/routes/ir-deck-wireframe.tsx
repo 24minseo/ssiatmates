@@ -1012,6 +1012,11 @@ export function IrDeckWireframe() {
         <section className={cn(panel, "p-16 text-center")}>
           <img src="/assets/sidebar/ir-deck-active.svg" alt="" className="mx-auto size-10" />
           <h2 className="mt-5 text-xl font-semibold text-ink" role="status">{analysis.phase}</h2>
+          {analysis.retryNeeded && !draft.analysis?.failed && (
+            <p className="mt-2 text-sm text-ink-muted">
+              분석이 오래 걸리고 있어요. 1분 후 상태 다시 확인 버튼을 눌러주세요.
+            </p>
+          )}
           <div className="mx-auto my-7 h-2 max-w-md overflow-hidden rounded-full bg-item-hover">
             <div className="ir-deck-progress h-full rounded-full bg-brand" style={{ width: `${processingProgress}%` }} />
           </div>
