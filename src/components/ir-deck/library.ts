@@ -119,6 +119,20 @@ export function mergeLibraryProjects(
     }),
   ];
 }
+export function completedLibraryProjects(
+  local: Project[],
+  rows: LibraryItem[],
+  owner: string,
+  ready: boolean,
+): Project[] {
+  if (!ready) return [];
+  const completed = new Set(
+    rows.filter((row) => row.html_state === "ready" && row.document_id).map((row) => row.deck_id),
+  );
+  return mergeLibraryProjects(local, rows, owner, ready).filter((project) =>
+    completed.has(projectDeckId(project) ?? project.id),
+  );
+}
 function brand(v: unknown): BrandSettings {
   const b = object(v) ? v : {};
   const colors = Array.isArray(b["brandColors"])

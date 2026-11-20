@@ -65,6 +65,19 @@ assert.deepEqual(
   [unknown.id],
 );
 assert.equal(api.mergeLibraryProjects([], [row], owner, true)[0].id, deck);
+assert.deepEqual(api.completedLibraryProjects([local, unknown], [row], owner, true), []);
+const completeRow = { ...row, html_state: "ready", document_id: job };
+assert.deepEqual(
+  api.completedLibraryProjects([local, unknown], [completeRow], owner, true).map((p) => p.id),
+  [local.id],
+);
+assert.deepEqual(api.completedLibraryProjects([local], [completeRow], owner, false), []);
+for (const state of ["failed", "planning", "generating", "validating"]) {
+  assert.deepEqual(
+    api.completedLibraryProjects([local], [{ ...completeRow, html_state: state }], owner, true),
+    [],
+  );
+}
 let calls = 0;
 const rows = await api.listLibrary(async (_name, args) => {
   calls++;
