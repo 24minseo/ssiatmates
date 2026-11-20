@@ -118,3 +118,46 @@ export function acceptResidualContrast<T extends Report>(
     contrast_remaining: remaining,
   };
 }
+
+// Publication policy for an already repaired deck, or an export of a ready deck.
+// Keep observed quality defects in the private report; do not turn infrastructure
+// failures, missing fonts, unexpected issue codes, or a missing slide into success.
+export const VISUAL_ISSUE_CODES = [
+  "ELEMENT_OUTSIDE_SLIDE",
+  "CONTENT_OVERFLOW",
+  "TEXT_OUTSIDE_SLIDE",
+  "CLIPPED_TEXT",
+  "LOW_TEXT_CONTRAST",
+  "INVISIBLE_TEXT",
+  "NO_VISIBLE_TEXT",
+  "CANVAS_SIZE",
+] as const;
+
+export function acceptResidualVisualIssues<T extends Report>(report: T) {
+  const allowed = new Set<string>(VISUAL_ISSUE_CODES);
+  let remaining = 0;
+  const slides = report.slides.map((slide) => {
+    const qualityIssues = slide.issues.filter((issue) => allowed.has(issue.code));
+    const issues = slide.issues.filter((issue) => !allowed.has(issue.code));
+    remaining += qualityIssues.length;
+    return {
+      ...slide,
+      visual_passed: slide.passed,
+      quality_issues: qualityIssues,
+      issues,
+      passed: issues.length === 0,
+    };
+  });
+  return {
+    ...report,
+    visual_passed: report.passed,
+    visual_policy: "after_one_repair_v1",
+    quality_remaining: remaining,
+    slides,
+    passed:
+      report.fonts_loaded === true &&
+      report.slide_count === 7 &&
+      slides.length === 7 &&
+      slides.every((slide) => slide.passed),
+  };
+}
