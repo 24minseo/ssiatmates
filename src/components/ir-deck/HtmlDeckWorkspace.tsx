@@ -40,6 +40,8 @@ import {
 
 const button =
   "inline-flex items-center justify-center gap-2 rounded-xl border border-field-border px-4 py-3 text-sm font-semibold text-ink hover:bg-item-hover disabled:cursor-not-allowed disabled:opacity-40";
+const secondaryButton =
+  "inline-flex h-12 items-center justify-center rounded-[12px] bg-secondary-btn px-5 text-[16px] font-semibold text-secondary-btn-text shadow-none transition-colors hover:bg-secondary-btn-hover hover:text-secondary-btn-text-hover focus-visible:ring-1 focus-visible:ring-focus-soft";
 const primary = `${button} border-brand bg-brand text-brand-foreground hover:bg-brand/90`;
 const toolbarButton =
   "inline-flex h-10 items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold text-ink-muted transition-colors hover:bg-item-hover disabled:cursor-not-allowed disabled:opacity-40";
@@ -862,7 +864,7 @@ export function HtmlDeckWorkspace({
         <p className="mt-3 text-ink-muted">
           IR 덱을 생성한 계정으로 로그인하면 이어서 확인할 수 있어요.
         </p>
-        <button className={`${button} mt-6`} onClick={onHome}>
+        <button className={`${secondaryButton} mt-6`} onClick={onHome}>
           목록으로
         </button>
       </section>
@@ -898,7 +900,7 @@ export function HtmlDeckWorkspace({
           </p>
         )}
         <div className="mt-7 flex justify-center gap-3">
-          <button className={button} onClick={onHome}>
+          <button className={secondaryButton} onClick={onHome}>
             목록으로
           </button>
           {error && (
