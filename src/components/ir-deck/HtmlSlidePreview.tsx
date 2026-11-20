@@ -9,6 +9,7 @@ export function HtmlSlidePreview({
   view,
   urls,
   mediaOrigin,
+  selectedSlotId,
   onSelect,
   onDrag,
   onSlideShortcut,
@@ -18,6 +19,7 @@ export function HtmlSlidePreview({
   view: HtmlView;
   urls: Record<string, string>;
   mediaOrigin: string;
+  selectedSlotId?: string | null;
   onSelect?: ((slot: ImageSlot | null, point: { x: number; y: number }) => void) | undefined;
   onDrag?:
     | ((
@@ -40,8 +42,17 @@ export function HtmlSlidePreview({
   const interactive = Boolean(onSelect || onDrag || onSlideShortcut);
   const html = useMemo(
     () =>
-      previewHtml(slide, view, urls, identity.nonce, identity.channel, mediaOrigin, interactive),
-    [slide, view, urls, identity, mediaOrigin, interactive],
+      previewHtml(
+        slide,
+        view,
+        urls,
+        identity.nonce,
+        identity.channel,
+        mediaOrigin,
+        interactive,
+        selectedSlotId,
+      ),
+    [slide, view, urls, identity, mediaOrigin, interactive, selectedSlotId],
   );
   useEffect(() => {
     const observer = new ResizeObserver((entries) => setWidth(entries[0]?.contentRect.width || 0));

@@ -11,6 +11,7 @@ export function previewHtml(
   channel: string,
   mediaOrigin: string,
   interactive: boolean,
+  selectedSlotId?: string | null,
 ): string {
   const parsed = new DOMParser().parseFromString(slide.html, "text/html");
   parsed
@@ -52,7 +53,12 @@ export function previewHtml(
       root.append(host);
     }
     if (!host) continue;
+    const selected = interactive && slot.origin === "user" && slot.id === selectedSlotId;
     host.style.cursor = interactive ? (slot.origin === "user" ? "move" : "pointer") : "default";
+    if (selected) {
+      host.style.outline = "2px solid rgba(31,128,100,.72)";
+      host.style.outlineOffset = "2px";
+    }
     host.setAttribute("aria-label", slot.description || "이미지 업로드");
     if (!slot.assetId) continue;
     host.querySelectorAll("[data-slot-placeholder-ui]").forEach((n) => n.remove());
@@ -80,6 +86,10 @@ export function previewHtml(
       const handle = parsed.createElement("div");
       handle.dataset["imageResizeHandle"] = "true";
       handle.setAttribute("aria-label", "이미지 크기 조절");
+      if (selected) {
+        handle.style.opacity = "1";
+        handle.style.pointerEvents = "auto";
+      }
       host.append(handle);
     }
   }
@@ -103,12 +113,51 @@ export function previewHtml(
             y:Math.round(event.clientY)
           },'*');
         }
+        function number(value, fallback) {
+          var parsed = Number.parseFloat(value);
+          return Number.isFinite(parsed) ? parsed : fallback;
+        }
+        function clamp(value, min, max) {
+          return Math.max(min, Math.min(max, value));
+        }
+        function updateDrag(e) {
+          if(!active) return;
+          var dx=e.clientX-active.startX;
+          var dy=e.clientY-active.startY;
+          var left=active.left;
+          var top=active.top;
+          var width=active.width;
+          var height=active.height;
+          if(active.mode === 'resize') {
+            var ratio=active.width/active.height;
+            var maxWidth=Math.min(1920-active.left, (1080-active.top)*ratio);
+            width=clamp(active.width+dx, 80, maxWidth);
+            height=width/ratio;
+          } else {
+            left=clamp(active.left+dx, 0, 1920-active.width);
+            top=clamp(active.top+dy, 0, 1080-active.height);
+          }
+          active.node.style.left=Math.round(left)+'px';
+          active.node.style.top=Math.round(top)+'px';
+          active.node.style.width=Math.round(width)+'px';
+          active.node.style.height=Math.round(height)+'px';
+        }
         document.addEventListener('pointerdown',function(e){
           if(e.button !== 0) return;
-          var resize=e.target.closest('[data-image-resize-handle]');
-          var n=resize ? resize.closest('[data-image-slot-id]') : e.target.closest('[data-image-slot-id]');
+          var target=e.target instanceof Element ? e.target : null;
+          var resize=target && target.closest('[data-image-resize-handle]');
+          var n=resize ? resize.closest('[data-image-slot-id]') : target && target.closest('[data-image-slot-id]');
           e.preventDefault();
-          active=n ? {node:n, mode:resize ? 'resize' : 'move'} : null;
+          active=n ? {
+            node:n,
+            mode:resize ? 'resize' : 'move',
+            startX:e.clientX,
+            startY:e.clientY,
+            left:number(n.style.left, 0),
+            top:number(n.style.top, 0),
+            width:number(n.style.width, 640),
+            height:number(n.style.height, 360),
+          } : null;
           if(n && n.setPointerCapture) n.setPointerCapture(e.pointerId);
           send(
             n ? (resize ? 'ir-image-resize-start' : 'ir-image-drag-start') : 'ir-image-select',
@@ -119,11 +168,13 @@ export function previewHtml(
         document.addEventListener('pointermove',function(e){
           if(!active) return;
           e.preventDefault();
+          updateDrag(e);
           send(active.mode === 'resize' ? 'ir-image-resize-move' : 'ir-image-drag-move',active.node,e);
         });
         document.addEventListener('pointerup',function(e){
           if(!active) return;
           e.preventDefault();
+          updateDrag(e);
           send(active.mode === 'resize' ? 'ir-image-resize-end' : 'ir-image-drag-end',active.node,e);
           active=null;
         });

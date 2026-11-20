@@ -204,10 +204,10 @@ export function HtmlDeckWorkspace({
   const [urls, setUrls] = useState<Record<string, string>>({});
   const [slotId, setSlotId] = useState<string | null>(null),
     [adding, setAdding] = useState(false);
-  const [point, setPoint] = useState({ x: 96, y: 200 });
+  const [point, setPoint] = useState({ x: 640, y: 360 });
   const [placement, setPlacement] = useState<Placement>({
-    x: 96,
-    y: 200,
+    x: 640,
+    y: 360,
     width: 640,
     height: 360,
     zIndex: 100,
@@ -687,16 +687,6 @@ export function HtmlDeckWorkspace({
       height,
     };
     setPlacement(nextPlacement);
-    setView((currentView) =>
-      currentView
-        ? {
-            ...currentView,
-            imageSlots: currentView.imageSlots.map((imageSlot) =>
-              imageSlot.id === slot.id ? { ...imageSlot, placement: nextPlacement } : imageSlot,
-            ),
-          }
-        : currentView,
-    );
     if (phase === "end") {
       draggingImage.current = null;
       const changed =
@@ -961,8 +951,9 @@ export function HtmlDeckWorkspace({
                 className={toolbarButton}
                 disabled={!canMutate && !devPreview}
                 onClick={() => {
-                  setAdding(!adding);
+                  setAdding(false);
                   setSlotId(null);
+                  window.requestAnimationFrame(() => fileInput.current?.click());
                 }}
               >
                 <GrowthJournalImageIcon className="size-3.5" />
@@ -1229,6 +1220,7 @@ export function HtmlDeckWorkspace({
             view={view}
             urls={urls}
             mediaOrigin={new URL(mediaBase()).origin}
+            selectedSlotId={slotId}
             onSelect={preview ? undefined : selectSlot}
             onDrag={preview ? undefined : dragImage}
             onSlideShortcut={preview ? undefined : switchSlideShortcut}
