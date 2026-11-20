@@ -333,13 +333,24 @@ export function HtmlDeckWorkspace({
     switchSlideShortcut(direction > 0 ? "ArrowRight" : "ArrowLeft");
   }
 
-  function toggleFullscreen() {
-    if (isFullscreen || document.fullscreenElement) {
-      setIsFullscreen(false);
-      setPreview(false);
-      if (document.fullscreenElement) void document.exitFullscreen();
+  async function toggleFullscreen() {
+    if (document.fullscreenElement) {
+      await document.exitFullscreen();
       return;
     }
+
+    const editor = editorRef.current;
+    if (!editor) return;
+
+    if (typeof editor.requestFullscreen === "function") {
+      try {
+        await editor.requestFullscreen();
+        return;
+      } catch {
+        // Fall back to the in-app presentation view when Fullscreen API is blocked.
+      }
+    }
+
     setIsFullscreen(true);
     setPreview(true);
   }
