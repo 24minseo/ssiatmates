@@ -302,10 +302,19 @@ export function HtmlDeckWorkspace({
 
   function switchSlideShortcut(key: "ArrowLeft" | "ArrowRight") {
     if (busy || pendingImage) return;
-    if (key === "ArrowLeft" && selected > 0) {
+    const lastSlide = Math.max(0, (view?.document.slides.length || 7) - 1);
+    if (key === "ArrowLeft") {
+      if (selected === 0) {
+        toast.info("첫 번째 슬라이드예요.", { id: "ir-deck-boundary", duration: 1200 });
+        return;
+      }
       setSelected((index) => index - 1);
       setSlotId(null);
-    } else if (key === "ArrowRight" && selected < 6) {
+    } else {
+      if (selected >= lastSlide) {
+        toast.info("마지막 슬라이드예요.", { id: "ir-deck-boundary", duration: 1200 });
+        return;
+      }
       setSelected((index) => index + 1);
       setSlotId(null);
     }
@@ -323,11 +332,6 @@ export function HtmlDeckWorkspace({
     }
     gesture.distance += Math.abs(deltaY);
     if (gesture.distance < 32) return;
-    const lastSlide = (view?.document.slides.length || 7) - 1;
-    if ((direction < 0 && selected === 0) || (direction > 0 && selected >= lastSlide)) {
-      gesture.distance = 0;
-      return;
-    }
     gesture.distance = 0;
     gesture.blockedUntil = now + 650;
     switchSlideShortcut(direction > 0 ? "ArrowRight" : "ArrowLeft");
@@ -424,10 +428,10 @@ export function HtmlDeckWorkspace({
         ["INPUT", "TEXTAREA", "SELECT", "BUTTON"].includes(target?.tagName || "")
       )
         return;
-      if (event.key === "ArrowLeft" && selected > 0) {
+      if (event.key === "ArrowLeft") {
         event.preventDefault();
         switchSlideShortcut("ArrowLeft");
-      } else if (event.key === "ArrowRight" && selected < 6) {
+      } else if (event.key === "ArrowRight") {
         event.preventDefault();
         switchSlideShortcut("ArrowRight");
       }
