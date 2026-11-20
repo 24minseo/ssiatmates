@@ -1,6 +1,11 @@
 import { ArrowLeft, ArrowRight, ArrowUp, ArrowDown, LoaderCircle, Plus, Trash2, Eye, Check, MoreVertical, ChevronRight, Presentation, Upload, X } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
+import { accountWorkspaceKey, ownedWorkspace, mergeLibraryProjects, projectDeckId, resumeLibraryProject, mutateLibrary } from "@/components/ir-deck/library";
+import { libraryRpc } from "@/components/ir-deck/library-client";
+import { useDeckLibrary } from "@/components/ir-deck/useDeckLibrary";
+import { reviewHash } from "@/components/ir-deck/analysis";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -103,8 +108,18 @@ function editorPreviewView(): HtmlView {
 
 const editorPreviewDocument = editorPreviewView();
 
-function ProjectThumbnail({ project }: { project: { draft: Draft } }) {
-  const reference = project.draft.html;
+function ProjectThumbnail(props: { project: { draft: Draft }; cloudDocument?: { documentId: string; deckId: string } | undefined }) {
+  const element = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    if (!element.current || typeof IntersectionObserver === "undefined") { setVisible(true); return; }
+    const observer = new IntersectionObserver(entries => { if (entries.some(e => e.isIntersecting)) { setVisible(true); observer.disconnect(); } }, { rootMargin: "200px" });
+    observer.observe(element.current); return () => observer.disconnect();
+  }, []);
+  return <div ref={element} className="h-full w-full">{visible ? <ProjectThumbnailContent {...props} /> : <div className="h-full w-full bg-item-hover" />}</div>;
+}
+function ProjectThumbnailContent({ project, cloudDocument }: { project: { draft: Draft }; cloudDocument?: { documentId: string; deckId: string } | undefined }) {
+  const reference = cloudDocument ? { documentId: cloudDocument.documentId, deckId: cloudDocument.deckId } : project.draft.html;
   const [view, setView] = useState<HtmlView | null>(null);
   const [urls, setUrls] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(Boolean(reference?.documentId));
@@ -274,6 +289,13 @@ type Screen =
   "home" | "input" | "processing" | "review" | "themes" | "editor" | "preview" | "saved";
 
 export function IrDeckWireframe() {
+  const { user, loading: authLoading } = useAuth();
+  const accountKey = accountWorkspaceKey(user?.id ?? null);
+  const libraryOwner = useRef(user?.id);
+  libraryOwner.current = user?.id;
+  const [cacheOwner, setCacheOwner] = useState("");
+  const libraryLock = useRef(false);
+  const [libraryPending, setLibraryPending] = useState(false);
   const [screen, setScreen] = useState<Screen>("home");
   const [workspace, setWorkspace] = useState<Workspace>(() => ({
     projects: [],
@@ -300,7 +322,11 @@ export function IrDeckWireframe() {
   const [billingOpen, setBillingOpen] = useState(false);
   const [fontMenuOpen, setFontMenuOpen] = useState(false);
   const { draft, projects } = workspace;
-  const displayedProjects = devEmptyPreview ? [] : projects;
+  const library = useDeckLibrary(user?.id, loaded && cacheOwner === accountKey && screen === "home");
+  const displayedProjects = devEmptyPreview || cacheOwner !== accountKey ? [] : user
+    ? mergeLibraryProjects(projects, library.items, user.id, library.ready) : projects;
+  const cloudItem = (project: (typeof projects)[number]) => library.items.find(item => item.deck_id === projectDeckId(project) || item.deck_id === project.id);
+  const displayProjectTitle = (project: (typeof projects)[number]) => cloudItem(project)?.title ?? projectTitle(project);
   const { theme, primaryColor, primaryColor2, colorMode, slides, activeSlide } = draft;
   const recommendedColorMode = primaryColor && Math.round(contrastRatio(primaryColor, "#FFFFFF") * 10) / 10 < 3 ? "dark" : "light";
   const currentSlide = slides[activeSlide] || slides[0]!;
@@ -321,12 +347,22 @@ export function IrDeckWireframe() {
   const processingTarget = processingPhaseTargets.find(([phase]) => phase === analysis.phase)?.[1] ?? 0;
 
   useEffect(() => {
+    if (authLoading) return;
+    setLoaded(false);
+    setScreen("home");
+    setMessage("");
+    setStorageBlocked(false);
+    setDeleteTarget(null);
+    setRenameTarget(null);
+    setRenameTitle("");
+    setMedia(null);
+    setMediaSource("");
+    setMediaFile(null);
     try {
-      const restored = restoreWorkspace(
-        localStorage.getItem(storageKey),
-        localStorage.getItem("ssiat-ir-deck"),
-      );
-      if (restored) setWorkspace(restored);
+      const scoped = localStorage.getItem(accountKey);
+      const restored = scoped ? restoreWorkspace(scoped, null) : restoreWorkspace(
+        localStorage.getItem(storageKey), localStorage.getItem("ssiat-ir-deck"));
+      setWorkspace(ownedWorkspace(restored, user?.id ?? null, scoped !== null));
       const savedTrial = localStorage.getItem(trialStorageKey);
       if (savedTrial) {
         const parsed = JSON.parse(savedTrial) as Partial<TrialState>;
@@ -338,13 +374,15 @@ export function IrDeckWireframe() {
         });
       }
     } catch {
+      setWorkspace({ projects: [], draft: newDraft() });
       setStorageBlocked(true);
       setMessage(
         "브라우저 저장 내용을 읽지 못했습니다. 기존 데이터는 보존했습니다. 저장소 접근 권한이나 저장 데이터를 확인한 뒤 새로고침해 주세요.",
       );
     }
+    setCacheOwner(accountKey);
     setLoaded(true);
-  }, []);
+  }, [authLoading, accountKey, user?.id]);
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (import.meta.env.DEV && params.get("empty") === "1") {
@@ -408,15 +446,15 @@ export function IrDeckWireframe() {
     setScreen("editor");
   }, [loaded]);
   useEffect(() => {
-    if (!loaded || storageBlocked) return;
+    if (!loaded || storageBlocked || authLoading || cacheOwner !== accountKey) return;
     try {
-      localStorage.setItem(storageKey, JSON.stringify(workspace));
+      localStorage.setItem(accountKey, JSON.stringify(workspace));
     } catch {
       setMessage(
         "브라우저에 임시 저장하지 못했습니다. 저장 공간·접근 권한을 확인해 주세요. 현재 편집 내용은 이 화면에 유지됩니다.",
       );
     }
-  }, [workspace, loaded, storageBlocked]);
+  }, [workspace, loaded, storageBlocked, authLoading, cacheOwner, accountKey]);
   useEffect(() => {
     if (!loaded || storageBlocked) return;
     try {
@@ -458,7 +496,7 @@ export function IrDeckWireframe() {
     const existing = projects.find(project => project.id === id);
     const project = { id, title: existing?.title || draft.slides[0]?.title || "IR 덱", createdAt: existing?.createdAt || Date.now(), updatedAt: Date.now(), draft: structuredClone(nextDraft) };
     const next = { ...workspace, draft: nextDraft, projects: [project, ...projects.filter(item => item.id !== id)] };
-    try { localStorage.setItem(storageKey, JSON.stringify(next)); }
+    try { localStorage.setItem(accountKey, JSON.stringify(next)); }
     catch { setMessage("생성 요청 번호를 저장하지 못했어요. 브라우저 저장소를 확인한 뒤 다시 시도해 주세요."); return; }
     setWorkspace(next);
     setScreen("editor");
@@ -501,55 +539,74 @@ export function IrDeckWireframe() {
     setTrial((current) => ({ ...current, credits: current.credits - designCost }));
     return true;
   }
-  function deleteProject(projectId: string, title: string) {
-    setWorkspace((w) => {
-      const next = { ...w, projects: w.projects.filter((project) => project.id !== projectId) };
-      if (w.draft.projectId === projectId) next.draft = newDraft();
-      try {
-        localStorage.setItem(storageKey, JSON.stringify(next));
-      } catch {
-        setMessage("덱을 삭제하지 못했습니다. 브라우저 저장소를 확인해 주세요.");
-      }
-      return next;
-    });
-  }
-  function requestDelete(projectId: string, title: string) {
-    setDeleteTarget({ id: projectId, title });
-  }
-  function requestRename(projectId: string, title: string) {
-    setRenameTarget({ id: projectId, title });
-    setRenameTitle(title);
-  }
-  function renameProject() {
-    if (!renameTarget || !renameTitle.trim()) return;
-    const next = {
-      ...workspace,
-      projects: workspace.projects.map((project) =>
-        project.id === renameTarget.id
-          ? { ...project, title: renameTitle.trim(), updatedAt: Date.now() }
-          : project,
-      ),
-    };
-    try {
-      localStorage.setItem(storageKey, JSON.stringify(next));
-      setWorkspace(next);
-      setRenameTarget(null);
-    } catch {
-      setMessage("제목을 저장하지 못했습니다. 브라우저 저장 공간·접근 권한을 확인해 주세요.");
-    }
-  }
-  function openProject(projectId: string) {
-    const project = projects.find((item) => item.id === projectId);
+  async function deleteProject(projectId: string, _title: string) {
+    if (libraryLock.current) return;
+    const project = displayedProjects.find(p => p.id === projectId);
     if (!project) return;
-    setWorkspace((w) => ({
-      ...w,
-      projects: w.projects.map((item) =>
-        item.id === projectId ? { ...item, lastViewedAt: Date.now() } : item,
-      ),
-      draft: { ...structuredClone(project.draft), projectId: project.id },
-    }));
-    setActiveField("title");
-    setScreen("editor");
+    const deck = cloudItem(project)?.deck_id ?? projectDeckId(project), owner = user?.id;
+    libraryLock.current = true; setLibraryPending(true);
+    try {
+      if (deck) {
+        if (!owner) throw new Error("로그인 후 이용해주세요.");
+        await mutateLibrary(libraryRpc, owner, deck);
+        if (libraryOwner.current !== owner) return;
+        library.remove(deck);
+      }
+      setWorkspace(w => ({ ...w, projects: w.projects.filter(p => p.id !== projectId && (!deck || projectDeckId(p) !== deck)), draft: w.draft.projectId === projectId ? newDraft() : w.draft }));
+      setDeleteTarget(null);
+    } catch (error) { if (libraryOwner.current === owner) setMessage(error instanceof Error ? error.message : "덱을 삭제하지 못했습니다."); }
+    finally { libraryLock.current = false; setLibraryPending(false); }
+  }
+  function requestDelete(projectId: string, title: string) { setDeleteTarget({ id: projectId, title }); }
+  function requestRename(projectId: string, title: string) { setRenameTarget({ id: projectId, title }); setRenameTitle(title); }
+  async function renameProject() {
+    if (!renameTarget || !renameTitle.trim() || libraryLock.current) return;
+    const project = displayedProjects.find(p => p.id === renameTarget.id);
+    if (!project) return;
+    const owner = user?.id, deck = cloudItem(project)?.deck_id ?? projectDeckId(project), title = renameTitle.trim();
+    libraryLock.current = true; setLibraryPending(true);
+    try {
+      if (deck) {
+        if (!owner) throw new Error("로그인 후 이용해주세요.");
+        await mutateLibrary(libraryRpc, owner, deck, title);
+        if (libraryOwner.current !== owner) return;
+        library.rename(deck, title);
+      }
+      setWorkspace(w => ({ ...w, projects: w.projects.map(p => p.id === project.id ? { ...p, title, updatedAt: Date.now() } : p) }));
+      setRenameTarget(null);
+    } catch (error) { if (libraryOwner.current === owner) setMessage(error instanceof Error ? error.message : "제목을 저장하지 못했습니다."); }
+    finally { libraryLock.current = false; setLibraryPending(false); }
+  }
+  async function openProject(projectId: string) {
+    if (libraryLock.current) return;
+    const project = displayedProjects.find(p => p.id === projectId);
+    if (!project) return;
+    const owner = user?.id, deck = cloudItem(project)?.deck_id ?? projectDeckId(project);
+    libraryLock.current = true; setLibraryPending(true); setMessage("");
+    try {
+      let nextDraft = structuredClone(project.draft);
+      let nextScreen: Screen = "editor";
+      if (deck) {
+        if (!owner) throw new Error("로그인 후 이용해주세요.");
+        const restored = await resumeLibraryProject(libraryRpc, owner, deck, project.id);
+        if (libraryOwner.current !== owner) return;
+        const local = project.draft.analysis;
+        const dirty = local?.businessRevision !== undefined && local.savedReviewHash !== await reviewHash(project.draft.slides);
+        nextDraft = restored.draft; nextScreen = restored.screen;
+        if (dirty && nextDraft.analysis && local?.businessRevision !== undefined) {
+          nextDraft.slides = structuredClone(project.draft.slides);
+          nextDraft.analysis = { ...nextDraft.analysis, businessRevision: local.businessRevision };
+          if (local.savedReviewHash !== undefined) nextDraft.analysis.savedReviewHash = local.savedReviewHash;
+          else delete nextDraft.analysis.savedReviewHash;
+          nextDraft.html = undefined; nextScreen = "review";
+        }
+      }
+      if (libraryOwner.current !== owner) return;
+      nextDraft.projectId = project.id;
+      setWorkspace(w => ({ ...w, draft: nextDraft, projects: [{ ...project, draft: structuredClone(nextDraft), lastViewedAt: Date.now() }, ...w.projects.filter(p => p.id !== project.id && (!deck || projectDeckId(p) !== deck))] }));
+      setActiveField("title"); setScreen(nextScreen);
+    } catch (error) { if (libraryOwner.current === owner) setMessage(error instanceof Error ? error.message : "덱을 불러오지 못했습니다."); }
+    finally { libraryLock.current = false; setLibraryPending(false); }
   }
   function changeText(field: string, value: string) {
     patchSlide((slide) =>
@@ -600,7 +657,7 @@ export function IrDeckWireframe() {
     };
     const next = { draft: savedDraft, projects: [...projects.filter((p) => p.id !== id), project] };
     try {
-      localStorage.setItem(storageKey, JSON.stringify(next));
+      localStorage.setItem(accountKey, JSON.stringify(next));
       setWorkspace(next);
       setMessage("");
       setScreen("saved");
@@ -620,7 +677,7 @@ export function IrDeckWireframe() {
     };
     try {
       if (storageBlocked) throw new Error("unavailable storage");
-      localStorage.setItem(storageKey, JSON.stringify(next));
+      localStorage.setItem(accountKey, JSON.stringify(next));
       setWorkspace(next);
       if (element.type === "text") setActiveField(`extra:${element.id}`);
       return true;
@@ -713,7 +770,7 @@ export function IrDeckWireframe() {
             </AlertDialogHeader>
             <AlertDialogFooter className="mt-4 flex-row justify-end gap-2 sm:space-x-0">
               <AlertDialogCancel className="mt-0 h-11 rounded-[12px] border-0 bg-secondary-btn px-5 text-[15px] font-semibold text-secondary-btn-text shadow-none hover:bg-secondary-btn-hover hover:text-secondary-btn-text-hover focus-visible:ring-1 focus-visible:ring-focus-soft">취소</AlertDialogCancel>
-              <AlertDialogAction className="h-11 rounded-[12px] border-0 bg-destructive px-5 text-[15px] font-semibold text-white shadow-none hover:bg-destructive/90 focus-visible:ring-1 focus-visible:ring-focus-soft" onClick={(event) => { event.preventDefault(); if (deleteTarget) { deleteProject(deleteTarget.id, deleteTarget.title); setDeleteTarget(null); } }}>삭제하기</AlertDialogAction>
+              <AlertDialogAction className="h-11 rounded-[12px] border-0 bg-destructive px-5 text-[15px] font-semibold text-white shadow-none hover:bg-destructive/90 focus-visible:ring-1 focus-visible:ring-focus-soft" onClick={(event) => { event.preventDefault(); if (deleteTarget) { void deleteProject(deleteTarget.id, deleteTarget.title); } }}>삭제하기</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
@@ -763,7 +820,7 @@ export function IrDeckWireframe() {
               <button
                 type="button"
                 className="h-11 rounded-[12px] border-0 bg-brand px-5 text-[15px] font-semibold text-brand-foreground shadow-none transition-colors hover:bg-brand/88 active:bg-brand-pressed disabled:cursor-not-allowed disabled:bg-brand-disabled disabled:text-brand-foreground disabled:opacity-100 focus-visible:ring-1 focus-visible:ring-focus-soft"
-                disabled={!renameTitle.trim()}
+                disabled={!renameTitle.trim() || libraryPending}
                 onClick={renameProject}
               >
                 저장
@@ -897,6 +954,7 @@ export function IrDeckWireframe() {
     </button>
   );
 
+  if (authLoading || cacheOwner !== accountKey) return page("", "", <p role="status" className="py-16 text-center text-ink-muted">덱을 불러오는 중이에요.</p>);
   if (screen === "home")
     return page(
       "AI IR 덱",
@@ -919,7 +977,9 @@ export function IrDeckWireframe() {
             <ProgramSortDropdown value={sort} onChange={setSort} variant="irDeck" />
           </div>
         </div>
-        {!loaded ? <p role="status" className="py-16 text-center text-ink-muted">덱을 불러오는 중이에요.</p> : displayedProjects.length === 0 ? (
+        {library.error && <p role="alert" className="mb-4 text-sm text-ink-muted">{library.error} <button type="button" onClick={library.refresh} className="underline">다시 불러오기</button></p>}
+        {libraryPending && <p role="status" className="mb-4 text-sm text-ink-muted">덱 정보를 확인하고 있어요.</p>}
+        {!loaded || (user && !library.ready && !library.error) ? <p role="status" className="py-16 text-center text-ink-muted">덱을 불러오는 중이에요.</p> : displayedProjects.length === 0 ? (
         <section className="flex flex-col items-center px-6 py-16 text-center">
           <IrDeckEmptyStateArtwork />
           {analysis.canResume ? (
@@ -970,24 +1030,24 @@ export function IrDeckWireframe() {
                     className="ir-deck-thumbnail relative aspect-video overflow-hidden rounded-t-xl bg-transparent"
                     aria-hidden="true"
                   >
-                    <ProjectThumbnail project={project} />
+                    <ProjectThumbnail project={project} cloudDocument={cloudItem(project)?.document_id ? { documentId: cloudItem(project)!.document_id!, deckId: cloudItem(project)!.deck_id } : undefined} />
                   </div>
                   <div className="border-t border-field-border p-4">
                     <div className="flex items-start justify-between gap-3">
                       <button type="button" className="min-w-0 flex-1 text-left" onClick={() => openProject(project.id)}>
-                        <strong className="block truncate text-ink">{projectTitle(project)}</strong>
+                        <strong className="block truncate text-ink">{displayProjectTitle(project)}</strong>
                       </button>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <button type="button" aria-label={`${projectTitle(project)} 더보기`} className="rounded-md p-1.5 text-ink-muted hover:bg-item-hover" onClick={(event) => event.stopPropagation()}>
+                          <button type="button" aria-label={`${displayProjectTitle(project)} 더보기`} className="rounded-md p-1.5 text-ink-muted hover:bg-item-hover" onClick={(event) => event.stopPropagation()}>
                             <MoreVertical className="size-4" />
                           </button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" sideOffset={6} onClick={(event) => event.stopPropagation()} className="min-w-0 w-fit rounded-[12px] border-0 bg-surface p-1 shadow-none" style={{ boxShadow: "var(--shadow-dropdown)" }}>
-                          <DropdownMenuItem onSelect={() => requestRename(project.id, projectTitle(project))} className="min-h-10 w-auto cursor-pointer rounded-[8px] px-[14px] text-ink hover:bg-dropdown-hover data-[highlighted]:bg-dropdown-hover focus:bg-dropdown-hover focus:text-ink">
+                          <DropdownMenuItem onSelect={() => requestRename(project.id, displayProjectTitle(project))} className="min-h-10 w-auto cursor-pointer rounded-[8px] px-[14px] text-ink hover:bg-dropdown-hover data-[highlighted]:bg-dropdown-hover focus:bg-dropdown-hover focus:text-ink">
                             제목 수정
                           </DropdownMenuItem>
-                          <DropdownMenuItem onSelect={() => requestDelete(project.id, projectTitle(project))} className="min-h-10 w-auto cursor-pointer rounded-[8px] px-[14px] text-destructive hover:bg-destructive-surface data-[highlighted]:bg-destructive-surface focus:bg-destructive-surface focus:text-destructive">
+                          <DropdownMenuItem onSelect={() => requestDelete(project.id, displayProjectTitle(project))} className="min-h-10 w-auto cursor-pointer rounded-[8px] px-[14px] text-destructive hover:bg-destructive-surface data-[highlighted]:bg-destructive-surface focus:bg-destructive-surface focus:text-destructive">
                             덱 삭제
                           </DropdownMenuItem>
                         </DropdownMenuContent>
