@@ -362,7 +362,7 @@ export function IrDeckWireframe() {
     }));
   }, [loaded]);
   useEffect(() => {
-    if (screen !== "processing" || analysisErrorOpen) return;
+    if (screen !== "processing" || analysisErrorOpen || draft.analysis?.failed) return;
     setProcessingProgress(0);
     previousProcessingPhase.current = undefined;
     catchingUpToPhase.current = false;
@@ -396,7 +396,7 @@ export function IrDeckWireframe() {
       });
     }, 80);
     return () => window.clearInterval(timer);
-  }, [analysisErrorOpen, processingTarget, screen]);
+  }, [analysisErrorOpen, draft.analysis?.failed, processingTarget, screen]);
   useEffect(() => {
     if (!loaded || !import.meta.env.DEV) return;
     const params = new URLSearchParams(window.location.search);
