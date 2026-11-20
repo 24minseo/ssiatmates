@@ -90,6 +90,7 @@ function cloneImageSlot(slot: ImageSlot | null | undefined): ImageSlot | null {
 }
 
 const states: Record<string, string> = {
+  loading: "IR 덱을 불러오는 중이에요",
   queued: "생성 요청을 접수했어요",
   planning: "전체 발표 흐름과 핵심 메시지를 구성하고 있어요",
   generating: "내용에 맞는 슬라이드를 만들고 있어요",
@@ -197,7 +198,7 @@ export function HtmlDeckWorkspace({
     loading = useRef(false),
     busyLock = useRef(false);
   const [view, setView] = useState<HtmlView | null>(devPreview ? previewView || null : null);
-  const [state, setState] = useState("queued"),
+  const [state, setState] = useState(reference.documentId ? "loading" : "queued"),
     [error, setError] = useState("");
   const [attempt, setAttempt] = useState(0),
     [selected, setSelected] = useState(0);
@@ -874,8 +875,12 @@ export function HtmlDeckWorkspace({
           {states[state] || "생성 상태를 확인하고 있어요"}
         </h1>
         <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-ink-muted">
-          사업계획서의 전체 맥락과 확인한 내용을 바탕으로 제목·핵심 문장·레이아웃을 구성해요.
-          검사까지 완료되면 7장 전체를 보여드려요.
+          {state === "loading" ? "저장된 IR 덱과 슬라이드 정보를 불러오고 있어요." : (
+            <>
+              사업계획서의 전체 맥락과 확인한 내용을 바탕으로 제목·핵심 문장·레이아웃을 구성해요.
+              검사까지 완료되면 7장 전체를 보여드려요.
+            </>
+          )}
         </p>
         {error && (
           <p role="alert" className="mt-4 text-sm text-ink">
@@ -970,7 +975,7 @@ export function HtmlDeckWorkspace({
             </div>
           </div>
         )}
-        <div className="flex flex-wrap gap-2">
+        <div className={cn("flex flex-wrap gap-2", preview && "ml-auto")}>
           <button className={button} onClick={onHome}>
             최근 파일
           </button>
