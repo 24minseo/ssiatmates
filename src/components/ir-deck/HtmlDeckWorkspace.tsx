@@ -16,6 +16,7 @@ import {
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
+import { Toaster } from "@/components/ui/sonner";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -225,7 +226,6 @@ export function HtmlDeckWorkspace({
   });
   const [preview, setPreview] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [boundaryMessage, setBoundaryMessage] = useState("");
   const [pendingImage, setPendingImage] = useState<PendingImage | null>(null);
   const [exportBusy, setExportBusy] = useState(false),
     [exportError, setExportError] = useState("");
@@ -263,12 +263,6 @@ export function HtmlDeckWorkspace({
   const selectedSlot = view?.imageSlots.find((s) => s.id === slotId) || null;
   const canMutate = !devPreview && authorized && !busy && !pendingImage;
   const canNavigate = !preview || isFullscreen;
-
-  useEffect(() => {
-    if (!boundaryMessage) return;
-    const timeout = window.setTimeout(() => setBoundaryMessage(""), 1200);
-    return () => window.clearTimeout(timeout);
-  }, [boundaryMessage]);
 
   useEffect(() => {
     if (preview) return;
@@ -312,14 +306,14 @@ export function HtmlDeckWorkspace({
     const lastSlide = Math.max(0, (view?.document.slides.length || 7) - 1);
     if (key === "ArrowLeft") {
       if (selected === 0) {
-        setBoundaryMessage("첫 번째 슬라이드예요.");
+        toast.info("첫 번째 슬라이드예요.", { id: "ir-deck-boundary", duration: 1200 });
         return;
       }
       setSelected((index) => index - 1);
       setSlotId(null);
     } else {
       if (selected >= lastSlide) {
-        setBoundaryMessage("마지막 슬라이드예요.");
+        toast.info("마지막 슬라이드예요.", { id: "ir-deck-boundary", duration: 1200 });
         return;
       }
       setSelected((index) => index + 1);
@@ -1094,17 +1088,7 @@ export function HtmlDeckWorkspace({
         isFullscreen && "ir-deck-presentation",
       )}
     >
-      {boundaryMessage && (
-        <div
-          className="pointer-events-none fixed inset-x-0 bottom-20 z-[2147483647] flex justify-center px-4"
-          role="status"
-          aria-live="polite"
-        >
-          <div className="rounded-full bg-[#173d31] px-4 py-2 text-sm font-semibold text-white shadow-lg">
-            {boundaryMessage}
-          </div>
-        </div>
-      )}
+      {isFullscreen && <Toaster position="bottom-center" duration={1200} />}
       <header className="shrink-0 flex flex-wrap items-center justify-between gap-4">
         {!preview && (
           <div className="flex flex-wrap items-center gap-3">
