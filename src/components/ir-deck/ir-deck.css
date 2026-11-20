@@ -56,35 +56,52 @@
   height: auto;
   flex: 0 0 auto;
 }
-.ir-deck-editor:fullscreen {
-  width: 100vw;
+.ir-deck-editor:is(:fullscreen, .ir-deck-presentation) {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  width: 100dvw;
   max-width: none;
-  height: 100vh;
+  height: 100dvh;
   padding: 0;
   gap: 0;
+  overflow: hidden;
   background: #0b0d0c;
 }
-.ir-deck-editor:fullscreen > header {
+.ir-deck-editor:is(:fullscreen, .ir-deck-presentation) > header {
   display: none;
 }
-.ir-deck-editor:fullscreen > div,
-.ir-deck-editor:fullscreen main,
-.ir-deck-editor:fullscreen .ir-deck-slide-stage {
+.ir-deck-editor:is(:fullscreen, .ir-deck-presentation) > div,
+.ir-deck-editor:is(:fullscreen, .ir-deck-presentation) main,
+.ir-deck-editor:is(:fullscreen, .ir-deck-presentation) .ir-deck-slide-stage {
   width: 100%;
   max-width: none;
+  align-items: center;
 }
-.ir-deck-editor:fullscreen > .ir-deck-main-wrap,
-.ir-deck-editor:fullscreen .ir-deck-main-wrap > main,
-.ir-deck-editor:fullscreen .ir-deck-slide-stage {
+.ir-deck-editor:is(:fullscreen, .ir-deck-presentation) > .ir-deck-main-wrap,
+.ir-deck-editor:is(:fullscreen, .ir-deck-presentation) .ir-deck-main-wrap > main,
+.ir-deck-editor:is(:fullscreen, .ir-deck-presentation) .ir-deck-slide-stage {
   flex: 1 1 auto;
   min-height: 0;
   height: 100%;
   aspect-ratio: auto;
 }
-.ir-deck-editor:fullscreen main {
+.ir-deck-editor:is(:fullscreen, .ir-deck-presentation) > .ir-deck-main-wrap,
+.ir-deck-editor:is(:fullscreen, .ir-deck-presentation) .ir-deck-main-wrap > main,
+.ir-deck-editor:is(:fullscreen, .ir-deck-presentation) .ir-deck-slide-stage {
+  position: fixed;
+  inset: 0;
+  width: 100dvw;
+  height: 100dvh;
+}
+.ir-deck-editor:is(:fullscreen, .ir-deck-presentation) .ir-deck-fullscreen-slide-frame {
+  width: min(100dvw, calc(100dvh * 16 / 9)) !important;
+  max-width: none;
+}
+.ir-deck-editor:is(:fullscreen, .ir-deck-presentation) main {
   gap: 0;
 }
-.ir-deck-editor:fullscreen .ir-deck-current-slide {
+.ir-deck-editor:is(:fullscreen, .ir-deck-presentation) .ir-deck-current-slide {
   border-radius: 0;
   box-shadow: none;
 }

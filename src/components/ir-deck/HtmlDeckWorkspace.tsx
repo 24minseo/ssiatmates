@@ -246,6 +246,7 @@ export function HtmlDeckWorkspace({
   const slideStageRef = useRef<HTMLDivElement>(null);
   const wheelGesture = useRef({ direction: 0, distance: 0, blockedUntil: 0 });
   const [slideStageSize, setSlideStageSize] = useState({ width: 0, height: 0 });
+  const [fullscreenViewport, setFullscreenViewport] = useState({ width: 0, height: 0 });
   const thumbnailStrip = useRef<HTMLDivElement>(null);
   const [thumbnailEdges, setThumbnailEdges] = useState({ left: false, right: false });
   const uploaded = useRef<{ file: File; assetId: string } | null>(null);
@@ -332,17 +333,15 @@ export function HtmlDeckWorkspace({
     switchSlideShortcut(direction > 0 ? "ArrowRight" : "ArrowLeft");
   }
 
-  async function toggleFullscreen() {
-    if (document.fullscreenElement) {
-      await document.exitFullscreen();
+  function toggleFullscreen() {
+    if (isFullscreen || document.fullscreenElement) {
+      setIsFullscreen(false);
+      setPreview(false);
+      if (document.fullscreenElement) void document.exitFullscreen();
       return;
     }
-    try {
-      setPreview(true);
-      await editorRef.current?.requestFullscreen();
-    } catch {
-      setPreview(false);
-    }
+    setIsFullscreen(true);
+    setPreview(true);
   }
 
   useEffect(() => {
@@ -362,10 +361,33 @@ export function HtmlDeckWorkspace({
       const active = document.fullscreenElement === editorRef.current;
       setIsFullscreen(active);
       setPreview(active);
+      if (active) {
+        setFullscreenViewport({ width: window.innerWidth, height: window.innerHeight });
+      }
     };
     document.addEventListener("fullscreenchange", handleFullscreenChange);
     return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
   }, []);
+
+  useEffect(() => {
+    if (!isFullscreen) return;
+    const updateViewport = () =>
+      setFullscreenViewport({ width: window.innerWidth, height: window.innerHeight });
+    updateViewport();
+    window.addEventListener("resize", updateViewport);
+    return () => window.removeEventListener("resize", updateViewport);
+  }, [isFullscreen]);
+
+  useEffect(() => {
+    if (!isFullscreen) return;
+    const handlePresentationEscape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || document.fullscreenElement) return;
+      setIsFullscreen(false);
+      setPreview(false);
+    };
+    window.addEventListener("keydown", handlePresentationEscape);
+    return () => window.removeEventListener("keydown", handlePresentationEscape);
+  }, [isFullscreen]);
 
   useEffect(() => {
     const stage = slideStageRef.current;
@@ -1020,8 +1042,24 @@ export function HtmlDeckWorkspace({
     transform:
       selectedAnchor.y >= 220 ? "translate(-50%, calc(-100% - 8px))" : "translate(-50%, 8px)",
   };
+  const fullscreenSlideWidth =
+    isFullscreen && fullscreenViewport.width > 0 && fullscreenViewport.height > 0
+      ? Math.min(fullscreenViewport.width, fullscreenViewport.height * (16 / 9))
+      : 0;
+  const currentSlideStyle =
+    fullscreenSlideWidth > 0
+      ? { width: fullscreenSlideWidth, height: fullscreenSlideWidth * (9 / 16) }
+      : slideStageSize.width > 0 && slideStageSize.height > 0
+        ? { width: Math.min(slideStageSize.width, slideStageSize.height * (16 / 9)) }
+        : undefined;
   return (
-    <div ref={editorRef} className="ir-deck-editor mx-auto flex h-full min-h-0 w-full max-w-[1200px] flex-col gap-3">
+    <div
+      ref={editorRef}
+      className={cn(
+        "ir-deck-editor mx-auto flex h-full min-h-0 w-full max-w-[1200px] flex-col gap-3",
+        isFullscreen && "ir-deck-presentation",
+      )}
+    >
       <header className="shrink-0 flex flex-wrap items-center justify-between gap-4">
         {!preview && (
           <div className="flex flex-wrap items-center gap-3">
@@ -1077,7 +1115,7 @@ export function HtmlDeckWorkspace({
           <button className={button} onClick={onHome}>
             최근 파일
           </button>
-          <button className={button} onClick={() => void toggleFullscreen()}>
+          <button className={button} onClick={toggleFullscreen}>
             전체화면
           </button>
           <DropdownMenu>
@@ -1234,12 +1272,8 @@ export function HtmlDeckWorkspace({
           )}
           <div ref={slideStageRef} className="ir-deck-slide-stage flex min-h-0 flex-1 items-start justify-center">
             <div
-              className="relative max-w-full"
-              style={
-                slideStageSize.width > 0 && slideStageSize.height > 0
-                  ? { width: Math.min(slideStageSize.width, slideStageSize.height * (16 / 9)) }
-                  : undefined
-              }
+              className="ir-deck-fullscreen-slide-frame relative max-w-full"
+              style={currentSlideStyle}
             >
               <HtmlSlidePreview
                 key={current.slideId}
