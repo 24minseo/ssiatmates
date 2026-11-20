@@ -299,7 +299,7 @@ export function AppHeader({
   return (
     <header
       aria-label="앱 헤더"
-      className={`app-header-soft-edge ${growthJournal ? "growth-journal-header" : ""} ${growthJournalExpanded ? "growth-journal-header-expanded" : ""} absolute inset-x-0 top-0 z-20 flex h-[74px] min-w-0 w-full flex-none flex-row items-center justify-end self-stretch py-4 pl-8 pr-16`}
+      className={`app-shell-header app-header-soft-edge ${growthJournal ? "growth-journal-header" : ""} ${growthJournalExpanded ? "growth-journal-header-expanded" : ""} absolute inset-x-0 top-0 z-20 flex h-[74px] min-w-0 w-full flex-none flex-row items-center justify-end self-stretch py-4 pl-8 pr-16`}
       data-figma-node="903:284"
     >
       <div ref={notificationsRef} className="relative flex h-9 items-center gap-1">

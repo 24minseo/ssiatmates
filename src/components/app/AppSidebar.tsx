@@ -319,7 +319,7 @@ export function AppSidebar({ active }: AppSidebarProps) {
   return (
     <aside
       ref={sidebarRef}
-      className={`sticky top-0 z-50 h-screen shrink-0 overflow-visible bg-[#F6F8F7] transition-[width] duration-200 ease-out motion-reduce:transition-none ${
+      className={`app-shell-sidebar sticky top-0 z-50 h-screen shrink-0 overflow-visible bg-[#F6F8F7] transition-[width] duration-200 ease-out motion-reduce:transition-none ${
         expanded ? "w-[240px]" : "w-20"
       }`}
     >

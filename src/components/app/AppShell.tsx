@@ -50,10 +50,10 @@ export function AppShell({ active, children }: AppShellProps) {
   }, [isGrowthJournal]);
 
   return (
-    <div className="h-dvh min-h-dvh min-h-0 overflow-hidden bg-item-hover text-ink">
-      <div className="flex h-full min-w-0">
+    <div className="app-shell h-dvh min-h-dvh min-h-0 overflow-hidden bg-item-hover text-ink">
+      <div className="app-shell-body flex h-full min-w-0">
         <AppSidebar active={active} />
-        <div className="relative z-0 flex min-w-0 flex-1 flex-col overflow-hidden rounded-l-[20px] bg-surface">
+        <div className="app-shell-panel relative z-0 flex min-w-0 flex-1 flex-col overflow-hidden rounded-l-[20px] bg-surface">
           <AppHeader
             growthJournal={isGrowthJournal}
             growthJournalExpanded={growthJournalExpanded}
