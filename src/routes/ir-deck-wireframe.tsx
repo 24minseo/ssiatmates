@@ -2,7 +2,7 @@ import { ArrowLeft, ArrowRight, ArrowUp, ArrowDown, LoaderCircle, Plus, Trash2, 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
-import { accountWorkspaceKey, ownedWorkspace, mergeLibraryProjects, projectDeckId, resumeLibraryProject, mutateLibrary } from "@/components/ir-deck/library";
+import { accountWorkspaceKey, ownedWorkspace, completedLibraryProjects, projectDeckId, resumeLibraryProject, mutateLibrary } from "@/components/ir-deck/library";
 import { libraryRpc } from "@/components/ir-deck/library-client";
 import { useDeckLibrary } from "@/components/ir-deck/useDeckLibrary";
 import { reviewHash } from "@/components/ir-deck/analysis";
@@ -324,7 +324,7 @@ export function IrDeckWireframe() {
   const { draft, projects } = workspace;
   const library = useDeckLibrary(user?.id, loaded && cacheOwner === accountKey && screen === "home");
   const displayedProjects = devEmptyPreview || cacheOwner !== accountKey ? [] : user
-    ? mergeLibraryProjects(projects, library.items, user.id, library.ready) : projects;
+    ? completedLibraryProjects(projects, library.items, user.id, library.ready) : projects.filter(project => Boolean(project.draft.html?.documentId));
   const cloudItem = (project: (typeof projects)[number]) => library.items.find(item => item.deck_id === projectDeckId(project) || item.deck_id === project.id);
   const displayProjectTitle = (project: (typeof projects)[number]) => cloudItem(project)?.title ?? projectTitle(project);
   const { theme, primaryColor, primaryColor2, colorMode, slides, activeSlide } = draft;
