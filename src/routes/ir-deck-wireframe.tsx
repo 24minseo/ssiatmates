@@ -1,5 +1,5 @@
 import { ArrowLeft, ArrowRight, ArrowUp, ArrowDown, LoaderCircle, Plus, Trash2, Eye, Check, MoreVertical, ChevronRight, Presentation, Upload, X } from "lucide-react";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -38,6 +38,13 @@ const initialCredits = 100;
 const designCost = 30;
 type TrialState = { credits: number };
 const defaultTrialState: TrialState = { credits: initialCredits };
+const processingPhaseTargets: Array<[string, number]> = [
+  ["PDF 업로드를 준비하고 있어요", 25],
+  ["분석 시작을 기다리고 있어요", 50],
+  ["PDF에서 사업 내용을 읽고 있어요", 75],
+  ["사업 내용을 7개 항목으로 정리하고 있어요", 100],
+  ["사업 내용을 정리하고 있어요", 100],
+];
 
 const editorPreviewReference: HtmlReference = {
   userId: "00000000-0000-4000-8000-000000000001",
@@ -308,6 +315,10 @@ export function IrDeckWireframe() {
     },
     navigate: setScreen,
   });
+  const [processingProgress, setProcessingProgress] = useState(0);
+  const previousProcessingPhase = useRef<string | undefined>(undefined);
+  const catchingUpToPhase = useRef(false);
+  const processingTarget = processingPhaseTargets.find(([phase]) => phase === analysis.phase)?.[1] ?? 0;
 
   useEffect(() => {
     try {
@@ -350,6 +361,42 @@ export function IrDeckWireframe() {
       draft: { ...current.draft, primaryColor: undefined, primaryColor2: undefined, fontFamily: "Paperlogy" },
     }));
   }, [loaded]);
+  useEffect(() => {
+    if (screen !== "processing") return;
+    setProcessingProgress(0);
+    previousProcessingPhase.current = undefined;
+    catchingUpToPhase.current = false;
+  }, [screen]);
+  useEffect(() => {
+    if (screen !== "processing") {
+      previousProcessingPhase.current = undefined;
+      catchingUpToPhase.current = false;
+      return;
+    }
+    if (previousProcessingPhase.current !== undefined && previousProcessingPhase.current !== analysis.phase) {
+      catchingUpToPhase.current = true;
+    }
+    previousProcessingPhase.current = analysis.phase;
+  }, [analysis.phase, screen]);
+  useEffect(() => {
+    if (screen !== "processing") return;
+    const timer = window.setInterval(() => {
+      setProcessingProgress((current) => {
+        const distance = processingTarget - current;
+        if (Math.abs(distance) <= 0.35) {
+          catchingUpToPhase.current = false;
+          return processingTarget;
+        }
+        const step = catchingUpToPhase.current ? 2.4 : 0.45;
+        if (Math.abs(distance) <= step) {
+          catchingUpToPhase.current = false;
+          return processingTarget;
+        }
+        return current + Math.sign(distance) * Math.min(Math.abs(distance), step);
+      });
+    }, 80);
+    return () => window.clearInterval(timer);
+  }, [processingTarget, screen]);
   useEffect(() => {
     if (!loaded || !import.meta.env.DEV) return;
     const params = new URLSearchParams(window.location.search);
@@ -957,7 +1004,7 @@ export function IrDeckWireframe() {
       </>,
     );
 
-  if (screen === "processing")
+  if (screen === "processing") {
     return page(
       "사업 내용 분석 중",
       "입력한 내용을 덱에 필요한 항목으로 정리하는 흐름입니다.",
@@ -966,19 +1013,21 @@ export function IrDeckWireframe() {
           <img src="/assets/sidebar/ir-deck-active.svg" alt="" className="mx-auto size-10" />
           <h2 className="mt-5 text-xl font-semibold text-ink" role="status">{analysis.phase}</h2>
           <div className="mx-auto my-7 h-2 max-w-md overflow-hidden rounded-full bg-item-hover">
-            <div className="ir-deck-progress h-full w-1/3 rounded-full bg-brand" />
+            <div className="ir-deck-progress h-full rounded-full bg-brand" style={{ width: `${processingProgress}%` }} />
           </div>
           <div className="mt-8 flex justify-center gap-3">
             <button type="button" className="inline-flex h-12 items-center justify-center rounded-[12px] bg-secondary-btn px-5 text-[16px] font-semibold text-secondary-btn-text shadow-none transition-colors hover:bg-secondary-btn-hover hover:text-secondary-btn-text-hover focus-visible:ring-1 focus-visible:ring-focus-soft" onClick={() => setCancelAnalysisOpen(true)}>
               입력 화면으로 돌아가기
             </button>
-            {analysis.retryNeeded && <button type="button" className={button} onClick={analysis.retry}>상태 다시 확인</button>}
+            {analysis.retryNeeded && !draft.analysis?.failed && <button type="button" className={button} onClick={analysis.retry}>상태 다시 확인</button>}
           </div>
         </section>
       </>,
       undefined,
       <Steps current={2} />,
+      "text-2xl",
     );
+  }
 
   if (screen === "review")
     return page(

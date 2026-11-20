@@ -5,16 +5,11 @@
   overflow-wrap: anywhere;
 }
 .ir-deck-progress {
-  animation: ir-deck-progress 2s ease-in-out infinite alternate;
-}
-@keyframes ir-deck-progress {
-  to {
-    transform: translateX(185%);
-  }
+  transition: width 140ms linear;
 }
 @media (prefers-reduced-motion: reduce) {
   .ir-deck-progress {
-    animation: none;
+    transition: none;
   }
 }
 @media print {
