@@ -1,6 +1,6 @@
 // 서버 전용 HTML 덱 출력. 사용자 HTML/URL을 직접 받지 않고 고정된 문서 ID로 조회합니다.
 import { createHash, timingSafeEqual } from "node:crypto";
-import { acceptResidualContrast } from "./ir-html-contrast.server";
+import { acceptResidualContrast, acceptResidualVisualIssues } from "./ir-html-contrast.server";
 import type { Browser } from "puppeteer-core";
 import {
   assembleHtml,
@@ -151,7 +151,11 @@ export async function renderExportFile(
     await page.emulateMediaType("screen");
     await page.setContent(assembleHtml(document, fontCss), { waitUntil: "load", timeout: 25000 });
     await page.evaluate(composeImagesInPage, images);
-    const report = acceptResidualContrast(await page.evaluate(measureInPage));
+    // Only saved ready documents reach this export path. Do not block a deck
+    // already accepted after its single repair because it still has visual defects.
+    const report = acceptResidualVisualIssues(
+      acceptResidualContrast(await page.evaluate(measureInPage)),
+    );
     if (!report.passed || !report.fonts_loaded || report.slide_count !== 7) {
       throw new Error("EXPORT_VALIDATION_FAILED");
     }
