@@ -101,7 +101,7 @@ const states: Record<string, string> = {
   ready: "IR 덱이 완성됐어요",
   failed: "IR 덱 생성을 완료하지 못했어요",
 };
-type PendingImage = { body: Json; revision: number };
+type PendingImage = { body: Json; revision: number; localSlot?: ImageSlot };
 
 async function imageUrlAsDataUrl(url: string) {
   const response = await fetch(url);
@@ -559,10 +559,68 @@ export function HtmlDeckWorkspace({
     if (alive.current && owner.current === reference.userId) setView(fresh);
     return fresh;
   }
+  function applySavedImageMutation(
+    currentView: HtmlView,
+    pending: PendingImage,
+    imageRevision: number,
+  ): HtmlView {
+    const action = pending.body.action;
+    const slotId = typeof pending.body.slot_id === "string" ? pending.body.slot_id : "";
+    const assetId = typeof pending.body.asset_id === "string" ? pending.body.asset_id : null;
+    if (!slotId) return currentView;
+
+    if (action === "save_slot_image") {
+      return {
+        ...currentView,
+        image_revision: imageRevision,
+        imageSlots: currentView.imageSlots.map((slot) =>
+          slot.id === slotId ? { ...slot, assetId } : slot,
+        ),
+      };
+    }
+    if (action !== "save_user_image") return currentView;
+    if (pending.body.delete === true) {
+      return {
+        ...currentView,
+        image_revision: imageRevision,
+        imageSlots: currentView.imageSlots.filter((slot) => slot.id !== slotId),
+      };
+    }
+
+    const existing = currentView.imageSlots.find((slot) => slot.id === slotId);
+    const localSlot = pending.localSlot || existing;
+    if (!localSlot) return currentView;
+    const nextSlot: ImageSlot = {
+      ...localSlot,
+      assetId,
+      fit: "contain",
+      placement:
+        pending.body.placement && typeof pending.body.placement === "object"
+          ? (pending.body.placement as Placement)
+          : localSlot.placement,
+    };
+    return {
+      ...currentView,
+      image_revision: imageRevision,
+      imageSlots: existing
+        ? currentView.imageSlots.map((slot) => (slot.id === slotId ? nextSlot : slot))
+        : [...currentView.imageSlots, nextSlot],
+    };
+  }
   async function saveBinding(pending: PendingImage) {
     const result = await htmlCall("ir-deck-html-api-v1", pending.body);
     if (result["saved"] !== true) throw new Error("이미지 저장 완료를 확인하지 못했습니다.");
-    await refreshView();
+    const imageRevision =
+      typeof result["image_revision"] === "number" && Number.isSafeInteger(result["image_revision"])
+        ? result["image_revision"]
+        : typeof result["revision"] === "number" && Number.isSafeInteger(result["revision"])
+          ? result["revision"]
+          : pending.revision + 1;
+    if (alive.current && owner.current === reference.userId) {
+      setView((currentView) =>
+        currentView ? applySavedImageMutation(currentView, pending, imageRevision) : currentView,
+      );
+    }
     if (alive.current && owner.current === reference.userId) {
       setPendingImage(null);
       toast.success("이미지 변경사항을 저장했어요.");
@@ -710,7 +768,7 @@ export function HtmlDeckWorkspace({
             placement: p,
             fit: "contain",
           };
-      const pending = {
+      const pending: PendingImage = {
         body: {
           ...body,
           document_id: view.document_id,
@@ -718,6 +776,7 @@ export function HtmlDeckWorkspace({
           request_id: crypto.randomUUID(),
         },
         revision: view.image_revision,
+        localSlot: slot,
       };
       setPendingImage(pending);
       setSlotId(slot.id);

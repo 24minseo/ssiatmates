@@ -41,19 +41,36 @@ export function HtmlSlidePreview({
     nonce: crypto.randomUUID().replaceAll("-", ""),
     channel: crypto.randomUUID(),
   }));
+  const viewRef = useRef(view);
+  const urlsRef = useRef(urls);
+  viewRef.current = view;
+  urlsRef.current = urls;
   const interactive = Boolean(onSelect || onDrag || onSlideShortcut || onSlideWheel);
+  const slideRenderKey = useMemo(
+    () =>
+      JSON.stringify({
+        colors: view.document.designTokens.colors,
+        slots: view.imageSlots.filter((slot) => slot.slideId === slide.slideId),
+        urls: Object.fromEntries(
+          view.imageSlots
+            .filter((slot) => slot.slideId === slide.slideId && slot.assetId)
+            .map((slot) => [slot.assetId, urls[slot.assetId!]]),
+        ),
+      }),
+    [slide.slideId, urls, view.document.designTokens.colors, view.imageSlots],
+  );
   const html = useMemo(
     () =>
       previewHtml(
         slide,
-        view,
-        urls,
+        viewRef.current,
+        urlsRef.current,
         identity.nonce,
         identity.channel,
         mediaOrigin,
         interactive,
       ),
-    [slide, view, urls, identity, mediaOrigin, interactive],
+    [slide, slideRenderKey, identity, mediaOrigin, interactive],
   );
   useEffect(() => {
     const observer = new ResizeObserver((entries) => setWidth(entries[0]?.contentRect.width || 0));
