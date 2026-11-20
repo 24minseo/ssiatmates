@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { X } from "lucide-react";
 import { toast } from "sonner";
 import { LoadingDots } from "@/components/ui/loading-dots";
@@ -10,6 +10,8 @@ import {
   STARTUP_STAGES,
   SUPPORT_CATEGORIES,
   STARTUP_STAGE_CODES,
+  formatBirthDate,
+  validateBirthDate,
 } from "@/components/onboarding/constants";
 import { FormField } from "@/components/onboarding/FormField";
 import { MultiSelectDropdown } from "@/components/onboarding/MultiSelectDropdown";
@@ -79,6 +81,8 @@ export function MatchingProfileSheet({
   const [nameHintExiting, setNameHintExiting] = useState(false);
   const [nameHintOpenKey, setNameHintOpenKey] = useState(0);
   const formRef = useRef<HTMLFormElement>(null);
+  const birthInputRef = useRef<HTMLInputElement>(null);
+  const pendingBirthCaretRef = useRef<number | null>(null);
   const [scrollFades, setScrollFades] = useState({ top: false, bottom: true });
 
   useEffect(() => {
@@ -115,6 +119,16 @@ export function MatchingProfileSheet({
     setDirty(false);
     return () => cancelAnimationFrame(hintFrame);
   }, [open, profile]);
+
+  const birth = useMemo(() => validateBirthDate(birthDate), [birthDate]);
+
+  useLayoutEffect(() => {
+    const caret = pendingBirthCaretRef.current;
+    const input = birthInputRef.current;
+    if (caret === null || !input) return;
+    input.setSelectionRange(caret, caret);
+    pendingBirthCaretRef.current = null;
+  }, [birthDate]);
 
   useEffect(() => {
     if (!open) return;
@@ -159,7 +173,23 @@ export function MatchingProfileSheet({
     }, 180);
   };
   const isPreFounder = startupStage === "예비창업자";
-  const canSave = dirty && (isPreFounder || businessLocation.trim().length > 0);
+  const canSave = dirty && birth.valid && personalStatuses.length > 0 && !!startupStage &&
+    !!residence.trim() && (isPreFounder || businessLocation.trim().length > 0);
+
+  const handleBirthChange = (rawValue: string, selectionStart: number | null) => {
+    const rawCaret = selectionStart ?? rawValue.length;
+    const digitsBeforeCaret = rawValue.slice(0, rawCaret).replace(/\D/g, "").length;
+    const formatted = formatBirthDate(rawValue);
+    let formattedCaret = 0;
+    let seenDigits = 0;
+    while (formattedCaret < formatted.length && seenDigits < digitsBeforeCaret) {
+      if (/\d/.test(formatted.charAt(formattedCaret))) seenDigits += 1;
+      formattedCaret += 1;
+    }
+    pendingBirthCaretRef.current = formattedCaret;
+    setBirthDate(formatted);
+    markDirty();
+  };
 
   const toggleSupportCategory = (category: string) => {
     if (category === "전체") {
@@ -350,13 +380,14 @@ export function MatchingProfileSheet({
                   <div className="flex flex-col gap-4">
                     <FormField label="생년월일" required labelVariant="muted2">
                       <Input
+                        ref={birthInputRef}
                         inputMode="numeric"
                         placeholder="YYYY.MM.DD"
                         className="h-12 rounded-[12px] border-field-border bg-surface px-4 text-[15px] text-ink shadow-none placeholder:text-guide-text focus-visible:border-[1.5px] focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft"
                         value={birthDate}
-                        onChange={(event) => {
-                          setBirthDate(event.target.value);
-                          markDirty();
+                        onChange={(event) => handleBirthChange(event.target.value, event.target.selectionStart)}
+                        onBlur={() => {
+                          if (!birth.valid) toast.error(birthDate ? "생년월일을 다시 확인해주세요." : "생년월일을 입력해주세요.");
                         }}
                       />
                     </FormField>
