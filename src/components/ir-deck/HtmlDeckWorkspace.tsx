@@ -1220,7 +1220,6 @@ export function HtmlDeckWorkspace({
             view={view}
             urls={urls}
             mediaOrigin={new URL(mediaBase()).origin}
-            selectedSlotId={slotId}
             onSelect={preview ? undefined : selectSlot}
             onDrag={preview ? undefined : dragImage}
             onSlideShortcut={preview ? undefined : switchSlideShortcut}

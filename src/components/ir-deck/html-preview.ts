@@ -11,7 +11,6 @@ export function previewHtml(
   channel: string,
   mediaOrigin: string,
   interactive: boolean,
-  selectedSlotId?: string | null,
 ): string {
   const parsed = new DOMParser().parseFromString(slide.html, "text/html");
   parsed
@@ -53,12 +52,7 @@ export function previewHtml(
       root.append(host);
     }
     if (!host) continue;
-    const selected = interactive && slot.origin === "user" && slot.id === selectedSlotId;
     host.style.cursor = interactive ? (slot.origin === "user" ? "move" : "pointer") : "default";
-    if (selected) {
-      host.style.outline = "2px solid rgba(31,128,100,.72)";
-      host.style.outlineOffset = "2px";
-    }
     host.setAttribute("aria-label", slot.description || "이미지 업로드");
     if (!slot.assetId) continue;
     host.querySelectorAll("[data-slot-placeholder-ui]").forEach((n) => n.remove());
@@ -86,10 +80,6 @@ export function previewHtml(
       const handle = parsed.createElement("div");
       handle.dataset["imageResizeHandle"] = "true";
       handle.setAttribute("aria-label", "이미지 크기 조절");
-      if (selected) {
-        handle.style.opacity = "1";
-        handle.style.pointerEvents = "auto";
-      }
       host.append(handle);
     }
   }
