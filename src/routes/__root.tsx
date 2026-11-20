@@ -88,16 +88,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "씨앗" },
+      { title: "씨앗 | 청년 창업 올인원 플랫폼" },
       {
         name: "description",
-        content: "지원사업 매칭부터 일정 관리까지, 사업의 다음 단계를 준비하세요.",
+        content: "청년 창업자를 위한 지원사업 탐색, 사업계획서 기반 IR덱 생성, 일정관리까지 한 곳에서!",
       },
       { name: "author", content: "씨앗" },
-      { property: "og:title", content: "씨앗 | 지원사업 관리 서비스" },
+      { property: "og:title", content: "씨앗 | 청년 창업 올인원 플랫폼" },
       {
         property: "og:description",
-        content: "지원사업 매칭부터 일정 관리까지, 사업의 다음 단계를 준비하세요.",
+        content: "청년 창업자를 위한 지원사업 탐색, 사업계획서 기반 IR덱 생성, 일정관리까지 한 곳에서!",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
