@@ -847,7 +847,19 @@ export function HtmlDeckWorkspace({
   }
   function changeLayer(direction: "front" | "back") {
     if (!selectedSlot?.placement || selectedSlot.origin !== "user") return;
-    const zIndex = direction === "front" ? 10000 : 0;
+    const userImageLayers = (view?.imageSlots || [])
+      .filter(
+        (slot) =>
+          slot.slideId === selectedSlot.slideId &&
+          slot.origin === "user" &&
+          slot.placement,
+      )
+      .map((slot) => slot.placement!.zIndex);
+    if (userImageLayers.length === 0) return;
+    const zIndex =
+      direction === "front"
+        ? Math.min(10000, Math.max(...userImageLayers) + 1)
+        : Math.max(0, Math.min(...userImageLayers) - 1);
     if (selectedSlot.placement.zIndex === zIndex) return;
     saveSelectedPlacement({ ...selectedSlot.placement, zIndex });
   }
@@ -1328,16 +1340,10 @@ export function HtmlDeckWorkspace({
               />
               {!preview && selectedSlot && (
                 <div
-                  className="absolute z-20 inline-flex max-w-[calc(100%-16px)] flex-wrap items-center gap-1 rounded-xl border border-[rgba(64,72,66,0.08)] bg-surface p-1"
+                  className="absolute z-20 inline-flex w-max max-w-none flex-nowrap items-center gap-1 whitespace-nowrap rounded-xl border border-[rgba(64,72,66,0.08)] bg-surface p-1"
                   style={{ ...selectionToolbarStyle, boxShadow: "0 4px 12px 0 rgba(64, 72, 66, 0.1)" }}
                   onPointerDown={(event) => event.stopPropagation()}
                 >
-                  <span
-                    className="max-w-40 truncate px-2 text-xs font-semibold text-ink"
-                    title={selectedSlot.description || "선택한 이미지"}
-                  >
-                    {selectedSlot.description || "선택한 이미지"}
-                  </span>
                   <button
                     className={toolbarButton}
                     disabled={!canMutate}
