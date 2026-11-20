@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   ArrowDownToLine,
   ArrowLeft,
@@ -178,6 +178,8 @@ export function HtmlDeckWorkspace({
   onSave,
   devPreview = false,
   previewView,
+  pendingTitle,
+  pendingSteps,
 }: {
   reference: HtmlReference;
   persist: (ref: HtmlReference) => void;
@@ -186,6 +188,8 @@ export function HtmlDeckWorkspace({
   onSave: () => void;
   devPreview?: boolean;
   previewView?: HtmlView;
+  pendingTitle?: string;
+  pendingSteps?: ReactNode;
 }) {
   const { user, loading: authLoading } = useAuth();
   const ref = useRef(reference),
@@ -865,12 +869,19 @@ export function HtmlDeckWorkspace({
     );
   if (!view || !current)
     return (
-      <section
-        className="rounded-2xl border border-field-border bg-surface px-8 py-20 text-center"
-        aria-live="polite"
-      >
+      <div className="w-full">
+        {state !== "loading" && (pendingSteps || pendingTitle) && (
+          <>
+            {pendingSteps && <div className="mb-5">{pendingSteps}</div>}
+            {pendingTitle && <h1 className="mb-7 text-2xl font-bold leading-tight text-ink">{pendingTitle}</h1>}
+          </>
+        )}
+        <section
+          className="rounded-2xl border border-field-border bg-surface px-8 py-20 text-center"
+          aria-live="polite"
+        >
         {!error && <LoaderCircle className="mx-auto size-9 animate-spin text-brand" />}
-        <h1 className="mt-5 text-2xl font-bold text-ink">
+        <h1 className="mt-5 text-xl font-bold text-ink">
           {states[state] || "생성 상태를 확인하고 있어요"}
         </h1>
         <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-ink-muted">
@@ -907,7 +918,8 @@ export function HtmlDeckWorkspace({
             다시 생성하려면 디자인 선택 화면에서 생성 버튼을 눌러 주세요.
           </p>
         )}
-      </section>
+        </section>
+      </div>
     );
   const stale = view.input_status && Object.values(view.input_status).some((v) => !v);
   const thumbnailNumberColor = readableThumbnailNumberColor(view.document.designTokens.colors);
