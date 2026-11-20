@@ -93,7 +93,7 @@ export function MatchingProfileSheet({
     setNameHintExiting(false);
     setNameHintOpenKey((value) => value + 1);
     const hintFrame = requestAnimationFrame(() => setShowNameHint(shouldShowNameHint));
-    setBirthDate(profile?.birth_date?.replace(/-/g, ".") ?? "");
+    setBirthDate(formatBirthDate(profile?.birth_date ?? ""));
     setBusinessName(profile?.business_name ?? "");
     const savedStage = profile?.startup_stage ?? "";
     setStartupStage(
@@ -382,6 +382,7 @@ export function MatchingProfileSheet({
                       <Input
                         ref={birthInputRef}
                         inputMode="numeric"
+                        maxLength={10}
                         placeholder="YYYY.MM.DD"
                         className="h-12 rounded-[12px] border-field-border bg-surface px-4 text-[15px] text-ink shadow-none placeholder:text-guide-text focus-visible:border-[1.5px] focus-visible:border-brand focus-visible:ring-[3.2px] focus-visible:ring-focus-soft"
                         value={birthDate}
