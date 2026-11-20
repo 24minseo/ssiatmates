@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import type { HtmlSlide, HtmlView, ImageSlot } from "./html-api";
 import { cn } from "@/lib/utils";
 
@@ -12,6 +12,8 @@ export function HtmlSlidePreview({
   onSelect,
   onDrag,
   onSlideShortcut,
+  onSlideWheel,
+  style,
   className,
 }: {
   slide: HtmlSlide;
@@ -28,6 +30,8 @@ export function HtmlSlidePreview({
       ) => void)
     | undefined;
   onSlideShortcut?: ((key: "ArrowLeft" | "ArrowRight") => void) | undefined;
+  onSlideWheel?: ((deltaY: number, deltaX: number) => void) | undefined;
+  style?: CSSProperties;
   className?: string;
 }) {
   const host = useRef<HTMLDivElement>(null),
@@ -37,7 +41,7 @@ export function HtmlSlidePreview({
     nonce: crypto.randomUUID().replaceAll("-", ""),
     channel: crypto.randomUUID(),
   }));
-  const interactive = Boolean(onSelect || onDrag || onSlideShortcut);
+  const interactive = Boolean(onSelect || onDrag || onSlideShortcut || onSlideWheel);
   const html = useMemo(
     () =>
       previewHtml(
@@ -57,7 +61,7 @@ export function HtmlSlidePreview({
     return () => observer.disconnect();
   }, []);
   useEffect(() => {
-    if (!onSelect && !onDrag && !onSlideShortcut) return;
+    if (!onSelect && !onDrag && !onSlideShortcut && !onSlideWheel) return;
     function receive(e: MessageEvent) {
       if (
         e.source !== frame.current?.contentWindow ||
@@ -72,11 +76,17 @@ export function HtmlSlidePreview({
           "ir-image-resize-move",
           "ir-image-resize-end",
           "ir-slide-shortcut",
+          "ir-slide-wheel",
         ].includes(e.data.type) ||
         e.data.channel !== identity.channel ||
         e.data.slideId !== slide.slideId
       )
         return;
+      if (e.data.type === "ir-slide-wheel") {
+        if (Number.isFinite(e.data.deltaY) && Number.isFinite(e.data.deltaX))
+          onSlideWheel?.(e.data.deltaY as number, e.data.deltaX as number);
+        return;
+      }
       if (
         e.data.type === "ir-slide-shortcut" &&
         (e.data.key === "ArrowLeft" || e.data.key === "ArrowRight")
@@ -111,10 +121,11 @@ export function HtmlSlidePreview({
     }
     window.addEventListener("message", receive);
     return () => window.removeEventListener("message", receive);
-  }, [identity, onDrag, onSelect, onSlideShortcut, slide.slideId, view.imageSlots]);
+  }, [identity, onDrag, onSelect, onSlideShortcut, onSlideWheel, slide.slideId, view.imageSlots]);
   return (
     <div
       ref={host}
+      style={style}
       className={cn(
         "relative aspect-video w-full overflow-hidden rounded-xl border border-field-border bg-surface",
         className,

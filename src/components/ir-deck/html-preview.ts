@@ -69,7 +69,7 @@ export function previewHtml(
       inset: "0",
       width: "100%",
       height: "100%",
-      objectFit: slot.fit,
+      objectFit: slot.origin === "user" ? "contain" : slot.fit,
       display: "block",
       margin: "0",
       maxWidth: "none",
@@ -179,6 +179,17 @@ export function previewHtml(
             key:e.key
           },'*');
         });
+        document.addEventListener('wheel',function(e){
+          if(Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
+          e.preventDefault();
+          parent.postMessage({
+            type:'ir-slide-wheel',
+            channel:${JSON.stringify(channel)},
+            slideId:${JSON.stringify(slide.slideId)},
+            deltaX:e.deltaX,
+            deltaY:e.deltaY
+          },'*');
+        },{passive:false});
       })();
     </script>`
     : "";

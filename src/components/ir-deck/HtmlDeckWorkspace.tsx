@@ -218,13 +218,13 @@ export function HtmlDeckWorkspace({
     height: 360,
     zIndex: 100,
   });
-  const [fit, setFit] = useState<"contain" | "cover">("contain");
   const [busy, setBusy] = useState(false);
   const [history, setHistory] = useState<{ past: ImageHistoryEntry[]; future: ImageHistoryEntry[] }>({
     past: [],
     future: [],
   });
   const [preview, setPreview] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const [pendingImage, setPendingImage] = useState<PendingImage | null>(null);
   const [exportBusy, setExportBusy] = useState(false),
     [exportError, setExportError] = useState("");
@@ -242,6 +242,10 @@ export function HtmlDeckWorkspace({
     expiresAt: number;
   } | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
+  const editorRef = useRef<HTMLDivElement>(null);
+  const slideStageRef = useRef<HTMLDivElement>(null);
+  const wheelGesture = useRef({ direction: 0, distance: 0, blockedUntil: 0 });
+  const [slideStageSize, setSlideStageSize] = useState({ width: 0, height: 0 });
   const thumbnailStrip = useRef<HTMLDivElement>(null);
   const [thumbnailEdges, setThumbnailEdges] = useState({ left: false, right: false });
   const uploaded = useRef<{ file: File; assetId: string } | null>(null);
@@ -256,6 +260,7 @@ export function HtmlDeckWorkspace({
   const current = view?.document.slides[selected];
   const selectedSlot = view?.imageSlots.find((s) => s.id === slotId) || null;
   const canMutate = !devPreview && authorized && !busy && !pendingImage;
+  const canNavigate = !preview || isFullscreen;
 
   useEffect(() => {
     if (preview) return;
@@ -304,6 +309,76 @@ export function HtmlDeckWorkspace({
       setSlotId(null);
     }
   }
+
+  function handleSlideWheel(deltaY: number, deltaX: number) {
+    if (busy || pendingImage || Math.abs(deltaY) <= Math.abs(deltaX)) return;
+    const direction = deltaY > 0 ? 1 : -1;
+    const gesture = wheelGesture.current;
+    const now = performance.now();
+    if (now < gesture.blockedUntil) return;
+    if (gesture.direction !== direction) {
+      gesture.direction = direction;
+      gesture.distance = 0;
+    }
+    gesture.distance += Math.abs(deltaY);
+    if (gesture.distance < 32) return;
+    const lastSlide = (view?.document.slides.length || 7) - 1;
+    if ((direction < 0 && selected === 0) || (direction > 0 && selected >= lastSlide)) {
+      gesture.distance = 0;
+      return;
+    }
+    gesture.distance = 0;
+    gesture.blockedUntil = now + 650;
+    switchSlideShortcut(direction > 0 ? "ArrowRight" : "ArrowLeft");
+  }
+
+  async function toggleFullscreen() {
+    if (document.fullscreenElement) {
+      await document.exitFullscreen();
+      return;
+    }
+    try {
+      setPreview(true);
+      await editorRef.current?.requestFullscreen();
+    } catch {
+      setPreview(false);
+    }
+  }
+
+  useEffect(() => {
+    const editor = editorRef.current;
+    if (!editor || (preview && !isFullscreen)) return;
+    const handleWheel = (event: WheelEvent) => {
+      if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
+      event.preventDefault();
+      handleSlideWheel(event.deltaY, event.deltaX);
+    };
+    editor.addEventListener("wheel", handleWheel, { passive: false });
+    return () => editor.removeEventListener("wheel", handleWheel);
+  }, [busy, isFullscreen, pendingImage, preview, selected]);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      const active = document.fullscreenElement === editorRef.current;
+      setIsFullscreen(active);
+      setPreview(active);
+    };
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
+  }, []);
+
+  useEffect(() => {
+    const stage = slideStageRef.current;
+    if (!stage) return;
+    const updateSize = () => {
+      const { width, height } = stage.getBoundingClientRect();
+      setSlideStageSize({ width, height });
+    };
+    updateSize();
+    const observer = new ResizeObserver(updateSize);
+    observer.observe(stage);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     function handleSlideShortcut(event: KeyboardEvent) {
@@ -528,7 +603,7 @@ export function HtmlDeckWorkspace({
       slide_id: next?.slideId || slot.slideId,
       asset_id: next?.assetId || null,
       placement: next?.placement || slot.placement,
-      fit: next?.fit || slot.fit,
+      fit: "contain",
       delete: next === null,
     };
   }
@@ -546,10 +621,9 @@ export function HtmlDeckWorkspace({
     assetId: string | null,
     remove = false,
     nextPlacement = placement,
-    nextFit = fit,
   ): Json {
     if (slot.origin === "generated")
-      return { action: "save_slot_image", slot_id: slot.id, asset_id: assetId, fit: nextFit };
+      return { action: "save_slot_image", slot_id: slot.id, asset_id: assetId, fit: slot.fit };
     validatePlacement(nextPlacement);
     return {
       action: "save_user_image",
@@ -557,7 +631,7 @@ export function HtmlDeckWorkspace({
       slide_id: slot.slideId,
       asset_id: assetId,
       placement: nextPlacement,
-      fit: nextFit,
+      fit: "contain",
       delete: remove,
     };
   }
@@ -586,7 +660,7 @@ export function HtmlDeckWorkspace({
         description: file.name,
         assetId,
         placement: p,
-        fit,
+        fit: "contain",
       };
       const body: Json = target
         ? binding(slot, assetId)
@@ -596,7 +670,7 @@ export function HtmlDeckWorkspace({
             slide_id: destinationSlide,
             asset_id: assetId,
             placement: p,
-            fit,
+            fit: "contain",
           };
       const pending = {
         body: {
@@ -636,7 +710,6 @@ export function HtmlDeckWorkspace({
     }
     setSlotId(slot?.id || null);
     if (slot) {
-      setFit(slot.fit);
       if (slot.placement) setPlacement(slot.placement);
     }
   }
@@ -647,6 +720,7 @@ export function HtmlDeckWorkspace({
     point: { x: number; y: number },
   ) {
     if (busy || pendingImage) return;
+    setPoint(point);
     if (phase === "start") {
       selectSlot(slot, point);
       if (!slot || slot.origin !== "user" || !slot.placement || adding || !canMutate) return;
@@ -711,17 +785,16 @@ export function HtmlDeckWorkspace({
       }
     }
   }
-  function saveSelectedPlacement(nextPlacement: Placement, nextFit = fit) {
+  function saveSelectedPlacement(nextPlacement: Placement) {
     if (!selectedSlot || selectedSlot.origin !== "user" || !selectedSlot.assetId) return;
     try {
       validatePlacement(nextPlacement);
       setPlacement(nextPlacement);
-      setFit(nextFit);
       void mutate(
-        binding(selectedSlot, selectedSlot.assetId, false, nextPlacement, nextFit),
+        binding(selectedSlot, selectedSlot.assetId, false, nextPlacement),
         {
           before: cloneImageSlot(selectedSlot),
-          after: { ...selectedSlot, placement: { ...nextPlacement }, fit: nextFit },
+          after: { ...selectedSlot, placement: { ...nextPlacement }, fit: "contain" },
         },
       );
     } catch (e) {
@@ -932,9 +1005,24 @@ export function HtmlDeckWorkspace({
       : thumbnailEdges.right
         ? "linear-gradient(90deg, black 0%, black 93%, transparent 100%)"
         : undefined;
+  const selectedAnchor = selectedSlot?.origin === "user" && selectedSlot.placement
+    ? placement
+    : selectedSlot?.placement || {
+    x: point.x,
+    y: point.y,
+    width: 0,
+    height: 0,
+    zIndex: 0,
+  };
+  const selectionToolbarStyle = {
+    left: `${((selectedAnchor.x + selectedAnchor.width / 2) / 1920) * 100}%`,
+    top: `${(selectedAnchor.y / 1080) * 100}%`,
+    transform:
+      selectedAnchor.y >= 220 ? "translate(-50%, calc(-100% - 8px))" : "translate(-50%, 8px)",
+  };
   return (
-    <div className="mx-auto w-full max-w-[1200px] space-y-5">
-      <header className="flex flex-wrap items-center justify-between gap-4">
+    <div ref={editorRef} className="ir-deck-editor mx-auto flex h-full min-h-0 w-full max-w-[1200px] flex-col gap-3">
+      <header className="shrink-0 flex flex-wrap items-center justify-between gap-4">
         {!preview && (
           <div className="flex flex-wrap items-center gap-3">
             <div
@@ -989,8 +1077,8 @@ export function HtmlDeckWorkspace({
           <button className={button} onClick={onHome}>
             최근 파일
           </button>
-          <button className={button} onClick={() => setPreview((v) => !v)}>
-            {preview ? "편집 화면으로 돌아가기" : "미리보기"}
+          <button className={button} onClick={() => void toggleFullscreen()}>
+            전체화면
           </button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -1126,8 +1214,8 @@ export function HtmlDeckWorkspace({
           )}
         </div>
       )}
-      <div>
-        <main className="mx-auto w-full min-w-0 max-w-[1120px] space-y-4">
+      <div className="ir-deck-main-wrap flex min-h-0 flex-1 flex-col">
+        <main className="mx-auto flex h-full min-h-0 w-full min-w-0 max-w-[1120px] flex-1 flex-col gap-4">
           {!preview && (
             <>
               <input
@@ -1142,10 +1230,40 @@ export function HtmlDeckWorkspace({
                   e.target.value = "";
                 }}
               />
-              {selectedSlot && (
+            </>
+          )}
+          <div ref={slideStageRef} className="ir-deck-slide-stage flex min-h-0 flex-1 items-start justify-center">
+            <div
+              className="relative max-w-full"
+              style={
+                slideStageSize.width > 0 && slideStageSize.height > 0
+                  ? { width: Math.min(slideStageSize.width, slideStageSize.height * (16 / 9)) }
+                  : undefined
+              }
+            >
+              <HtmlSlidePreview
+                key={current.slideId}
+                slide={current}
+                view={view}
+                urls={urls}
+                mediaOrigin={new URL(mediaBase()).origin}
+                onSelect={preview ? undefined : (slot, position) => {
+                  setPoint(position);
+                  selectSlot(slot, position);
+                }}
+                onDrag={preview ? undefined : dragImage}
+                onSlideShortcut={canNavigate ? switchSlideShortcut : undefined}
+                onSlideWheel={canNavigate ? handleSlideWheel : undefined}
+                className={cn(
+                  "ir-deck-current-slide rounded-none shadow-[0_2px_12px_rgba(0,13,59,0.08)]",
+                  !preview && "border-0",
+                )}
+              />
+              {!preview && selectedSlot && (
                 <div
-                  className="inline-flex max-w-full flex-wrap items-center gap-1 rounded-xl border border-[rgba(64,72,66,0.08)] bg-surface p-1"
-                  style={{ boxShadow: "0 4px 12px 0 rgba(64, 72, 66, 0.1)" }}
+                  className="absolute z-20 inline-flex max-w-[calc(100%-16px)] flex-wrap items-center gap-1 rounded-xl border border-[rgba(64,72,66,0.08)] bg-surface p-1"
+                  style={{ ...selectionToolbarStyle, boxShadow: "0 4px 12px 0 rgba(64, 72, 66, 0.1)" }}
+                  onPointerDown={(event) => event.stopPropagation()}
                 >
                   <span
                     className="max-w-40 truncate px-2 text-xs font-semibold text-ink"
@@ -1161,34 +1279,6 @@ export function HtmlDeckWorkspace({
                     <ImagePlus className="size-3.5" />
                     {selectedSlot.assetId ? "교체" : "업로드"}
                   </button>
-                  <label className="inline-flex h-8 items-center">
-                    <span className="sr-only">이미지 표시 방식</span>
-                    <select
-                      aria-label="이미지 표시 방식"
-                      className="h-8 rounded-lg border-0 bg-transparent px-2 text-xs font-semibold text-ink outline-none hover:bg-item-hover disabled:cursor-not-allowed disabled:opacity-40"
-                      value={fit}
-                      disabled={!canMutate}
-                      onChange={(e) => {
-                        const nextFit = e.target.value as "cover" | "contain";
-                        if (selectedSlot.origin === "user" && selectedSlot.placement)
-                          saveSelectedPlacement(selectedSlot.placement, nextFit);
-                        else {
-                          setFit(nextFit);
-                          if (selectedSlot.assetId)
-                            void mutate(
-                              binding(selectedSlot, selectedSlot.assetId, false, placement, nextFit),
-                              {
-                                before: cloneImageSlot(selectedSlot),
-                                after: { ...selectedSlot, fit: nextFit },
-                              },
-                            );
-                        }
-                      }}
-                    >
-                      <option value="contain">전체 보이기</option>
-                      <option value="cover">영역 채우기</option>
-                    </select>
-                  </label>
                   {selectedSlot.origin === "user" && (
                     <>
                       <button
@@ -1227,27 +1317,13 @@ export function HtmlDeckWorkspace({
                   )}
                 </div>
               )}
-            </>
-          )}
-          <HtmlSlidePreview
-            key={current.slideId}
-            slide={current}
-            view={view}
-            urls={urls}
-            mediaOrigin={new URL(mediaBase()).origin}
-            onSelect={preview ? undefined : selectSlot}
-            onDrag={preview ? undefined : dragImage}
-            onSlideShortcut={preview ? undefined : switchSlideShortcut}
-            className={cn(
-              "rounded-none shadow-[0_2px_12px_rgba(0,13,59,0.08)]",
-              !preview && "border-0",
-            )}
-          />
+            </div>
+          </div>
         </main>
       </div>
       {!preview && (
         <section
-          className="w-full rounded-xl p-2"
+          className="w-full shrink-0 rounded-xl p-2"
           aria-label="슬라이드 목록"
         >
           <div className="relative">

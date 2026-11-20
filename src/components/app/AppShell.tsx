@@ -60,10 +60,12 @@ export function AppShell({ active, children }: AppShellProps) {
           />
           <main
             ref={mainRef}
-            className="min-h-0 flex-1 overflow-auto overscroll-y-contain pt-[74px]"
+            className="app-shell-main min-h-0 flex-1 overflow-auto overscroll-y-contain pt-[74px]"
           >
             <div className="flex min-h-[calc(100dvh-74px)] min-w-[1264px] flex-col">
-              <div className="mx-auto flex w-[1208px] flex-1 flex-col pt-[3px]">{children}</div>
+              <div className="app-shell-content mx-auto flex w-[1208px] flex-1 flex-col pt-[3px]">
+                {children}
+              </div>
               <AppFooter />
             </div>
           </main>

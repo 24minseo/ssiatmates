@@ -7,6 +7,87 @@
 .ir-deck-progress {
   transition: width 140ms linear;
 }
+
+/* Keep the editor workspace inside the viewport on short screens. */
+.app-shell-main:has(.ir-deck-editor) {
+  overflow: hidden;
+}
+.app-shell-content:has(.ir-deck-editor) {
+  height: 100%;
+  min-height: 0;
+}
+.app-shell-content:has(.ir-deck-editor) > .ir-deck-workspace {
+  flex: 1;
+}
+.app-shell-content:has(.ir-deck-editor) + footer {
+  display: none;
+}
+.ir-deck-workspace:has(.ir-deck-editor) {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  padding-bottom: 0;
+}
+.ir-deck-workspace:has(.ir-deck-editor) > .ir-deck-editor {
+  flex: 0 0 auto;
+  height: auto;
+  padding-bottom: 30px;
+}
+.ir-deck-workspace:has(.ir-deck-editor) > header {
+  display: none;
+}
+.ir-deck-editor:not(:fullscreen) .ir-deck-main-wrap {
+  flex: 0 0 auto;
+}
+.ir-deck-editor:not(:fullscreen) .ir-deck-main-wrap > main {
+  flex: 0 0 auto;
+}
+.ir-deck-editor:not(:fullscreen) .ir-deck-slide-stage {
+  width: min(100%, calc((100dvh - 290px) * 16 / 9));
+  max-width: 100%;
+  aspect-ratio: 16 / 9;
+  flex: 0 0 auto;
+  align-self: center;
+}
+.ir-deck-current-slide {
+  width: min(100%, calc((100dvh - 290px) * 16 / 9));
+  height: auto;
+  flex: 0 0 auto;
+}
+.ir-deck-editor:fullscreen {
+  width: 100vw;
+  max-width: none;
+  height: 100vh;
+  padding: 0;
+  gap: 0;
+  background: #0b0d0c;
+}
+.ir-deck-editor:fullscreen > header {
+  display: none;
+}
+.ir-deck-editor:fullscreen > div,
+.ir-deck-editor:fullscreen main,
+.ir-deck-editor:fullscreen .ir-deck-slide-stage {
+  width: 100%;
+  max-width: none;
+}
+.ir-deck-editor:fullscreen > .ir-deck-main-wrap,
+.ir-deck-editor:fullscreen .ir-deck-main-wrap > main,
+.ir-deck-editor:fullscreen .ir-deck-slide-stage {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  aspect-ratio: auto;
+}
+.ir-deck-editor:fullscreen main {
+  gap: 0;
+}
+.ir-deck-editor:fullscreen .ir-deck-current-slide {
+  border-radius: 0;
+  box-shadow: none;
+}
 @media (prefers-reduced-motion: reduce) {
   .ir-deck-progress {
     transition: none;
