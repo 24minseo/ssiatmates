@@ -886,3 +886,17 @@ a[href] {
 .loading-dot-nudge-1 { --loading-dot-distance: 1px; }
 .loading-dot-nudge-2 { --loading-dot-distance: 2px; }
 .loading-dot-nudge-3 { --loading-dot-distance: 3px; }
+
+/* Growth journal sticker color cycle. */
+:root {
+  --journal-sticker-green-surface: #d7f5ea;
+  --journal-sticker-green-ink: #1f8064;
+  --journal-sticker-red-surface: #fee2e2;
+  --journal-sticker-red-ink: #b83e48;
+  --journal-sticker-blue-surface: #dbeafe;
+  --journal-sticker-blue-ink: #326bb5;
+  --journal-sticker-purple-surface: #ede4fa;
+  --journal-sticker-purple-ink: #8050b1;
+  --journal-sticker-gray-surface: #e8ebed;
+  --journal-sticker-gray-ink: #647078;
+}

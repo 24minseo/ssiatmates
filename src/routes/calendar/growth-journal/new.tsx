@@ -832,6 +832,7 @@ function GrowthJournalNewPage() {
       };
       setSaved(true);
       setIsDirty(false);
+      window.dispatchEvent(new Event("growth-journal-changed"));
       if (navigateAfterSave && savedEntry?.id) {
         allowSavedNavigationRef.current = true;
         void navigate({ to: "/calendar/growth-journal/$id", params: { id: savedEntry.id } });

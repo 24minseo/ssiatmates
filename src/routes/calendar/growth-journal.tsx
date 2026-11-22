@@ -694,6 +694,7 @@ function GrowthJournalPage() {
                   .eq("id", deleteTarget.id);
                 if (!error) {
                   setEntries((current) => current.filter((entry) => entry.id !== deleteTarget.id));
+                  window.dispatchEvent(new Event("growth-journal-changed"));
                 }
                 setDeleteTarget(null);
               }}

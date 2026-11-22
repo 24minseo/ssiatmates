@@ -10,7 +10,7 @@ import {
   Search,
   X,
 } from "lucide-react";
-import { startTransition, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { startTransition, useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -39,6 +39,7 @@ import { Label } from "@/components/ui/label";
 import { LayeredTextarea } from "@/components/ui/layered-textarea";
 import { TimeWheelPicker } from "@/components/ui/time-wheel-picker";
 import { useAuth } from "@/hooks/useAuth";
+import { useJournalStickerColors } from "@/hooks/useJournalStickerColors";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { createCalendarTask } from "@/services/calendarTaskApi";
@@ -88,6 +89,14 @@ type ChecklistItem = {
 };
 
 type ChecklistDropPosition = "before" | "after";
+
+const JOURNAL_STICKER_COLORS = [
+  { key: "green", label: "초록" },
+  { key: "red", label: "빨강" },
+  { key: "blue", label: "파랑" },
+  { key: "purple", label: "보라" },
+  { key: "gray", label: "회색" },
+] as const;
 
 const REMINDER_MAX_ITEMS = 4;
 const REMINDER_QUICK_OPTIONS = [
@@ -1238,6 +1247,65 @@ function CalendarPage() {
   const month = visibleMonth.getMonth();
 
   const days = useMemo(() => buildCalendarDays(year, month), [year, month]);
+  const visibleCalendarStartKey = days[0]?.key ?? null;
+  const visibleCalendarEndKey = days[days.length - 1]?.key ?? null;
+  const [growthJournalDateKeys, setGrowthJournalDateKeys] = useState<Set<string>>(
+    () => new Set(),
+  );
+  const growthJournalDateRequestRef = useRef(0);
+  const { colors: stickerColors, ready: stickerColorsReady, cycleColor: cycleJournalStickerColor } =
+    useJournalStickerColors(user?.id, visibleCalendarStartKey, visibleCalendarEndKey);
+
+  const loadGrowthJournalDates = useCallback(async () => {
+    const requestId = ++growthJournalDateRequestRef.current;
+    if (authLoading || !user?.id || !visibleCalendarStartKey || !visibleCalendarEndKey) {
+      setGrowthJournalDateKeys(new Set());
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("startup_diaries")
+      .select("diary_date")
+      .eq("user_id", user.id)
+      .gte("diary_date", visibleCalendarStartKey)
+      .lte("diary_date", visibleCalendarEndKey);
+
+    if (requestId !== growthJournalDateRequestRef.current) return;
+    if (error) {
+      console.error("[calendar] 성장일지 날짜 조회 실패", error);
+      setGrowthJournalDateKeys(new Set());
+      return;
+    }
+
+    setGrowthJournalDateKeys(
+      new Set(
+        (data ?? [])
+          .map((row) => row.diary_date)
+          .filter((date): date is string => typeof date === "string"),
+      ),
+    );
+  }, [authLoading, user?.id, visibleCalendarStartKey, visibleCalendarEndKey]);
+
+  useEffect(() => {
+    setGrowthJournalDateKeys(new Set());
+    void loadGrowthJournalDates();
+    return () => { growthJournalDateRequestRef.current += 1; };
+  }, [loadGrowthJournalDates]);
+
+  useEffect(() => {
+    const refreshGrowthJournalDates = () => {
+      if (!document.hidden) void loadGrowthJournalDates();
+    };
+    window.addEventListener("growth-journal-changed", refreshGrowthJournalDates);
+    window.addEventListener("focus", refreshGrowthJournalDates);
+    document.addEventListener("visibilitychange", refreshGrowthJournalDates);
+    return () => {
+      window.removeEventListener("growth-journal-changed", refreshGrowthJournalDates);
+      window.removeEventListener("focus", refreshGrowthJournalDates);
+      document.removeEventListener("visibilitychange", refreshGrowthJournalDates);
+    };
+  }, [loadGrowthJournalDates]);
+
   const calendarVisibleEventRows = days.length === 35 ? 4 : 3;
   const eventsByDate = useMemo(() => {
     return events.reduce<Record<string, CalendarEvent[]>>((grouped, event) => {
@@ -2144,6 +2212,10 @@ function CalendarPage() {
               {days.map((day, index) => {
                 const isSelected = selectedDate === day.key;
                 const isToday = todayKey === day.key;
+                const hasGrowthJournal = growthJournalDateKeys.has(day.key);
+                const stickerColorIndex = stickerColors[day.key] ?? 0;
+                const stickerColor = JOURNAL_STICKER_COLORS[stickerColorIndex]!;
+                const nextStickerColor = JOURNAL_STICKER_COLORS[(stickerColorIndex + 1) % JOURNAL_STICKER_COLORS.length]!;
                 const dayEvents = sortedEventsByDate[day.key] ?? [];
                 const singleDayEvents = dayEvents.filter(
                   (calendarEvent) =>
@@ -2196,6 +2268,7 @@ function CalendarPage() {
                     )}
                   >
                     <div className="flex h-6 items-start justify-between gap-2">
+                      <div className="flex shrink-0 items-center gap-0.5">
                       <span
                         className={cn(
                           "flex h-6 w-6 shrink-0 items-center justify-center rounded-[6px] text-sm font-normal leading-4",
@@ -2206,19 +2279,46 @@ function CalendarPage() {
                       >
                         {day.date.getDate()}
                       </span>
-                      <Link
-                        to="/calendar/growth-journal/new"
-                        search={{ date: day.key, from: "calendar" }}
-                        onClick={(event) => event.stopPropagation()}
-                        className={cn(
-                          "group/journal invisible flex h-6 items-center gap-0.5 rounded-[6px] bg-item-hover py-0.5 pl-[7px] pr-2 text-[13px] font-medium text-ink-muted hover:bg-calendar-journal-hover hover:text-brand",
-                          "group-hover:visible",
-                        )}
-                      >
-                        <img src="/assets/sidebar/journal-edit-default.svg" alt="" aria-hidden="true" className="h-[18px] w-3.5 object-contain group-hover/journal:hidden" />
-                        <img src="/assets/sidebar/journal-edit-hover.svg" alt="" aria-hidden="true" className="hidden h-[18px] w-3.5 object-contain group-hover/journal:block" />
-                        일지 쓰기
-                      </Link>
+                        {hasGrowthJournal ? (
+                          <button
+                            type="button"
+                            aria-label={`성장일지 작성됨 · ${stickerColor.label} 스티커. 클릭하면 ${nextStickerColor.label}으로 변경`}
+                            title={stickerColorsReady ? "클릭하여 스티커 색상 변경" : "스티커 색상을 불러오는 중"}
+                            disabled={!stickerColorsReady}
+                            onClick={(event) => { event.stopPropagation(); cycleJournalStickerColor(day.key); }}
+                            onPointerDown={(event) => event.stopPropagation()}
+                            onPointerUp={(event) => event.stopPropagation()}
+                            onKeyDown={(event) => event.stopPropagation()}
+                            className="flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                          >
+<svg className="size-5" aria-hidden="true" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(12 12) scale(1.142857) translate(-12 -12)">
+<path d="M12 22.5C6.20101 22.5 1.5 17.799 1.5 12C1.5 6.20101 6.20101 1.5 12 1.5L18.6818 1.5C20.7905 1.5 22.5 3.20946 22.5 5.31818V12C22.5 17.799 17.799 22.5 12 22.5Z" fill={`var(--journal-sticker-${stickerColor.key}-surface)`}/>
+<path d="M8.31372 9.31651C8.31372 9.9964 7.75407 10.5476 7.06372 10.5476C6.37337 10.5476 5.81372 9.9964 5.81372 9.31651C5.81372 8.63662 6.37337 8.08545 7.06372 8.08545C7.75407 8.08545 8.31372 8.63662 8.31372 9.31651Z" fill={`var(--journal-sticker-${stickerColor.key}-ink)`} stroke={`var(--journal-sticker-${stickerColor.key}-ink)`} strokeWidth="0.2" strokeLinejoin="round"/>
+<path d="M9.31372 13.7485C9.72792 13.7485 10.0637 14.0792 10.0637 14.4872C10.0637 15.439 10.8472 16.2107 11.8137 16.2107C12.7802 16.2107 13.5637 15.439 13.5637 14.4872C13.5637 14.0792 13.8995 13.7485 14.3137 13.7485C14.7279 13.7485 15.0637 14.0792 15.0637 14.4872C15.0637 16.2549 13.6087 17.6879 11.8137 17.6879C10.0188 17.6879 8.56372 16.2549 8.56372 14.4872C8.56372 14.0792 8.89952 13.7485 9.31372 13.7485Z" fill={`var(--journal-sticker-${stickerColor.key}-ink)`} stroke={`var(--journal-sticker-${stickerColor.key}-ink)`} strokeWidth="0.2" strokeLinejoin="round"/>
+<path d="M16.5637 10.5476C17.2541 10.5476 17.8137 9.9964 17.8137 9.31651C17.8137 8.63662 17.2541 8.08545 16.5637 8.08545C15.8734 8.08545 15.3137 8.63662 15.3137 9.31651C15.3137 9.9964 15.8734 10.5476 16.5637 10.5476Z" fill={`var(--journal-sticker-${stickerColor.key}-ink)`} stroke={`var(--journal-sticker-${stickerColor.key}-ink)`} strokeWidth="0.2" strokeLinejoin="round"/>
+</g>
+</svg>
+                          </button>
+                        ) : null}
+                      </div>
+                      <div className="ml-auto h-6 shrink-0">
+                        <Link
+                          to="/calendar/growth-journal/new"
+                          search={{ date: day.key, from: "calendar" }}
+                          onClick={(event) => event.stopPropagation()}
+                          onPointerDown={(event) => event.stopPropagation()}
+                          onPointerUp={(event) => event.stopPropagation()}
+                          onKeyDown={(event) => event.stopPropagation()}
+                          className={cn(
+                            "group/journal invisible flex h-6 w-max shrink-0 items-center gap-0.5 whitespace-nowrap rounded-[6px] bg-item-hover py-0.5 pl-[7px] pr-2 text-[13px] font-medium leading-5 text-ink-muted opacity-0 transition-opacity duration-150 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100 hover:bg-calendar-journal-hover hover:text-brand motion-reduce:transition-none",
+                          )}
+                        >
+                          <img src="/assets/sidebar/journal-edit-default.svg" alt="" aria-hidden="true" className="h-[18px] w-3.5 object-contain group-hover/journal:hidden" />
+                          <img src="/assets/sidebar/journal-edit-hover.svg" alt="" aria-hidden="true" className="hidden h-[18px] w-3.5 object-contain group-hover/journal:block" />
+                          일지 쓰기
+                        </Link>
+                      </div>
                     </div>
 
                     {singleDayEvents.length > 0 || hiddenPeriodCount > 0 ? (

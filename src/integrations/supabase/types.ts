@@ -14,6 +14,13 @@ export type Database = {
   }
   public: {
     Tables: {
+      journal_sticker_colors: {
+        Row: { user_id: string; diary_date: string; color: string }
+        Insert: { user_id: string; diary_date: string; color?: string }
+        Update: { user_id?: string; diary_date?: string; color?: string }
+        Relationships: []
+      }
+
       feedback_submissions: {
         Row: {
           id: string

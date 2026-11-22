@@ -69,7 +69,7 @@ export function preferenceResultMessage(result: PreferenceSearchResult) {
       return "선호조건을 충족하는 것으로 확인된 공고가 없어요.";
     case "needs_clarification":
     case "clarification":
-      return "선호조건을 조금 더 구체적으로 알려주세요.";
+      return "선호조건을 확인하기 어려워요. 다른 표현으로 재시도 해주세요.";
     case "matching_not_ready":
       return "기본매칭이 아직 준비되지 않았어요. 잠시 후 다시 확인해주세요.";
     default:
