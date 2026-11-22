@@ -1377,7 +1377,7 @@ export function HtmlDeckWorkspace({
                 onSlideShortcut={canNavigate ? switchSlideShortcut : undefined}
                 onSlideWheel={canNavigate ? handleSlideWheel : undefined}
                 className={cn(
-                  "ir-deck-current-slide rounded-none shadow-[0_2px_12px_rgba(0,13,59,0.08)]",
+                  "ir-deck-current-slide rounded-none shadow-none",
                   !preview && "border-0",
                 )}
               />
