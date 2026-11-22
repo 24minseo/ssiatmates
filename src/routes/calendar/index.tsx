@@ -2336,7 +2336,7 @@ function CalendarPage() {
                           <button
                             type="button"
                             aria-label={`성장일지 작성됨 · ${stickerColor.label} 스티커. 클릭하면 ${nextStickerColor.label}으로 변경`}
-                            title={stickerColorsReady ? "클릭하여 스티커 색상 변경" : "스티커 색상을 불러오는 중"}
+                            title="성장일지 작성완료"
                             disabled={!stickerColorsReady}
                             onClick={(event) => { event.stopPropagation(); cycleJournalStickerColor(day.key); }}
                             onPointerDown={(event) => event.stopPropagation()}
