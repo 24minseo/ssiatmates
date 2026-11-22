@@ -44,11 +44,16 @@ const designCost = 30;
 type TrialState = { credits: number };
 const defaultTrialState: TrialState = { credits: initialCredits };
 const processingPhaseTargets: Array<[string, number]> = [
-  ["PDF 업로드를 준비하고 있어요", 25],
-  ["분석 시작을 기다리고 있어요", 50],
+  // Stage-based estimates; only a completed analysis reaches 100%.
+  ["PDF 업로드를 준비하고 있어요", 10],
+  ["PDF를 업로드하고 있어요", 25],
+  ["업로드한 PDF를 확인하고 있어요", 35],
+  ["사업 내용 분석을 요청하고 있어요", 45],
+  ["분석 시작을 기다리고 있어요", 55],
   ["PDF에서 사업 내용을 읽고 있어요", 75],
-  ["사업 내용을 7개 항목으로 정리하고 있어요", 100],
-  ["사업 내용을 정리하고 있어요", 100],
+  ["사업 내용을 7개 항목으로 정리하고 있어요", 95],
+  ["사업 내용을 저장하고 있어요", 10],
+  ["사업 내용 분석이 완료됐어요", 100],
 ];
 
 const editorPreviewReference: HtmlReference = {
@@ -419,16 +424,17 @@ export function IrDeckWireframe() {
     const timer = window.setInterval(() => {
       setProcessingProgress((current) => {
         const distance = processingTarget - current;
-        if (Math.abs(distance) <= 0.35) {
+        if (distance <= 0) return current;
+        if (distance <= 0.35) {
           catchingUpToPhase.current = false;
           return processingTarget;
         }
         const step = catchingUpToPhase.current ? 2.4 : 0.45;
-        if (Math.abs(distance) <= step) {
+        if (distance <= step) {
           catchingUpToPhase.current = false;
           return processingTarget;
         }
-        return current + Math.sign(distance) * Math.min(Math.abs(distance), step);
+        return current + step;
       });
     }, 80);
     return () => window.clearInterval(timer);
