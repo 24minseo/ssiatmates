@@ -1253,6 +1253,19 @@ function CalendarPage() {
       return grouped;
     }, {});
   }, [events]);
+  const sortedEventsByDate = useMemo(() => {
+    return Object.entries(eventsByDate).reduce<Record<string, CalendarEvent[]>>((sorted, [date, dayEvents]) => {
+      sorted[date] = [...dayEvents].sort(
+        (a, b) =>
+          getEventDurationDays(b) - getEventDurationDays(a) ||
+          a.date.localeCompare(b.date) ||
+          (a.eventType === "application_deadline" ? 0 : 1) -
+            (b.eventType === "application_deadline" ? 0 : 1) ||
+          a.id - b.id,
+      );
+      return sorted;
+    }, {});
+  }, [eventsByDate]);
   const sortedEvents = useMemo(
     () => [...events].sort((a, b) => a.date.localeCompare(b.date)),
     [events],
@@ -1319,6 +1332,18 @@ function CalendarPage() {
           segment.lane < (periodLaneLimitByWeek[segment.weekIndex] ?? calendarVisibleEventRows),
       ),
     [calendarPeriodSegments, calendarVisibleEventRows, periodLaneLimitByWeek],
+  );
+  const visibleCalendarSegmentsByWeek = useMemo(
+    () => Array.from({ length: days.length / 7 }, (_, weekIndex) =>
+      visibleCalendarPeriodSegments.filter((segment) => segment.weekIndex === weekIndex),
+    ),
+    [days.length, visibleCalendarPeriodSegments],
+  );
+  const calendarDragSegmentsByWeek = useMemo(
+    () => Array.from({ length: days.length / 7 }, (_, weekIndex) =>
+      calendarDragSegments.filter((segment) => segment.weekIndex === weekIndex),
+    ),
+    [calendarDragSegments, days.length],
   );
   const hiddenPeriodCountByDate = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -2119,14 +2144,7 @@ function CalendarPage() {
               {days.map((day, index) => {
                 const isSelected = selectedDate === day.key;
                 const isToday = todayKey === day.key;
-                const dayEvents = [...(eventsByDate[day.key] ?? [])].sort(
-                  (a, b) =>
-                    getEventDurationDays(b) - getEventDurationDays(a) ||
-                    a.date.localeCompare(b.date) ||
-                    (a.eventType === "application_deadline" ? 0 : 1) -
-                      (b.eventType === "application_deadline" ? 0 : 1) ||
-                    a.id - b.id,
-                );
+                const dayEvents = sortedEventsByDate[day.key] ?? [];
                 const singleDayEvents = dayEvents.filter(
                   (calendarEvent) =>
                     !calendarEvent.endDate || calendarEvent.endDate === calendarEvent.date,
@@ -2255,12 +2273,8 @@ function CalendarPage() {
 
             <div className="pointer-events-none absolute inset-0">
               {Array.from({ length: days.length / 7 }, (_, weekIndex) => {
-                const weekSegments = visibleCalendarPeriodSegments.filter(
-                  (segment) => segment.weekIndex === weekIndex,
-                );
-                const weekDragSegments = calendarDragSegments.filter(
-                  (segment) => segment.weekIndex === weekIndex,
-                );
+                const weekSegments = visibleCalendarSegmentsByWeek[weekIndex] ?? [];
+                const weekDragSegments = calendarDragSegmentsByWeek[weekIndex] ?? [];
 
                 return (
                   <div
