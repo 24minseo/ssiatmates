@@ -1040,7 +1040,11 @@ export function IrDeckWireframe() {
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <button type="button" aria-label={`${displayProjectTitle(project)} 더보기`} className="rounded-md p-1.5 text-ink-muted hover:bg-item-hover" onClick={(event) => event.stopPropagation()}>
-                            <MoreVertical className="size-4" />
+                            <span aria-hidden className="flex size-6 flex-col items-center justify-center gap-[3px]">
+                              <span className="size-[2.5px] rounded-full bg-[#84968E]" />
+                              <span className="size-[2.5px] rounded-full bg-[#84968E]" />
+                              <span className="size-[2.5px] rounded-full bg-[#84968E]" />
+                            </span>
                           </button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" sideOffset={6} onClick={(event) => event.stopPropagation()} className="min-w-0 w-fit rounded-[12px] border-0 bg-surface p-1 shadow-none" style={{ boxShadow: "var(--shadow-dropdown)" }}>
