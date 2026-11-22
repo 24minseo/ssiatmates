@@ -1033,7 +1033,7 @@ export function IrDeckWireframe() {
                   <div className="border-t border-field-border p-4">
                     <div className="flex items-start justify-between gap-3">
                       <button type="button" className="min-w-0 flex-1 text-left" onClick={() => openProject(project.id)}>
-                        <strong className="block truncate text-ink">{displayProjectTitle(project)}</strong>
+                        <strong className="block truncate text-[18px] font-semibold leading-6 text-ink">{displayProjectTitle(project)}</strong>
                       </button>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
