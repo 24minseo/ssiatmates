@@ -102,7 +102,7 @@ function OnboardingPage() {
     }
     setSaving(false);
     toast.success("정보 입력이 완료되었어요.");
-    void navigate({ to: "/my-programs", replace: true });
+    void navigate({ to: "/programs", replace: true });
   };
 
 
