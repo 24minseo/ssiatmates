@@ -10,7 +10,7 @@ import {
   Search,
   X,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { startTransition, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -1393,44 +1393,46 @@ function CalendarPage() {
     const initialEndDate = endDate === initialStartDate ? "" : endDate;
     const initialMode: DateSelectionMode = initialEndDate ? "range" : "single";
 
-    setEditingEventId(null);
-    setIsAutoDeadlineEdit(false);
-    setEventTitle("");
-    setEventColor(EVENT_COLORS[0].value);
-    setColorPickerOpen(false);
-    setProgramPickerOpen(false);
     const activeProgramKey = programKey ?? noticeFilterKey;
     const filteredNotice = activeProgramKey !== "all"
       ? sortedEvents.find((event) => eventProgramKey(event) === activeProgramKey) ?? null
       : null;
-    setSelectedProgram(
-      activeProgramKey !== "all"
-        ? savedPrograms.find((program) => savedProgramKey(program) === activeProgramKey)
-          ?? (filteredNotice ? findEventProgram(filteredNotice, savedPrograms) : null)
-        : null,
-    );
-    setProgramSearch("");
-    setEventDescription("");
-    setContentMode("memo");
-    setChecklistItems([]);
-    setFocusedChecklistId(null);
-    setEventStartTime("");
-    setReminders([]);
-    setReminderPickerOpen(false);
-    setReminderPickerMode("quick");
-    setSaveError(null);
-    setCustomReminderAmount("");
-    setCustomReminderUnit("일");
-    setReminderError("");
-    setEventDate(initialStartDate);
-    setEventEndDate(initialEndDate);
-    setDateSelectionMode(initialMode);
-    setInitialDateSelection({
-      mode: initialMode,
-      startDate: initialStartDate,
-      endDate: initialEndDate,
+    startTransition(() => {
+      setEditingEventId(null);
+      setIsAutoDeadlineEdit(false);
+      setEventTitle("");
+      setEventColor(EVENT_COLORS[0].value);
+      setColorPickerOpen(false);
+      setProgramPickerOpen(false);
+      setSelectedProgram(
+        activeProgramKey !== "all"
+          ? savedPrograms.find((program) => savedProgramKey(program) === activeProgramKey)
+            ?? (filteredNotice ? findEventProgram(filteredNotice, savedPrograms) : null)
+          : null,
+      );
+      setProgramSearch("");
+      setEventDescription("");
+      setContentMode("memo");
+      setChecklistItems([]);
+      setFocusedChecklistId(null);
+      setEventStartTime("");
+      setReminders([]);
+      setReminderPickerOpen(false);
+      setReminderPickerMode("quick");
+      setSaveError(null);
+      setCustomReminderAmount("");
+      setCustomReminderUnit("일");
+      setReminderError("");
+      setEventDate(initialStartDate);
+      setEventEndDate(initialEndDate);
+      setDateSelectionMode(initialMode);
+      setInitialDateSelection({
+        mode: initialMode,
+        startDate: initialStartDate,
+        endDate: initialEndDate,
+      });
+      setIsAddOpen(true);
     });
-    setIsAddOpen(true);
   };
 
   const editSelectedEvent = () => {
