@@ -1477,12 +1477,18 @@ function CalendarPage() {
 
   const deleteSelectedEvent = async () => {
     const ownerId = ownerIdRef.current;
-    if (!selectedEvent || !ownerId || mutationInFlightRef.current) return;
+    const eventToDelete = selectedEvent;
+    if (!eventToDelete || !ownerId || mutationInFlightRef.current) return;
+    const previousEvents = currentEventsRef.current;
+    const optimisticEvents = previousEvents.filter((event) => event.id !== eventToDelete.id);
     mutationInFlightRef.current = true;
     setIsSavingEvent(true);
+    setSelectedEvent(null);
+    setDeleteConfirmOpen(false);
+    publishCalendarEvents(ownerId, optimisticEvents);
     try {
       await withFreshAccessToken((accessToken) => mutateCalendarEventFn({ data: {
-        eventId: selectedEvent.id,
+        eventId: eventToDelete.id,
         action: "delete",
         accessToken,
       }}));
@@ -1490,13 +1496,16 @@ function CalendarPage() {
         window.dispatchEvent(new Event("calendar-events-changed"));
         return;
       }
-      setSelectedEvent(null);
-      setDeleteConfirmOpen(false);
-      publishCalendarEvents(ownerId, currentEventsRef.current.filter((event) => event.id !== selectedEvent.id));
       window.dispatchEvent(new Event("calendar-events-changed"));
       window.dispatchEvent(new Event("notifications-changed"));
     } catch (error) {
       if (ownerIdRef.current === ownerId) {
+        if (currentEventsRef.current === optimisticEvents) {
+          publishCalendarEvents(ownerId, previousEvents);
+        } else {
+          window.dispatchEvent(new Event("calendar-events-changed"));
+        }
+        setSelectedEvent(eventToDelete);
         setEventsError(error instanceof Error ? error.message : "일정을 삭제하지 못했어요.");
       }
     } finally {
