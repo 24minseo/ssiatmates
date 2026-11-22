@@ -48,7 +48,7 @@ import { getCalendarEvents } from "@/services/calendarEventsApi";
 import { normalizeCalendarEvents, upsertCalendarEvent } from "@/services/calendarEventModel";
 import { savedNoticesApi, type SavedNotice } from "@/services/savedNoticesApi";
 import { eventProgramKey, findEventProgram, groupEventsByProgram, programLinkInput, savedProgramKey } from "@/services/calendarNoticeLink";
-import { connectGoogleCalendar, disconnectGoogleCalendar, getGoogleCalendarStatus } from "@/services/googleCalendarApi";
+import { connectGoogleCalendar, disconnectGoogleCalendar, getGoogleCalendarStatus, importGoogleCalendarEvents } from "@/services/googleCalendarApi";
 
 export const Route = createFileRoute("/calendar/")({
   head: () => ({
@@ -1013,6 +1013,8 @@ function CalendarPage() {
   const [isGoogleCalendarConnectOpen, setIsGoogleCalendarConnectOpen] = useState(false);
   const [isGoogleCalendarConnected, setIsGoogleCalendarConnected] = useState(false);
   const [isGoogleCalendarLoading, setIsGoogleCalendarLoading] = useState(false);
+  const googleImportInFlightRef = useRef(false);
+  const [googleImportMessage, setGoogleImportMessage] = useState<string | null>(null);
   const [googleCalendarError, setGoogleCalendarError] = useState<string | null>(null);
   const [isGoogleCalendarBannerVisible, setIsGoogleCalendarBannerVisible] = useState(true);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
@@ -1097,6 +1099,10 @@ function CalendarPage() {
     setEditingEventId(null);
     setIsSavingEvent(false);
     setEventsError(null);
+    setIsGoogleCalendarConnected(false);
+    setGoogleCalendarError(null);
+    setGoogleImportMessage(null);
+    setIsGoogleCalendarLoading(false);
     mutationInFlightRef.current = false;
     createRequestRef.current = null;
 
@@ -1138,6 +1144,7 @@ function CalendarPage() {
   };
 
   const handleGoogleCalendarDisconnect = async () => {
+    setGoogleImportMessage(null);
     setIsGoogleCalendarLoading(true);
     setGoogleCalendarError(null);
     try {
@@ -1147,6 +1154,35 @@ function CalendarPage() {
       setGoogleCalendarError(error instanceof Error ? error.message : "Google Calendar 연결 해제에 실패했어요.");
     } finally {
       setIsGoogleCalendarLoading(false);
+    }
+  };
+
+  const handleGoogleCalendarImport = async () => {
+    if (googleImportInFlightRef.current || isGoogleCalendarLoading || !user?.id) return;
+    const ownerId = user.id;
+    const requestedMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), 1);
+    const rangeStart = toDateKey(requestedMonth);
+    const rangeEnd = toDateKey(new Date(requestedMonth.getFullYear(), requestedMonth.getMonth() + 1, 1));
+    googleImportInFlightRef.current = true;
+    setIsGoogleCalendarLoading(true);
+    setGoogleCalendarError(null);
+    setGoogleImportMessage(null);
+    try {
+      await importGoogleCalendarEvents(rangeStart, rangeEnd);
+      if (ownerIdRef.current !== ownerId) return;
+      invalidateCalendarRead();
+      setSelectedEvent(null);
+      setSelectedDayEvents(null);
+      await loadCalendarEvents(true);
+      if (ownerIdRef.current !== ownerId) return;
+      setGoogleImportMessage(`${requestedMonth.getFullYear()}년 ${requestedMonth.getMonth() + 1}월 구글 일정을 가져왔어요.`);
+    } catch (error) {
+      if (ownerIdRef.current === ownerId) {
+        setGoogleCalendarError(error instanceof Error ? error.message : "구글 일정 가져오기에 실패했어요.");
+      }
+    } finally {
+      googleImportInFlightRef.current = false;
+      if (ownerIdRef.current === ownerId) setIsGoogleCalendarLoading(false);
     }
   };
 
@@ -1187,7 +1223,7 @@ function CalendarPage() {
     }
   };
 
-  const loadCalendarEvents = async () => {
+  const loadCalendarEvents = async (throwOnError = false) => {
     if (eventsRequestRef.current) return eventsRequestRef.current;
     const ownerId = user?.id;
     const generation = eventsGenerationRef.current;
@@ -1209,6 +1245,7 @@ function CalendarPage() {
         }
         if (isCurrentRequest()) publishCalendarEvents(ownerId, normalized);
       } catch (error) {
+        if (throwOnError) throw error;
         console.error("[calendar] 이벤트 조회 실패", error);
         if (isCurrentRequest()) {
           setEventsError(error instanceof Error ? error.message : "캘린더를 불러오지 못했어요.");
@@ -1529,7 +1566,7 @@ function CalendarPage() {
   };
 
   const editSelectedEvent = () => {
-    if (!selectedEvent) return;
+    if (!selectedEvent || selectedEvent.eventType === "google_import") return;
     const isDeadlineEvent = selectedEvent.eventType === "application_deadline" || selectedEvent.title.startsWith("[접수 마감]");
     setIsAutoDeadlineEdit(isDeadlineEvent);
     const linkedProgram = findEventProgram(selectedEvent, savedPrograms);
@@ -1571,7 +1608,7 @@ function CalendarPage() {
   const deleteSelectedEvent = async () => {
     const ownerId = ownerIdRef.current;
     const eventToDelete = selectedEvent;
-    if (!eventToDelete || !ownerId || mutationInFlightRef.current) return;
+    if (!eventToDelete || eventToDelete.eventType === "google_import" || !ownerId || mutationInFlightRef.current) return;
     const previousEvents = currentEventsRef.current;
     const optimisticEvents = previousEvents.filter((event) => event.id !== eventToDelete.id);
     mutationInFlightRef.current = true;
@@ -2041,11 +2078,27 @@ function CalendarPage() {
             </DialogTitle>
             <DialogDescription className="text-[14px] leading-6 text-ink-muted">
               {isGoogleCalendarConnected
-                ? "Google Calendar가 연결되어 있어요."
-                : "메이츠 일정을 Google Calendar에서 관리해요."}
+                ? "연결된 구글 기본 캘린더의 일정을 가져올 수 있어요."
+                : "Google Calendar를 연결하고 일정을 가져오세요."}
             </DialogDescription>
           </DialogHeader>
           {googleCalendarError ? <p role="alert" className="mt-3 text-center text-[13px] text-destructive">{googleCalendarError}</p> : null}
+          {googleImportMessage ? <p role="status" className="mt-3 text-center text-sm text-brand">{googleImportMessage}</p> : null}
+          {isGoogleCalendarConnected ? (
+            <div className="mt-4 flex flex-col gap-3">
+              <p className="text-center text-sm text-ink-muted">
+                {visibleMonth.getFullYear()}년 {visibleMonth.getMonth() + 1}월 · 한국 시간 기준<br />
+                Google Tasks의 할 일은 포함되지 않아요.
+              </p>
+              <Button type="button" disabled={isGoogleCalendarLoading} onClick={() => void handleGoogleCalendarImport()}>
+                {isGoogleCalendarLoading ? "처리 중..." : "구글 일정 가져오기"}
+              </Button>
+              <Button type="button" variant="outline" disabled={isGoogleCalendarLoading} onClick={() => void handleGoogleCalendarConnect()}>
+                권한 다시 동의
+              </Button>
+              <p className="text-center text-xs text-ink-muted">권한을 추가했다면 다시 동의한 뒤 캘린더로 돌아와 가져오기를 눌러주세요.</p>
+            </div>
+          ) : null}
           <DialogFooter className="mt-6 flex-row justify-center sm:space-x-0">
             <Button
               type="button"
@@ -2561,7 +2614,7 @@ function CalendarPage() {
               aria-hidden="true"
               className="size-5"
             />
-            Google Calendar 연결하기
+            {isGoogleCalendarConnected ? "Google Calendar 일정 가져오기" : "Google Calendar 연결하기"}
           </Button>
           <button
             type="button"
@@ -3431,7 +3484,7 @@ function CalendarPage() {
           closeClassName="right-8 top-5 flex size-9 items-center justify-center rounded-lg text-icon-muted opacity-100 transition-colors hover:bg-item-hover hover:text-ink hover:opacity-100 focus:outline-none focus:ring-0 focus:ring-offset-0 [&_svg]:size-6"
           className="rounded-[12px] border-0 bg-surface p-7 text-ink shadow-[0_12px_16px_0_rgba(9,31,23,0.12)] sm:max-w-[600px]"
         >
-          <div className="absolute right-[72px] top-5 flex items-center gap-1">
+          <div className={cn("absolute right-[72px] top-5 flex items-center gap-1", selectedEvent?.eventType === "google_import" && "hidden")}>
             <Button
               type="button"
               variant="ghost"
@@ -3517,6 +3570,14 @@ function CalendarPage() {
               selectedEvent?.description || selectedEvent?.checklistItems?.length ? "min-h-16" : "",
             )}
           >
+            {selectedEvent?.eventType === "google_import" ? (
+              <p className="text-sm text-ink-muted">
+                구글에서 가져온 일정이에요. 수정은 Google Calendar에서 한 뒤 다시 가져와주세요.
+                {selectedEvent.url?.startsWith("https://") ? (
+                  <a href={selectedEvent.url} target="_blank" rel="noreferrer" className="ml-2 text-brand underline">Google Calendar에서 열기</a>
+                ) : null}
+              </p>
+            ) : null}
             {selectedEvent?.description ? (
               <p className="whitespace-pre-wrap rounded-[12px] border border-field-border px-3 py-2 text-[15px] leading-6 text-ink-muted">
                 {selectedEvent.description}

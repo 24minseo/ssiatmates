@@ -1,66 +1,90 @@
 import { supabase } from "@/integrations/supabase/client";
 
-type GoogleCalendarResponse = {
+type CalendarResponse = {
   connected?: boolean;
   isConnected?: boolean;
   authorizationUrl?: string;
   authorization_url?: string;
   authUrl?: string;
+  success?: boolean;
+  error?: string;
   message?: string;
+  code?: string;
+  inserted?: number;
+  updated?: number;
+  removed?: number;
+  skipped_exported?: number;
+  synced_at?: string;
 };
 
-async function invokeGoogleCalendar(action: "connect" | "status" | "disconnect") {
-  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-  if (sessionError) throw sessionError;
-
-  const session = sessionData.session;
-  let accessToken = session?.access_token;
-  if (session && (!accessToken || (session.expires_at ?? 0) * 1000 <= Date.now() + 30_000)) {
-    const { data: refreshedSession, error: refreshError } = await supabase.auth.refreshSession();
-    if (refreshError) throw refreshError;
-    accessToken = refreshedSession.session?.access_token;
+export class GoogleCalendarError extends Error {
+  constructor(message: string, public readonly code?: string) {
+    super(message);
+    this.name = "GoogleCalendarError";
   }
-  console.log("[Google Calendar] session exists:", Boolean(accessToken));
-  if (!session || !accessToken) throw new Error("로그인 세션이 없습니다. 다시 로그인해 주세요.");
+}
 
-  const { data, error } = await supabase.functions.invoke<GoogleCalendarResponse>("google-calendar", {
-    body: { action },
+async function invokeCalendar(functionName: string, body: Record<string, unknown>) {
+  const { data, error } = await supabase.auth.getSession();
+  if (error) throw error;
+  let session = data.session;
+  if (!session) throw new Error("로그인이 필요합니다. 다시 로그인해주세요.");
+  if (!session.access_token || (session.expires_at ?? 0) * 1000 <= Date.now() + 30_000) {
+    const refreshed = await supabase.auth.refreshSession();
+    if (refreshed.error) throw refreshed.error;
+    session = refreshed.data.session;
+  }
+  if (!session?.access_token) throw new Error("로그인이 필요합니다. 다시 로그인해주세요.");
+
+  const result = await supabase.functions.invoke<CalendarResponse>(functionName, {
+    body,
     headers: {
       apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-      Authorization: `Bearer ${accessToken}`,
+      Authorization: `Bearer ${session.access_token}`,
     },
   });
-  if (error) {
-    const response = (error as { context?: Response }).context;
-    if (response) {
-      const detail = await response.clone().text().catch(() => "");
-      if (detail) {
-        try {
-          const parsed = JSON.parse(detail) as { error?: string; message?: string };
-          throw new Error(parsed.error ?? parsed.message ?? detail);
-        } catch (parseError) {
-          if (parseError instanceof SyntaxError) throw new Error(detail);
-          throw parseError;
-        }
-      }
+  if (result.error) {
+    const response = (result.error as { context?: Response }).context;
+    let detail: CalendarResponse | null = null;
+    if (response && typeof response.clone === "function") {
+      detail = await response.clone().json().catch(() => null);
     }
-    throw error;
+    throw new GoogleCalendarError(
+      detail?.error ?? detail?.message ?? "구글 캘린더 요청에 실패했습니다. 잠시 후 다시 시도해주세요.",
+      detail?.code,
+    );
   }
-  return data ?? {};
+  if (!result.data) throw new GoogleCalendarError("구글 캘린더 응답을 받지 못했습니다.");
+  if (result.data.error || result.data.success === false) {
+    throw new GoogleCalendarError(result.data.error ?? result.data.message ?? "구글 캘린더 요청에 실패했습니다.", result.data.code);
+  }
+  return result.data;
 }
 
 export async function getGoogleCalendarStatus() {
-  const data = await invokeGoogleCalendar("status");
+  const data = await invokeCalendar("google-calendar", { action: "status" });
   return data.connected === true || data.isConnected === true;
 }
 
+// Also use this to request additional consent without disconnecting first.
 export async function connectGoogleCalendar() {
-  const data = await invokeGoogleCalendar("connect");
-  const authorizationUrl = data.authorizationUrl ?? data.authorization_url ?? data.authUrl;
-  if (!authorizationUrl) throw new Error("Google 로그인 주소를 받지 못했습니다.");
-  return authorizationUrl;
+  const data = await invokeCalendar("google-calendar", { action: "connect" });
+  const url = data.authorizationUrl ?? data.authorization_url ?? data.authUrl;
+  if (!url) throw new Error("Google 로그인 주소를 받지 못했습니다.");
+  return url;
 }
 
 export async function disconnectGoogleCalendar() {
-  await invokeGoogleCalendar("disconnect");
+  await invokeCalendar("google-calendar", { action: "disconnect" });
 }
+
+// Dates are YYYY-MM-DD; rangeEnd is exclusive. Maximum range: 93 days.
+export async function importGoogleCalendarEvents(rangeStart: string, rangeEnd: string) {
+  const data = await invokeCalendar("google-calendar-import", {
+    range_start: rangeStart,
+    range_end: rangeEnd,
+  });
+  if (data.success !== true) throw new Error("일정 가져오기 완료 여부를 확인하지 못했습니다.");
+  return data;
+}
+
