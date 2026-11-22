@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { FormField } from "@/components/onboarding/FormField";
+import { LoadingDots } from "@/components/ui/loading-dots";
 import type {
   Program,
   ProgramInput,
@@ -337,14 +338,24 @@ export function ProgramFormDialog({
             <Button
               type="submit"
               disabled={saving || analyzing || !canSubmit}
-              className="h-11 rounded-[12px] bg-brand px-5 text-[15px] font-semibold text-brand-foreground shadow-none hover:bg-brand/88 active:bg-brand-pressed disabled:bg-brand-disabled disabled:opacity-100"
+              className="h-11 gap-0 rounded-[12px] bg-brand px-5 text-[15px] font-semibold text-brand-foreground shadow-none hover:bg-brand/88 active:bg-brand-pressed disabled:bg-brand-disabled disabled:opacity-100"
             >
               {step === 1
                 ? analyzing
-                  ? "분석 중…"
+                  ? (
+                    <>
+                      분석 중
+                      <LoadingDots />
+                    </>
+                  )
                   : "분석"
                 : saving
-                  ? "저장 중…"
+                  ? (
+                    <>
+                      저장 중
+                      <LoadingDots />
+                    </>
+                  )
                   : program || manualProgram
                     ? "저장하기"
                     : "추가하기"}

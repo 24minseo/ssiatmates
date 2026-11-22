@@ -570,9 +570,9 @@ function GrowthJournalPage() {
                                   aria-hidden
                                   className="flex size-6 flex-col items-center justify-center gap-[3px]"
                                 >
-                                  <span className="size-[2px] rounded-full bg-[#84968E] transition-colors group-hover/more:bg-ink" />
-                                  <span className="size-[2px] rounded-full bg-[#84968E] transition-colors group-hover/more:bg-ink" />
-                                  <span className="size-[2px] rounded-full bg-[#84968E] transition-colors group-hover/more:bg-ink" />
+                                  <span className="size-[2.5px] rounded-full bg-[#84968E] transition-colors group-hover/more:bg-ink" />
+                                  <span className="size-[2.5px] rounded-full bg-[#84968E] transition-colors group-hover/more:bg-ink" />
+                                  <span className="size-[2.5px] rounded-full bg-[#84968E] transition-colors group-hover/more:bg-ink" />
                                 </span>
                               </button>
                             </DropdownMenuTrigger>

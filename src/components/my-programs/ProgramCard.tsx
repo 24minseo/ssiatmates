@@ -139,7 +139,7 @@ export function ProgramCard({
                 aria-label={`${program.title} 더보기 메뉴`}
                 className="group/more flex size-8 cursor-pointer items-center justify-center rounded-[8px] text-icon-muted transition-colors hover:bg-item-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
               >
-                <span aria-hidden className="flex size-6 flex-col items-center justify-center gap-[3px]"><span className="size-[2px] rounded-full bg-[#84968E] transition-colors group-hover/more:bg-ink" /><span className="size-[2px] rounded-full bg-[#84968E] transition-colors group-hover/more:bg-ink" /><span className="size-[2px] rounded-full bg-[#84968E] transition-colors group-hover/more:bg-ink" /></span>
+                <span aria-hidden className="flex size-6 flex-col items-center justify-center gap-[3px]"><span className="size-[2.5px] rounded-full bg-[#84968E] transition-colors group-hover/more:bg-ink" /><span className="size-[2.5px] rounded-full bg-[#84968E] transition-colors group-hover/more:bg-ink" /><span className="size-[2.5px] rounded-full bg-[#84968E] transition-colors group-hover/more:bg-ink" /></span>
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="status-actions-menu w-36 rounded-[12px] border-0 bg-surface p-1 shadow-none" style={{ boxShadow: "var(--shadow-dropdown)" }}>

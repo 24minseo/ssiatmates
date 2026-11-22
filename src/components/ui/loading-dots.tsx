@@ -1,6 +1,6 @@
 export function LoadingDots() {
   return (
-    <span className="ml-1 inline-flex items-center gap-px" aria-hidden="true">
+    <span className="inline-flex items-center gap-px" aria-hidden="true">
       {[0, 1, 2].map((index) => (
         <span
           key={index}

@@ -152,9 +152,9 @@ export function ProgramResultRow({
               className="group/dots absolute right-[-20px] top-[calc(50%-4px)] inline-flex size-10 -translate-y-1/2 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-dropdown-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
             >
               <span aria-hidden className="flex size-6 flex-col items-center justify-center gap-[3px]">
-                <span className="size-[3px] rounded-full bg-[#84968E] transition-colors group-hover/dots:bg-ink" />
-                <span className="size-[3px] rounded-full bg-[#84968E] transition-colors group-hover/dots:bg-ink" />
-                <span className="size-[3px] rounded-full bg-[#84968E] transition-colors group-hover/dots:bg-ink" />
+                <span className="size-[2.5px] rounded-full bg-[#84968E] transition-colors group-hover/dots:bg-ink" />
+                <span className="size-[2.5px] rounded-full bg-[#84968E] transition-colors group-hover/dots:bg-ink" />
+                <span className="size-[2.5px] rounded-full bg-[#84968E] transition-colors group-hover/dots:bg-ink" />
               </span>
             </button>
           </DropdownMenuTrigger>
