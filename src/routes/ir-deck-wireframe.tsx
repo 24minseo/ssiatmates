@@ -1031,13 +1031,13 @@ export function IrDeckWireframe() {
                     <ProjectThumbnail project={project} cloudDocument={cloudItem(project)?.document_id ? { documentId: cloudItem(project)!.document_id!, deckId: cloudItem(project)!.deck_id } : undefined} />
                   </div>
                   <div className="border-t border-field-border p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <button type="button" className="min-w-0 flex-1 text-left" onClick={() => openProject(project.id)}>
+                    <div className="flex items-center justify-between gap-3">
+                      <button type="button" className="min-w-0 flex-1 overflow-hidden text-left" onClick={() => openProject(project.id)}>
                         <strong className="block truncate text-[18px] font-semibold leading-6 text-ink">{displayProjectTitle(project)}</strong>
                       </button>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <button type="button" aria-label={`${displayProjectTitle(project)} 더보기`} className="rounded-md p-1.5 text-ink-muted hover:bg-item-hover" onClick={(event) => event.stopPropagation()}>
+                          <button type="button" aria-label={`${displayProjectTitle(project)} 더보기`} className="shrink-0 rounded-md p-1.5 text-ink-muted hover:bg-item-hover" onClick={(event) => event.stopPropagation()}>
                             <span aria-hidden className="flex size-6 flex-col items-center justify-center gap-[3px]">
                               <span className="size-[2.5px] rounded-full bg-[#84968E]" />
                               <span className="size-[2.5px] rounded-full bg-[#84968E]" />
