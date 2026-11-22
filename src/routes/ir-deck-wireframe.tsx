@@ -272,9 +272,7 @@ function IrDeckEmptyStateArtwork() {
 }
 
 function projectTitle(project: { title: string; draft: Draft }) {
-  const pdfTitle = project.draft.fileName.replace(/\.pdf$/i, "").trim();
-  const coverTitle = project.draft.slides[0]?.title?.trim();
-  return pdfTitle && project.title === coverTitle ? pdfTitle : project.title;
+  return project.title;
 }
 
 const button =
@@ -641,12 +639,12 @@ export function IrDeckWireframe() {
     const previous = projects.find((p) => p.id === id);
     const coverTitle = slides[0]?.title?.trim();
     const pdfTitle = draft.fileName.replace(/\.pdf$/i, "").trim();
-    const shouldSyncCoverTitle =
-      !previous || previous.title === previous.draft.slides[0]?.title;
     const project = {
       id,
       title:
-        (shouldSyncCoverTitle ? pdfTitle || coverTitle : previous?.title) ||
+        previous?.title ||
+        pdfTitle ||
+        coverTitle ||
         draft.review["제목"]?.trim() ||
         draft.review["사업/서비스명"]?.trim() ||
         "제목 없는 IR Deck",
