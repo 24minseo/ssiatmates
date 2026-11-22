@@ -1,6 +1,11 @@
-import { ArrowLeft, ArrowRight, ArrowUp, ArrowDown, LoaderCircle, Plus, Trash2, Eye, Check, ChevronRight, Presentation, Upload, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, ArrowUp, ArrowDown, LoaderCircle, Plus, Trash2, Eye, Check, MoreVertical, ChevronRight, Presentation, Upload, X } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
+import { accountWorkspaceKey, ownedWorkspace, completedLibraryProjects, projectDeckId, resumeLibraryProject, mutateLibrary } from "@/components/ir-deck/library";
+import { libraryRpc } from "@/components/ir-deck/library-client";
+import { useDeckLibrary } from "@/components/ir-deck/useDeckLibrary";
+import { reviewHash } from "@/components/ir-deck/analysis";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -25,7 +30,6 @@ import {
   slideNames,
   storageKey,
   type Draft,
-  type Project,
   type Slide,
   type SlideElement,
   type TextFormat,
@@ -39,6 +43,13 @@ const initialCredits = 100;
 const designCost = 30;
 type TrialState = { credits: number };
 const defaultTrialState: TrialState = { credits: initialCredits };
+const processingPhaseTargets: Array<[string, number]> = [
+  ["PDF 업로드를 준비하고 있어요", 25],
+  ["분석 시작을 기다리고 있어요", 50],
+  ["PDF에서 사업 내용을 읽고 있어요", 75],
+  ["사업 내용을 7개 항목으로 정리하고 있어요", 100],
+  ["사업 내용을 정리하고 있어요", 100],
+];
 
 const editorPreviewReference: HtmlReference = {
   userId: "00000000-0000-4000-8000-000000000001",
@@ -97,37 +108,24 @@ function editorPreviewView(): HtmlView {
 
 const editorPreviewDocument = editorPreviewView();
 
-const completedDeckPreviewProject: Project = {
-  id: "completed-deck-preview",
-  title: "사업계획서(초안) — 씨앗",
-  updatedAt: new Date("2026-11-20T05:44:41+09:00").getTime(),
-  createdAt: new Date("2026-11-20T05:44:41+09:00").getTime(),
-  lastViewedAt: new Date("2026-11-20T05:44:41+09:00").getTime(),
-  draft: { ...newDraft(), html: editorPreviewReference, projectId: "completed-deck-preview" },
-};
-
-function ProjectThumbnail({
-  project,
-  previewView,
-}: {
-  project: { draft: Draft };
-  previewView?: HtmlView;
-}) {
-  const reference = project.draft.html;
-  const [view, setView] = useState<HtmlView | null>(previewView || null);
+function ProjectThumbnail(props: { project: { draft: Draft }; cloudDocument?: { documentId: string; deckId: string } | undefined }) {
+  const element = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    if (!element.current || typeof IntersectionObserver === "undefined") { setVisible(true); return; }
+    const observer = new IntersectionObserver(entries => { if (entries.some(e => e.isIntersecting)) { setVisible(true); observer.disconnect(); } }, { rootMargin: "200px" });
+    observer.observe(element.current); return () => observer.disconnect();
+  }, []);
+  return <div ref={element} className="h-full w-full">{visible ? <ProjectThumbnailContent {...props} /> : <div className="h-full w-full bg-item-hover" />}</div>;
+}
+function ProjectThumbnailContent({ project, cloudDocument }: { project: { draft: Draft }; cloudDocument?: { documentId: string; deckId: string } | undefined }) {
+  const reference = cloudDocument ? { documentId: cloudDocument.documentId, deckId: cloudDocument.deckId } : project.draft.html;
+  const [view, setView] = useState<HtmlView | null>(null);
   const [urls, setUrls] = useState<Record<string, string>>({});
-  const [loading, setLoading] = useState(Boolean(reference?.documentId) && !previewView);
+  const [loading, setLoading] = useState(Boolean(reference?.documentId));
 
   useEffect(() => {
     let cancelled = false;
-    if (previewView) {
-      setView(previewView);
-      setUrls({});
-      setLoading(false);
-      return () => {
-        cancelled = true;
-      };
-    }
     setView(null);
     setUrls({});
     setLoading(Boolean(reference?.documentId));
@@ -163,7 +161,7 @@ function ProjectThumbnail({
       });
 
     return () => { cancelled = true; };
-  }, [previewView, reference?.deckId, reference?.documentId]);
+  }, [reference?.deckId, reference?.documentId]);
 
   if (loading) {
     return (
@@ -245,132 +243,6 @@ function Steps({ current }: { current: number }) {
   );
 }
 
-type AnalysisPreviewMode = "input" | "processing" | "generation" | "failed" | "timeout" | "error" | "complete" | "themes" | "editor";
-type AnalysisPreviewPhase = "prepare" | "queued" | "extracting" | "analyzing";
-
-const analysisPreviewModes: Array<{ value: AnalysisPreviewMode; label: string }> = [
-  { value: "input", label: "입력" },
-  { value: "processing", label: "생성 중" },
-  { value: "generation", label: "생성 요청 중" },
-  { value: "failed", label: "분석 실패" },
-  { value: "timeout", label: "시간 초과" },
-  { value: "error", label: "오류 팝업" },
-  { value: "complete", label: "완료" },
-  { value: "themes", label: "디자인 선택" },
-  { value: "editor", label: "슬라이드 편집" },
-];
-
-const analysisPreviewPhases: Array<{ value: AnalysisPreviewPhase; label: string; message: string }> = [
-  { value: "prepare", label: "준비", message: "PDF 업로드를 준비하고 있어요" },
-  { value: "queued", label: "대기", message: "분석 시작을 기다리고 있어요" },
-  { value: "extracting", label: "읽는 중", message: "PDF에서 사업 내용을 읽고 있어요" },
-  { value: "analyzing", label: "정리 중", message: "사업 내용을 7개 항목으로 정리하고 있어요" },
-];
-
-function AnalysisPreviewControls({
-  mode,
-  phase,
-  onModeChange,
-  onPhaseChange,
-}: {
-  mode: AnalysisPreviewMode;
-  phase: AnalysisPreviewPhase;
-  onModeChange: (next: AnalysisPreviewMode) => void;
-  onPhaseChange: (next: AnalysisPreviewPhase) => void;
-}) {
-  return (
-    <section className="pointer-events-auto w-full max-w-[1200px] rounded-xl border border-brand/20 bg-brand/5 p-3" aria-label="개발 전용 미리보기 안내">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <p className="flex items-center gap-2 text-sm font-semibold text-ink">
-            <span className="rounded-md bg-brand px-2 py-1 text-[11px] font-bold text-brand-foreground">개발 전용</span>
-            사업 분석 상태 미리보기
-          </p>
-          <p className="mt-1 text-xs text-ink-muted">실제 분석 요청 없이 프론트 상태만 전환해요.</p>
-        </div>
-        <div className="flex flex-wrap items-center justify-end gap-1 rounded-lg bg-surface p-1" role="tablist" aria-label="사업 분석 상태">
-          {analysisPreviewModes.map((item) => (
-            <button
-              key={item.value}
-              type="button"
-              role="tab"
-              aria-selected={mode === item.value}
-              onClick={() => onModeChange(item.value)}
-              className={cn(
-                "rounded-md px-2.5 py-1.5 text-xs font-semibold text-ink-muted transition-colors",
-                mode === item.value && "bg-brand text-brand-foreground",
-              )}
-            >
-              {item.label}
-            </button>
-          ))}
-          {mode === "processing" && (
-            <>
-              <span className="mx-1 h-5 w-px bg-field-border" aria-hidden="true" />
-              {analysisPreviewPhases.map((item) => (
-                <button
-                  key={item.value}
-                  type="button"
-                  role="tab"
-                  aria-selected={phase === item.value}
-                  onClick={() => onPhaseChange(item.value)}
-                  className={cn("rounded-md px-2 py-1.5 text-[11px] font-semibold text-ink-muted", phase === item.value && "bg-brand text-brand-foreground")}
-                >
-                  {item.label}
-                </button>
-              ))}
-            </>
-          )}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-type CompletedDeckPreviewMode = "home" | "generating" | "editor";
-
-function CompletedDeckPreviewControls({
-  mode,
-  onModeChange,
-}: {
-  mode: CompletedDeckPreviewMode;
-  onModeChange: (next: CompletedDeckPreviewMode) => void;
-}) {
-  const items: Array<{ value: CompletedDeckPreviewMode; label: string }> = [
-    { value: "home", label: "덱 목록" },
-    { value: "generating", label: "생성 요청 중" },
-    { value: "editor", label: "편집 화면" },
-  ];
-
-  return (
-    <section className="pointer-events-auto w-full max-w-[520px] rounded-xl border border-brand/20 bg-brand/5 p-3" aria-label="완성 덱 분기 미리보기">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="flex items-center gap-2 text-sm font-semibold text-ink">
-          <span className="rounded-md bg-brand px-2 py-1 text-[11px] font-bold text-brand-foreground">개발 전용</span>
-          완성 덱 화면 미리보기
-        </p>
-        <div className="flex items-center gap-1 rounded-lg bg-surface p-1" role="tablist" aria-label="완성 덱 화면">
-          {items.map((item) => (
-            <button
-              key={item.value}
-              type="button"
-              role="tab"
-              aria-selected={mode === item.value}
-              onClick={() => onModeChange(item.value)}
-              className={cn(
-                "rounded-md px-2.5 py-1.5 text-xs font-semibold text-ink-muted transition-colors",
-                mode === item.value && "bg-brand text-brand-foreground",
-              )}
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
 function IrDeckEmptyStateArtwork() {
   return (
     <div
@@ -409,7 +281,6 @@ const button =
   "inline-flex items-center justify-center gap-2 rounded-[10px] border border-field-border px-4 py-3 text-sm font-semibold text-ink hover:bg-item-hover disabled:cursor-not-allowed disabled:opacity-40";
 const primary = cn(button, "border-brand bg-brand text-brand-foreground hover:bg-brand/90");
 const brandSecondaryButton = "inline-flex h-[42px] items-center justify-center gap-2 rounded-[12px] bg-item-hover px-5 text-[15px] font-semibold text-brand shadow-none transition-colors hover:bg-item-hover-selected active:bg-brand-pressed active:text-brand-foreground focus-visible:ring-1 focus-visible:ring-focus-soft";
-const secondaryButton = "inline-flex h-12 items-center justify-center rounded-[12px] bg-secondary-btn px-5 text-[16px] font-semibold text-secondary-btn-text shadow-none transition-colors hover:bg-secondary-btn-hover hover:text-secondary-btn-text-hover focus-visible:ring-1 focus-visible:ring-focus-soft";
 const panel = "rounded-2xl border border-field-border bg-surface p-7";
 const input =
   "w-full rounded-xl border border-field-border bg-background p-4 text-sm text-ink outline-none focus:border-brand";
@@ -418,6 +289,13 @@ type Screen =
   "home" | "input" | "processing" | "review" | "themes" | "editor" | "preview" | "saved";
 
 export function IrDeckWireframe() {
+  const { user, loading: authLoading } = useAuth();
+  const accountKey = accountWorkspaceKey(user?.id ?? null);
+  const libraryOwner = useRef(user?.id);
+  libraryOwner.current = user?.id;
+  const [cacheOwner, setCacheOwner] = useState("");
+  const libraryLock = useRef(false);
+  const [libraryPending, setLibraryPending] = useState(false);
   const [screen, setScreen] = useState<Screen>("home");
   const [workspace, setWorkspace] = useState<Workspace>(() => ({
     projects: [],
@@ -443,16 +321,12 @@ export function IrDeckWireframe() {
   const [trial, setTrial] = useState<TrialState>(defaultTrialState);
   const [billingOpen, setBillingOpen] = useState(false);
   const [fontMenuOpen, setFontMenuOpen] = useState(false);
-  const [analysisPreviewMode, setAnalysisPreviewMode] = useState<AnalysisPreviewMode>("input");
-  const [analysisPreviewPhase, setAnalysisPreviewPhase] = useState<AnalysisPreviewPhase>("analyzing");
-  const [completedDeckPreviewMode, setCompletedDeckPreviewMode] = useState<CompletedDeckPreviewMode>("home");
-  const [processingProgress, setProcessingProgress] = useState(0);
-  const previousProcessingMessage = useRef<string | undefined>(undefined);
-  const catchingUpToPhase = useRef(false);
-  const devAnalysisPreview = import.meta.env.DEV && typeof window !== "undefined" && new URLSearchParams(window.location.search).get("preview") === "analysis";
-  const devCompletedDeckPreview = import.meta.env.DEV && typeof window !== "undefined" && new URLSearchParams(window.location.search).get("preview") === "completed-deck";
   const { draft, projects } = workspace;
-  const displayedProjects = devEmptyPreview ? [] : projects;
+  const library = useDeckLibrary(user?.id, loaded && cacheOwner === accountKey && screen === "home");
+  const displayedProjects = devEmptyPreview || cacheOwner !== accountKey ? [] : user
+    ? completedLibraryProjects(projects, library.items, user.id, library.ready) : projects.filter(project => Boolean(project.draft.html?.documentId));
+  const cloudItem = (project: (typeof projects)[number]) => library.items.find(item => item.deck_id === projectDeckId(project) || item.deck_id === project.id);
+  const displayProjectTitle = (project: (typeof projects)[number]) => cloudItem(project)?.title ?? projectTitle(project);
   const { theme, primaryColor, primaryColor2, colorMode, slides, activeSlide } = draft;
   const recommendedColorMode = primaryColor && Math.round(contrastRatio(primaryColor, "#FFFFFF") * 10) / 10 < 3 ? "dark" : "light";
   const currentSlide = slides[activeSlide] || slides[0]!;
@@ -467,21 +341,28 @@ export function IrDeckWireframe() {
     },
     navigate: setScreen,
   });
-  const processingMessage = devAnalysisPreview
-    ? analysisPreviewPhases.find((item) => item.value === analysisPreviewPhase)?.message
-    : analysis.phase;
-  const processingPhaseIndex = analysisPreviewPhases.findIndex((item) => item.message === processingMessage);
-  const processingTarget = processingPhaseIndex < 0
-    ? 0
-    : ((processingPhaseIndex + 1) / analysisPreviewPhases.length) * 100;
+  const [processingProgress, setProcessingProgress] = useState(0);
+  const previousProcessingPhase = useRef<string | undefined>(undefined);
+  const catchingUpToPhase = useRef(false);
+  const processingTarget = processingPhaseTargets.find(([phase]) => phase === analysis.phase)?.[1] ?? 0;
 
   useEffect(() => {
+    if (authLoading) return;
+    setLoaded(false);
+    setScreen("home");
+    setMessage("");
+    setStorageBlocked(false);
+    setDeleteTarget(null);
+    setRenameTarget(null);
+    setRenameTitle("");
+    setMedia(null);
+    setMediaSource("");
+    setMediaFile(null);
     try {
-      const restored = restoreWorkspace(
-        localStorage.getItem(storageKey),
-        localStorage.getItem("ssiat-ir-deck"),
-      );
-      if (restored) setWorkspace(restored);
+      const scoped = localStorage.getItem(accountKey);
+      const restored = scoped ? restoreWorkspace(scoped, null) : restoreWorkspace(
+        localStorage.getItem(storageKey), localStorage.getItem("ssiat-ir-deck"));
+      setWorkspace(ownedWorkspace(restored, user?.id ?? null, scoped !== null));
       const savedTrial = localStorage.getItem(trialStorageKey);
       if (savedTrial) {
         const parsed = JSON.parse(savedTrial) as Partial<TrialState>;
@@ -493,13 +374,15 @@ export function IrDeckWireframe() {
         });
       }
     } catch {
+      setWorkspace({ projects: [], draft: newDraft() });
       setStorageBlocked(true);
       setMessage(
         "브라우저 저장 내용을 읽지 못했습니다. 기존 데이터는 보존했습니다. 저장소 접근 권한이나 저장 데이터를 확인한 뒤 새로고침해 주세요.",
       );
     }
+    setCacheOwner(accountKey);
     setLoaded(true);
-  }, []);
+  }, [authLoading, accountKey, user?.id]);
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (import.meta.env.DEV && params.get("empty") === "1") {
@@ -517,72 +400,22 @@ export function IrDeckWireframe() {
     }));
   }, [loaded]);
   useEffect(() => {
-    if (!loaded || !devCompletedDeckPreview) return;
-    setWorkspace((current) => ({
-      ...current,
-      projects: [completedDeckPreviewProject],
-      draft: structuredClone(completedDeckPreviewProject.draft),
-    }));
-    setScreen("home");
-  }, [devCompletedDeckPreview, loaded]);
-  useEffect(() => {
-    if (!loaded || !import.meta.env.DEV) return;
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("preview") !== "editor") return;
-    setWorkspace((current) => ({
-      ...current,
-      draft: { ...newDraft(), html: editorPreviewReference, projectId: "editor-preview" },
-    }));
-    setScreen("editor");
-  }, [loaded]);
-  useEffect(() => {
-    if (!loaded || !devAnalysisPreview) return;
-    const nextScreen: Screen =
-      analysisPreviewMode === "input"
-        ? "input"
-        : analysisPreviewMode === "complete"
-          ? "review"
-          : analysisPreviewMode === "themes"
-            ? "themes"
-            : analysisPreviewMode === "editor"
-              ? "editor"
-              : analysisPreviewMode === "generation"
-                ? "editor"
-                : "processing";
-    setScreen(nextScreen);
-    setAnalysisErrorOpen(analysisPreviewMode === "error");
-    if (analysisPreviewMode === "processing") setAnalysisPreviewPhase("prepare");
-    setMessage("");
-    if (analysisPreviewMode === "themes") {
-      setWorkspace((current) => ({
-        ...current,
-        draft: { ...current.draft, primaryColor: current.draft.primaryColor || "#1F8064", primaryColor2: undefined, fontFamily: "Paperlogy" },
-      }));
-    }
-    if (analysisPreviewMode === "editor") {
-      setWorkspace((current) => ({
-        ...current,
-        draft: { ...current.draft, html: editorPreviewReference, projectId: "editor-preview" },
-      }));
-    }
-  }, [analysisPreviewMode, devAnalysisPreview, loaded]);
-  useEffect(() => {
-    if (screen !== "processing" || analysisErrorOpen || analysisPreviewMode === "failed") return;
+    if (screen !== "processing" || analysisErrorOpen || draft.analysis?.failed) return;
     setProcessingProgress(0);
-    previousProcessingMessage.current = undefined;
+    previousProcessingPhase.current = undefined;
     catchingUpToPhase.current = false;
-  }, [analysisPreviewMode, devAnalysisPreview, screen]);
+  }, [screen]);
   useEffect(() => {
     if (screen !== "processing") {
-      previousProcessingMessage.current = undefined;
+      previousProcessingPhase.current = undefined;
       catchingUpToPhase.current = false;
       return;
     }
-    if (previousProcessingMessage.current !== undefined && previousProcessingMessage.current !== processingMessage) {
+    if (previousProcessingPhase.current !== undefined && previousProcessingPhase.current !== analysis.phase) {
       catchingUpToPhase.current = true;
     }
-    previousProcessingMessage.current = processingMessage;
-  }, [processingMessage, screen]);
+    previousProcessingPhase.current = analysis.phase;
+  }, [analysis.phase, screen]);
   useEffect(() => {
     if (screen !== "processing") return;
     const timer = window.setInterval(() => {
@@ -601,17 +434,27 @@ export function IrDeckWireframe() {
       });
     }, 80);
     return () => window.clearInterval(timer);
-  }, [analysisErrorOpen, analysisPreviewMode, processingTarget, screen]);
+  }, [analysisErrorOpen, draft.analysis?.failed, processingTarget, screen]);
   useEffect(() => {
-    if (!loaded || storageBlocked) return;
+    if (!loaded || !import.meta.env.DEV) return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("preview") !== "editor") return;
+    setWorkspace((current) => ({
+      ...current,
+      draft: { ...newDraft(), html: editorPreviewReference, projectId: "editor-preview" },
+    }));
+    setScreen("editor");
+  }, [loaded]);
+  useEffect(() => {
+    if (!loaded || storageBlocked || authLoading || cacheOwner !== accountKey) return;
     try {
-      localStorage.setItem(storageKey, JSON.stringify(workspace));
+      localStorage.setItem(accountKey, JSON.stringify(workspace));
     } catch {
       setMessage(
         "브라우저에 임시 저장하지 못했습니다. 저장 공간·접근 권한을 확인해 주세요. 현재 편집 내용은 이 화면에 유지됩니다.",
       );
     }
-  }, [workspace, loaded, storageBlocked]);
+  }, [workspace, loaded, storageBlocked, authLoading, cacheOwner, accountKey]);
   useEffect(() => {
     if (!loaded || storageBlocked) return;
     try {
@@ -636,14 +479,6 @@ export function IrDeckWireframe() {
     });
   }
   function generateHtml() {
-    if (devAnalysisPreview) {
-      setWorkspace((current) => ({
-        ...current,
-        draft: { ...current.draft, html: editorPreviewReference, projectId: "editor-preview" },
-      }));
-      setAnalysisPreviewMode("editor");
-      return;
-    }
     const source = draft.analysis;
     if (!source?.deckId || source.businessRevision === undefined) {
       setMessage("사업내용 확인 화면에서 내용을 저장한 뒤 생성해 주세요.");
@@ -661,7 +496,7 @@ export function IrDeckWireframe() {
     const existing = projects.find(project => project.id === id);
     const project = { id, title: existing?.title || draft.slides[0]?.title || "IR 덱", createdAt: existing?.createdAt || Date.now(), updatedAt: Date.now(), draft: structuredClone(nextDraft) };
     const next = { ...workspace, draft: nextDraft, projects: [project, ...projects.filter(item => item.id !== id)] };
-    try { localStorage.setItem(storageKey, JSON.stringify(next)); }
+    try { localStorage.setItem(accountKey, JSON.stringify(next)); }
     catch { setMessage("생성 요청 번호를 저장하지 못했어요. 브라우저 저장소를 확인한 뒤 다시 시도해 주세요."); return; }
     setWorkspace(next);
     setScreen("editor");
@@ -704,64 +539,74 @@ export function IrDeckWireframe() {
     setTrial((current) => ({ ...current, credits: current.credits - designCost }));
     return true;
   }
-  function deleteProject(projectId: string, title: string) {
-    setWorkspace((w) => {
-      const next = { ...w, projects: w.projects.filter((project) => project.id !== projectId) };
-      if (w.draft.projectId === projectId) next.draft = newDraft();
-      try {
-        localStorage.setItem(storageKey, JSON.stringify(next));
-      } catch {
-        setMessage("덱을 삭제하지 못했습니다. 브라우저 저장소를 확인해 주세요.");
-      }
-      return next;
-    });
-  }
-  function requestDelete(projectId: string, title: string) {
-    setDeleteTarget({ id: projectId, title });
-  }
-  function requestRename(projectId: string, title: string) {
-    setRenameTarget({ id: projectId, title });
-    setRenameTitle(title);
-  }
-  function renameProject() {
-    if (!renameTarget || !renameTitle.trim()) return;
-    const next = {
-      ...workspace,
-      projects: workspace.projects.map((project) =>
-        project.id === renameTarget.id
-          ? { ...project, title: renameTitle.trim(), updatedAt: Date.now() }
-          : project,
-      ),
-    };
-    try {
-      localStorage.setItem(storageKey, JSON.stringify(next));
-      setWorkspace(next);
-      setRenameTarget(null);
-    } catch {
-      setMessage("제목을 저장하지 못했습니다. 브라우저 저장 공간·접근 권한을 확인해 주세요.");
-    }
-  }
-  function openProject(projectId: string) {
-    if (devCompletedDeckPreview) {
-      setCompletedDeckPreviewMode("generating");
-      setScreen("editor");
-      return;
-    }
-    const project = projects.find((item) => item.id === projectId);
+  async function deleteProject(projectId: string, _title: string) {
+    if (libraryLock.current) return;
+    const project = displayedProjects.find(p => p.id === projectId);
     if (!project) return;
-    setWorkspace((w) => ({
-      ...w,
-      projects: w.projects.map((item) =>
-        item.id === projectId ? { ...item, lastViewedAt: Date.now() } : item,
-      ),
-      draft: { ...structuredClone(project.draft), projectId: project.id },
-    }));
-    setActiveField("title");
-    setScreen("editor");
+    const deck = cloudItem(project)?.deck_id ?? projectDeckId(project), owner = user?.id;
+    libraryLock.current = true; setLibraryPending(true);
+    try {
+      if (deck) {
+        if (!owner) throw new Error("로그인 후 이용해주세요.");
+        await mutateLibrary(libraryRpc, owner, deck);
+        if (libraryOwner.current !== owner) return;
+        library.remove(deck);
+      }
+      setWorkspace(w => ({ ...w, projects: w.projects.filter(p => p.id !== projectId && (!deck || projectDeckId(p) !== deck)), draft: w.draft.projectId === projectId ? newDraft() : w.draft }));
+      setDeleteTarget(null);
+    } catch (error) { if (libraryOwner.current === owner) setMessage(error instanceof Error ? error.message : "덱을 삭제하지 못했습니다."); }
+    finally { libraryLock.current = false; setLibraryPending(false); }
   }
-  function changeCompletedDeckPreview(next: CompletedDeckPreviewMode) {
-    setCompletedDeckPreviewMode(next);
-    setScreen(next === "home" ? "home" : "editor");
+  function requestDelete(projectId: string, title: string) { setDeleteTarget({ id: projectId, title }); }
+  function requestRename(projectId: string, title: string) { setRenameTarget({ id: projectId, title }); setRenameTitle(title); }
+  async function renameProject() {
+    if (!renameTarget || !renameTitle.trim() || libraryLock.current) return;
+    const project = displayedProjects.find(p => p.id === renameTarget.id);
+    if (!project) return;
+    const owner = user?.id, deck = cloudItem(project)?.deck_id ?? projectDeckId(project), title = renameTitle.trim();
+    libraryLock.current = true; setLibraryPending(true);
+    try {
+      if (deck) {
+        if (!owner) throw new Error("로그인 후 이용해주세요.");
+        await mutateLibrary(libraryRpc, owner, deck, title);
+        if (libraryOwner.current !== owner) return;
+        library.rename(deck, title);
+      }
+      setWorkspace(w => ({ ...w, projects: w.projects.map(p => p.id === project.id ? { ...p, title, updatedAt: Date.now() } : p) }));
+      setRenameTarget(null);
+    } catch (error) { if (libraryOwner.current === owner) setMessage(error instanceof Error ? error.message : "제목을 저장하지 못했습니다."); }
+    finally { libraryLock.current = false; setLibraryPending(false); }
+  }
+  async function openProject(projectId: string) {
+    if (libraryLock.current) return;
+    const project = displayedProjects.find(p => p.id === projectId);
+    if (!project) return;
+    const owner = user?.id, deck = cloudItem(project)?.deck_id ?? projectDeckId(project);
+    libraryLock.current = true; setLibraryPending(true); setMessage("");
+    try {
+      let nextDraft = structuredClone(project.draft);
+      let nextScreen: Screen = "editor";
+      if (deck) {
+        if (!owner) throw new Error("로그인 후 이용해주세요.");
+        const restored = await resumeLibraryProject(libraryRpc, owner, deck, project.id);
+        if (libraryOwner.current !== owner) return;
+        const local = project.draft.analysis;
+        const dirty = local?.businessRevision !== undefined && local.savedReviewHash !== await reviewHash(project.draft.slides);
+        nextDraft = restored.draft; nextScreen = restored.screen;
+        if (dirty && nextDraft.analysis && local?.businessRevision !== undefined) {
+          nextDraft.slides = structuredClone(project.draft.slides);
+          nextDraft.analysis = { ...nextDraft.analysis, businessRevision: local.businessRevision };
+          if (local.savedReviewHash !== undefined) nextDraft.analysis.savedReviewHash = local.savedReviewHash;
+          else delete nextDraft.analysis.savedReviewHash;
+          nextDraft.html = undefined; nextScreen = "review";
+        }
+      }
+      if (libraryOwner.current !== owner) return;
+      nextDraft.projectId = project.id;
+      setWorkspace(w => ({ ...w, draft: nextDraft, projects: [{ ...project, draft: structuredClone(nextDraft), lastViewedAt: Date.now() }, ...w.projects.filter(p => p.id !== project.id && (!deck || projectDeckId(p) !== deck))] }));
+      setActiveField("title"); setScreen(nextScreen);
+    } catch (error) { if (libraryOwner.current === owner) setMessage(error instanceof Error ? error.message : "덱을 불러오지 못했습니다."); }
+    finally { libraryLock.current = false; setLibraryPending(false); }
   }
   function changeText(field: string, value: string) {
     patchSlide((slide) =>
@@ -812,7 +657,7 @@ export function IrDeckWireframe() {
     };
     const next = { draft: savedDraft, projects: [...projects.filter((p) => p.id !== id), project] };
     try {
-      localStorage.setItem(storageKey, JSON.stringify(next));
+      localStorage.setItem(accountKey, JSON.stringify(next));
       setWorkspace(next);
       setMessage("");
       setScreen("saved");
@@ -832,7 +677,7 @@ export function IrDeckWireframe() {
     };
     try {
       if (storageBlocked) throw new Error("unavailable storage");
-      localStorage.setItem(storageKey, JSON.stringify(next));
+      localStorage.setItem(accountKey, JSON.stringify(next));
       setWorkspace(next);
       if (element.type === "text") setActiveField(`extra:${element.id}`);
       return true;
@@ -882,41 +727,17 @@ export function IrDeckWireframe() {
   function page(title: string, subtitle: string, content: ReactNode, actions?: ReactNode, topContent?: ReactNode, titleClass = "text-[28px]") {
     return (
       <main className="ir-deck-workspace min-h-full bg-background pb-20" aria-busy={!loaded}>
-        {devAnalysisPreview && (
-          <div className="pointer-events-none fixed inset-x-0 top-2 z-50 flex justify-center px-4">
-            <AnalysisPreviewControls
-              mode={analysisPreviewMode}
-              phase={analysisPreviewPhase}
-              onModeChange={setAnalysisPreviewMode}
-              onPhaseChange={setAnalysisPreviewPhase}
-            />
-          </div>
-        )}
-        {devCompletedDeckPreview && (
-          <div className="pointer-events-none fixed inset-x-0 top-2 z-50 flex justify-center px-4">
-            <CompletedDeckPreviewControls mode={completedDeckPreviewMode} onModeChange={changeCompletedDeckPreview} />
-          </div>
-        )}
-        <Dialog open={Boolean(message)} onOpenChange={(open) => !open && setMessage("")}>
-          <DialogContent
-            className="w-[calc(100vw-32px)] max-w-[480px] rounded-[20px] border-0 bg-surface p-7"
-            closeClassName="right-5 top-5 flex size-9 items-center justify-center rounded-lg text-icon-muted opacity-100 transition-colors hover:bg-item-hover hover:text-ink hover:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-focus-soft focus-visible:ring-offset-0 [&_svg]:size-6"
+        {message && (
+          <div
+            role="alert"
+            className="mb-5 rounded-xl border border-field-border bg-item-hover p-4 text-sm text-ink"
           >
-            <DialogTitle className="text-[20px] font-bold leading-7 text-ink">확인해 주세요</DialogTitle>
-            <DialogDescription className="mt-2 text-[16px] leading-6 text-ink-muted">
-              {message}
-            </DialogDescription>
-            <div className="mt-5 flex justify-end">
-              <button
-                type="button"
-                className="inline-flex h-12 items-center justify-center rounded-[12px] border-0 bg-secondary-btn px-5 text-[16px] font-semibold text-secondary-btn-text shadow-none transition-colors hover:bg-secondary-btn-hover hover:text-secondary-btn-text-hover focus-visible:ring-1 focus-visible:ring-focus-soft"
-                onClick={() => setMessage("")}
-              >
-                확인
-              </button>
-            </div>
-          </DialogContent>
-        </Dialog>
+            {message}
+            <button type="button" className="ml-4 underline" onClick={() => setMessage("")}>
+              닫기
+            </button>
+          </div>
+        )}
         {topContent && <div className="mb-5">{topContent}</div>}
         <header className="mb-7 flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -949,7 +770,7 @@ export function IrDeckWireframe() {
             </AlertDialogHeader>
             <AlertDialogFooter className="mt-4 flex-row justify-end gap-2 sm:space-x-0">
               <AlertDialogCancel className="mt-0 h-11 rounded-[12px] border-0 bg-secondary-btn px-5 text-[15px] font-semibold text-secondary-btn-text shadow-none hover:bg-secondary-btn-hover hover:text-secondary-btn-text-hover focus-visible:ring-1 focus-visible:ring-focus-soft">취소</AlertDialogCancel>
-              <AlertDialogAction className="h-11 rounded-[12px] border-0 bg-destructive px-5 text-[15px] font-semibold text-white shadow-none hover:bg-destructive/90 focus-visible:ring-1 focus-visible:ring-focus-soft" onClick={(event) => { event.preventDefault(); if (deleteTarget) { deleteProject(deleteTarget.id, deleteTarget.title); setDeleteTarget(null); } }}>삭제하기</AlertDialogAction>
+              <AlertDialogAction className="h-11 rounded-[12px] border-0 bg-destructive px-5 text-[15px] font-semibold text-white shadow-none hover:bg-destructive/90 focus-visible:ring-1 focus-visible:ring-focus-soft" onClick={(event) => { event.preventDefault(); if (deleteTarget) { void deleteProject(deleteTarget.id, deleteTarget.title); } }}>삭제하기</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
@@ -999,7 +820,7 @@ export function IrDeckWireframe() {
               <button
                 type="button"
                 className="h-11 rounded-[12px] border-0 bg-brand px-5 text-[15px] font-semibold text-brand-foreground shadow-none transition-colors hover:bg-brand/88 active:bg-brand-pressed disabled:cursor-not-allowed disabled:bg-brand-disabled disabled:text-brand-foreground disabled:opacity-100 focus-visible:ring-1 focus-visible:ring-focus-soft"
-                disabled={!renameTitle.trim()}
+                disabled={!renameTitle.trim() || libraryPending}
                 onClick={renameProject}
               >
                 저장
@@ -1030,8 +851,7 @@ export function IrDeckWireframe() {
                 onClick={() => {
                   setAnalysisErrorOpen(false);
                   window.setTimeout(() => {
-                    if (devAnalysisPreview) setAnalysisPreviewMode("processing");
-                    else if (analysis.retryNeeded) analysis.retry();
+                    if (analysis.retryNeeded) analysis.retry();
                     else void analysis.analyze();
                   }, 220);
                 }}
@@ -1134,42 +954,7 @@ export function IrDeckWireframe() {
     </button>
   );
 
-  if (devAnalysisPreview && analysisPreviewMode === "generation") {
-    return page(
-      "IR 덱 디자인 생성 중",
-      "",
-      <section className="rounded-2xl border border-field-border bg-surface px-8 py-20 text-center" aria-live="polite">
-        <LoaderCircle className="mx-auto size-9 animate-spin text-brand" aria-hidden="true" />
-        <h1 className="mt-5 text-xl font-bold text-ink" role="status">생성 요청을 접수했어요</h1>
-        <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-ink-muted">
-          선택한 디자인에 맞춰 7장 슬라이드를 만들고 있어요.
-          완료되면 편집 화면에서 확인할 수 있어요.
-        </p>
-        <div className="mt-7 flex justify-center gap-3">
-          <button className={secondaryButton} onClick={() => setAnalysisPreviewMode("input")}>목록으로</button>
-        </div>
-      </section>,
-      undefined,
-      <Steps current={3} />,
-      "text-2xl",
-    );
-  }
-
-  if (devCompletedDeckPreview && completedDeckPreviewMode === "generating") {
-    return page(
-      "",
-      "",
-      <section className="rounded-2xl border border-field-border bg-surface px-8 py-20 text-center" aria-live="polite">
-        <LoaderCircle className="mx-auto size-9 animate-spin text-brand" aria-hidden="true" />
-        <h1 className="mt-5 text-2xl font-bold text-ink" role="status">생성 요청을 접수했어요</h1>
-        <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-ink-muted">
-          사업계획서의 전체 맥락과 확인한 내용을 바탕으로 제목·핵심 문장·레이아웃을 구성해요.
-          검사까지 완료되면 7장 전체를 보여드려요.
-        </p>
-      </section>,
-    );
-  }
-
+  if (authLoading || cacheOwner !== accountKey) return page("", "", <p role="status" className="py-16 text-center text-ink-muted">덱을 불러오는 중이에요.</p>);
   if (screen === "home")
     return page(
       "AI IR 덱",
@@ -1192,7 +977,9 @@ export function IrDeckWireframe() {
             <ProgramSortDropdown value={sort} onChange={setSort} variant="irDeck" />
           </div>
         </div>
-        {!loaded ? <p role="status" className="py-16 text-center text-ink-muted">덱을 불러오는 중이에요.</p> : displayedProjects.length === 0 ? (
+        {library.error && <p role="alert" className="mb-4 text-sm text-ink-muted">{library.error} <button type="button" onClick={library.refresh} className="underline">다시 불러오기</button></p>}
+        {libraryPending && <p role="status" className="mb-4 text-sm text-ink-muted">덱 정보를 확인하고 있어요.</p>}
+        {!loaded || (user && !library.ready && !library.error) ? <p role="status" className="py-16 text-center text-ink-muted">덱을 불러오는 중이에요.</p> : displayedProjects.length === 0 ? (
         <section className="flex flex-col items-center px-6 py-16 text-center">
           <IrDeckEmptyStateArtwork />
           {analysis.canResume ? (
@@ -1243,31 +1030,24 @@ export function IrDeckWireframe() {
                     className="ir-deck-thumbnail relative aspect-video overflow-hidden rounded-t-xl bg-transparent"
                     aria-hidden="true"
                   >
-                    <ProjectThumbnail
-                      project={project}
-                      previewView={devCompletedDeckPreview ? editorPreviewDocument : undefined}
-                    />
+                    <ProjectThumbnail project={project} cloudDocument={cloudItem(project)?.document_id ? { documentId: cloudItem(project)!.document_id!, deckId: cloudItem(project)!.deck_id } : undefined} />
                   </div>
                   <div className="border-t border-field-border p-4">
                     <div className="flex items-start justify-between gap-3">
                       <button type="button" className="min-w-0 flex-1 text-left" onClick={() => openProject(project.id)}>
-                        <strong className="block truncate text-ink">{projectTitle(project)}</strong>
+                        <strong className="block truncate text-ink">{displayProjectTitle(project)}</strong>
                       </button>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <button type="button" aria-label={`${projectTitle(project)} 더보기`} className="rounded-md p-1.5 text-ink-muted hover:bg-item-hover" onClick={(event) => event.stopPropagation()}>
-                            <span aria-hidden className="flex size-6 flex-col items-center justify-center gap-[3px]">
-                              <span className="size-[2.5px] rounded-full bg-[#84968E]" />
-                              <span className="size-[2.5px] rounded-full bg-[#84968E]" />
-                              <span className="size-[2.5px] rounded-full bg-[#84968E]" />
-                            </span>
+                          <button type="button" aria-label={`${displayProjectTitle(project)} 더보기`} className="rounded-md p-1.5 text-ink-muted hover:bg-item-hover" onClick={(event) => event.stopPropagation()}>
+                            <MoreVertical className="size-4" />
                           </button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" sideOffset={6} onClick={(event) => event.stopPropagation()} className="min-w-0 w-fit rounded-[12px] border-0 bg-surface p-1 shadow-none" style={{ boxShadow: "var(--shadow-dropdown)" }}>
-                          <DropdownMenuItem onSelect={() => requestRename(project.id, projectTitle(project))} className="min-h-10 w-auto cursor-pointer rounded-[8px] px-[14px] text-ink hover:bg-dropdown-hover data-[highlighted]:bg-dropdown-hover focus:bg-dropdown-hover focus:text-ink">
+                          <DropdownMenuItem onSelect={() => requestRename(project.id, displayProjectTitle(project))} className="min-h-10 w-auto cursor-pointer rounded-[8px] px-[14px] text-ink hover:bg-dropdown-hover data-[highlighted]:bg-dropdown-hover focus:bg-dropdown-hover focus:text-ink">
                             제목 수정
                           </DropdownMenuItem>
-                          <DropdownMenuItem onSelect={() => requestDelete(project.id, projectTitle(project))} className="min-h-10 w-auto cursor-pointer rounded-[8px] px-[14px] text-destructive hover:bg-destructive-surface data-[highlighted]:bg-destructive-surface focus:bg-destructive-surface focus:text-destructive">
+                          <DropdownMenuItem onSelect={() => requestDelete(project.id, displayProjectTitle(project))} className="min-h-10 w-auto cursor-pointer rounded-[8px] px-[14px] text-destructive hover:bg-destructive-surface data-[highlighted]:bg-destructive-surface focus:bg-destructive-surface focus:text-destructive">
                             덱 삭제
                           </DropdownMenuItem>
                         </DropdownMenuContent>
@@ -1291,18 +1071,8 @@ export function IrDeckWireframe() {
       <>
         <section className={cn(panel, "p-16 text-center")}>
           <img src="/assets/sidebar/ir-deck-active.svg" alt="" className="mx-auto size-10" />
-          <h2 className="mt-5 text-xl font-semibold text-ink" role="status">
-            <span>
-              {devAnalysisPreview
-                ? analysisPreviewModes.find((item) => item.value === analysisPreviewMode)?.label === "분석 실패"
-                  ? "사업 내용 분석에 실패했어요"
-                  : analysisPreviewMode === "timeout"
-                    ? "분석 상태를 다시 확인해 주세요"
-                    : analysisPreviewPhases.find((item) => item.value === analysisPreviewPhase)?.message
-                : analysis.phase}
-            </span>
-          </h2>
-          {((analysis.retryNeeded && !draft.analysis?.failed) || (devAnalysisPreview && analysisPreviewMode === "timeout")) && (
+          <h2 className="mt-5 text-xl font-semibold text-ink" role="status">{analysis.phase}</h2>
+          {analysis.retryNeeded && !draft.analysis?.failed && (
             <p className="mt-2 text-sm text-ink-muted">
               분석이 오래 걸리고 있어요. 1분 후 상태 다시 확인 버튼을 눌러주세요.
             </p>
@@ -1314,18 +1084,7 @@ export function IrDeckWireframe() {
             <button type="button" className="inline-flex h-12 items-center justify-center rounded-[12px] bg-secondary-btn px-5 text-[16px] font-semibold text-secondary-btn-text shadow-none transition-colors hover:bg-secondary-btn-hover hover:text-secondary-btn-text-hover focus-visible:ring-1 focus-visible:ring-focus-soft" onClick={() => setCancelAnalysisOpen(true)}>
               입력 화면으로 돌아가기
             </button>
-            {((analysis.retryNeeded && !draft.analysis?.failed) || (devAnalysisPreview && analysisPreviewMode === "timeout")) && (
-              <button
-                type="button"
-                className={cn(button, "text-[16px]")}
-                onClick={() => {
-                  if (devAnalysisPreview) setAnalysisPreviewMode("processing");
-                  else analysis.retry();
-                }}
-              >
-                상태 다시 확인
-              </button>
-            )}
+            {analysis.retryNeeded && !draft.analysis?.failed && <button type="button" className={button} onClick={analysis.retry}>상태 다시 확인</button>}
           </div>
         </section>
       </>,
@@ -1398,7 +1157,7 @@ export function IrDeckWireframe() {
           <button type="button" className="inline-flex h-12 items-center justify-center rounded-[12px] bg-secondary-btn px-5 text-[16px] font-semibold text-secondary-btn-text shadow-none transition-colors hover:bg-secondary-btn-hover hover:text-secondary-btn-text-hover focus-visible:ring-1 focus-visible:ring-focus-soft" onClick={() => setScreen("input")}>
             입력 화면으로 돌아가기
           </button>
-          <button type="button" disabled={analysis.saving} onClick={() => { if (devAnalysisPreview) setAnalysisPreviewMode("themes"); else void analysis.continueToDesign(); }} className="inline-flex h-12 items-center justify-center gap-2 rounded-[12px] bg-brand px-5 text-[16px] font-semibold text-brand-foreground shadow-none transition-colors hover:bg-brand/88 active:bg-brand-pressed focus-visible:ring-1 focus-visible:ring-focus-soft disabled:cursor-not-allowed disabled:opacity-40">
+          <button type="button" disabled={analysis.saving} onClick={analysis.continueToDesign} className="inline-flex h-12 items-center justify-center gap-2 rounded-[12px] bg-brand px-5 text-[16px] font-semibold text-brand-foreground shadow-none transition-colors hover:bg-brand/88 active:bg-brand-pressed focus-visible:ring-1 focus-visible:ring-focus-soft disabled:cursor-not-allowed disabled:opacity-40">
             {analysis.saving ? "수정 내용 저장 중" : "디자인 방향 선택"}
             <ArrowRight className="size-4" />
           </button>
@@ -1600,11 +1359,7 @@ export function IrDeckWireframe() {
 
   if (screen === "editor" || screen === "preview" || screen === "saved") {
     if (!draft.html) return page("IR 덱 생성", "이전 작업의 사업내용을 확인한 뒤 HTML 슬라이드를 생성해 주세요.", <button className={primary} onClick={() => setScreen(draft.analysis?.deckId ? "review" : "input")}>사업내용 확인하기</button>);
-    const editorPreview = import.meta.env.DEV && typeof window !== "undefined" && (
-      new URLSearchParams(window.location.search).get("preview") === "editor" ||
-      devCompletedDeckPreview ||
-      (devAnalysisPreview && analysisPreviewMode === "editor")
-    );
+    const editorPreview = import.meta.env.DEV && new URLSearchParams(window.location.search).get("preview") === "editor";
     return page("", "", <HtmlDeckWorkspace key={draft.html.requestId} reference={draft.html} persist={rememberHtml} onHome={() => setScreen("home")} onBack={() => setScreen("themes")} onSave={() => { if (draft.html) rememberHtml(draft.html); }} pendingTitle="IR 덱 디자인 생성 중" pendingSteps={<Steps current={3} />} devPreview={editorPreview} previewView={editorPreviewDocument} />);
   }
 
@@ -1716,7 +1471,7 @@ export function IrDeckWireframe() {
           </button>
           <button
             type="button"
-            onClick={() => { if (devAnalysisPreview) setAnalysisPreviewMode("processing"); else void analysis.analyze(); }}
+            onClick={analysis.analyze}
             disabled={analysis.submitting || !draft.fileName}
             className={cn(
               primary,
