@@ -687,7 +687,7 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle,
   const [analysisStatus, setAnalysisStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [analysisMessage, setAnalysisMessage] = useState<string | null>(null);
   const [analysisResult, setAnalysisResult] = useState<unknown>(null);
-  const [savedReview, setSavedReview] = useState<unknown>(null);
+  const [previouslyAnalyzed, setPreviouslyAnalyzed] = useState(false);
   const [savedDetailError, setSavedDetailError] = useState(false);
   const analysisGeneration = useRef(0);
   useEffect(() => {
@@ -748,9 +748,11 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle,
           : null]);
         if (!cancelled && session?.user.id === currentUserId && noticeId === currentNoticeId) {
           const fallback = saved?.data?.report as NoticeReport | null;
-          const data = display.data?.status === "ready" ? display.data : fallback ?? display.data;
+          const data = display.data?.status === "ready"
+            ? { ...display.data, plan_review_eligibility: display.data.plan_review_eligibility ?? fallback?.plan_review_eligibility }
+            : fallback ?? display.data;
           const rpcError = fallback ? null : display.error;
-          setSavedReview(saved?.data?.review ?? null);
+          setPreviouslyAnalyzed(saved?.data?.review != null);
           setSavedDetailError(Boolean(saved?.error));
           if (rpcError) {
             console.error("[programs] 맞춤 리포트 조회 실패", rpcError);
@@ -814,9 +816,9 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle,
   const eligibility = currentReport?.plan_review_eligibility;
   const canAnalyzePlan =
     currentReport?.status === "ready" &&
-    eligibility?.analysis_status === "completed" &&
-    eligibility.is_current === true &&
-    eligibility.business_plan_required === true;
+    (eligibility
+      ? eligibility.analysis_status === "completed" && eligibility.is_current === true && eligibility.business_plan_required === true
+      : savedNotice && previouslyAnalyzed && Boolean(noticeUrl));
   const planReviewDisabledReason = getPlanReviewDisabledReason(eligibility);
 
   const submitPlanReview = async () => {
@@ -996,10 +998,6 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle,
           <DialogHeader className="px-8 pb-3 pt-8 pr-16 text-left">
             <div className="flex items-center gap-4">
               <DialogTitle className="text-[24px] font-bold leading-10 text-ink">리포트</DialogTitle>
-              {savedReview != null && <button type="button" className="rounded-lg border border-field-border px-3 py-2 text-sm font-semibold text-brand" onClick={() => {
-                setAnalysisResult(savedReview);
-                setAnalysisOpen(true);
-              }}>내 적합도 결과 보기</button>}
               {savedDetailError && <span role="status" className="text-sm text-ink-muted">저장한 공고 상세를 불러오지 못했어요.</span>}
               <span
                 title={canAnalyzePlan ? undefined : planReviewDisabledReason}

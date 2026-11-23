@@ -294,7 +294,7 @@ export type Database = {
       }
       get_my_saved_notice_detail_v1: {
         Args: { p_notice_id: string }
-        Returns: { report: Json; review: Json } | null
+        Returns: { report: Json; review?: Json } | null
       }
       get_my_saved_notice_ids_v1: {
         Args: Record<string, never>
