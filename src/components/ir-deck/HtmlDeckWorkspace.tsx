@@ -126,7 +126,7 @@ function standaloneHtml(title: string, slides: string[]) {
   <title>IR 덱</title>
   <style>
     * { box-sizing: border-box; }
-    body { display: flex; flex-direction: column; margin: 0; height: 100vh; height: 100dvh; overflow: hidden; background: #f1f4f2; color: #173d31; font-family: Arial, sans-serif; }
+    body { display: flex; flex-direction: column; margin: 0; height: 100vh; height: 100dvh; overflow: hidden; background: #fff; color: #173d31; font-family: Arial, sans-serif; }
     header { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 20px; background: rgba(255,255,255,.94); border-bottom: 1px solid #d8e1dd; }
     header strong { font-size: 16px; }
     header span { color: #587067; font-size: 14px; }
