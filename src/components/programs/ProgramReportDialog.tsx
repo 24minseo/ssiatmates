@@ -447,6 +447,21 @@ function groupItemsByLabel(items: ReportItem[], fallbackLabel: string) {
   return Array.from(groups.values());
 }
 
+function cleanGenesisListText(value: string) {
+  return value.replace(
+    /((?:^|<br\s*\/?>)[ \t]*(?:[-•●▪][ \t]+)?)(?:\(\d{1,2}\)|\d{1,2}\\?[.)])[ \t]+(?!\d{1,2}(?:[./-]|[ \t]*(?:$|일)))(?=\S)/gim,
+    "$1",
+  );
+}
+
+function cleanGenesisItem(item: ReportItem): ReportItem {
+  const result = { ...item };
+  if (item.label) result.label = cleanGenesisListText(item.label);
+  if (item.detail) result.detail = cleanGenesisListText(item.detail);
+  if (item.children) result.children = item.children.map(cleanGenesisItem);
+  return result;
+}
+
 function ReportGroupView({
   group,
   itemLabel,
@@ -941,6 +956,14 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle,
     ];
   }, [currentReport]);
 
+  const displayGroups = useMemo(() => noticeId === "d30c05c5-a9e4-4e72-a784-22a1c98a7efa"
+    ? groups.map((group) => ({
+        ...group,
+        title: cleanGenesisListText(group.title),
+        section: { items: collectItems(group.section).map(cleanGenesisItem) },
+      }))
+    : groups, [groups, noticeId]);
+
   const reportContentKey = loading
     ? "loading"
     : error
@@ -1099,7 +1122,7 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle,
               </div>
             ) : (
               <>
-                {groups.map((group) =>
+                {displayGroups.map((group) =>
                   group.key === "obligations" ? <ObligationsGroupView key={group.title} section={group.section} /> : <ReportGroupView key={group.title} group={group} />,
                 )}
                 <ChangeHistoryView
