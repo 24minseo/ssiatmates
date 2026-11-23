@@ -1368,7 +1368,7 @@ export function IrDeckWireframe() {
   if (screen === "editor" || screen === "preview" || screen === "saved") {
     if (!draft.html) return page("IR 덱 생성", "이전 작업의 사업내용을 확인한 뒤 HTML 슬라이드를 생성해 주세요.", <button className={primary} onClick={() => setScreen(draft.analysis?.deckId ? "review" : "input")}>사업내용 확인하기</button>);
     const editorPreview = import.meta.env.DEV && new URLSearchParams(window.location.search).get("preview") === "editor";
-    return page("", "", <HtmlDeckWorkspace key={draft.html.requestId} reference={draft.html} persist={rememberHtml} onHome={() => setScreen("home")} onBack={() => setScreen("themes")} onSave={() => { if (draft.html) rememberHtml(draft.html); }} pendingTitle="IR 덱 디자인 생성 중" pendingSteps={<Steps current={3} />} devPreview={editorPreview} previewView={editorPreviewDocument} />);
+    return page("", "", <HtmlDeckWorkspace key={draft.html.requestId} reference={draft.html} persist={rememberHtml} onHome={() => setScreen("home")} onBack={() => setScreen("themes")} onSave={() => { if (draft.html) rememberHtml(draft.html); }} downloadName={projects.find((project) => project.id === draft.projectId)?.title || draft.fileName.replace(/\.pdf$/i, "").trim() || "IR 덱"} pendingTitle="IR 덱 디자인 생성 중" pendingSteps={<Steps current={3} />} devPreview={editorPreview} previewView={editorPreviewDocument} />);
   }
 
 

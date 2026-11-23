@@ -115,8 +115,9 @@ async function imageUrlAsDataUrl(url: string) {
   });
 }
 
-function standaloneHtml(slides: string[]) {
+function standaloneHtml(title: string, slides: string[]) {
   const serializedSlides = JSON.stringify(slides).replaceAll("<", "\\u003c");
+  const serializedTitle = JSON.stringify(title).replaceAll("<", "\\u003c");
   return `<!doctype html>
 <html lang="ko">
 <head>
@@ -134,7 +135,8 @@ function standaloneHtml(slides: string[]) {
     button:hover:not(:disabled) { background: #eaf1ec; }
     button:disabled { cursor: default; opacity: .4; }
     main { display: flex; justify-content: center; padding: 28px 20px 48px; }
-    iframe { width: min(92vw, 1280px); aspect-ratio: 16 / 9; border: 0; background: #fff; box-shadow: 0 2px 12px rgba(0,13,59,.08); }
+    #stage { width: min(92vw, 1280px); aspect-ratio: 16 / 9; position: relative; overflow: hidden; background: #fff; box-shadow: 0 2px 12px rgba(0,13,59,.08); }
+    iframe { position: absolute; inset: 0; width: 1920px; height: 1080px; border: 0; background: #fff; transform-origin: top left; }
   </style>
 </head>
 <body>
@@ -148,20 +150,32 @@ function standaloneHtml(slides: string[]) {
   <main id="stage"></main>
   <script>
     const slides = ${serializedSlides};
+    const deckTitle = ${serializedTitle};
     let current = 0;
+    let resizeFrame = null;
     const stage = document.getElementById('stage');
     const counter = document.getElementById('counter');
     const previous = document.getElementById('previous');
     const next = document.getElementById('next');
     function render() {
+      if (resizeFrame) window.removeEventListener('resize', resizeFrame);
       const frame = document.createElement('iframe');
       frame.title = 'IR 덱 슬라이드 ' + (current + 1);
       frame.srcdoc = slides[current];
       stage.replaceChildren(frame);
+      resizeFrame = () => {
+        const scale = stage.clientWidth / 1920;
+        frame.style.transform = 'scale(' + scale + ')';
+        stage.style.height = (1080 * scale) + 'px';
+      };
+      window.addEventListener('resize', resizeFrame);
+      resizeFrame();
       counter.textContent = (current + 1) + ' / ' + slides.length;
       previous.disabled = current === 0;
       next.disabled = current === slides.length - 1;
     }
+    document.title = deckTitle;
+    document.querySelector('header strong').textContent = deckTitle;
     previous.addEventListener('click', () => { if (current > 0) { current -= 1; render(); } });
     next.addEventListener('click', () => { if (current < slides.length - 1) { current += 1; render(); } });
     window.addEventListener('keydown', (event) => {
@@ -179,6 +193,7 @@ export function HtmlDeckWorkspace({
   persist,
   onHome,
   onSave,
+  downloadName,
   devPreview = false,
   previewView,
   pendingTitle,
@@ -189,6 +204,7 @@ export function HtmlDeckWorkspace({
   onBack: () => void;
   onHome: () => void;
   onSave: () => void;
+  downloadName?: string;
   devPreview?: boolean;
   previewView?: HtmlView;
   pendingTitle?: string;
@@ -1023,11 +1039,13 @@ export function HtmlDeckWorkspace({
           false,
         ),
       );
-      const blob = new Blob([standaloneHtml(documents)], { type: "text/html;charset=utf-8" });
+      const title = (downloadName || "IR 덱").trim() || "IR 덱";
+      const fileBase = title.replace(/[\\/:*?"<>|]/g, " ").replace(/\s+/g, " ").trim() || "IR 덱";
+      const blob = new Blob([standaloneHtml(title, documents)], { type: "text/html;charset=utf-8" });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = "IR-deck.html";
+      link.download = `${fileBase}.html`;
       link.click();
       URL.revokeObjectURL(url);
       toast.success("HTML 파일을 다운로드했어요.", { id: htmlToastId });
