@@ -134,7 +134,7 @@ function standaloneHtml(title: string, slides: string[]) {
     button { border: 1px solid #d8e1dd; border-radius: 8px; padding: 8px 12px; background: #fff; color: #173d31; font: inherit; cursor: pointer; }
     button:hover:not(:disabled) { background: #eaf1ec; }
     button:disabled { cursor: default; opacity: .4; }
-    main { display: flex; justify-content: center; padding: 28px 20px 48px; }
+    main { display: flex; justify-content: center; align-items: center; min-height: calc(100vh - 65px); padding: 28px 20px 48px; }
     #stage { width: min(92vw, 1280px); aspect-ratio: 16 / 9; position: relative; overflow: hidden; background: #fff; box-shadow: 0 2px 12px rgba(0,13,59,.08); }
     iframe { position: absolute; inset: 0; width: 1920px; height: 1080px; border: 0; background: #fff; transform-origin: top left; }
   </style>
