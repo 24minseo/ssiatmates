@@ -88,6 +88,7 @@ type ReportGroup = {
 };
 
 type ProgramReportDialogProps = {
+  savedNotice?: boolean;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   noticeId: string | null;
@@ -676,7 +677,7 @@ function ObligationsGroupView({ section }: { section: ReportGroup["section"] }) 
   );
 }
 
-export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle, scrollToChanges = false, supportOverride }: ProgramReportDialogProps) {
+export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle, scrollToChanges = false, supportOverride, savedNotice = false }: ProgramReportDialogProps) {
   const { session } = useAuth();
   const [report, setReport] = useState<NoticeReport | null>(null);
   const [analysisOpen, setAnalysisOpen] = useState(false);
@@ -686,6 +687,8 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle,
   const [analysisStatus, setAnalysisStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [analysisMessage, setAnalysisMessage] = useState<string | null>(null);
   const [analysisResult, setAnalysisResult] = useState<unknown>(null);
+  const [previouslyAnalyzed, setPreviouslyAnalyzed] = useState(false);
+  const [savedDetailError, setSavedDetailError] = useState(false);
   const analysisGeneration = useRef(0);
   useEffect(() => {
     analysisGeneration.current += 1;
@@ -738,10 +741,19 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle,
       try {
         const isManual = currentNoticeId.startsWith("manual:");
         const reportId = isManual ? currentNoticeId.slice("manual:".length) : currentNoticeId;
-        const { data, error: rpcError } = await supabase.functions.invoke("notice-report-display", {
+        const [display, saved] = await Promise.all([supabase.functions.invoke("notice-report-display", {
           body: isManual ? { kind: "manual", manual_notice_id: reportId } : { kind: "notice", notice_id: reportId, ...(supportOverride ? {support_override: supportOverride} : {}) },
-        });
+        }), savedNotice && !isManual
+          ? supabase.rpc("get_my_saved_notice_detail_v1", { p_notice_id: reportId })
+          : null]);
         if (!cancelled && session?.user.id === currentUserId && noticeId === currentNoticeId) {
+          const fallback = saved?.data?.report as NoticeReport | null;
+          const data = display.data?.status === "ready"
+            ? { ...display.data, plan_review_eligibility: display.data.plan_review_eligibility ?? fallback?.plan_review_eligibility }
+            : fallback ?? display.data;
+          const rpcError = fallback ? null : display.error;
+          setPreviouslyAnalyzed(saved?.data?.review != null);
+          setSavedDetailError(Boolean(saved?.error));
           if (rpcError) {
             console.error("[programs] 맞춤 리포트 조회 실패", rpcError);
             setError(`리포트를 불러오지 못했습니다: ${rpcError.message || "Edge Function 호출 실패"}`);
@@ -794,7 +806,7 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle,
       window.removeEventListener("pageshow", refreshOnResume);
       document.removeEventListener("visibilitychange", refreshOnResume);
     };
-  }, [noticeId, open, session?.user.id, JSON.stringify(supportOverride ?? null)]);
+  }, [noticeId, open, session?.user.id, savedNotice, JSON.stringify(supportOverride ?? null)]);
 
   const currentReport = reportNoticeId === noticeId ? report : null;
   const displayNoticeTitle = noticeTitle?.trim() || currentReport?.notice?.title?.trim() || null;
@@ -804,9 +816,9 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle,
   const eligibility = currentReport?.plan_review_eligibility;
   const canAnalyzePlan =
     currentReport?.status === "ready" &&
-    eligibility?.analysis_status === "completed" &&
-    eligibility.is_current === true &&
-    eligibility.business_plan_required === true;
+    (eligibility
+      ? eligibility.analysis_status === "completed" && eligibility.is_current === true && eligibility.business_plan_required === true
+      : savedNotice && previouslyAnalyzed && Boolean(noticeUrl));
   const planReviewDisabledReason = getPlanReviewDisabledReason(eligibility);
 
   const submitPlanReview = async () => {
@@ -986,6 +998,7 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle,
           <DialogHeader className="px-8 pb-3 pt-8 pr-16 text-left">
             <div className="flex items-center gap-4">
               <DialogTitle className="text-[24px] font-bold leading-10 text-ink">리포트</DialogTitle>
+              {savedDetailError && <span role="status" className="text-sm text-ink-muted">저장한 공고 상세를 불러오지 못했어요.</span>}
               <span
                 title={canAnalyzePlan ? undefined : planReviewDisabledReason}
                 className="group relative inline-flex"
@@ -996,6 +1009,7 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle,
                   aria-label={canAnalyzePlan ? "사업 계획서 적합도 분석" : planReviewDisabledReason}
                   onClick={() => {
                     if (!canAnalyzePlan) return;
+                    setAnalysisResult(null);
                     setAnalysisFile(null);
                     setAnalysisFilePhase("ready");
                     setAnalysisOpen(true);
@@ -1132,9 +1146,9 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle,
         {analysisResult ? <>
           <PlanReviewResultView review={analysisResult} />
           <div className="mt-6 flex justify-end gap-2">
-            <button type="button" className="rounded-xl border border-field-border px-4 py-3 text-sm font-semibold" onClick={() => {
+            {canAnalyzePlan && <button type="button" className="rounded-xl border border-field-border px-4 py-3 text-sm font-semibold" onClick={() => {
               setAnalysisResult(null); setAnalysisMessage(null); setAnalysisStatus("idle"); setAnalysisFile(null);
-            }}>다른 PDF로 분석</button>
+            }}>다른 PDF로 분석</button>}
             <button type="button" className="rounded-xl bg-brand px-5 py-3 text-sm font-semibold text-brand-foreground" onClick={() => setAnalysisOpen(false)}>닫기</button>
           </div>
         </> : (

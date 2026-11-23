@@ -1317,8 +1317,7 @@ export function HtmlDeckWorkspace({
           {exportBusy && (
             <span className="inline-flex gap-2">
               <LoaderCircle className="size-4 animate-spin" />
-              {exportState?.format.toUpperCase()} 출력 파일을 만들고 있어요. AI를 다시 호출하지
-              않아요.
+              {exportState?.format.toUpperCase()} 출력 파일을 만들고 있어요.
             </span>
           )}
           {exportError && (
