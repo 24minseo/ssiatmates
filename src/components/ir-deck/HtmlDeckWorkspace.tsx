@@ -126,7 +126,7 @@ function standaloneHtml(title: string, slides: string[]) {
   <title>IR 덱</title>
   <style>
     * { box-sizing: border-box; }
-    body { display: flex; flex-direction: column; margin: 0; min-height: 100vh; overflow: hidden; background: #f1f4f2; color: #173d31; font-family: Arial, sans-serif; }
+    body { display: flex; flex-direction: column; margin: 0; height: 100vh; height: 100dvh; overflow: hidden; background: #f1f4f2; color: #173d31; font-family: Arial, sans-serif; }
     header { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 20px; background: rgba(255,255,255,.94); border-bottom: 1px solid #d8e1dd; }
     header strong { font-size: 16px; }
     header span { color: #587067; font-size: 14px; }
@@ -134,8 +134,8 @@ function standaloneHtml(title: string, slides: string[]) {
     button { border: 1px solid #d8e1dd; border-radius: 8px; padding: 8px 12px; background: #fff; color: #173d31; font: inherit; cursor: pointer; }
     button:hover:not(:disabled) { background: #eaf1ec; }
     button:disabled { cursor: default; opacity: .4; }
-    main { flex: 1 1 auto; min-height: 0; display: flex; justify-content: center; align-items: center; padding: 28px 20px 48px; }
-    #stage { width: min(92vw, 1280px); aspect-ratio: 16 / 9; position: relative; overflow: hidden; background: #fff; box-shadow: 0 2px 12px rgba(0,13,59,.08); }
+    main { flex: 1 1 auto; min-height: 0; display: flex; justify-content: center; align-items: center; padding: 20px; }
+    #stage { flex: none; position: relative; overflow: hidden; }
     iframe { position: absolute; inset: 0; width: 1920px; height: 1080px; border: 0; background: #fff; transform-origin: top left; }
   </style>
 </head>
@@ -147,28 +147,34 @@ function standaloneHtml(title: string, slides: string[]) {
       <button id="next" type="button">다음</button>
     </nav>
   </header>
-  <main id="stage"></main>
+  <main><div id="stage"></div></main>
   <script>
     const slides = ${serializedSlides};
     const deckTitle = ${serializedTitle};
     let current = 0;
-    let resizeFrame = null;
+
     const stage = document.getElementById('stage');
+    const viewport = document.querySelector('main');
     const counter = document.getElementById('counter');
     const previous = document.getElementById('previous');
     const next = document.getElementById('next');
+    function resizeFrame() {
+      const frame = stage.querySelector('iframe');
+      if (!frame) return;
+      const style = getComputedStyle(viewport);
+      const width = viewport.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+      const height = viewport.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom);
+      const scale = Math.max(0, Math.min(width / 1920, height / 1080));
+      stage.style.width = (1920 * scale) + 'px';
+      stage.style.height = (1080 * scale) + 'px';
+      frame.style.transform = 'scale(' + scale + ')';
+    }
+    new ResizeObserver(resizeFrame).observe(viewport);
     function render() {
-      if (resizeFrame) window.removeEventListener('resize', resizeFrame);
       const frame = document.createElement('iframe');
       frame.title = 'IR 덱 슬라이드 ' + (current + 1);
       frame.srcdoc = slides[current];
       stage.replaceChildren(frame);
-      resizeFrame = () => {
-        const scale = stage.clientWidth / 1920;
-        frame.style.transform = 'scale(' + scale + ')';
-        stage.style.height = (1080 * scale) + 'px';
-      };
-      window.addEventListener('resize', resizeFrame);
       resizeFrame();
       counter.textContent = (current + 1) + ' / ' + slides.length;
       previous.disabled = current === 0;
