@@ -493,6 +493,8 @@ function MyProgramsPage() {
       />
 
       <ProgramReportDialog
+        key={JSON.stringify([session?.user.id, reportTarget?.id])}
+        savedNotice
         open={Boolean(reportTarget)}
         onOpenChange={(open) => {
           if (!open) setReportTarget(null);
