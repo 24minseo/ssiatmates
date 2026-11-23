@@ -449,14 +449,23 @@ function groupItemsByLabel(items: ReportItem[], fallbackLabel: string) {
 
 function ReportGroupView({
   group,
+  noticeId,
   itemLabel,
   showItemLabel = true,
 }: {
   group: ReportGroup;
+  noticeId?: string | null;
   itemLabel?: string;
   showItemLabel?: boolean;
 }) {
   const isMatchingConditions = group.key === "matching_conditions";
+  function matchingDetail(text: string) {
+    const formatted = formatMatchingConditionDetail(text);
+    // The Genesis Lab source repeats its original list numbers across categories.
+    return noticeId === "d30c05c5-a9e4-4e72-a784-22a1c98a7efa"
+      ? formatted.replace(/^[ \t]*[1-4]\.[ \t]+(?=[가-힣])/gm, "")
+      : formatted;
+  }
   const items = collectItems(group.section).filter(hasReportDetail);
   if (!items.length) return null;
   const isFlatList = group.key === "benefits" || group.key === "documents";
@@ -612,7 +621,7 @@ function ReportGroupView({
                       {itemGroup.items.map((item, itemIndex) => (
                         <div key={`${itemGroup.label}-${itemIndex}`}>
                           <p className="whitespace-pre-wrap break-keep text-ink">
-                            {formatMatchingConditionDetail(item.detail ?? "")}
+                            {matchingDetail(item.detail ?? "")}
                           </p>
                           <ReportItemChildren items={item.children ?? []} />
                         </div>
@@ -1100,7 +1109,7 @@ export function ProgramReportDialog({ open, onOpenChange, noticeId, noticeTitle,
             ) : (
               <>
                 {groups.map((group) =>
-                  group.key === "obligations" ? <ObligationsGroupView key={group.title} section={group.section} /> : <ReportGroupView key={group.title} group={group} />,
+                  group.key === "obligations" ? <ObligationsGroupView key={group.title} section={group.section} /> : <ReportGroupView key={group.title} group={group} noticeId={noticeId} />,
                 )}
                 <ChangeHistoryView
                   history={
