@@ -126,7 +126,7 @@ function standaloneHtml(title: string, slides: string[]) {
   <title>IR 덱</title>
   <style>
     * { box-sizing: border-box; }
-    body { display: flex; flex-direction: column; margin: 0; height: 100vh; height: 100dvh; overflow: hidden; background: #fff; color: #173d31; font-family: Arial, sans-serif; }
+    body { display: flex; flex-direction: column; margin: 0; height: 100vh; height: 100dvh; overflow: hidden; background: #f1f4f2; color: #173d31; font-family: Arial, sans-serif; }
     header { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 20px; background: rgba(255,255,255,.94); border-bottom: 1px solid #d8e1dd; }
     header strong { font-size: 16px; }
     header span { color: #587067; font-size: 14px; }
@@ -135,7 +135,7 @@ function standaloneHtml(title: string, slides: string[]) {
     button:hover:not(:disabled) { background: #eaf1ec; }
     button:disabled { cursor: default; opacity: .4; }
     main { flex: 1 1 auto; min-height: 0; display: flex; justify-content: center; align-items: center; padding: 20px; }
-    #stage { flex: none; position: relative; overflow: hidden; }
+    #stage { flex: none; position: relative; overflow: hidden; box-shadow: 0 2px 12px rgba(0,13,59,.08); }
     iframe { position: absolute; inset: 0; width: 1920px; height: 1080px; border: 0; background: #fff; transform-origin: top left; }
   </style>
 </head>
