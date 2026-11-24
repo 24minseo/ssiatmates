@@ -1,10 +1,10 @@
+import { getProgramDeadlineDisplay } from "@/lib/programDeadline";
 import { formatProgramRegion } from "@/lib/programRegion";
 import type { MatchedProgram } from "@/mocks/programSearchMock";
 import { supabase } from "@/integrations/supabase/client";
 
 const RECENT_NOTICES_STORAGE_KEY = "ssiat.recent-notices.v1";
 const RECENT_NOTICES_EVENT = "recent-notices-changed";
-const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"] as const;
 
 export type HomeNoticeItem = {
   id: string;
@@ -36,15 +36,6 @@ function safeNoticeUrl(value: string | null | undefined) {
   } catch {
     return undefined;
   }
-}
-
-function formatDeadline(value: string | null) {
-  if (!value) return "일정 확인 필요";
-  const date = new Date(`${value}T00:00:00+09:00`);
-  if (Number.isNaN(date.getTime())) return "일정 확인 필요";
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `~${month}.${day}(${WEEKDAYS[date.getDay()]})`;
 }
 
 function readRecentNotices(): HomeNoticeItem[] {
@@ -125,8 +116,7 @@ export async function getHomeRecommendedNotices({ selectedField = null, offset =
         organization: item.organization,
         ...(url ? { url } : {}),
         categories: [item.field, formatProgramRegion(item.region)].filter((value): value is string => Boolean(value?.trim())),
-        dDay: item.deadline_label?.trim() || "공고 원문 확인",
-        deadline: formatDeadline(item.deadline),
+        ...getProgramDeadlineDisplay(item.deadline, item.deadline_label),
         reportAvailable: item.report_available !== false,
         ...(item.has_meaningful_changes === true ? { changeReason: "수정됨" } : {}),
         ...(item.change_needs_review === true && item.change_review_reason ? { changeDetail: item.change_review_reason } : {}),

@@ -1,3 +1,4 @@
+import { formatDeadline, getProgramDeadlineDisplay } from "@/lib/programDeadline";
 import { refreshRouteSnapshot } from "@/lib/routeSnapshots";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -113,24 +114,6 @@ function safeNoticeUrl(value: string | null): string | null {
   }
 }
 
-function formatDeadline(deadline: string | null): string {
-  if (!deadline) return "";
-  const date = new Date(
-    /^\d{4}-\d{2}-\d{2}$/.test(deadline)
-      ? `${deadline}T00:00:00+09:00`
-      : deadline,
-  );
-  if (Number.isNaN(date.getTime())) return "";
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone: "Asia/Seoul",
-    month: "2-digit",
-    day: "2-digit",
-    weekday: "short",
-  }).formatToParts(date);
-  const value = (type: string) => parts.find((part) => part.type === type)?.value ?? "";
-  const weekday = { Sun: "일", Mon: "월", Tue: "화", Wed: "수", Thu: "목", Fri: "금", Sat: "토" }[value("weekday")] ?? "";
-  return `~${value("month")}.${value("day")}(${weekday})`;
-}
 
 function formatDday(deadline: string | null, fallback?: string | null): string {
   if (fallback && /^(D-\d+|D-DAY|마감)$/.test(fallback.trim())) return fallback.trim();
@@ -154,14 +137,7 @@ function toMatchedProgram(item: NoticeMatchItem): MatchedProgram {
     .filter((value): value is string => Boolean(value?.trim()))
     .map((value) => value.trim())
     .filter((value) => value.length <= 20);
-  const rawDeadlineLabel = item.deadline_label?.trim() ?? "";
-  const dDay =
-    rawDeadlineLabel &&
-    rawDeadlineLabel !== "공고 원문 확인" &&
-    rawDeadlineLabel !== "일정 확인 필요"
-      ? rawDeadlineLabel
-      : "-";
-  const deadlineLabel = formatDeadline(item.deadline) || "공고 원문 확인";
+  const { dDay, deadline: deadlineLabel } = getProgramDeadlineDisplay(item.deadline, item.deadline_label);
 
   return {
     id: item.notice_id,
