@@ -15,6 +15,16 @@ import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/sonner";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -269,6 +279,7 @@ export function HtmlDeckWorkspace({
   const [exportBusy, setExportBusy] = useState(false),
     [exportError, setExportError] = useState("");
   const [htmlBusy, setHtmlBusy] = useState(false);
+  const [leaveDialogOpen, setLeaveDialogOpen] = useState(false);
   const [exportAttempt, setExportAttempt] = useState(0);
   const [exportState, setExportState] = useState<{
     format: "pdf" | "pptx";
@@ -697,8 +708,9 @@ export function HtmlDeckWorkspace({
         : { past: [...currentHistory.past, historyEntry], future: currentHistory.future.slice(0, -1) });
     } else if (historyEntry) rememberImageChange(historyEntry.before, historyEntry.after);
   }
-  async function saveQueuedImages() {
-    if (!queuedImageChanges.length || busyLock.current) return;
+  async function saveQueuedImages(): Promise<boolean> {
+    if (!queuedImageChanges.length) return true;
+    if (busyLock.current) return false;
     busyLock.current = true;
     setBusy(true);
     try {
@@ -709,12 +721,21 @@ export function HtmlDeckWorkspace({
       }
       setQueuedImageChanges([]);
       toast.success("이미지 변경사항을 저장했어요.");
+      return true;
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "이미지 변경사항을 저장하지 못했어요.");
+      return false;
     } finally {
       busyLock.current = false;
       if (alive.current) setBusy(false);
     }
+  }
+  async function handleHome() {
+    if (queuedImageChanges.length || selection) {
+      setLeaveDialogOpen(true);
+      return;
+    }
+    onHome();
   }
   function historyBody(slot: ImageSlot, next: ImageSlot | null): Json {
     if (slot.origin === "generated") {
@@ -1198,6 +1219,36 @@ export function HtmlDeckWorkspace({
       )}
     >
       {isFullscreen && <Toaster position="bottom-center" duration={1200} />}
+      <AlertDialog open={leaveDialogOpen} onOpenChange={setLeaveDialogOpen}>
+        <AlertDialogContent className="w-[calc(100vw-32px)] max-w-[480px] rounded-[20px] border-0 bg-surface p-7">
+          <AlertDialogHeader className="text-left">
+            <AlertDialogTitle className="text-[20px] font-bold leading-7 text-ink">
+              저장하지 않은 변경사항이 있어요
+            </AlertDialogTitle>
+            <AlertDialogDescription className="mt-2 text-[16px] leading-6 text-ink-muted">
+              변경사항을 저장한 후 최근 파일로 이동할까요?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-5 flex-row justify-end gap-2 sm:space-x-0">
+            <AlertDialogCancel className="mt-0 h-11 rounded-[12px] border-0 bg-secondary-btn px-5 text-[15px] font-semibold text-secondary-btn-text shadow-none hover:bg-secondary-btn-hover hover:text-secondary-btn-text-hover focus-visible:ring-1 focus-visible:ring-focus-soft">
+              계속 편집
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="h-11 rounded-[12px] border-0 bg-brand px-5 text-[15px] font-semibold text-brand-foreground shadow-none hover:bg-brand/90 focus-visible:ring-1 focus-visible:ring-focus-soft"
+              onClick={(event) => {
+                event.preventDefault();
+                void (async () => {
+                  if (!(await saveQueuedImages())) return;
+                  setLeaveDialogOpen(false);
+                  onHome();
+                })();
+              }}
+            >
+              저장하고 나가기
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <header className="shrink-0 flex flex-wrap items-center justify-between gap-4">
         {!preview && (
           <div className="flex flex-wrap items-center gap-3">
@@ -1293,7 +1344,7 @@ export function HtmlDeckWorkspace({
           </div>
         )}
         {(preview || !textMode) && <div className={cn("flex flex-wrap gap-2", preview && "ml-auto")}>
-          <button className={button} onClick={onHome}>
+          <button className={button} onClick={() => void handleHome()}>
             최근 파일
           </button>
           <button className={button} onClick={toggleFullscreen}>
