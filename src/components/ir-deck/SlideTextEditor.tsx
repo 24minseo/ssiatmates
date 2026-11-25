@@ -94,6 +94,30 @@ export function SlideTextEditor({
   const saving = useRef(false);
   const box = selection.box ?? {left:64,top:64,width:720,height:64,font,color:"var(--ir-ink)",lineHeight:"1.25"};
   const [measured,setMeasured]=useState<{left:number;top:number;width:number;height:number}|null>(null);
+  // The stored x/y are translations from the generated layout. The toolbar
+  // shows coordinates in the slide's unscaled 1920 × 1080 coordinate space.
+  const position = {
+    x: measured?.left ?? box.left + draft.x - (stored.x ?? 0),
+    y: measured?.top ?? box.top + draft.y - (stored.y ?? 0),
+  };
+  const values = {size:draft.size, x:Math.round(position.x), y:Math.round(position.y)};
+  function applyNumber(key:"size"|"x"|"y", input:HTMLInputElement) {
+    const value=input.valueAsNumber;
+    if (!Number.isFinite(value)) {input.value=String(values[key]);return;}
+    if (value===values[key]) return;
+    if (key==="size") {
+      const size=Math.max(1,Math.min(512,value));
+      input.value=String(size);
+      setDraft({...draft,size});
+      command("size",size);
+      return;
+    }
+    const offset=Math.max(-1920,Math.min(1920,draft[key]+value-position[key]));
+    const next={...draft,[key]:offset};
+    input.value=String(Math.round(position[key]+offset-draft[key]));
+    setDraft(next);
+    command("position",[next.x,next.y]);
+  }
   const [dimensions,resize] = useState({width:box.width,height:box.height});
   const [scale,setScale] = useState((stage?.clientWidth || 1920)/1920);
   const drag = useRef<{x:number;y:number;w:number;h:number;dx:number;dy:number;fontSize:number;move:boolean}|null>(null);
@@ -177,12 +201,10 @@ export function SlideTextEditor({
       </div>}
     </div>
     <button type="button" aria-label="굵게" aria-pressed={pressed} className="rounded px-2 font-bold aria-pressed:bg-item-hover" onMouseDown={e=>e.preventDefault()} onClick={toggleBold}>B</button>
-    {(["size","x","y"] as const).map((k,i)=><label key={k+draft[k]} className="flex items-center gap-1 text-xs">{["크기","가로","세로"][i]}
-      <input type="number" aria-label={["글자 크기","가로 이동","세로 이동"][i]} className="w-14 rounded border px-1 py-1" defaultValue={draft[k]}
-        onKeyDown={e=>{if(e.key==="Enter")e.currentTarget.blur();}} onBlur={e=>{
-          const v=e.target.valueAsNumber;
-          if(Number.isFinite(v)){const n=Math.max(k==="size"?1:-1920,Math.min(k==="size"?512:1920,v));setDraft({...draft,[k]:n});command(k==="size"?"size":"position",k==="size"?n:k==="x"?[n,draft.y]:[draft.x,n]);}
-        }} /></label>)}
+    {(["size","x","y"] as const).map((k,i)=><label key={k+values[k]} className="flex items-center gap-1 text-xs">{["크기","X","Y"][i]}
+      <input type="number" aria-label={["글자 크기","가로 위치","세로 위치"][i]} className="w-14 rounded border px-1 py-1" defaultValue={values[k]}
+        onKeyDown={e=>{if(e.key==="Enter")e.currentTarget.blur();}}
+        onBlur={e=>applyNumber(k,e.currentTarget)} /></label>)}
     {([AlignLeft,AlignCenter,AlignRight]).map((Icon,i)=>{
       const align=(["left","center","right"] as const)[i]!;
       return <button key={align} aria-label={["왼쪽 정렬","가운데 정렬","오른쪽 정렬"][i]} aria-pressed={draft.align===align}
