@@ -68,9 +68,9 @@ const secondaryButton =
   "inline-flex h-12 items-center justify-center rounded-[12px] bg-secondary-btn px-5 text-[16px] font-semibold text-secondary-btn-text shadow-none transition-colors hover:bg-secondary-btn-hover hover:text-secondary-btn-text-hover focus-visible:ring-1 focus-visible:ring-focus-soft";
 const primary = `${button} border-brand bg-brand text-brand-foreground hover:bg-brand/90`;
 const toolbarButton =
-  "inline-flex h-10 items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold text-ink-muted transition-colors hover:bg-item-hover hover:text-ink disabled:cursor-not-allowed disabled:opacity-40";
+  "inline-flex h-9 items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold text-ink-muted transition-colors hover:bg-item-hover hover:text-ink disabled:cursor-not-allowed disabled:opacity-40";
 const historyButton =
-  "inline-flex size-10 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-item-hover disabled:cursor-not-allowed";
+  "inline-flex size-9 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-item-hover disabled:cursor-not-allowed";
 const field =
   "w-full rounded-lg border border-field-border bg-background px-3 py-2 text-sm text-ink";
 
@@ -1342,7 +1342,7 @@ export function HtmlDeckWorkspace({
                   </button>
                 </>}
                 {selectedSlot.assetId && <button
-                  className="inline-flex size-10 shrink-0 items-center justify-center rounded-lg p-0 text-icon-muted transition-colors hover:bg-destructive-surface hover:text-destructive disabled:cursor-not-allowed disabled:opacity-40"
+                  className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg p-0 text-icon-muted transition-colors hover:bg-destructive-surface hover:text-destructive disabled:cursor-not-allowed disabled:opacity-40"
                   aria-label="이미지 제거" title="이미지 제거" disabled={!canMutate}
                   onClick={() => void mutate(binding(selectedSlot, null, selectedSlot.origin === "user"), { before: cloneImageSlot(selectedSlot), after: null })}
                 >
