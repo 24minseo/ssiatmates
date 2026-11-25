@@ -75,7 +75,11 @@ export function prepareSlideText(root: Element, edits: Record<string, SlideTextE
     if (edit.width || edit.height) {
       if (el.matches(inline)) el.style.display = "inline-block";
       if (edit.width) el.style.setProperty("width", edit.width+"px","important");
-      if (edit.height) el.style.setProperty("height", edit.height+"px","important");
+      if (edit.height) {
+        el.style.setProperty("min-height",edit.height+"px","important");
+        el.style.setProperty("height","auto","important");
+      }
+      el.style.setProperty("overflow-wrap","anywhere","important");
     }
     if (edit.align) {
       if (el.matches(inline)) {
@@ -92,6 +96,7 @@ export function prepareSlideText(root: Element, edits: Record<string, SlideTextE
       for (const part of [el, ...el.querySelectorAll<HTMLElement>("*")]) {
         if (edit.size !== undefined)
           part.style.setProperty("font-size", edit.size + "px", "important");
+        if (edit.size !== undefined && edit.width && edit.height) part.style.setProperty("line-height","normal","important");
         if (edit.bold !== undefined)
           part.style.setProperty("font-weight", edit.bold ? "700" : "400", "important");
       }

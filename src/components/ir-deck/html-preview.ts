@@ -192,8 +192,23 @@ export function previewHtml(
           }
           if(key==='size')for(var part of [editing,...editing.querySelectorAll('*')])part.style.setProperty('font-size',value+'px','important');
           if(key==='align')editing.style.setProperty('text-align',value,'important');
-          if(key==='position')editing.style.translate=value[0]+'px '+value[1]+'px';
-          if(key==='dimensions'){editing.style.width=value[0]+'px';editing.style.height=value[1]+'px';}
+          if(key==='position'){
+            if(getComputedStyle(editing).display==='inline')editing.style.display='inline-block';
+            editing.style.translate=value[0]+'px '+value[1]+'px';
+          }
+          if(key==='scaleBox'){
+            if(getComputedStyle(editing).display==='inline')editing.style.display='inline-block';
+            editing.style.setProperty('width',value[0]+'px','important');
+            editing.style.setProperty('min-height',value[1]+'px','important');
+            editing.style.setProperty('height','auto','important');
+            editing.style.setProperty('overflow-wrap','anywhere','important');
+            for(var part of [editing,...editing.querySelectorAll('*')]){
+              part.style.setProperty('font-size',value[2]+'px','important');
+              part.style.setProperty('line-height','normal','important');
+            }
+          }
+          var rect=editing.getBoundingClientRect();
+          editEvent('geometry',{left:rect.left,top:rect.top,width:rect.width,height:rect.height});
         });
         document.addEventListener('pointerdown',function(e){
           if(e.button !== 0) return;
@@ -212,7 +227,7 @@ export function previewHtml(
               }
               parent.postMessage({type:'ir-text-select',channel:${JSON.stringify(channel)},slideId:${JSON.stringify(slide.slideId)},
                 box:{left:r.left,top:r.top,width:r.width,height:r.height,font:css.fontFamily,color:css.color,lineHeight:css.lineHeight},
-                id:block.dataset.irText,text:block.innerText,initialWeights:originalWeights,align:css.textAlign,size:parseFloat(css.fontSize),bold:Number(css.fontWeight)>=600,dx:0,dy:0},'*');
+                id:block.dataset.irText,text:block.innerText,initialWeights:originalWeights,align:css.textAlign,size:parseFloat(getComputedStyle(target.closest('[data-ir-text]')===block?target:block).fontSize),bold:Number(css.fontWeight)>=600,dx:0,dy:0},'*');
             }
             return;
           }

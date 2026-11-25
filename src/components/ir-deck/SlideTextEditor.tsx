@@ -93,9 +93,10 @@ export function SlideTextEditor({
   const [error,setError] = useState("");
   const saving = useRef(false);
   const box = selection.box ?? {left:64,top:64,width:720,height:64,font,color:"var(--ir-ink)",lineHeight:"1.25"};
+  const [measured,setMeasured]=useState<{left:number;top:number;width:number;height:number}|null>(null);
   const [dimensions,resize] = useState({width:box.width,height:box.height});
   const [scale,setScale] = useState((stage?.clientWidth || 1920)/1920);
-  const drag = useRef<{x:number;y:number;w:number;h:number;dx:number;dy:number;move:boolean}|null>(null);
+  const drag = useRef<{x:number;y:number;w:number;h:number;dx:number;dy:number;fontSize:number;move:boolean}|null>(null);
   useEffect(() => {
     input.current?.focus();
     if (!stage) return;
@@ -148,6 +149,7 @@ export function SlideTextEditor({
     function receive(event:Event) {
       const {id,kind,value}=(event as CustomEvent).detail;
       if(id!==selection.id)return;
+      if(kind==="geometry")setMeasured(value);
       if(kind==="finish")void finish();
       if(kind==="range" && Array.isArray(value))setSelected([value[0],value[1]]);
       if(kind==="input" && typeof value==="string")changeText(value);
@@ -190,17 +192,27 @@ export function SlideTextEditor({
     {error && <button role="alert" onClick={()=>void finish()}>{error} · 다시 저장</button>}
     {stage && createPortal(<div className="absolute inset-0 z-20 overflow-hidden" style={{pointerEvents:selection.isNew?"auto":"none"}} onClick={e=>{if(e.target===e.currentTarget)void finish();}}>
       <div style={{width:1920,height:1080,transformOrigin:"top left",transform:"scale("+scale+")",pointerEvents:"none"}}>
-        <div ref={canvas} style={{position:"absolute",pointerEvents:selection.isNew?"auto":"none",left:box.left+draft.x-(stored.x??0),top:box.top+draft.y-(stored.y??0),...dimensions,outline:"2px solid #238767"}}>
+        <div ref={canvas} style={{position:"absolute",pointerEvents:selection.isNew?"auto":"none",left:box.left+draft.x-(stored.x??0),top:box.top+draft.y-(stored.y??0),...dimensions,...(!selection.isNew && measured ? measured : {}),outline:"2px solid #238767"}}>
           {selection.isNew && <><div aria-hidden style={{...layout,color:box.color,pointerEvents:"none",overflow:"hidden"}}>{wordView}</div>
           <textarea ref={input} aria-label="슬라이드 텍스트" spellCheck={false} maxLength={6000}
             style={{...layout,position:"absolute",inset:0,background:"transparent",color:"transparent",caretColor:box.color,resize:"none",outline:0}}
             value={draft.text} onSelect={e=>setSelected([e.currentTarget.selectionStart,e.currentTarget.selectionEnd])} onChange={e=>changeText(e.target.value)} onScroll={e=>{const mirror=e.currentTarget.previousElementSibling;if(mirror)mirror.scrollTop=e.currentTarget.scrollTop;}} /></>}
           {["move","resize"].map(mode=><button key={mode} aria-label={mode==="move"?"텍스트 상자 이동":"텍스트 상자 크기 조절"}
             style={{position:"absolute",pointerEvents:"auto",touchAction:"none",right:0,...(mode==="move"?{top:-5,left:0,height:8,cursor:"move"}:{bottom:0,width:18,height:18,border:"2px solid #238767",background:"white",cursor:"nwse-resize"})}}
-            onPointerDown={e=>{e.preventDefault();e.currentTarget.setPointerCapture(e.pointerId);drag.current={x:e.clientX,y:e.clientY,w:dimensions.width,h:dimensions.height,dx:draft.x,dy:draft.y,move:mode==="move"};}}
+            onPointerDown={e=>{e.preventDefault();e.currentTarget.setPointerCapture(e.pointerId);drag.current={x:e.clientX,y:e.clientY,w:dimensions.width,h:dimensions.height,dx:draft.x,dy:draft.y,fontSize:draft.size,move:mode==="move"};}}
             onPointerMove={e=>{const g=drag.current;if(!g)return;const dx=Math.round((e.clientX-g.x)/scale),dy=Math.round((e.clientY-g.y)/scale);
               if(g.move){const x=Math.max(-1920,Math.min(1920,g.dx+dx)),y=Math.max(-1920,Math.min(1920,g.dy+dy));setDraft({...draft,x,y});command("position",[x,y]);}
-              else {const width=Math.min(1920,Math.max(12,Math.round(g.w+dx))),height=Math.min(1080,Math.max(12,Math.round(g.h+dy)));resize({width,height});command("dimensions",[width,height]);}}}
+              else {
+                const w=Math.max(1,g.w),h=Math.max(1,g.h);
+                const factor=Math.max(Math.max(12/w,12/h,1/g.fontSize),Math.min(
+                  1920/w,1080/h,512/g.fontSize,1+(dx*w+dy*h)/(w*w+h*h)));
+                const width=Math.round(w*factor),height=Math.round(h*factor);
+                const size=Math.round(g.fontSize*factor*100)/100;
+                resize({width,height});
+                setDraft(previous=>({...previous,size}));
+                command("scaleBox",[width,height,size]);
+              }}}
+
 
             onLostPointerCapture={()=>{drag.current=null;}} />)}
         </div>
