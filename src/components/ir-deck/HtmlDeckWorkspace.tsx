@@ -1270,7 +1270,7 @@ export function HtmlDeckWorkspace({
         {!preview && (
           <div className="flex flex-wrap items-center gap-3">
             <div
-              className="inline-flex max-w-full flex-wrap items-center gap-0.5 rounded-xl border border-[rgba(64,72,66,0.08)] bg-surface p-1"
+              className="relative z-30 inline-flex max-w-full flex-wrap items-center gap-0.5 overflow-visible rounded-xl border border-[rgba(64,72,66,0.08)] bg-surface p-1"
               style={{ boxShadow: "0 4px 12px 0 rgba(64, 72, 66, 0.1)" }}
             >
               <div className="flex items-center gap-0">
