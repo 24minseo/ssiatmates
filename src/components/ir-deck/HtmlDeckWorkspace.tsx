@@ -700,7 +700,11 @@ export function HtmlDeckWorkspace({
       },
       revision: view.image_revision,
     };
-    setQueuedImageChanges((changes) => [...changes, pending]);
+    setQueuedImageChanges((changes) => {
+      const slotId = typeof pending.body.slot_id === "string" ? pending.body.slot_id : null;
+      if (!slotId) return [...changes, pending];
+      return [...changes.filter((change) => change.body.slot_id !== slotId), pending];
+    });
     setView((currentView) => currentView ? applySavedImageMutation(currentView, pending, currentView.image_revision) : currentView);
     if (historyEntry && historyDirection) {
       setHistory((currentHistory) => historyDirection === "undo"
@@ -871,7 +875,10 @@ export function HtmlDeckWorkspace({
       setSlotId(slot.id);
       setAdding(false);
       setPlacement(slot.placement || placement);
-      setQueuedImageChanges((changes) => [...changes, pending]);
+      setQueuedImageChanges((changes) => [
+        ...changes.filter((change) => change.body.slot_id !== pending.body.slot_id),
+        pending,
+      ]);
       setView((currentView) => currentView ? applySavedImageMutation(currentView, pending, currentView.image_revision) : currentView);
       rememberImageChange(before, slot);
     } catch (e) {
