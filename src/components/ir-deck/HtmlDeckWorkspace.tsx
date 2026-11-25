@@ -1272,6 +1272,27 @@ export function HtmlDeckWorkspace({
               className="inline-flex max-w-full flex-wrap items-center gap-0.5 rounded-xl border border-[rgba(64,72,66,0.08)] bg-surface p-1"
               style={{ boxShadow: "0 4px 12px 0 rgba(64, 72, 66, 0.1)" }}
             >
+              <div className="flex items-center gap-0">
+                <button
+                  className={historyButton}
+                  aria-label="이전"
+                  title="이전"
+                  disabled={!canMutate || (history.past.length === 0 && !selection)}
+                  onClick={() => void applyHistory("undo")}
+                >
+                  <Undo2 className="size-4" strokeWidth={2} />
+                </button>
+                <button
+                  className={historyButton}
+                  aria-label="이후"
+                  title="이후"
+                  disabled={!canMutate || history.future.length === 0}
+                  onClick={() => void applyHistory("redo")}
+                >
+                  <Redo2 className="size-4" strokeWidth={2} />
+                </button>
+              </div>
+              <span className="h-5 w-px shrink-0 bg-field-border/70" aria-hidden="true" />
               {selectedSlot ? <>
                 <button className={toolbarButton} disabled={!canMutate} onClick={() => fileInput.current?.click()}>
                   <GrowthJournalImageIcon className="size-3.5" />
