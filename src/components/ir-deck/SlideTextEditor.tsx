@@ -207,7 +207,7 @@ export function SlideTextEditor({
         className="relative inline-flex size-10 shrink-0 items-center justify-center rounded-lg text-[18px] font-medium leading-none text-ink transition-colors hover:bg-item-hover"
         onClick={()=>setShowPalette(!showPalette)}>
         A
-        <span aria-hidden="true" className="absolute bottom-1 left-1/2 h-1 w-5 -translate-x-1/2 rounded-full" style={{background:activeColor}} />
+        <span aria-hidden="true" className="absolute bottom-2 left-1/2 h-1 w-5 -translate-x-1/2 rounded-full" style={{background:activeColor}} />
       </button>
       {showPalette && <div className="absolute left-0 top-full z-50 mt-2 grid w-40 grid-cols-5 gap-1 rounded-lg border bg-white p-2 shadow">
         {Array.from(new Set(palette.filter((c):c is string=>!!c && /^#[0-9a-f]{6}$/i.test(c)))).map(c=>
