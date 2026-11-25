@@ -1275,7 +1275,7 @@ export function HtmlDeckWorkspace({
             </div>
           </div>
         )}
-        <div className={cn("flex flex-wrap gap-2", preview && "ml-auto")}>
+        {(preview || !textMode) && <div className={cn("flex flex-wrap gap-2", preview && "ml-auto")}>
           <button className={button} onClick={onHome}>
             최근 파일
           </button>
@@ -1325,7 +1325,7 @@ export function HtmlDeckWorkspace({
           >
             저장
           </button>
-        </div>
+        </div>}
       </header>
       {stale && (
         <p className="rounded-xl bg-item-hover p-4 text-sm text-ink">
