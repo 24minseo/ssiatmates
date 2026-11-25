@@ -1328,7 +1328,7 @@ export function HtmlDeckWorkspace({
                   setSelection({ id: "u"+crypto.randomUUID().replaceAll("-",""), text: "", size: 40,
                     bold: false, x: 0, y: 0, align: "left", isNew: true,
                     slideId: current.slideId, revision: view.image_revision });
-                }} aria-label="Text · 텍스트 추가" title="텍스트 추가">Text</button>
+                }} aria-label="텍스트 추가" title="텍스트 추가">텍스트 추가</button>
       {selection && current.slideId === selection.slideId && !preview ? <SlideTextEditor
         key={selection.id} stage={textStage.current} font={reference.settings.fontFamily}
         palette={Object.values(view.document.designTokens.colors)}
