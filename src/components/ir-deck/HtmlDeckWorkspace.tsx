@@ -1321,7 +1321,7 @@ export function HtmlDeckWorkspace({
                   }} />
                 </button>}
               </> : <>
-              <button type="button" className={toolbarButton} disabled={!canMutate || busy}
+              {!selection && <button type="button" className={toolbarButton} disabled={!canMutate || busy}
                 onClick={() => {
                   setTextMode(true);
                   setAdding(false);
@@ -1329,7 +1329,7 @@ export function HtmlDeckWorkspace({
                   setSelection({ id: "u"+crypto.randomUUID().replaceAll("-",""), text: "", size: 40,
                     bold: false, x: 0, y: 0, align: "left", isNew: true,
                     slideId: current.slideId, revision: view.image_revision });
-                }} aria-label="텍스트 추가" title="텍스트 추가">텍스트 추가</button>
+                }} aria-label="텍스트 추가" title="텍스트 추가">텍스트 추가</button>}
       {selection && current.slideId === selection.slideId && !preview ? <SlideTextEditor
         key={selection.id} stage={textStage.current} font={reference.settings.fontFamily}
         palette={Object.values(view.document.designTokens.colors)}
@@ -1364,7 +1364,7 @@ export function HtmlDeckWorkspace({
         }}
       /> : <SlideTextEditor inactive stage={null} font={reference.settings.fontFamily} palette={[]} stored={{}}
         selection={{id:"",text:"",size:40,bold:false,x:0,y:0}} close={()=>{}} save={async()=>{}} />}
-              <button
+              {!selection && <button
                 className={toolbarButton}
                 disabled={!canMutate && !devPreview}
                 onClick={() => {
@@ -1376,7 +1376,7 @@ export function HtmlDeckWorkspace({
               >
                 <GrowthJournalImageIcon className="size-3.5" />
                 {adding ? "추가 위치 선택 취소" : "이미지 추가"}
-              </button>
+              </button>}
               </>}
             </div>
           </div>
