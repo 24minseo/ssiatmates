@@ -201,17 +201,23 @@ export function SlideTextEditor({
   });
   if (inactive) return null;
   return <fieldset disabled={inactive} ref={toolbar as React.RefObject<HTMLFieldSetElement>} role="toolbar" aria-label="선택한 텍스트 서식" className="flex h-10 flex-wrap items-center gap-1 px-1">
+    <button type="button" aria-label="굵게" aria-pressed={pressed} className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg font-bold text-ink transition-colors hover:bg-item-hover aria-pressed:bg-brand/10 aria-pressed:text-brand" onMouseDown={e=>e.preventDefault()} onClick={toggleBold}>B</button>
     <div className="relative flex size-8 shrink-0 items-center justify-center">
       <button type="button" title="글자 색상" aria-label="글자 색상" aria-expanded={showPalette}
-        className="block size-8 rounded-lg border border-field-border" style={{background:activeColor}}
-        onClick={()=>setShowPalette(!showPalette)} />
+        className="relative inline-flex size-8 shrink-0 items-center justify-center rounded-lg text-[18px] font-medium leading-none text-ink transition-colors hover:bg-item-hover"
+        onClick={()=>setShowPalette(!showPalette)}>
+        A
+        <span aria-hidden="true" className="absolute bottom-1 left-1/2 h-1 w-5 -translate-x-1/2 rounded-full" style={{background:activeColor}} />
+      </button>
       {showPalette && <div className="absolute left-0 top-full z-50 mt-2 grid w-40 grid-cols-5 gap-1 rounded-lg border bg-white p-2 shadow">
         {Array.from(new Set(palette.filter((c):c is string=>!!c && /^#[0-9a-f]{6}$/i.test(c)))).map(c=>
           <button key={c} aria-label={c} className="size-6 rounded-full border" style={{background:c}} onClick={()=>{paint(c);setShowPalette(false);}} />)}
-        <label className="col-span-5 text-xs">직접 선택 <input type="color" value={custom} onChange={e=>{setCustom(e.target.value);paint(e.target.value);}} /></label>
+        <label className="col-span-5 flex items-center gap-2 text-xs text-ink-muted">
+          <span className="shrink-0">직접 선택</span>
+          <input type="color" value={custom} aria-label="직접 색상 선택" className="size-8 shrink-0 cursor-pointer rounded border border-field-border bg-transparent p-0.5" onChange={e=>{setCustom(e.target.value);paint(e.target.value);}} />
+        </label>
       </div>}
     </div>
-    <button type="button" aria-label="굵게" aria-pressed={pressed} className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg font-bold text-ink transition-colors hover:bg-item-hover aria-pressed:bg-brand/10 aria-pressed:text-brand" onMouseDown={e=>e.preventDefault()} onClick={toggleBold}>B</button>
     {(["size","x","y"] as const).map((k,i)=><label key={k+values[k]} className="flex h-8 shrink-0 items-center gap-1 rounded-lg px-1 text-xs text-ink-muted">{["크기","X","Y"][i]}
       <input type="number" aria-label={["글자 크기","가로 위치","세로 위치"][i]} className="h-8 w-14 rounded-lg border border-field-border bg-field px-2 text-sm text-ink outline-none focus:border-focus" defaultValue={values[k]}
         onKeyDown={e=>{if(e.key==="Enter")e.currentTarget.blur();}}
