@@ -219,7 +219,7 @@ export function SlideTextEditor({
       </div>}
     </div>
     {(["size","x","y"] as const).map((k,i)=><label key={k+values[k]} className="flex h-10 shrink-0 items-center gap-1 rounded-lg px-1 text-xs text-ink-muted">{["크기","X","Y"][i]}
-      <input type="number" aria-label={["글자 크기","가로 위치","세로 위치"][i]} className="h-10 w-14 rounded-lg border border-field-border bg-field px-2 text-sm text-ink outline-none focus:border-focus" defaultValue={values[k]}
+      <input type="number" aria-label={["글자 크기","가로 위치","세로 위치"][i]} className="h-10 w-20 rounded-lg border border-field-border bg-field px-2 text-sm text-ink outline-none focus:border-focus" defaultValue={values[k]}
         onKeyDown={e=>{if(e.key==="Enter")e.currentTarget.blur();}}
         onBlur={e=>applyNumber(k,e.currentTarget)} /></label>)}
     {([AlignLeft,AlignCenter,AlignRight]).map((Icon,i)=>{
