@@ -57,7 +57,8 @@
   flex-direction: column;
   height: 100%;
   min-height: 0;
-  overflow: hidden;
+  /* Let the editor toolbar's token shadow extend beyond its own box. */
+  overflow: visible;
   padding-bottom: 0;
 }
 .ir-deck-workspace:has(.ir-deck-editor) > .ir-deck-editor {
