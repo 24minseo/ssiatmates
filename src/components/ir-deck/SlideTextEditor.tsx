@@ -189,10 +189,10 @@ export function SlideTextEditor({
     const weight=weights.find(r=>r.start<=at && r.end>at);
     return <span key={at} style={{color:colors.find(r=>r.start<=at && r.end>at)?.color,fontWeight:weight?(weight.bold?700:400):undefined}}>{draft.text.slice(at,boundaries[i+1])}</span>;
   });
-  return <fieldset disabled={inactive} ref={toolbar as React.RefObject<HTMLFieldSetElement>} role="toolbar" aria-label="선택한 텍스트 서식" className="flex flex-wrap items-center gap-2 px-2">
-    <div className="relative">
+  return <fieldset disabled={inactive} ref={toolbar as React.RefObject<HTMLFieldSetElement>} role="toolbar" aria-label="선택한 텍스트 서식" className="flex h-10 flex-wrap items-center gap-1 px-1">
+    <div className="relative flex size-8 shrink-0 items-center justify-center">
       <button type="button" title="글자 색상" aria-label="글자 색상" aria-expanded={showPalette}
-        className="block size-6 rounded-full border" style={{background:"conic-gradient(red,yellow,lime,cyan,blue,magenta,red)"}}
+        className="block size-6 rounded-full border border-field-border" style={{background:"conic-gradient(red,yellow,lime,cyan,blue,magenta,red)"}}
         onClick={()=>setShowPalette(!showPalette)} />
       {showPalette && <div className="absolute left-0 top-full z-50 mt-2 grid w-40 grid-cols-5 gap-1 rounded-lg border bg-white p-2 shadow">
         {Array.from(new Set(palette.filter((c):c is string=>!!c && /^#[0-9a-f]{6}$/i.test(c)))).map(c=>
@@ -200,17 +200,17 @@ export function SlideTextEditor({
         <label className="col-span-5 text-xs">직접 선택 <input type="color" value={custom} onChange={e=>{setCustom(e.target.value);paint(e.target.value);}} /></label>
       </div>}
     </div>
-    <button type="button" aria-label="굵게" aria-pressed={pressed} className="rounded px-2 font-bold aria-pressed:bg-item-hover" onMouseDown={e=>e.preventDefault()} onClick={toggleBold}>B</button>
-    {(["size","x","y"] as const).map((k,i)=><label key={k+values[k]} className="flex items-center gap-1 text-xs">{["크기","X","Y"][i]}
-      <input type="number" aria-label={["글자 크기","가로 위치","세로 위치"][i]} className="w-14 rounded border px-1 py-1" defaultValue={values[k]}
+    <button type="button" aria-label="굵게" aria-pressed={pressed} className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg font-bold text-ink transition-colors hover:bg-item-hover aria-pressed:bg-item-hover" onMouseDown={e=>e.preventDefault()} onClick={toggleBold}>B</button>
+    {(["size","x","y"] as const).map((k,i)=><label key={k+values[k]} className="flex h-8 shrink-0 items-center gap-1 rounded-lg px-1 text-xs text-ink-muted">{["크기","X","Y"][i]}
+      <input type="number" aria-label={["글자 크기","가로 위치","세로 위치"][i]} className="h-8 w-14 rounded-lg border border-field-border bg-field px-2 text-sm text-ink outline-none focus:border-focus" defaultValue={values[k]}
         onKeyDown={e=>{if(e.key==="Enter")e.currentTarget.blur();}}
         onBlur={e=>applyNumber(k,e.currentTarget)} /></label>)}
     {([AlignLeft,AlignCenter,AlignRight]).map((Icon,i)=>{
       const align=(["left","center","right"] as const)[i]!;
       return <button key={align} aria-label={["왼쪽 정렬","가운데 정렬","오른쪽 정렬"][i]} aria-pressed={draft.align===align}
-        className="rounded p-1 aria-pressed:bg-item-hover" onClick={()=>{setDraft({...draft,align});command("align",align);}}><Icon size={17}/></button>;
+        className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg text-icon-muted transition-colors hover:bg-item-hover hover:text-ink aria-pressed:bg-item-hover aria-pressed:text-ink" onClick={()=>{setDraft({...draft,align});command("align",align);}}><Icon size={17}/></button>;
     })}
-    <button className="text-ink-muted" aria-label="텍스트 삭제" title="텍스트 삭제" onClick={()=>void finish(true)}><span
+    <button type="button" className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg text-icon-muted transition-colors hover:bg-destructive-surface hover:text-destructive" aria-label="텍스트 삭제" title="텍스트 삭제" onClick={()=>void finish(true)}><span
       aria-hidden="true"
       className="block size-[18px] bg-current"
       style={{
