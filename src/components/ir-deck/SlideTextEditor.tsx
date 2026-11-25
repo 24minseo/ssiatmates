@@ -204,7 +204,7 @@ export function SlideTextEditor({
     <button type="button" aria-label="굵게" aria-pressed={pressed} className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg font-bold text-ink transition-colors hover:bg-item-hover hover:text-ink aria-pressed:bg-brand/10 aria-pressed:text-brand" onMouseDown={e=>e.preventDefault()} onClick={toggleBold}>B</button>
     <div className="relative flex size-9 shrink-0 items-center justify-center">
       <button type="button" title="글자 색상" aria-label="글자 색상" aria-expanded={showPalette}
-        className="relative inline-flex size-9 shrink-0 items-center justify-center rounded-lg pb-2 text-[16px] font-medium leading-none text-ink transition-colors hover:bg-item-hover hover:text-ink"
+        className="relative inline-flex size-9 shrink-0 items-center justify-center rounded-lg text-[16px] font-medium leading-none text-ink transition-colors hover:bg-item-hover hover:text-ink"
         onClick={()=>setShowPalette(!showPalette)}>
         A
         <span aria-hidden="true" className="absolute bottom-1 left-1/2 h-1 w-5 -translate-x-1/2 rounded-full" style={{background:activeColor}} />
