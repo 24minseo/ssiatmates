@@ -135,7 +135,15 @@ export function previewHtml(
           active.node.style.width=Math.round(width)+'px';
           active.node.style.height=Math.round(height)+'px';
         }
-        var textMode=false;
+        var textMode=false, concealed=null;
+        window.addEventListener('message',function(e){
+          var m=e.data;
+          if(e.source!==parent || !m || m.channel!==${JSON.stringify(channel)} || m.type!=='ir-text-active') return;
+          if(concealed) concealed.removeAttribute('data-ir-editing');
+          concealed=typeof m.id==='string' && /^(?:t[0-9]{1,5}|u[0-9a-f]{32})$/.test(m.id)
+            ? document.querySelector('[data-ir-text="'+m.id+'"]') : null;
+          if(concealed) concealed.setAttribute('data-ir-editing','');
+        });
         window.addEventListener('message',function(e){
           var m=e.data;
           if(e.source!==parent || !m || m.channel!==${JSON.stringify(channel)} || m.type!=='ir-text-mode' || typeof m.enabled!=='boolean') return;
@@ -192,7 +200,8 @@ export function previewHtml(
             var t=movingText, css=getComputedStyle(t.block);
             t.block.style.translate=t.original;
             parent.postMessage({type:'ir-text-select',channel:${JSON.stringify(channel)},slideId:${JSON.stringify(slide.slideId)},
-              id:t.block.dataset.irText,text:t.block.innerText,size:parseFloat(css.fontSize),bold:Number(css.fontWeight)>=600,
+              box:(function(){var r=t.block.getBoundingClientRect();return {left:r.left,top:r.top,width:r.width,height:r.height,font:css.fontFamily,color:css.color,lineHeight:css.lineHeight}})(),
+              id:t.block.dataset.irText,text:t.block.innerText,align:css.textAlign,size:parseFloat(css.fontSize),bold:Number(css.fontWeight)>=600,
               dx:Math.round(e.clientX-t.sx),dy:Math.round(e.clientY-t.sy)},'*');
             movingText=null;
             return;
@@ -228,5 +237,5 @@ export function previewHtml(
       })();
     </script>`
     : "";
-  return `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="${csp}"><style>${fontCss}:root{${vars}}*{box-sizing:border-box}html,body{margin:0;padding:0;width:1920px;height:1080px;overflow:hidden;background:var(--ir-canvas);font-family:Pretendard,sans-serif}.ir-host-page{position:relative;width:1920px;height:1080px;margin:0;padding:0;background:var(--ir-canvas)}section.ir-slide{width:1920px;height:1080px;position:relative;margin:0}:where([data-image-slot-id]){position:relative;touch-action:none}:where([data-image-resize-handle]){position:absolute;right:4px;bottom:4px;width:20px;height:20px;border:1px solid rgba(23,61,49,.18);border-radius:4px;background:rgba(255,255,255,.92);box-shadow:0 1px 4px rgba(0,13,59,.12);cursor:nwse-resize;opacity:0;pointer-events:none;transition:opacity 120ms ease}:where([data-image-slot-id]):hover [data-image-resize-handle]{opacity:1;pointer-events:auto}${safeCss}</style></head><body><div class="ir-host-page">${root.outerHTML}</div>${bridge}</body></html>`;
+  return `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="${csp}"><style>${fontCss}:root{${vars}}*{box-sizing:border-box}html,body{margin:0;padding:0;width:1920px;height:1080px;overflow:hidden;background:var(--ir-canvas);font-family:Pretendard,sans-serif}.ir-host-page{position:relative;width:1920px;height:1080px;margin:0;padding:0;background:var(--ir-canvas)}section.ir-slide{width:1920px;height:1080px;position:relative;margin:0}:where([data-image-slot-id]){position:relative;touch-action:none}:where([data-image-resize-handle]){position:absolute;right:4px;bottom:4px;width:20px;height:20px;border:1px solid rgba(23,61,49,.18);border-radius:4px;background:rgba(255,255,255,.92);box-shadow:0 1px 4px rgba(0,13,59,.12);cursor:nwse-resize;opacity:0;pointer-events:none;transition:opacity 120ms ease}:where([data-image-slot-id]):hover [data-image-resize-handle]{opacity:1;pointer-events:auto}${safeCss}[data-ir-editing],[data-ir-editing] *{color:transparent!important;-webkit-text-fill-color:transparent!important;text-shadow:none!important}</style></head><body><div class="ir-host-page">${root.outerHTML}</div>${bridge}</body></html>`;
 }

@@ -14,10 +14,12 @@ export function HtmlSlidePreview({
   onSlideShortcut,
   onSlideWheel,
   onText,
+  activeTextId,
   style,
   className,
 }: {
   slide: HtmlSlide;
+  activeTextId?: string | undefined;
   onText?: ((s: import("@/lib/ir-slide-text").TextSelection) => void) | undefined;
   view: HtmlView;
   urls: Record<string, string>;
@@ -80,6 +82,10 @@ export function HtmlSlidePreview({
       type: "ir-text-mode", channel: identity.channel, enabled: editText,
     }, "*");
   }
+  function syncSelection() {
+    if(interactive) frame.current?.contentWindow?.postMessage({type:"ir-text-active",channel:identity.channel,id:activeTextId},"*");
+  }
+  useEffect(syncSelection,[interactive,identity.channel,activeTextId]);
   useEffect(syncTextMode, [interactive, identity.channel, editText]);
   useEffect(() => {
     const observer = new ResizeObserver((entries) => setWidth(entries[0]?.contentRect.width || 0));
@@ -111,10 +117,10 @@ export function HtmlSlidePreview({
         return;
       if (e.data.type === "ir-text-select") {
         const { id, text, size, bold } = e.data;
-        if (typeof id === "string" && /^t\d{1,5}$/.test(id) && typeof text === "string" && Number.isFinite(size) && typeof bold === "boolean") {
+        if (typeof id === "string" && /^(?:t\d{1,5}|u[0-9a-f]{32})$/.test(id) && typeof text === "string" && Number.isFinite(size) && typeof bold === "boolean") {
           const edit = slide.textEdits?.[id];
           if (!Number.isFinite(e.data.dx) || !Number.isFinite(e.data.dy)) return;
-          onText?.({ id, text, size, bold, x: Math.round((edit?.x ?? 0) + e.data.dx), y: Math.round((edit?.y ?? 0) + e.data.dy) });
+          onText?.({ id, text, size, bold, box:e.data.box, align: e.data.align === "center" ? "center" : ["right","end"].includes(e.data.align) ? "right" : "left", x: Math.round((edit?.x ?? 0) + e.data.dx), y: Math.round((edit?.y ?? 0) + e.data.dy) });
         }
         return;
       }
@@ -172,7 +178,7 @@ export function HtmlSlidePreview({
         title={`${slide.sectionLabel}: ${slide.headline}`}
         sandbox={interactive ? "allow-scripts" : ""}
         referrerPolicy="no-referrer"
-        onLoad={syncTextMode}
+        onLoad={() => {syncTextMode();syncSelection();}}
         srcDoc={html}
         className="absolute left-0 top-0 border-0"
         style={{

@@ -1,5 +1,11 @@
 export type ColorRange = { start: number; end: number; color: string };
+export type TextAlign = "left" | "center" | "right";
 export type SlideTextEdit = {
+  align?: TextAlign;
+  deleted?: boolean;
+  width?: number;
+  height?: number;
+  designFont?: "Paperlogy" | "Pretendard";
   text?: string;
   colors?: ColorRange[];
   size?: number;
@@ -8,6 +14,9 @@ export type SlideTextEdit = {
   y?: number;
 };
 export type TextSelection = {
+  align?: TextAlign;
+  isNew?: boolean;
+  box?: {left:number; top:number; width:number; height:number; font:string; color:string; lineHeight:string};
   id: string;
   text: string;
   size: number;
@@ -46,11 +55,32 @@ export function prepareSlideText(root: Element, edits: Record<string, SlideTextE
     }
   }
   visit(root);
-  for (const [index, el] of groups.entries()) {
-    const id = "t" + index;
+  const blocks = groups.map((el,index) => ({ id: "t" + index, el }));
+  for (const [id, edit] of Object.entries(edits)) {
+    if (!/^u[0-9a-f]{32}$/.test(id) || edit.deleted || !edit.text) continue;
+    const el = root.ownerDocument.createElement("div");
+    el.style.cssText = "position:absolute;left:64px;top:64px;width:720px;z-index:20;white-space:pre-wrap;overflow-wrap:anywhere;font-size:40px;color:var(--ir-ink)";
+    el.style.fontFamily = edit.designFont === "Paperlogy" ? "Paperlogy, sans-serif" : "Pretendard, sans-serif";
+    root.append(el);
+    blocks.push({id,el});
+  }
+  for (const {id, el} of blocks) {
     el.setAttribute("data-ir-text", id);
     const edit = edits[id];
     if (!edit) continue;
+    if (edit.deleted) { el.remove(); continue; }
+    if (edit.width || edit.height) {
+      if (el.matches(inline)) el.style.display = "inline-block";
+      if (edit.width) el.style.setProperty("width", edit.width+"px","important");
+      if (edit.height) el.style.setProperty("height", edit.height+"px","important");
+    }
+    if (edit.align) {
+      if (el.matches(inline)) {
+        el.style.display = "inline-block";
+        el.style.width = "100%";
+      }
+      el.style.setProperty("text-align",edit.align,"important");
+    }
     if (typeof edit.text === "string" && el.textContent !== edit.text) {
       el.textContent = edit.text;
       el.style.whiteSpace = "pre-wrap";

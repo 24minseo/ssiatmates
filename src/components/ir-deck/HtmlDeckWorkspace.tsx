@@ -245,6 +245,7 @@ export function HtmlDeckWorkspace({
     zIndex: 100,
   });
   const [busy, setBusy] = useState(false);
+  const textStage = useRef<HTMLDivElement>(null);
   const [textMode, setTextMode] = useState(false);
   const [selection, setSelection] = useState<(TextSelection & { slideId: string; revision: number }) | null>(null);
   const [history, setHistory] = useState<{ past: ImageHistoryEntry[]; future: ImageHistoryEntry[] }>({
@@ -1177,32 +1178,11 @@ export function HtmlDeckWorkspace({
       )}
     >
       {isFullscreen && <Toaster position="bottom-center" duration={1200} />}
-      {selection && current.slideId === selection.slideId && !preview && <SlideTextEditor
-        palette={Object.values(view.document.designTokens.colors)}
-        selection={selection} stored={current.textEdits?.[selection.id] ?? {}}
-        close={() => setSelection(null)}
-        save={async edit => {
-          if (!canMutate || busyLock.current) throw new Error("다른 저장 작업이 끝나면 다시 시도해 주세요.");
-          busyLock.current = true;
-          setBusy(true);
-          try {
-            const { data, error } = await supabase.rpc("save_ir_html_text_v1", {
-              p_document_id: view.document_id, p_slide_id: selection.slideId,
-              p_text_id: selection.id, p_revision: selection.revision, p_edit: edit,
-            });
-            if (error) throw new Error(error.message);
-            if (alive.current && owner.current === reference.userId) {
-              setView(parseView(data, reference.deckId));
-              setDownload(null);
-            }
-          } finally { busyLock.current = false; setBusy(false); }
-        }}
-      />}
       <header className="shrink-0 flex flex-wrap items-center justify-between gap-4">
         {!preview && (
           <div className="flex flex-wrap items-center gap-3">
             <div
-              className="inline-flex w-fit items-center gap-0.5 rounded-xl border border-[rgba(64,72,66,0.08)] bg-surface p-1"
+              className="inline-flex max-w-full flex-wrap items-center gap-0.5 rounded-xl border border-[rgba(64,72,66,0.08)] bg-surface p-1"
               style={{ boxShadow: "0 4px 12px 0 rgba(64, 72, 66, 0.1)" }}
             >
               <div className="relative">
@@ -1216,6 +1196,40 @@ export function HtmlDeckWorkspace({
                 글자를 클릭하거나 끌어서 이동하세요
               </span>
               </div>
+              {textMode && <>
+              <button type="button" className={toolbarButton} disabled={!canMutate || busy}
+                onClick={() => {
+                  setTextMode(true);
+                  setAdding(false);
+                  setSlotId(null);
+                  setSelection({ id: "u"+crypto.randomUUID().replaceAll("-",""), text: "", size: 40,
+                    bold: false, x: 0, y: 0, align: "left", isNew: true,
+                    slideId: current.slideId, revision: view.image_revision });
+                }} aria-label="Text · 텍스트 추가" title="텍스트 추가">Text</button>
+      {selection && current.slideId === selection.slideId && !preview ? <SlideTextEditor
+        key={selection.id} stage={textStage.current} font={reference.settings.fontFamily}
+        palette={Object.values(view.document.designTokens.colors)}
+        selection={selection} stored={current.textEdits?.[selection.id] ?? {}}
+        close={() => setSelection(null)}
+        save={async edit => {
+          if (!canMutate || busyLock.current) throw new Error("다른 저장 작업이 끝나면 다시 시도해 주세요.");
+          busyLock.current = true;
+          setBusy(true);
+          try {
+            const { data, error } = await supabase.rpc("save_ir_html_text_v1", {
+              p_document_id: view.document_id, p_slide_id: selection.slideId,
+              p_text_id: selection.id, p_revision: selection.revision, p_edit: selection.isNew ? { ...edit, designFont: reference.settings.fontFamily } : edit,
+            });
+            if (error) throw new Error(error.message);
+            if (alive.current && owner.current === reference.userId) {
+              setView(parseView(data, reference.deckId));
+              setDownload(null);
+            }
+          } finally { busyLock.current = false; setBusy(false); }
+        }}
+      /> : <SlideTextEditor inactive stage={null} font={reference.settings.fontFamily} palette={[]} stored={{}}
+        selection={{id:"",text:"",size:40,bold:false,x:0,y:0}} close={()=>{}} save={async()=>{}} />}
+              </>}
               <div className="flex items-center gap-0">
                 <button
                   className={historyButton}
@@ -1421,7 +1435,7 @@ export function HtmlDeckWorkspace({
           )}
           <div ref={slideStageRef} className="ir-deck-slide-stage flex min-h-0 flex-1 items-start justify-center">
             <div
-              className="ir-deck-fullscreen-slide-frame relative max-w-full"
+              ref={textStage} className="ir-deck-fullscreen-slide-frame relative max-w-full"
               style={currentSlideStyle}
             >
               <HtmlSlidePreview
@@ -1430,6 +1444,7 @@ export function HtmlDeckWorkspace({
                 view={view}
                 urls={urls}
                 mediaOrigin={new URL(mediaBase()).origin}
+                activeTextId={textMode && selection?.slideId === current.slideId ? selection.id : undefined}
                 onText={!preview && textMode && canMutate ? item => setSelection({ ...item, slideId: current.slideId, revision: view.image_revision }) : undefined}
                 onSelect={preview ? undefined : (slot, position) => {
                   setPoint(position);

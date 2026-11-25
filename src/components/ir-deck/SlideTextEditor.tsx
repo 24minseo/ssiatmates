@@ -1,20 +1,26 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { AlignLeft, AlignCenter, AlignRight, Trash2 } from "lucide-react";
 import type { SlideTextEdit, TextSelection } from "@/lib/ir-slide-text";
 
 export function SlideTextEditor({
-  selection,
+  stage, font, selection, inactive=false,
   stored,
   palette,
   save,
   close,
 }: {
+  stage: HTMLDivElement | null;
+  font: string;
+  inactive?: boolean;
   selection: TextSelection;
   stored: SlideTextEdit;
   palette: (string | null | undefined)[];
   save: (edit: SlideTextEdit) => Promise<void>;
   close: () => void;
 }) {
-  const dialog = useRef<HTMLDialogElement>(null);
+  const toolbar = useRef<HTMLDivElement>(null);
+  const canvas = useRef<HTMLDivElement>(null);
   const [draft, setDraft] = useState(selection);
   const input = useRef<HTMLTextAreaElement>(null);
   const [colors, setColors] = useState(stored.colors ?? []);
@@ -50,111 +56,101 @@ export function SlideTextEditor({
     }));
     setDraft({ ...draft, text });
   }
-  const [pending, setPending] = useState(false);
-  const [error, setError] = useState("");
+  const [showPalette,setShowPalette] = useState(false);
+  const [error,setError] = useState("");
+  const saving = useRef(false);
+  const box = selection.box ?? {left:64,top:64,width:720,height:64,font,color:"var(--ir-ink)",lineHeight:"1.25"};
+  const [dimensions,resize] = useState({width:box.width,height:box.height});
+  const [scale,setScale] = useState((stage?.clientWidth || 1920)/1920);
+  const drag = useRef<{x:number;y:number;w:number;h:number;dx:number;dy:number;move:boolean}|null>(null);
   useEffect(() => {
-    const el = dialog.current;
-    el?.showModal();
-    return () => el?.close();
-  }, []);
-  return (
-    <dialog
-      ref={dialog}
-      aria-label="텍스트 편집"
-      onCancel={(e) => {
+    input.current?.focus();
+    if (!stage) return;
+    const observer=new ResizeObserver(() => setScale(stage.clientWidth/1920));
+    observer.observe(stage);
+    return () => observer.disconnect();
+  },[stage]);
+  async function finish(remove=false) {
+    if (saving.current) return;
+    const edit:SlideTextEdit={...stored};
+    if (draft.text !== selection.text) edit.text=draft.text;
+    if (colors !== stored.colors && (colors.length || stored.colors?.length)) {
+      edit.text=draft.text;
+      edit.colors=colors;
+    }
+    if (draft.align && draft.align !== selection.align) edit.align=draft.align;
+    if (draft.size !== selection.size) edit.size=draft.size;
+    if (draft.bold !== selection.bold) edit.bold=draft.bold;
+    if (draft.x !== (stored.x ?? 0)) edit.x=draft.x;
+    if (draft.y !== (stored.y ?? 0)) edit.y=draft.y;
+    if (dimensions.width !== box.width) edit.width=dimensions.width;
+    if (dimensions.height !== box.height) edit.height=dimensions.height;
+    if (selection.isNew && !draft.text.trim()) { close();return true; }
+    if (!remove && JSON.stringify(edit)===JSON.stringify(stored)) {close();return true;}
+    saving.current=true;
+    try { await save(remove || !draft.text.trim() ? {deleted:true} : edit); close(); return true; }
+    catch (err) {setError(err instanceof Error ? err.message : "저장에 실패했어요. 다시 시도해 주세요.");}
+    finally {saving.current=false;}
+  }
+  useEffect(() => {
+    if (inactive) return;
+    function outside(e:MouseEvent) {
+      if (!(e.target instanceof Element) || toolbar.current?.contains(e.target) || canvas.current?.contains(e.target)) return;
+      const target=e.target.closest<HTMLElement>("button,a,input,select");
+      if (target) {
         e.preventDefault();
-        if (!pending) close();
-      }}
-      className="fixed inset-0 m-auto w-[min(28rem,94vw)] rounded-xl border border-field-border bg-surface p-5 text-ink shadow-lg backdrop:bg-black/30"
-    >
-      <form
-        className="grid gap-4"
-        onSubmit={async (e) => {
-          e.preventDefault();
-          const edit: SlideTextEdit = { ...stored };
-          if (draft.text !== selection.text) edit.text = draft.text;
-          if (colors.length || stored.colors?.length) {
-            edit.text = draft.text;
-            edit.colors = colors;
-          }
-          if (draft.size !== selection.size) edit.size = draft.size;
-          if (draft.bold !== selection.bold) edit.bold = draft.bold;
-          if (draft.x !== (stored.x ?? 0)) edit.x = draft.x;
-          if (draft.y !== (stored.y ?? 0)) edit.y = draft.y;
-          setPending(true);
-          try {
-            await save(edit);
-            close();
-          } catch (failure) {
-            setError(failure instanceof Error ? failure.message : "저장에 실패했어요.");
-          } finally {
-            setPending(false);
-          }
-        }}
-      >
-        <label className="grid gap-2 font-semibold">
-          텍스트 내용
-          <textarea
-            ref={input}
-            required
-            maxLength={6000}
-            rows={4}
-            value={draft.text}
-            className="rounded-lg border p-2 font-normal"
-            onChange={(e) => changeText(e.target.value)}
-          />
-        </label>
-        <fieldset className="grid gap-2">
-          <legend className="text-sm font-semibold">글자 색상</legend>
-          <p className="text-xs text-ink-muted">위에서 단어를 드래그한 뒤 색을 고르세요. 선택한 부분이 없으면 전체에 적용돼요.</p>
-          <div className="flex items-center gap-2">
-            {Array.from(new Set(palette.filter((c): c is string => !!c && /^#[0-9a-f]{6}$/i.test(c)))).map(color =>
-              <button key={color} type="button" aria-label={color + " 적용"} title={color}
-                className="size-8 rounded border" style={{ backgroundColor: color }}
-                onClick={() => paint(color)} />)}
-            <input type="color" aria-label="직접 고를 색상" value={custom} onChange={e => setCustom(e.target.value)} />
-            <button type="button" className="text-sm" onClick={() => paint(custom)}>선택 색 적용</button>
-          </div>
-          {colors.length > 0 && <div aria-label="글자 색상 미리보기" className="max-h-24 overflow-auto whitespace-pre-wrap break-words rounded border p-2">
-            {colors.map((r,i) => <span key={r.start}>{draft.text.slice(colors[i-1]?.end ?? 0,r.start)}<span style={{color:r.color}}>{draft.text.slice(r.start,r.end)}</span></span>)}
-            {draft.text.slice(colors[colors.length-1]?.end)}
-          </div>}
-        </fieldset>
-        <div className="flex flex-wrap items-end gap-3">
-          {(["size", "x", "y"] as const).map((key) => (
-            <label key={key} className="grid gap-1 text-sm">
-              {{ size: "크기 (px)", x: "가로 이동 (px)", y: "세로 이동 (px)" }[key]}
-              <input
-                type="number"
-                required
-                step="any"
-                min={key === "size" ? 1 : -1920}
-                max={key === "size" ? 512 : 1920}
-                className="w-24 rounded-md border p-2"
-                value={Number.isFinite(draft[key]) ? draft[key] : ""}
-                onChange={(e) => setDraft({ ...draft, [key]: e.target.valueAsNumber })}
-              />
-            </label>
-          ))}
-          <label>
-            <input
-              type="checkbox"
-              checked={draft.bold}
-              onChange={(e) => setDraft({ ...draft, bold: e.target.checked })}
-            />{" "}
-            굵게
-          </label>
+        e.stopImmediatePropagation();
+        void finish().then(ok=>{if(ok) requestAnimationFrame(()=>target.isConnected && target.click());});
+      } else void finish();
+    }
+    document.addEventListener("click",outside,true);
+    return ()=>document.removeEventListener("click",outside,true);
+  });
+  const layout={width:"100%",height:"100%",margin:0,padding:0,border:0,boxSizing:"border-box" as const,
+    fontFamily:box.font,fontSize:draft.size,fontWeight:draft.bold?700:400,lineHeight:box.lineHeight.endsWith("px")?parseFloat(box.lineHeight)/selection.size:box.lineHeight,
+    textAlign:draft.align,whiteSpace:"pre-wrap" as const,overflowWrap:"anywhere" as const};
+  const wordView = <>{colors.map((r,i)=><span key={r.start}>{draft.text.slice(colors[i-1]?.end ?? 0,r.start)}<span style={{color:r.color}}>{draft.text.slice(r.start,r.end)}</span></span>)}{draft.text.slice(colors.at(-1)?.end ?? 0)}</>;
+  return <fieldset disabled={inactive} ref={toolbar as React.RefObject<HTMLFieldSetElement>} role="toolbar" aria-label="선택한 텍스트 서식" className="flex flex-wrap items-center gap-2 px-2">
+    <div className="relative">
+      <button type="button" title="글자 색상" aria-label="글자 색상" aria-expanded={showPalette}
+        className="block size-6 rounded-full border" style={{background:"conic-gradient(red,yellow,lime,cyan,blue,magenta,red)"}}
+        onClick={()=>setShowPalette(!showPalette)} />
+      {showPalette && <div className="absolute left-0 top-full z-50 mt-2 grid w-40 grid-cols-5 gap-1 rounded-lg border bg-white p-2 shadow">
+        {Array.from(new Set(palette.filter((c):c is string=>!!c && /^#[0-9a-f]{6}$/i.test(c)))).map(c=>
+          <button key={c} aria-label={c} className="size-6 rounded-full border" style={{background:c}} onClick={()=>{paint(c);setShowPalette(false);}} />)}
+        <label className="col-span-5 text-xs">직접 선택 <input type="color" value={custom} onChange={e=>{setCustom(e.target.value);paint(e.target.value);}} /></label>
+      </div>}
+    </div>
+    <button type="button" aria-label="굵게" aria-pressed={draft.bold} className="rounded px-2 font-bold aria-pressed:bg-item-hover" onClick={()=>setDraft({...draft,bold:!draft.bold})}>B</button>
+    {(["size","x","y"] as const).map((k,i)=><label key={k+draft[k]} className="flex items-center gap-1 text-xs">{["크기","가로","세로"][i]}
+      <input type="number" aria-label={["글자 크기","가로 이동","세로 이동"][i]} className="w-14 rounded border px-1 py-1" defaultValue={draft[k]}
+        onKeyDown={e=>{if(e.key==="Enter")e.currentTarget.blur();}} onBlur={e=>{
+          const v=e.target.valueAsNumber;
+          if(Number.isFinite(v))setDraft({...draft,[k]:Math.max(k==="size"?1:-1920,Math.min(k==="size"?512:1920,v))});
+        }} /></label>)}
+    {([AlignLeft,AlignCenter,AlignRight]).map((Icon,i)=>{
+      const align=(["left","center","right"] as const)[i]!;
+      return <button key={align} aria-label={["왼쪽 정렬","가운데 정렬","오른쪽 정렬"][i]} aria-pressed={draft.align===align}
+        className="rounded p-1 aria-pressed:bg-item-hover" onClick={()=>setDraft({...draft,align})}><Icon size={17}/></button>;
+    })}
+    <button aria-label="텍스트 삭제" title="텍스트 삭제" onClick={()=>void finish(true)}><Trash2 size={17}/></button>
+    {error && <button role="alert" onClick={()=>void finish()}>{error} · 다시 저장</button>}
+    {stage && createPortal(<div className="absolute inset-0 z-20 overflow-hidden" onClick={e=>{if(e.target===e.currentTarget)void finish();}}>
+      <div style={{width:1920,height:1080,transformOrigin:"top left",transform:"scale("+scale+")",pointerEvents:"none"}}>
+        <div ref={canvas} style={{position:"absolute",pointerEvents:"auto",left:box.left+draft.x-(stored.x??0),top:box.top+draft.y-(stored.y??0),...dimensions,outline:"2px solid #238767"}}>
+          <div aria-hidden style={{...layout,color:box.color,pointerEvents:"none",overflow:"hidden"}}>{wordView}</div>
+          <textarea ref={input} aria-label="슬라이드 텍스트" spellCheck={false} maxLength={6000}
+            style={{...layout,position:"absolute",inset:0,background:"transparent",color:"transparent",caretColor:box.color,resize:"none",outline:0}}
+            value={draft.text} onChange={e=>changeText(e.target.value)} onScroll={e=>{const mirror=e.currentTarget.previousElementSibling;if(mirror)mirror.scrollTop=e.currentTarget.scrollTop;}} />
+          {["move","resize"].map(mode=><button key={mode} aria-label={mode==="move"?"텍스트 상자 이동":"텍스트 상자 크기 조절"}
+            style={{position:"absolute",touchAction:"none",right:0,...(mode==="move"?{top:-5,left:0,height:8,cursor:"move"}:{bottom:0,width:18,height:18,border:"2px solid #238767",background:"white",cursor:"nwse-resize"})}}
+            onPointerDown={e=>{e.preventDefault();e.currentTarget.setPointerCapture(e.pointerId);drag.current={x:e.clientX,y:e.clientY,w:dimensions.width,h:dimensions.height,dx:draft.x,dy:draft.y,move:mode==="move"};}}
+            onPointerMove={e=>{const g=drag.current;if(!g)return;const dx=Math.round((e.clientX-g.x)/scale),dy=Math.round((e.clientY-g.y)/scale);
+              if(g.move)setDraft({...draft,x:Math.max(-1920,Math.min(1920,g.dx+dx)),y:Math.max(-1920,Math.min(1920,g.dy+dy))});
+              else resize({width:Math.min(1920,Math.max(12,Math.round(g.w+dx))),height:Math.min(1080,Math.max(12,Math.round(g.h+dy)))});}}
+            onLostPointerCapture={()=>{drag.current=null;}} />)}
         </div>
-        {error && <p role="alert">{error}</p>}
-        <div className="flex justify-end gap-3">
-          <button type="button" disabled={pending} onClick={close}>
-            취소
-          </button>
-          <button disabled={pending} className="rounded-lg bg-brand px-4 py-2 text-white">
-            {pending ? "저장 중…" : "저장"}
-          </button>
-        </div>
-      </form>
-    </dialog>
-  );
+      </div>
+    </div>,stage)}
+  </fieldset>;
 }
