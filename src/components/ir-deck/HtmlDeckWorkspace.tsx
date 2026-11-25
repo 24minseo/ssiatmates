@@ -265,6 +265,7 @@ export function HtmlDeckWorkspace({
   const [preview, setPreview] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [pendingImage, setPendingImage] = useState<PendingImage | null>(null);
+  const [queuedImageChanges, setQueuedImageChanges] = useState<PendingImage[]>([]);
   const [exportBusy, setExportBusy] = useState(false),
     [exportError, setExportError] = useState("");
   const [htmlBusy, setHtmlBusy] = useState(false);
@@ -645,7 +646,7 @@ export function HtmlDeckWorkspace({
         : [...currentView.imageSlots, nextSlot],
     };
   }
-  async function saveBinding(pending: PendingImage) {
+  async function saveBinding(pending: PendingImage): Promise<number> {
     const result = await htmlCall("ir-deck-html-api-v1", pending.body);
     if (result["saved"] !== true) throw new Error("이미지 저장 완료를 확인하지 못했습니다.");
     const imageRevision =
@@ -660,10 +661,9 @@ export function HtmlDeckWorkspace({
       );
     }
     if (alive.current && owner.current === reference.userId) {
-      setPendingImage(null);
-      toast.success("이미지 변경사항을 저장했어요.");
       setDownload(null);
     }
+    return imageRevision;
   }
   function rememberImageChange(before: ImageSlot | null, after: ImageSlot | null) {
     setHistory((currentHistory) => ({
@@ -689,34 +689,28 @@ export function HtmlDeckWorkspace({
       },
       revision: view.image_revision,
     };
+    setQueuedImageChanges((changes) => [...changes, pending]);
+    setView((currentView) => currentView ? applySavedImageMutation(currentView, pending, currentView.image_revision) : currentView);
+    if (historyEntry && historyDirection) {
+      setHistory((currentHistory) => historyDirection === "undo"
+        ? { past: currentHistory.past.slice(0, -1), future: [...currentHistory.future, historyEntry] }
+        : { past: [...currentHistory.past, historyEntry], future: currentHistory.future.slice(0, -1) });
+    } else if (historyEntry) rememberImageChange(historyEntry.before, historyEntry.after);
+  }
+  async function saveQueuedImages() {
+    if (!queuedImageChanges.length || busyLock.current) return;
     busyLock.current = true;
     setBusy(true);
-    setPendingImage(pending);
     try {
-      await saveBinding(pending);
-      if (historyEntry && historyDirection) {
-        setHistory((currentHistory) => {
-          if (historyDirection === "undo") {
-            return {
-              past: currentHistory.past.slice(0, -1),
-              future: [...currentHistory.future, historyEntry],
-            };
-          }
-          return {
-            past: [...currentHistory.past, historyEntry],
-            future: currentHistory.future.slice(0, -1),
-          };
-        });
-      } else if (historyEntry) {
-        rememberImageChange(historyEntry.before, historyEntry.after);
+      let revision = view?.image_revision ?? 0;
+      for (const pending of queuedImageChanges) {
+        pending.body.expected_revision = revision;
+        revision = await saveBinding(pending);
       }
+      setQueuedImageChanges([]);
+      toast.success("이미지 변경사항을 저장했어요.");
     } catch (e) {
-      if (alive.current)
-        toast.error(
-          e instanceof Error
-            ? e.message
-            : "이미지를 저장하지 못했습니다. 같은 변경으로 다시 확인해 주세요.",
-        );
+      toast.error(e instanceof Error ? e.message : "이미지 변경사항을 저장하지 못했어요.");
     } finally {
       busyLock.current = false;
       if (alive.current) setBusy(false);
@@ -844,11 +838,11 @@ export function HtmlDeckWorkspace({
         revision: view.image_revision,
         localSlot: slot,
       };
-      setPendingImage(pending);
       setSlotId(slot.id);
       setAdding(false);
       setPlacement(slot.placement || placement);
-      await saveBinding(pending);
+      setQueuedImageChanges((changes) => [...changes, pending]);
+      setView((currentView) => currentView ? applySavedImageMutation(currentView, pending, currentView.image_revision) : currentView);
       rememberImageChange(before, slot);
     } catch (e) {
       if (alive.current)
@@ -1211,27 +1205,6 @@ export function HtmlDeckWorkspace({
               className="inline-flex max-w-full flex-wrap items-center gap-0.5 rounded-xl border border-[rgba(64,72,66,0.08)] bg-surface p-1"
               style={{ boxShadow: "0 4px 12px 0 rgba(64, 72, 66, 0.1)" }}
             >
-              <div className="flex items-center gap-0">
-                <button
-                  className={historyButton}
-                  aria-label="되돌리기"
-                  title="되돌리기"
-                  disabled={!canMutate || (history.past.length === 0 && !selection)}
-                  onClick={() => void applyHistory("undo")}
-                >
-                  <Undo2 className="size-4" strokeWidth={2} />
-                </button>
-                <button
-                  className={historyButton}
-                  aria-label="다시 실행"
-                  title="다시 실행"
-                  disabled={!canMutate || history.future.length === 0}
-                  onClick={() => void applyHistory("redo")}
-                >
-                  <Redo2 className="size-4" strokeWidth={2} />
-                </button>
-              </div>
-              <span className="h-5 w-px shrink-0 bg-field-border/70" aria-hidden="true" />
               {selectedSlot ? <>
                 <button className={toolbarButton} disabled={!canMutate} onClick={() => fileInput.current?.click()}>
                   <GrowthJournalImageIcon className="size-3.5" />
@@ -1362,7 +1335,8 @@ export function HtmlDeckWorkspace({
           <button
             className={cn(primary, "px-5 text-white")}
             disabled={busy || !!pendingImage}
-            onClick={() => {
+            onClick={async () => {
+              await saveQueuedImages();
               onSave();
               toast.success("완성된 IR 덱을 최근 파일에 저장했어요.");
             }}
