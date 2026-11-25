@@ -191,6 +191,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      save_ir_html_text_v1: {
+        Args: { p_document_id: string; p_slide_id: string; p_text_id: string; p_revision: number; p_edit: Json }
+        Returns: Json
+      }
       attach_saved_notice_report_v1: {
         Args: {
           p_saved_notice_id: string
