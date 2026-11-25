@@ -124,7 +124,7 @@ export function SlideTextEditor({
   const [scale,setScale] = useState((stage?.clientWidth || 1920)/1920);
   const drag = useRef<{x:number;y:number;w:number;h:number;dx:number;dy:number;fontSize:number;move:boolean}|null>(null);
   useEffect(() => {
-    input.current?.focus();
+    if (selection.isNew) requestAnimationFrame(() => input.current?.focus());
     if (!stage) return;
     const observer=new ResizeObserver(() => setScale(stage.clientWidth/1920));
     observer.observe(stage);
@@ -248,8 +248,9 @@ export function SlideTextEditor({
           {selection.isNew && <><div aria-hidden style={{...layout,color:box.color,pointerEvents:"none",overflow:"hidden"}}>
             {draft.text ? wordView : <span style={{color:"var(--ir-ink-muted)"}}>텍스트를 입력하세요</span>}
           </div>
-          <textarea ref={input} aria-label="슬라이드 텍스트" placeholder="텍스트를 입력하세요" spellCheck={false} maxLength={6000}
-            style={{...layout,position:"absolute",inset:0,background:"transparent",color:"transparent",caretColor:box.color,resize:"none",outline:0}}
+          <textarea ref={input} autoFocus aria-label="슬라이드 텍스트" placeholder="텍스트를 입력하세요" spellCheck={false} maxLength={6000}
+            onMouseDown={e=>e.stopPropagation()}
+            style={{...layout,position:"absolute",inset:0,background:"transparent",color:"transparent",caretColor:"#1f8064",cursor:"text",resize:"none",outline:0}}
             value={draft.text} onSelect={e=>setSelected([e.currentTarget.selectionStart,e.currentTarget.selectionEnd])} onChange={e=>changeText(e.target.value)} onScroll={e=>{const mirror=e.currentTarget.previousElementSibling;if(mirror)mirror.scrollTop=e.currentTarget.scrollTop;}} /></>}
           {["move","resize"].map(mode=><button key={mode} aria-label={mode==="move"?"텍스트 상자 이동":"텍스트 상자 크기 조절"}
             style={{position:"absolute",pointerEvents:"auto",touchAction:"none",right:0,...(mode==="move"?{top:-5,left:0,height:8,cursor:"move"}:{bottom:0,width:18,height:18,border:"2px solid #238767",background:"white",cursor:"nwse-resize"})}}
