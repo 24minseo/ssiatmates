@@ -850,7 +850,7 @@ export function HtmlDeckWorkspace({
       const imageSize = target ? null : await readImageSize(file);
       const fitPlacement = imageSize
         ? (() => {
-            const scale = Math.min(1, 640 / imageSize.width, 360 / imageSize.height);
+            const scale = Math.min(1, 640 / imageSize.width, 640 / imageSize.height);
             return {
               ...placement,
               width: Math.max(80, Math.round(imageSize.width * scale)),
