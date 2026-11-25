@@ -982,7 +982,6 @@ export function IrDeckWireframe() {
           </div>
         </div>
         {library.error && <p role="alert" className="mb-4 text-sm text-ink-muted">{library.error} <button type="button" onClick={library.refresh} className="underline">다시 불러오기</button></p>}
-        {libraryPending && <p role="status" className="mb-4 text-sm text-ink-muted">덱 정보를 확인하고 있어요.</p>}
         {!loaded || (user && !library.ready && !library.error) ? <p role="status" className="py-16 text-center text-ink-muted">덱을 불러오는 중이에요.</p> : displayedProjects.length === 0 ? (
         <section className="flex flex-col items-center px-6 py-16 text-center">
           <IrDeckEmptyStateArtwork />
