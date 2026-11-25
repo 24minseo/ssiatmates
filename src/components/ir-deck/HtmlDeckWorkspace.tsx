@@ -1372,7 +1372,7 @@ export function HtmlDeckWorkspace({
           const before = structuredClone(current.textEdits?.[selection.id] ??
             (selection.id.startsWith("u") ? { deleted: true } : {}));
           const after: SlideTextEdit = edit.deleted ? { deleted: true } :
-            selection.isNew ? { ...edit, designFont: reference.settings.fontFamily } : edit;
+            selection.isNew ? { ...edit, designFont: "Pretendard" } : edit;
           busyLock.current = true;
           setBusy(true);
           try {

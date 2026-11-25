@@ -92,7 +92,7 @@ export function SlideTextEditor({
   const [showPalette,setShowPalette] = useState(false);
   const [error,setError] = useState("");
   const saving = useRef(false);
-  const box = selection.box ?? {left:64,top:64,width:720,height:64,font,color:"var(--ir-ink)",lineHeight:"1.25"};
+  const box = selection.box ?? {left:64,top:64,width:720,height:64,font:selection.isNew ? "Pretendard, sans-serif" : font,color:"var(--ir-ink)",lineHeight:"1.25"};
   const activeColor = colors.find(r => r.start <= start && r.end > start)?.color
     ?? (typeof box.color === "string" ? box.color : "var(--ir-ink)");
   const [measured,setMeasured]=useState<{left:number;top:number;width:number;height:number}|null>(null);
