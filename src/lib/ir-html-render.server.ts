@@ -35,6 +35,7 @@ const PACK = `https://github.com/Sparticuz/chromium/releases/download/v153.0.0/c
 const FONT_URLS = {
   Pretendard:
     "https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/packages/pretendard/dist/web/variable/woff2/PretendardVariable.woff2",
+  PaperlogyRegular: "https://cdn.jsdelivr.net/gh/fonts-archive/Paperlogy/Paperlogy-4Regular.woff2",
   Paperlogy: "https://cdn.jsdelivr.net/gh/fonts-archive/Paperlogy/Paperlogy-7Bold.woff2",
 };
 const object = (v: unknown) => v !== null && typeof v === "object" && !Array.isArray(v);
@@ -88,7 +89,7 @@ export async function defaultFonts(): Promise<string> {
           const data = await readBytes(r.body, 4 * 1024 * 1024);
           if (data.length < 100 || new TextDecoder().decode(data.slice(0, 4)) !== "wOF2")
             throw new Error("invalid_font");
-          return `@font-face{font-family:'${family}';font-style:normal;font-weight:${family === "Pretendard" ? "100 900" : "700"};src:url(data:font/woff2;base64,${Buffer.from(data).toString("base64")}) format('woff2');font-display:block;}`;
+          return `@font-face{font-family:'${family === 'PaperlogyRegular' ? 'Paperlogy' : family}';font-style:normal;font-weight:${family === "Pretendard" ? "100 900" : family === 'PaperlogyRegular' ? '400' : "700"};src:url(data:font/woff2;base64,${Buffer.from(data).toString("base64")}) format('woff2');font-display:block;}`;
         }),
       );
       return faces.join("\n");

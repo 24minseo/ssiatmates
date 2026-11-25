@@ -1,3 +1,4 @@
+export type WeightRange = {start:number;end:number;bold:boolean};
 export type ColorRange = { start: number; end: number; color: string };
 export type TextAlign = "left" | "center" | "right";
 export type SlideTextEdit = {
@@ -7,6 +8,7 @@ export type SlideTextEdit = {
   height?: number;
   designFont?: "Paperlogy" | "Pretendard";
   text?: string;
+  weights?: WeightRange[];
   colors?: ColorRange[];
   size?: number;
   bold?: boolean;
@@ -15,6 +17,7 @@ export type SlideTextEdit = {
 };
 export type TextSelection = {
   align?: TextAlign;
+  initialWeights?: WeightRange[];
   isNew?: boolean;
   box?: {left:number; top:number; width:number; height:number; font:string; color:string; lineHeight:string};
   id: string;
@@ -93,7 +96,8 @@ export function prepareSlideText(root: Element, edits: Record<string, SlideTextE
           part.style.setProperty("font-weight", edit.bold ? "700" : "400", "important");
       }
     }
-    if (edit.colors?.length) {
+    for (const ranges of [edit.colors,edit.weights]) {
+      if (!ranges?.length) continue;
       const walker = el.ownerDocument.createTreeWalker(el, 4);
       const nodes: Text[] = [];
       while (walker.nextNode()) nodes.push(walker.currentNode as Text);
@@ -102,13 +106,14 @@ export function prepareSlideText(root: Element, edits: Record<string, SlideTextE
         const value = node.data;
         let cursor = 0;
         const fragment = el.ownerDocument.createDocumentFragment();
-        for (const range of edit.colors) {
+        for (const range of ranges) {
           const start = Math.max(cursor, range.start - offset, 0);
           const end = Math.min(value.length, range.end - offset);
-          if (end <= start || !/^#[0-9a-f]{6}$/i.test(range.color)) continue;
+          if (end <= start) continue;
           fragment.append(value.slice(cursor, start));
           const span = el.ownerDocument.createElement("span");
-          span.style.setProperty("color", range.color, "important");
+          if ("color" in range) span.style.setProperty("color",range.color,"important");
+          else span.style.setProperty("font-weight",range.bold?"700":"400","important");
           span.textContent = value.slice(start, end);
           fragment.append(span);
           cursor = end;

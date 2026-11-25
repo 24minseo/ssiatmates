@@ -1,7 +1,7 @@
 import type { HtmlSlide, HtmlView } from "./html-api";
 import { prepareSlideText } from "@/lib/ir-slide-text";
 
-const fontCss = `@font-face{font-family:Pretendard;font-style:normal;font-weight:100 900;font-display:swap;src:url(https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/packages/pretendard/dist/web/variable/woff2/PretendardVariable.woff2) format('woff2')}@font-face{font-family:Paperlogy;font-style:normal;font-weight:700;font-display:swap;src:url(https://cdn.jsdelivr.net/gh/fonts-archive/Paperlogy/Paperlogy-7Bold.woff2) format('woff2')}`;
+const fontCss = `@font-face{font-family:Pretendard;font-style:normal;font-weight:100 900;font-display:swap;src:url(https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/packages/pretendard/dist/web/variable/woff2/PretendardVariable.woff2) format('woff2')}@font-face{font-family:Paperlogy;font-style:normal;font-weight:400;font-display:swap;src:url(https://cdn.jsdelivr.net/gh/fonts-archive/Paperlogy/Paperlogy-4Regular.woff2) format('woff2')}@font-face{font-family:Paperlogy;font-style:normal;font-weight:700;font-display:swap;src:url(https://cdn.jsdelivr.net/gh/fonts-archive/Paperlogy/Paperlogy-7Bold.woff2) format('woff2')}`;
 
 // HTML을 앱 DOM에 삽입하지 않는다. 서버 검사를 통과한 정적 문서만 opaque-origin iframe에서 표시한다.
 export function previewHtml(
@@ -95,7 +95,7 @@ export function previewHtml(
     ? `<script nonce="${nonce}">
       (function(){
         var active = null;
-        var movingText = null;
+
         function send(type, node, event) {
           parent.postMessage({
             type:type,
@@ -135,32 +135,84 @@ export function previewHtml(
           active.node.style.width=Math.round(width)+'px';
           active.node.style.height=Math.round(height)+'px';
         }
-        var textMode=false, concealed=null;
+        var textMode=false, editing=null;
+        function editEvent(kind, value) {
+          if(editing) parent.postMessage({type:'ir-inline-event',channel:${JSON.stringify(channel)},slideId:${JSON.stringify(slide.slideId)},id:editing.dataset.irText,kind,value},'*');
+        }
+        function publishRange() {
+          var sel=getSelection();
+          if (!editing || !sel.rangeCount || !editing.contains(sel.anchorNode) || !editing.contains(sel.focusNode)) return;
+          var range=sel.getRangeAt(0), before=range.cloneRange();
+          before.selectNodeContents(editing); before.setEnd(range.startContainer,range.startOffset);
+
+          editEvent('range',[before.toString().length,before.toString().length+range.toString().length]);
+        }
+        document.addEventListener('selectionchange',publishRange);
+        document.addEventListener('input',function(){if(editing){editEvent('input',editing.innerText);publishRange();}});
         window.addEventListener('message',function(e){
           var m=e.data;
-          if(e.source!==parent || !m || m.channel!==${JSON.stringify(channel)} || m.type!=='ir-text-active') return;
-          if(concealed) concealed.removeAttribute('data-ir-editing');
-          concealed=typeof m.id==='string' && /^(?:t[0-9]{1,5}|u[0-9a-f]{32})$/.test(m.id)
-            ? document.querySelector('[data-ir-text="'+m.id+'"]') : null;
-          if(concealed) concealed.setAttribute('data-ir-editing','');
-        });
-        window.addEventListener('message',function(e){
-          var m=e.data;
-          if(e.source!==parent || !m || m.channel!==${JSON.stringify(channel)} || m.type!=='ir-text-mode' || typeof m.enabled!=='boolean') return;
-          textMode=m.enabled;
-          if(movingText) movingText.block.style.translate=movingText.original;
-          movingText=null;
+          if(e.source!==parent || !m || m.channel!==${JSON.stringify(channel)}) return;
+          if(m.type==='ir-text-mode') { textMode=m.enabled===true;return; }
+          if(m.type==='ir-text-active') {
+            if(editing && editing.dataset.irText!==m.id){editing.removeAttribute('contenteditable');editing=null;}
+            return;
+          }
+          if(m.type!=='ir-inline-style' || !editing || editing.dataset.irText!==m.id) return;
+          var value=m.value, key=m.key;
+          if(key==='bold' || key==='color') {
+            var bounds=m.bounds;
+            if(!Array.isArray(bounds) || !bounds.every(Number.isFinite))return;
+            var walker=document.createTreeWalker(editing,4), nodes=[], index=0;
+            while(walker.nextNode()){
+              var item=walker.currentNode;
+              var from=Math.max(0,bounds[0]-index),to=Math.min(item.length,bounds[1]-index);
+              if(to>from)nodes.push({item,from,to});
+              index+=item.length;
+            }
+            for(var run of nodes){
+              var node=run.item, from=run.from,to=run.to;
+              if(to<=from)continue;
+              if(to<node.length)node.splitText(to);
+              var target=from?node.splitText(from):node, span=document.createElement('span');
+              span.style.setProperty(key==='bold'?'font-weight':'color',key==='bold'?(value?'700':'400'):value,'important');
+              target.replaceWith(span);span.append(target);
+            }
+            if(m.partial){
+              var sel=getSelection(), range=document.createRange(), cursor=0;
+              walker=document.createTreeWalker(editing,4);
+              while(walker.nextNode()){
+                var n=walker.currentNode, stop=cursor+n.length;
+                if(cursor<=bounds[0] && bounds[0]<stop)range.setStart(n,bounds[0]-cursor);
+                if(cursor<bounds[1] && bounds[1]<=stop){range.setEnd(n,bounds[1]-cursor);break;}
+                cursor=stop;
+              }
+              sel.removeAllRanges();sel.addRange(range);
+            }
+            return;
+          }
+          if(key==='size')for(var part of [editing,...editing.querySelectorAll('*')])part.style.setProperty('font-size',value+'px','important');
+          if(key==='align')editing.style.setProperty('text-align',value,'important');
+          if(key==='position')editing.style.translate=value[0]+'px '+value[1]+'px';
+          if(key==='dimensions'){editing.style.width=value[0]+'px';editing.style.height=value[1]+'px';}
         });
         document.addEventListener('pointerdown',function(e){
           if(e.button !== 0) return;
           var target=e.target instanceof Element ? e.target : null;
           if (textMode) {
             var block=target && target.closest('[data-ir-text]');
-            if (block) {
-              var css=getComputedStyle(block), offset=css.translate.split(' ');
-              movingText={block:block,sx:e.clientX,sy:e.clientY,x:parseFloat(offset[0])||0,y:parseFloat(offset[1])||0,original:block.style.translate};
-              e.preventDefault();
-              block.setPointerCapture(e.pointerId);
+            if(editing && editing!==block){editEvent('finish',null);return;}
+            if(block && !editing){
+              editing=block;block.contentEditable='plaintext-only';
+              var css=getComputedStyle(block), r=block.getBoundingClientRect();
+              var originalWeights=[], walker=document.createTreeWalker(block,4), offset=0;
+              while(walker.nextNode()){
+                var n=walker.currentNode, end=offset+n.length, heavy=Number(getComputedStyle(n.parentElement).fontWeight)>=600;
+                if(heavy!==(Number(css.fontWeight)>=600))originalWeights.push({start:offset,end:end,bold:heavy});
+                offset=end;
+              }
+              parent.postMessage({type:'ir-text-select',channel:${JSON.stringify(channel)},slideId:${JSON.stringify(slide.slideId)},
+                box:{left:r.left,top:r.top,width:r.width,height:r.height,font:css.fontFamily,color:css.color,lineHeight:css.lineHeight},
+                id:block.dataset.irText,text:block.innerText,initialWeights:originalWeights,align:css.textAlign,size:parseFloat(css.fontSize),bold:Number(css.fontWeight)>=600,dx:0,dy:0},'*');
             }
             return;
           }
@@ -185,35 +237,21 @@ export function previewHtml(
           );
         });
         document.addEventListener('pointermove',function(e){
-          if(movingText) {
-            var t=movingText;
-            t.block.style.translate=(t.x+e.clientX-t.sx)+'px '+(t.y+e.clientY-t.sy)+'px';
-            return;
-          }
           if(!active) return;
           e.preventDefault();
           updateDrag(e);
           send(active.mode === 'resize' ? 'ir-image-resize-move' : 'ir-image-drag-move',active.node,e);
         });
         document.addEventListener('pointerup',function(e){
-          if(movingText) {
-            var t=movingText, css=getComputedStyle(t.block);
-            t.block.style.translate=t.original;
-            parent.postMessage({type:'ir-text-select',channel:${JSON.stringify(channel)},slideId:${JSON.stringify(slide.slideId)},
-              box:(function(){var r=t.block.getBoundingClientRect();return {left:r.left,top:r.top,width:r.width,height:r.height,font:css.fontFamily,color:css.color,lineHeight:css.lineHeight}})(),
-              id:t.block.dataset.irText,text:t.block.innerText,align:css.textAlign,size:parseFloat(css.fontSize),bold:Number(css.fontWeight)>=600,
-              dx:Math.round(e.clientX-t.sx),dy:Math.round(e.clientY-t.sy)},'*');
-            movingText=null;
-            return;
-          }
           if(!active) return;
           e.preventDefault();
           updateDrag(e);
           send(active.mode === 'resize' ? 'ir-image-resize-end' : 'ir-image-drag-end',active.node,e);
           active=null;
         });
-        document.addEventListener('pointercancel',function(){ active=null; if(movingText) movingText.block.style.translate=movingText.original; movingText=null; });
+        document.addEventListener('pointercancel',function(){ active=null; });
         document.addEventListener('keydown',function(e){
+          if(editing) return;
           if(e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
           e.preventDefault();
           parent.postMessage({
@@ -237,5 +275,5 @@ export function previewHtml(
       })();
     </script>`
     : "";
-  return `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="${csp}"><style>${fontCss}:root{${vars}}*{box-sizing:border-box}html,body{margin:0;padding:0;width:1920px;height:1080px;overflow:hidden;background:var(--ir-canvas);font-family:Pretendard,sans-serif}.ir-host-page{position:relative;width:1920px;height:1080px;margin:0;padding:0;background:var(--ir-canvas)}section.ir-slide{width:1920px;height:1080px;position:relative;margin:0}:where([data-image-slot-id]){position:relative;touch-action:none}:where([data-image-resize-handle]){position:absolute;right:4px;bottom:4px;width:20px;height:20px;border:1px solid rgba(23,61,49,.18);border-radius:4px;background:rgba(255,255,255,.92);box-shadow:0 1px 4px rgba(0,13,59,.12);cursor:nwse-resize;opacity:0;pointer-events:none;transition:opacity 120ms ease}:where([data-image-slot-id]):hover [data-image-resize-handle]{opacity:1;pointer-events:auto}${safeCss}[data-ir-editing],[data-ir-editing] *{color:transparent!important;-webkit-text-fill-color:transparent!important;text-shadow:none!important}</style></head><body><div class="ir-host-page">${root.outerHTML}</div>${bridge}</body></html>`;
+  return `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="${csp}"><style>${fontCss}:root{${vars}}*{box-sizing:border-box}html,body{margin:0;padding:0;width:1920px;height:1080px;overflow:hidden;background:var(--ir-canvas);font-family:Pretendard,sans-serif}.ir-host-page{position:relative;width:1920px;height:1080px;margin:0;padding:0;background:var(--ir-canvas)}section.ir-slide{width:1920px;height:1080px;position:relative;margin:0}:where([data-image-slot-id]){position:relative;touch-action:none}:where([data-image-resize-handle]){position:absolute;right:4px;bottom:4px;width:20px;height:20px;border:1px solid rgba(23,61,49,.18);border-radius:4px;background:rgba(255,255,255,.92);box-shadow:0 1px 4px rgba(0,13,59,.12);cursor:nwse-resize;opacity:0;pointer-events:none;transition:opacity 120ms ease}:where([data-image-slot-id]):hover [data-image-resize-handle]{opacity:1;pointer-events:auto}${safeCss}[data-ir-text][contenteditable]{outline:none;user-select:text;-webkit-user-select:text;cursor:text}</style></head><body><div class="ir-host-page">${root.outerHTML}</div>${bridge}</body></html>`;
 }

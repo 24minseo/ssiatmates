@@ -110,17 +110,22 @@ export function HtmlSlidePreview({
           "ir-slide-shortcut",
           "ir-slide-wheel",
           "ir-text-select",
+          "ir-inline-event",
         ].includes(e.data.type) ||
         e.data.channel !== identity.channel ||
         e.data.slideId !== slide.slideId
       )
         return;
+      if(e.data.type === "ir-inline-event"){
+        host.current?.dispatchEvent(new CustomEvent("ir-inline-event",{bubbles:true,detail:e.data}));
+        return;
+      }
       if (e.data.type === "ir-text-select") {
         const { id, text, size, bold } = e.data;
         if (typeof id === "string" && /^(?:t\d{1,5}|u[0-9a-f]{32})$/.test(id) && typeof text === "string" && Number.isFinite(size) && typeof bold === "boolean") {
           const edit = slide.textEdits?.[id];
           if (!Number.isFinite(e.data.dx) || !Number.isFinite(e.data.dy)) return;
-          onText?.({ id, text, size, bold, box:e.data.box, align: e.data.align === "center" ? "center" : ["right","end"].includes(e.data.align) ? "right" : "left", x: Math.round((edit?.x ?? 0) + e.data.dx), y: Math.round((edit?.y ?? 0) + e.data.dy) });
+          onText?.({ id, text, size, bold, initialWeights:e.data.initialWeights, box:e.data.box, align: e.data.align === "center" ? "center" : ["right","end"].includes(e.data.align) ? "right" : "left", x: Math.round((edit?.x ?? 0) + e.data.dx), y: Math.round((edit?.y ?? 0) + e.data.dy) });
         }
         return;
       }
@@ -161,8 +166,13 @@ export function HtmlSlidePreview({
           point,
         );
     }
+    const parent=host.current?.parentElement;
+    const style=(event:Event)=>frame.current?.contentWindow?.postMessage({
+      ...(event as CustomEvent).detail,type:"ir-inline-style",channel:identity.channel
+    },"*");
+    parent?.addEventListener("ir-inline-style",style);
     window.addEventListener("message", receive);
-    return () => window.removeEventListener("message", receive);
+    return ()=>{parent?.removeEventListener("ir-inline-style",style);window.removeEventListener("message",receive);};
   }, [identity, interactive, onText, onDrag, onSelect, onSlideShortcut, onSlideWheel, slide, view.imageSlots]);
   return (
     <div
