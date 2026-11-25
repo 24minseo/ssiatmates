@@ -201,10 +201,10 @@ export function SlideTextEditor({
   });
   if (inactive) return null;
   return <fieldset disabled={inactive} ref={toolbar as React.RefObject<HTMLFieldSetElement>} role="toolbar" aria-label="선택한 텍스트 서식" className="flex h-10 flex-wrap items-center gap-1 px-1">
-    <button type="button" aria-label="굵게" aria-pressed={pressed} className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg font-bold text-ink transition-colors hover:bg-item-hover aria-pressed:bg-brand/10 aria-pressed:text-brand" onMouseDown={e=>e.preventDefault()} onClick={toggleBold}>B</button>
-    <div className="relative flex size-8 shrink-0 items-center justify-center">
+    <button type="button" aria-label="굵게" aria-pressed={pressed} className="inline-flex size-10 shrink-0 items-center justify-center rounded-lg font-bold text-ink transition-colors hover:bg-item-hover aria-pressed:bg-brand/10 aria-pressed:text-brand" onMouseDown={e=>e.preventDefault()} onClick={toggleBold}>B</button>
+    <div className="relative flex size-10 shrink-0 items-center justify-center">
       <button type="button" title="글자 색상" aria-label="글자 색상" aria-expanded={showPalette}
-        className="relative inline-flex size-8 shrink-0 items-center justify-center rounded-lg text-[18px] font-medium leading-none text-ink transition-colors hover:bg-item-hover"
+        className="relative inline-flex size-10 shrink-0 items-center justify-center rounded-lg text-[18px] font-medium leading-none text-ink transition-colors hover:bg-item-hover"
         onClick={()=>setShowPalette(!showPalette)}>
         A
         <span aria-hidden="true" className="absolute bottom-1 left-1/2 h-1 w-5 -translate-x-1/2 rounded-full" style={{background:activeColor}} />
@@ -218,16 +218,16 @@ export function SlideTextEditor({
         </label>
       </div>}
     </div>
-    {(["size","x","y"] as const).map((k,i)=><label key={k+values[k]} className="flex h-8 shrink-0 items-center gap-1 rounded-lg px-1 text-xs text-ink-muted">{["크기","X","Y"][i]}
-      <input type="number" aria-label={["글자 크기","가로 위치","세로 위치"][i]} className="h-8 w-14 rounded-lg border border-field-border bg-field px-2 text-sm text-ink outline-none focus:border-focus" defaultValue={values[k]}
+    {(["size","x","y"] as const).map((k,i)=><label key={k+values[k]} className="flex h-10 shrink-0 items-center gap-1 rounded-lg px-1 text-xs text-ink-muted">{["크기","X","Y"][i]}
+      <input type="number" aria-label={["글자 크기","가로 위치","세로 위치"][i]} className="h-10 w-14 rounded-lg border border-field-border bg-field px-2 text-sm text-ink outline-none focus:border-focus" defaultValue={values[k]}
         onKeyDown={e=>{if(e.key==="Enter")e.currentTarget.blur();}}
         onBlur={e=>applyNumber(k,e.currentTarget)} /></label>)}
     {([AlignLeft,AlignCenter,AlignRight]).map((Icon,i)=>{
       const align=(["left","center","right"] as const)[i]!;
       return <button key={align} aria-label={["왼쪽 정렬","가운데 정렬","오른쪽 정렬"][i]} aria-pressed={draft.align===align}
-        className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg text-icon-muted transition-colors hover:bg-item-hover hover:text-ink aria-pressed:bg-brand/10 aria-pressed:text-brand" onClick={()=>{setDraft({...draft,align});command("align",align);}}><Icon size={17}/></button>;
+        className="inline-flex size-10 shrink-0 items-center justify-center rounded-lg text-icon-muted transition-colors hover:bg-item-hover hover:text-ink aria-pressed:bg-brand/10 aria-pressed:text-brand" onClick={()=>{setDraft({...draft,align});command("align",align);}}><Icon size={17}/></button>;
     })}
-    <button type="button" className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg text-icon-muted transition-colors hover:bg-destructive-surface hover:text-destructive" aria-label="텍스트 삭제" title="텍스트 삭제" onClick={()=>void finish(true)}><span
+    <button type="button" className="inline-flex size-10 shrink-0 items-center justify-center rounded-lg text-icon-muted transition-colors hover:bg-destructive-surface hover:text-destructive" aria-label="텍스트 삭제" title="텍스트 삭제" onClick={()=>void finish(true)}><span
       aria-hidden="true"
       className="block size-[18px] bg-current"
       style={{

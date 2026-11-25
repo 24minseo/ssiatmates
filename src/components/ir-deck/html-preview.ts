@@ -99,13 +99,15 @@ export function previewHtml(
         var active = null;
 
         function send(type, node, event) {
+          var root=document.querySelector('section.ir-slide'), rootRect=root?root.getBoundingClientRect():{left:0,top:0,width:1920};
+          var scale=rootRect.width/1920 || 1;
           parent.postMessage({
             type:type,
             channel:${JSON.stringify(channel)},
             slideId:${JSON.stringify(slide.slideId)},
             slotId:node ? node.getAttribute('data-image-slot-id') : null,
-            x:Math.round(event.clientX),
-            y:Math.round(event.clientY)
+            x:Math.round((event.clientX-rootRect.left)/scale),
+            y:Math.round((event.clientY-rootRect.top)/scale)
           },'*');
         }
         function number(value, fallback) {
