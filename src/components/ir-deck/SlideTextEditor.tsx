@@ -93,6 +93,8 @@ export function SlideTextEditor({
   const [error,setError] = useState("");
   const saving = useRef(false);
   const box = selection.box ?? {left:64,top:64,width:720,height:64,font,color:"var(--ir-ink)",lineHeight:"1.25"};
+  const activeColor = colors.find(r => r.start <= start && r.end > start)?.color
+    ?? (typeof box.color === "string" ? box.color : "var(--ir-ink)");
   const [measured,setMeasured]=useState<{left:number;top:number;width:number;height:number}|null>(null);
   // The stored x/y are translations from the generated layout. The toolbar
   // shows coordinates in the slide's unscaled 1920 × 1080 coordinate space.
@@ -177,6 +179,14 @@ export function SlideTextEditor({
       if(kind==="finish")void finish();
       if(kind==="range" && Array.isArray(value))setSelected([value[0],value[1]]);
       if(kind==="input" && typeof value==="string")changeText(value);
+      if(kind==="style" && value && typeof value==="object"){
+        const next=value as {size?:unknown;bold?:unknown};
+        setDraft(current=>({
+          ...current,
+          ...(typeof next.size==="number" && Number.isFinite(next.size) ? {size:next.size} : {}),
+          ...(typeof next.bold==="boolean" ? {bold:next.bold} : {}),
+        }));
+      }
     }
     stage.addEventListener("ir-inline-event",receive);
     return ()=>stage.removeEventListener("ir-inline-event",receive);
@@ -193,7 +203,7 @@ export function SlideTextEditor({
   return <fieldset disabled={inactive} ref={toolbar as React.RefObject<HTMLFieldSetElement>} role="toolbar" aria-label="선택한 텍스트 서식" className="flex h-10 flex-wrap items-center gap-1 px-1">
     <div className="relative flex size-8 shrink-0 items-center justify-center">
       <button type="button" title="글자 색상" aria-label="글자 색상" aria-expanded={showPalette}
-        className="block size-6 rounded-full border border-field-border" style={{background:"conic-gradient(red,yellow,lime,cyan,blue,magenta,red)"}}
+        className="block size-8 rounded-lg border border-field-border" style={{background:activeColor}}
         onClick={()=>setShowPalette(!showPalette)} />
       {showPalette && <div className="absolute left-0 top-full z-50 mt-2 grid w-40 grid-cols-5 gap-1 rounded-lg border bg-white p-2 shadow">
         {Array.from(new Set(palette.filter((c):c is string=>!!c && /^#[0-9a-f]{6}$/i.test(c)))).map(c=>
