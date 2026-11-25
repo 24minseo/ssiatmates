@@ -250,7 +250,10 @@ export function previewHtml(
         document.addEventListener('pointerdown',function(e){
           if(e.button !== 0) return;
           var target=e.target instanceof Element ? e.target : null;
-          if (textMode || directText) {
+          // Image selection must win even while text editing mode is active.
+          // Otherwise the text-mode early return makes images appear unclickable
+          // until the user manually exits text editing.
+          if ((textMode || directText) && !(target && target.closest('[data-image-slot-id]'))) {
             var block=target && target.closest('[data-ir-text]');
             if(editing && editing!==block){editEvent('finish',null);return;}
             if(block && !editing){
