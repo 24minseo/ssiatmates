@@ -245,8 +245,10 @@ export function SlideTextEditor({
     {stage && createPortal(<div className="absolute inset-0 z-20 overflow-hidden" style={{pointerEvents:selection.isNew?"auto":"none"}} onClick={e=>{if(e.target===e.currentTarget)void finish();}}>
       <div style={{width:1920,height:1080,transformOrigin:"top left",transform:"scale("+scale+")",pointerEvents:"none"}}>
         <div ref={canvas} style={{position:"absolute",pointerEvents:selection.isNew?"auto":"none",left:box.left+draft.x-(stored.x??0),top:box.top+draft.y-(stored.y??0),...dimensions,...(!selection.isNew && measured ? measured : {}),outline:"2px solid #238767"}}>
-          {selection.isNew && <><div aria-hidden style={{...layout,color:box.color,pointerEvents:"none",overflow:"hidden"}}>{wordView}</div>
-          <textarea ref={input} aria-label="슬라이드 텍스트" spellCheck={false} maxLength={6000}
+          {selection.isNew && <><div aria-hidden style={{...layout,color:box.color,pointerEvents:"none",overflow:"hidden"}}>
+            {draft.text ? wordView : <span style={{color:"var(--ir-ink-muted)"}}>텍스트를 입력하세요</span>}
+          </div>
+          <textarea ref={input} aria-label="슬라이드 텍스트" placeholder="텍스트를 입력하세요" spellCheck={false} maxLength={6000}
             style={{...layout,position:"absolute",inset:0,background:"transparent",color:"transparent",caretColor:box.color,resize:"none",outline:0}}
             value={draft.text} onSelect={e=>setSelected([e.currentTarget.selectionStart,e.currentTarget.selectionEnd])} onChange={e=>changeText(e.target.value)} onScroll={e=>{const mirror=e.currentTarget.previousElementSibling;if(mirror)mirror.scrollTop=e.currentTarget.scrollTop;}} /></>}
           {["move","resize"].map(mode=><button key={mode} aria-label={mode==="move"?"텍스트 상자 이동":"텍스트 상자 크기 조절"}
