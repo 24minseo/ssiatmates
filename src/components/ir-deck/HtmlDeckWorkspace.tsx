@@ -726,10 +726,11 @@ export function HtmlDeckWorkspace({
         } catch (error) {
           const message = error instanceof Error ? error.message : String(error);
           if (!message.includes("IMAGE_REVISION_CONFLICT")) throw error;
-          const fresh = await refreshView();
-          revision = fresh.image_revision;
-          pending.body.expected_revision = revision;
-          revision = await saveBinding(pending);
+          // A stale client must not keep retrying the same image revision.
+          // Refreshing and retrying here can create a request loop when another
+          // open session continues to write the same slot.
+          setQueuedImageChanges([]);
+          throw new Error("이미지 변경사항이 최신 상태와 충돌했어요. 화면을 새로고침한 뒤 다시 저장해 주세요.");
         }
       }
       setQueuedImageChanges([]);
@@ -1424,7 +1425,7 @@ export function HtmlDeckWorkspace({
             className={cn(primary, "px-5 text-white")}
             disabled={busy || !!pendingImage}
             onClick={async () => {
-              await saveQueuedImages();
+              if (!(await saveQueuedImages())) return;
               onSave();
               toast.success("완성된 IR 덱을 최근 파일에 저장했어요.");
             }}
