@@ -24,6 +24,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { HtmlSlidePreview } from "./HtmlSlidePreview";
+import { SlideTextEditor } from "./SlideTextEditor";
+import type { TextSelection } from "@/lib/ir-slide-text";
+import { supabase } from "@/integrations/supabase/client";
 import { htmlCall, imageUrl, mediaBase, uploadImage } from "./html-client";
 import { previewHtml } from "./html-preview";
 import {
@@ -242,6 +245,8 @@ export function HtmlDeckWorkspace({
     zIndex: 100,
   });
   const [busy, setBusy] = useState(false);
+  const [textMode, setTextMode] = useState(false);
+  const [selection, setSelection] = useState<(TextSelection & { slideId: string; revision: number }) | null>(null);
   const [history, setHistory] = useState<{ past: ImageHistoryEntry[]; future: ImageHistoryEntry[] }>({
     past: [],
     future: [],
@@ -1172,6 +1177,26 @@ export function HtmlDeckWorkspace({
       )}
     >
       {isFullscreen && <Toaster position="bottom-center" duration={1200} />}
+      {selection && current.slideId === selection.slideId && !preview && <SlideTextEditor
+        selection={selection} stored={current.textEdits?.[selection.id] ?? {}}
+        close={() => setSelection(null)}
+        save={async edit => {
+          if (!canMutate || busyLock.current) throw new Error("다른 저장 작업이 끝나면 다시 시도해 주세요.");
+          busyLock.current = true;
+          setBusy(true);
+          try {
+            const { data, error } = await supabase.rpc("save_ir_html_text_v1", {
+              p_document_id: view.document_id, p_slide_id: selection.slideId,
+              p_text_id: selection.id, p_revision: selection.revision, p_edit: edit,
+            });
+            if (error) throw new Error(error.message);
+            if (alive.current && owner.current === reference.userId) {
+              setView(parseView(data, reference.deckId));
+              setDownload(null);
+            }
+          } finally { busyLock.current = false; setBusy(false); }
+        }}
+      />}
       <header className="shrink-0 flex flex-wrap items-center justify-between gap-4">
         {!preview && (
           <div className="flex flex-wrap items-center gap-3">
@@ -1179,6 +1204,12 @@ export function HtmlDeckWorkspace({
               className="inline-flex w-fit items-center gap-0.5 rounded-xl border border-[rgba(64,72,66,0.08)] bg-surface p-1"
               style={{ boxShadow: "0 4px 12px 0 rgba(64, 72, 66, 0.1)" }}
             >
+              <button type="button" aria-pressed={textMode} disabled={!canMutate}
+                className={cn(toolbarButton, textMode && "bg-item-hover text-brand")}
+                onClick={() => { setTextMode(!textMode); setAdding(false); setSlotId(null); }}>
+                텍스트 편집
+              </button>
+              {textMode && <span className="text-xs text-ink-muted">글자를 클릭하거나 끌어서 이동하세요</span>}
               <div className="flex items-center gap-0">
                 <button
                   className={historyButton}
@@ -1205,6 +1236,7 @@ export function HtmlDeckWorkspace({
                 disabled={!canMutate && !devPreview}
                 onClick={() => {
                   setAdding(false);
+                  setTextMode(false);
                   setSlotId(null);
                   window.requestAnimationFrame(() => fileInput.current?.click());
                 }}
@@ -1338,7 +1370,7 @@ export function HtmlDeckWorkspace({
             <>
               <span>
                 {exportState?.revision !== view.image_revision
-                  ? "이미지 변경 전 파일이에요. 최신 버전으로 다시 출력해 주세요."
+                  ? "편집 전 파일이에요. 최신 버전으로 다시 출력해 주세요."
                   : "출력 파일이 준비됐어요. "}
               </span>
               {exportState?.revision === view.image_revision && (
@@ -1392,6 +1424,7 @@ export function HtmlDeckWorkspace({
                 view={view}
                 urls={urls}
                 mediaOrigin={new URL(mediaBase()).origin}
+                onText={!preview && textMode && canMutate ? item => setSelection({ ...item, slideId: current.slideId, revision: view.image_revision }) : undefined}
                 onSelect={preview ? undefined : (slot, position) => {
                   setPoint(position);
                   selectSlot(slot, position);

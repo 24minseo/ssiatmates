@@ -3,7 +3,7 @@ import { timingSafeEqual } from "node:crypto";
 import { correctContrastInPage, acceptResidualContrast } from "./ir-html-contrast.server";
 import type { Browser } from "puppeteer-core";
 
-type Slide = { slideId: string; html: string; css: string };
+type Slide = { slideId: string; html: string; css: string; textEdits?: Record<string, import("./ir-slide-text").SlideTextEdit> };
 export type DeckDocument = {
   schemaVersion: string;
   canvas: { width: number; height: number };

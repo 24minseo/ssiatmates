@@ -2,6 +2,8 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import { acceptResidualContrast, acceptResidualVisualIssues } from "./ir-html-contrast.server";
 import type { Browser } from "puppeteer-core";
+import { prepareSlideText } from "./ir-slide-text";
+import { takeSlideText } from "./ir-pptx-text.server";
 import {
   assembleHtml,
   defaultBrowser,
@@ -98,7 +100,7 @@ function validInput(value: ExportInput, body: ExportBody) {
     s?.schemaVersion !== "ir_html_export_snapshot_v1" ||
     s.imageRevision !== value.image_revision ||
     s.emptyImagePolicy !== "preserve_geometry_hide_upload_ui" ||
-    s.pptxMode !== "image_slides" ||
+    !["image_slides", "editable_text_v1"].includes(s.pptxMode) ||
     d?.schemaVersion !== "ir_html_v1" ||
     d.canvas?.width !== 1920 ||
     d.canvas?.height !== 1080 ||
@@ -150,6 +152,9 @@ export async function renderExportFile(
     page.setDefaultTimeout(25000);
     await page.emulateMediaType("screen");
     await page.setContent(assembleHtml(document, fontCss), { waitUntil: "load", timeout: 25000 });
+    const slides = await page.$$(".ir-host-page > section.ir-slide");
+    for (const [index, slide] of slides.entries())
+      await slide.evaluate(prepareSlideText, document.slides[index]?.textEdits ?? {});
     await page.evaluate(composeImagesInPage, images);
     // Only saved ready documents reach this export path. Do not block a deck
     // already accepted after its single repair because it still has visual defects.
@@ -178,22 +183,32 @@ export async function renderExportFile(
       const pptx = new PptxGenJS();
       pptx.layout = "LAYOUT_WIDE";
       pptx.author = "SSIAT";
-      pptx.subject = "IR 덱 — 이미지 기반 장표";
+      pptx.subject = "IR 덱";
       pptx.title = "IR Deck";
       const roots = await page.$$(".ir-host-page");
       if (roots.length !== 7) throw new Error("EXPORT_VALIDATION_FAILED");
       let imageBytes = 0;
       for (const root of roots) {
+        const boxes = await root.evaluate(takeSlideText);
         const image = await root.screenshot({ type: "jpeg", quality: 94 });
         imageBytes += image.byteLength;
         if (imageBytes > MAX_FILE) throw new Error("EXPORT_TOO_LARGE");
-        pptx.addSlide().addImage({
+        const slide = pptx.addSlide();
+        slide.addImage({
           data: `image/jpeg;base64,${Buffer.from(image).toString("base64")}`,
           x: 0,
           y: 0,
           w: 13.333333,
           h: 7.5,
         });
+        for (const box of boxes) {
+          slide.addText(box.runs, {
+            x: box.x, y: box.y, w: Math.max(0.01,box.w), h: Math.max(0.01,box.h),
+            margin: 0, valign: "top", align: box.align, wrap: false,
+            ...(Number.isFinite(box.lineHeight) ? { lineSpacing: box.lineHeight } : {}),
+            paraSpaceAfter: 0, paraSpaceBefore: 0, lang: "ko-KR",
+          });
+        }
       }
       const output = await pptx.write({ outputType: "nodebuffer", compression: true });
       if (!(output instanceof Uint8Array)) throw new Error("EXPORT_RENDER_FAILED");

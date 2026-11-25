@@ -13,10 +13,12 @@ export function HtmlSlidePreview({
   onDrag,
   onSlideShortcut,
   onSlideWheel,
+  onText,
   style,
   className,
 }: {
   slide: HtmlSlide;
+  onText?: ((s: import("@/lib/ir-slide-text").TextSelection) => void) | undefined;
   view: HtmlView;
   urls: Record<string, string>;
   mediaOrigin: string;
@@ -45,7 +47,8 @@ export function HtmlSlidePreview({
   const urlsRef = useRef(urls);
   viewRef.current = view;
   urlsRef.current = urls;
-  const interactive = Boolean(onSelect || onDrag || onSlideShortcut || onSlideWheel);
+  const editText = !!onText;
+  const interactive = Boolean(onSelect || onDrag || onSlideShortcut || onSlideWheel || editText);
   const slideRenderKey = useMemo(
     () =>
       JSON.stringify({
@@ -69,8 +72,9 @@ export function HtmlSlidePreview({
         identity.channel,
         mediaOrigin,
         interactive,
+        editText,
       ),
-    [slide, slideRenderKey, identity, mediaOrigin, interactive],
+    [slide, slideRenderKey, identity, mediaOrigin, interactive, editText],
   );
   useEffect(() => {
     const observer = new ResizeObserver((entries) => setWidth(entries[0]?.contentRect.width || 0));
@@ -78,7 +82,7 @@ export function HtmlSlidePreview({
     return () => observer.disconnect();
   }, []);
   useEffect(() => {
-    if (!onSelect && !onDrag && !onSlideShortcut && !onSlideWheel) return;
+    if (!interactive) return;
     function receive(e: MessageEvent) {
       if (
         e.source !== frame.current?.contentWindow ||
@@ -94,11 +98,21 @@ export function HtmlSlidePreview({
           "ir-image-resize-end",
           "ir-slide-shortcut",
           "ir-slide-wheel",
+          "ir-text-select",
         ].includes(e.data.type) ||
         e.data.channel !== identity.channel ||
         e.data.slideId !== slide.slideId
       )
         return;
+      if (e.data.type === "ir-text-select") {
+        const { id, text, size, bold } = e.data;
+        if (typeof id === "string" && /^t\d{1,5}$/.test(id) && typeof text === "string" && Number.isFinite(size) && typeof bold === "boolean") {
+          const edit = slide.textEdits?.[id];
+          if (!Number.isFinite(e.data.dx) || !Number.isFinite(e.data.dy)) return;
+          onText?.({ id, text, size, bold, x: Math.round((edit?.x ?? 0) + e.data.dx), y: Math.round((edit?.y ?? 0) + e.data.dy) });
+        }
+        return;
+      }
       if (e.data.type === "ir-slide-wheel") {
         if (Number.isFinite(e.data.deltaY) && Number.isFinite(e.data.deltaX))
           onSlideWheel?.(e.data.deltaY as number, e.data.deltaX as number);
@@ -138,7 +152,7 @@ export function HtmlSlidePreview({
     }
     window.addEventListener("message", receive);
     return () => window.removeEventListener("message", receive);
-  }, [identity, onDrag, onSelect, onSlideShortcut, onSlideWheel, slide.slideId, view.imageSlots]);
+  }, [identity, interactive, onText, onDrag, onSelect, onSlideShortcut, onSlideWheel, slide, view.imageSlots]);
   return (
     <div
       ref={host}

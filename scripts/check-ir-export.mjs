@@ -8,14 +8,13 @@ import { createHash } from "node:crypto";
 
 const compiled = path.resolve("node_modules/.cache/ir-export-check");
 await fs.mkdir(compiled, { recursive: true });
-for (const name of ["ir-html-render.server", "ir-html-images.server", "ir-html-export.server"]) {
+for (const name of ["ir-slide-text", "ir-pptx-text.server", "ir-html-contrast.server", "ir-html-render.server", "ir-html-images.server", "ir-html-export.server"]) {
   const source = await fs.readFile(`src/lib/${name}.ts`, "utf8");
   const js = ts
     .transpileModule(source, {
       compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext },
     })
-    .outputText.replaceAll('./ir-html-render.server"', './ir-html-render.server.mjs"')
-    .replaceAll('./ir-html-images.server"', './ir-html-images.server.mjs"');
+    .outputText.replace(/from "(\.\/ir-[^"]+)"/g, 'from "$1.mjs"');
   await fs.writeFile(path.join(compiled, name + ".mjs"), js);
 }
 const { createExportHandler, renderExportFile } = await import(
@@ -209,6 +208,7 @@ if (process.env.IR_EXPORT_BROWSER_TEST === "1") {
       );
     const images = await prepareImageComposition(actualSnapshot, async () => picture);
     const actualDoc = actualSnapshot.document;
+    actualDoc.slides[0].textEdits = { t0: { text: "편집한 발표 제목", size: 54, bold: true, x: 90, y: 40 } };
     const pdf = await renderExportFile(browser, actualDoc, images, "pdf", css);
     assert.equal(pdf.bytes.subarray(0, 5).toString(), "%PDF-");
     assert.equal((pdf.bytes.toString("latin1").match(/\/Type \/Page\b/g) || []).length, 7);
@@ -217,6 +217,16 @@ if (process.env.IR_EXPORT_BROWSER_TEST === "1") {
     const require = createRequire(import.meta.url),
       JSZip = require("jszip");
     const zip = await JSZip.loadAsync(pptx.bytes);
+    for (let i=1; i<=7; i++) {
+      const xml = await zip.file(`ppt/slides/slide${i}.xml`).async("string");
+      assert.ok(xml.includes("<p:sp>"));
+      assert.ok(xml.includes(i === 1 ? "편집한 발표 제목" : `사업계획서 핵심 내용 ${i}`));
+      if (i === 1) {
+        assert.ok(!xml.includes("사업계획서 핵심 내용"));
+        assert.match(xml, /sz="2700"/);
+        assert.match(xml, /b="1"/);
+      }
+    }
     assert.equal(
       Object.keys(zip.files).filter((p) => /^ppt\/slides\/slide\d+\.xml$/.test(p)).length,
       7,

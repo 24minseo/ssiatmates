@@ -1,4 +1,5 @@
 import type { HtmlSlide, HtmlView } from "./html-api";
+import { prepareSlideText } from "@/lib/ir-slide-text";
 
 const fontCss = `@font-face{font-family:Pretendard;font-style:normal;font-weight:100 900;font-display:swap;src:url(https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/packages/pretendard/dist/web/variable/woff2/PretendardVariable.woff2) format('woff2')}@font-face{font-family:Paperlogy;font-style:normal;font-weight:700;font-display:swap;src:url(https://cdn.jsdelivr.net/gh/fonts-archive/Paperlogy/Paperlogy-7Bold.woff2) format('woff2')}`;
 
@@ -11,6 +12,7 @@ export function previewHtml(
   channel: string,
   mediaOrigin: string,
   interactive: boolean,
+  editText = false,
 ): string {
   const parsed = new DOMParser().parseFromString(slide.html, "text/html");
   parsed
@@ -30,6 +32,7 @@ export function previewHtml(
   const root = parsed.querySelector<HTMLElement>("section.ir-slide[data-slide-id]");
   if (!root || root.dataset["slideId"] !== slide.slideId)
     throw new Error("슬라이드 HTML을 확인하지 못했습니다.");
+  prepareSlideText(root, slide.textEdits);
   for (const slot of view.imageSlots.filter((s) => s.slideId === slide.slideId)) {
     let host: HTMLElement | undefined;
     if (slot.origin === "generated") {
@@ -93,6 +96,7 @@ export function previewHtml(
     ? `<script nonce="${nonce}">
       (function(){
         var active = null;
+        var movingText = null;
         function send(type, node, event) {
           parent.postMessage({
             type:type,
@@ -135,6 +139,16 @@ export function previewHtml(
         document.addEventListener('pointerdown',function(e){
           if(e.button !== 0) return;
           var target=e.target instanceof Element ? e.target : null;
+          if (${editText}) {
+            var block=target && target.closest('[data-ir-text]');
+            if (block) {
+              var css=getComputedStyle(block), offset=css.translate.split(' ');
+              movingText={block:block,sx:e.clientX,sy:e.clientY,x:parseFloat(offset[0])||0,y:parseFloat(offset[1])||0,original:block.style.translate};
+              e.preventDefault();
+              block.setPointerCapture(e.pointerId);
+            }
+            return;
+          }
           var resize=target && target.closest('[data-image-resize-handle]');
           var n=resize ? resize.closest('[data-image-slot-id]') : target && target.closest('[data-image-slot-id]');
           e.preventDefault();
@@ -156,19 +170,33 @@ export function previewHtml(
           );
         });
         document.addEventListener('pointermove',function(e){
+          if(movingText) {
+            var t=movingText;
+            t.block.style.translate=(t.x+e.clientX-t.sx)+'px '+(t.y+e.clientY-t.sy)+'px';
+            return;
+          }
           if(!active) return;
           e.preventDefault();
           updateDrag(e);
           send(active.mode === 'resize' ? 'ir-image-resize-move' : 'ir-image-drag-move',active.node,e);
         });
         document.addEventListener('pointerup',function(e){
+          if(movingText) {
+            var t=movingText, css=getComputedStyle(t.block);
+            t.block.style.translate=t.original;
+            parent.postMessage({type:'ir-text-select',channel:${JSON.stringify(channel)},slideId:${JSON.stringify(slide.slideId)},
+              id:t.block.dataset.irText,text:t.block.innerText,size:parseFloat(css.fontSize),bold:Number(css.fontWeight)>=600,
+              dx:Math.round(e.clientX-t.sx),dy:Math.round(e.clientY-t.sy)},'*');
+            movingText=null;
+            return;
+          }
           if(!active) return;
           e.preventDefault();
           updateDrag(e);
           send(active.mode === 'resize' ? 'ir-image-resize-end' : 'ir-image-drag-end',active.node,e);
           active=null;
         });
-        document.addEventListener('pointercancel',function(){ active=null; });
+        document.addEventListener('pointercancel',function(){ active=null; if(movingText) movingText.block.style.translate=movingText.original; movingText=null; });
         document.addEventListener('keydown',function(e){
           if(e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
           e.preventDefault();
