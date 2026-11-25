@@ -49,6 +49,19 @@ import {
   type Placement,
 } from "./html-api";
 
+async function readImageSize(file: File): Promise<{ width: number; height: number }> {
+  const url = URL.createObjectURL(file);
+  try {
+    const image = new Image();
+    image.src = url;
+    await image.decode();
+    if (!image.naturalWidth || !image.naturalHeight) throw new Error("이미지 크기를 읽지 못했어요.");
+    return { width: image.naturalWidth, height: image.naturalHeight };
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
 const button =
   "inline-flex items-center justify-center gap-2 rounded-xl border border-field-border px-4 py-3 text-sm font-semibold text-ink hover:bg-item-hover disabled:cursor-not-allowed disabled:opacity-40";
 const secondaryButton =
@@ -834,10 +847,22 @@ export function HtmlDeckWorkspace({
     busyLock.current = true;
     setBusy(true);
     try {
+      const imageSize = target ? null : await readImageSize(file);
+      const fitPlacement = imageSize
+        ? (() => {
+            const scale = Math.min(1, 640 / imageSize.width, 360 / imageSize.height);
+            return {
+              ...placement,
+              width: Math.max(80, Math.round(imageSize.width * scale)),
+              height: Math.max(80, Math.round(imageSize.height * scale)),
+            };
+          })()
+        : placement;
+      const basePlacement = target?.placement || fitPlacement;
       const p = {
-        ...placement,
-        x: Math.min(point.x, 1920 - placement.width),
-        y: Math.min(point.y, 1080 - placement.height),
+        ...basePlacement,
+        x: Math.max(0, Math.min(point.x, 1920 - basePlacement.width)),
+        y: Math.max(0, Math.min(point.y, 1080 - basePlacement.height)),
       };
       if (!target) validatePlacement(p);
       if (uploaded.current?.file !== file)
@@ -895,6 +920,13 @@ export function HtmlDeckWorkspace({
     }
   }
   function selectSlot(slot: ImageSlot | null, position: { x: number; y: number }) {
+    // Deselecting is a local UI action and must still work while a save is
+    // settling; otherwise the image toolbar can remain stuck after a drag.
+    if (!slot && !adding) {
+      setSelection(null);
+      setTextMode(false);
+      setSlotId(null);
+    }
     if (busy || pendingImage) return;
     if (adding) {
       if (devPreview) return;

@@ -255,7 +255,12 @@ export function previewHtml(
           // until the user manually exits text editing.
           if ((textMode || directText) && !(target && target.closest('[data-image-slot-id]'))) {
             var block=target && target.closest('[data-ir-text]');
-            if(editing && editing!==block){editEvent('finish',null);return;}
+            if(editing && editing!==block){
+              // Finish the previous text edit, but let this same click select
+              // the new text instead of forcing the user to click twice.
+              editEvent('finish',null);
+              editing=null;
+            }
             if(block && !editing){
               editing=block;block.contentEditable='plaintext-only';
               var css=getComputedStyle(block), r=block.getBoundingClientRect();
