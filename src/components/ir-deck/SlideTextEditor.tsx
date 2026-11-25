@@ -210,7 +210,7 @@ export function SlideTextEditor({
       return <button key={align} aria-label={["왼쪽 정렬","가운데 정렬","오른쪽 정렬"][i]} aria-pressed={draft.align===align}
         className="rounded p-1 aria-pressed:bg-item-hover" onClick={()=>{setDraft({...draft,align});command("align",align);}}><Icon size={17}/></button>;
     })}
-    <button aria-label="텍스트 삭제" title="텍스트 삭제" onClick={()=>void finish(true)}><span
+    <button className="text-ink-muted" aria-label="텍스트 삭제" title="텍스트 삭제" onClick={()=>void finish(true)}><span
       aria-hidden="true"
       className="block size-[18px] bg-current"
       style={{

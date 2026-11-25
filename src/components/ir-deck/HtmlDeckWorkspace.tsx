@@ -1228,7 +1228,7 @@ export function HtmlDeckWorkspace({
                   className={historyButton}
                   aria-label="되돌리기"
                   title="되돌리기"
-                  disabled={!canMutate || history.past.length === 0}
+                  disabled={!canMutate || (history.past.length === 0 && !selection)}
                   onClick={() => void applyHistory("undo")}
                 >
                   <Undo2 className="size-4" strokeWidth={2} />
@@ -1251,7 +1251,7 @@ export function HtmlDeckWorkspace({
                 텍스트 편집
               </button>
               <span id="ir-text-edit-tip" role="tooltip"
-                className="pointer-events-none absolute left-0 top-full z-50 mt-2 hidden whitespace-nowrap rounded-md bg-ink px-3 py-2 text-xs text-white shadow-md peer-hover:block peer-focus-visible:block">
+                className="pointer-events-none absolute left-0 top-full z-50 mt-2 hidden whitespace-nowrap rounded-[10px] bg-tooltip px-3 py-2 text-xs text-tooltip-foreground shadow-md after:absolute after:left-5 after:top-[-5px] after:border-x-[6px] after:border-b-[6px] after:border-x-transparent after:border-b-tooltip peer-hover:block peer-focus-visible:block">
                 텍스트를 클릭해서 시작하세요.
               </span>
               </div>
@@ -1555,7 +1555,7 @@ export function HtmlDeckWorkspace({
                   )}
                   {selectedSlot.assetId && (
                     <button
-                      className={`${toolbarButton} px-2 text-icon-muted hover:bg-destructive-surface hover:text-destructive`}
+                      className="inline-flex size-10 shrink-0 items-center justify-center rounded-lg p-0 text-icon-muted transition-colors hover:bg-destructive-surface hover:text-destructive disabled:cursor-not-allowed disabled:opacity-40"
                       aria-label="이미지 제거"
                       title="이미지 제거"
                       disabled={!canMutate}
