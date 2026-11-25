@@ -12,6 +12,7 @@ export function previewHtml(
   channel: string,
   mediaOrigin: string,
   interactive: boolean,
+  directText: boolean,
 ): string {
   const parsed = new DOMParser().parseFromString(slide.html, "text/html");
   parsed
@@ -136,7 +137,7 @@ export function previewHtml(
           active.node.style.width=Math.round(width)+'px';
           active.node.style.height=Math.round(height)+'px';
         }
-        var textMode=false, editing=null;
+        var textMode=false, editing=null, directText=${directText ? "true" : "false"};
         function editEvent(kind, value) {
           if(editing) parent.postMessage({type:'ir-inline-event',channel:${JSON.stringify(channel)},slideId:${JSON.stringify(slide.slideId)},id:editing.dataset.irText,kind,value},'*');
         }
@@ -249,7 +250,7 @@ export function previewHtml(
         document.addEventListener('pointerdown',function(e){
           if(e.button !== 0) return;
           var target=e.target instanceof Element ? e.target : null;
-          if (textMode) {
+          if (textMode || directText) {
             var block=target && target.closest('[data-ir-text]');
             if(editing && editing!==block){editEvent('finish',null);return;}
             if(block && !editing){

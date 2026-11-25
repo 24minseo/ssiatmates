@@ -871,6 +871,8 @@ export function HtmlDeckWorkspace({
       fileInput.current?.click();
       return;
     }
+    setSelection(null);
+    setTextMode(false);
     setSlotId(slot?.id || null);
     if (slot) {
       if (slot.placement) setPlacement(slot.placement);
@@ -1087,6 +1089,7 @@ export function HtmlDeckWorkspace({
           crypto.randomUUID(),
           mediaBase(),
           false,
+          false,
         ),
       );
       const title = (downloadName || "IR 덱").trim() || "IR 덱";
@@ -1182,21 +1185,6 @@ export function HtmlDeckWorkspace({
       : thumbnailEdges.right
         ? "linear-gradient(90deg, black 0%, black 93%, transparent 100%)"
         : undefined;
-  const selectedAnchor = selectedSlot?.origin === "user" && selectedSlot.placement
-    ? placement
-    : selectedSlot?.placement || {
-    x: point.x,
-    y: point.y,
-    width: 0,
-    height: 0,
-    zIndex: 0,
-  };
-  const selectionToolbarStyle = {
-    left: `${((selectedAnchor.x + selectedAnchor.width / 2) / 1920) * 100}%`,
-    top: `${(selectedAnchor.y / 1080) * 100}%`,
-    transform:
-      selectedAnchor.y >= 220 ? "translate(-50%, calc(-100% - 8px))" : "translate(-50%, 8px)",
-  };
   const fullscreenSlideWidth =
     isFullscreen && fullscreenViewport.width > 0 && fullscreenViewport.height > 0
       ? Math.min(fullscreenViewport.width, fullscreenViewport.height * (16 / 9))
@@ -1244,18 +1232,33 @@ export function HtmlDeckWorkspace({
                 </button>
               </div>
               <span className="h-5 w-px shrink-0 bg-field-border/70" aria-hidden="true" />
-              <div className="relative">
-              <button type="button" aria-pressed={textMode} disabled={!canMutate} aria-describedby="ir-text-edit-tip"
-                className={cn(toolbarButton, "peer", textMode && "bg-item-hover text-brand")}
-                onClick={() => { setTextMode(!textMode); setAdding(false); setSlotId(null); }}>
-                텍스트 편집
-              </button>
-              <span id="ir-text-edit-tip" role="tooltip"
-                className="pointer-events-none absolute left-0 top-full z-50 mt-2 hidden whitespace-nowrap rounded-[10px] bg-tooltip px-3 py-2 text-xs text-tooltip-foreground shadow-md after:absolute after:left-5 after:top-[-5px] after:border-x-[6px] after:border-b-[6px] after:border-x-transparent after:border-b-tooltip peer-hover:block peer-focus-visible:block">
-                텍스트를 클릭해서 시작하세요.
-              </span>
-              </div>
-              {textMode && <>
+              {selectedSlot ? <>
+                <button className={toolbarButton} disabled={!canMutate} onClick={() => fileInput.current?.click()}>
+                  <GrowthJournalImageIcon className="size-3.5" />
+                  {selectedSlot.assetId ? "교체" : "업로드"}
+                </button>
+                {selectedSlot.origin === "user" && <>
+                  <button className={toolbarButton} disabled={!canMutate} onClick={() => changeLayer("front")}>
+                    <ArrowUpToLine className="size-3.5" />
+                    맨 앞으로
+                  </button>
+                  <button className={toolbarButton} disabled={!canMutate} onClick={() => changeLayer("back")}>
+                    <ArrowDownToLine className="size-3.5" />
+                    맨 뒤로
+                  </button>
+                </>}
+                {selectedSlot.assetId && <button
+                  className="inline-flex size-10 shrink-0 items-center justify-center rounded-lg p-0 text-icon-muted transition-colors hover:bg-destructive-surface hover:text-destructive disabled:cursor-not-allowed disabled:opacity-40"
+                  aria-label="이미지 제거" title="이미지 제거" disabled={!canMutate}
+                  onClick={() => void mutate(binding(selectedSlot, null, selectedSlot.origin === "user"), { before: cloneImageSlot(selectedSlot), after: null })}
+                >
+                  <span aria-hidden="true" className="block size-[18px] bg-current" style={{
+                    maskImage: "url('/assets/sidebar/delete.svg')", WebkitMaskImage: "url('/assets/sidebar/delete.svg')",
+                    maskRepeat: "no-repeat", WebkitMaskRepeat: "no-repeat", maskPosition: "center",
+                    WebkitMaskPosition: "center", maskSize: "contain", WebkitMaskSize: "contain",
+                  }} />
+                </button>}
+              </> : <>
               <button type="button" className={toolbarButton} disabled={!canMutate || busy}
                 onClick={() => {
                   setTextMode(true);
@@ -1269,7 +1272,7 @@ export function HtmlDeckWorkspace({
         key={selection.id} stage={textStage.current} font={reference.settings.fontFamily}
         palette={Object.values(view.document.designTokens.colors)}
         selection={selection} stored={current.textEdits?.[selection.id] ?? {}}
-        close={() => setSelection(null)}
+        close={() => { setSelection(null); setTextMode(false); }}
         save={async edit => {
           if (!canMutate || busyLock.current) throw new Error("다른 저장 작업이 끝나면 다시 시도해 주세요.");
           const before = structuredClone(current.textEdits?.[selection.id] ??
@@ -1299,7 +1302,6 @@ export function HtmlDeckWorkspace({
         }}
       /> : <SlideTextEditor inactive stage={null} font={reference.settings.fontFamily} palette={[]} stored={{}}
         selection={{id:"",text:"",size:40,bold:false,x:0,y:0}} close={()=>{}} save={async()=>{}} />}
-              </>}
               <button
                 className={toolbarButton}
                 disabled={!canMutate && !devPreview}
@@ -1313,6 +1315,7 @@ export function HtmlDeckWorkspace({
                 <GrowthJournalImageIcon className="size-3.5" />
                 {adding ? "추가 위치 선택 취소" : "이미지 추가"}
               </button>
+              </>}
             </div>
           </div>
         )}
@@ -1485,7 +1488,7 @@ export function HtmlDeckWorkspace({
                 view={view}
                 urls={urls}
                 mediaOrigin={new URL(mediaBase()).origin}
-                activeTextId={textMode && selection?.slideId === current.slideId ? selection.id : undefined}
+                activeTextId={selection?.slideId === current.slideId ? selection.id : undefined}
                 onGroupMove={!preview && canMutate && !adding && !textMode ? async(id,x,y,scale)=>{
                   if(busyLock.current)return false;
                   busyLock.current=true;
@@ -1506,7 +1509,12 @@ export function HtmlDeckWorkspace({
                   } catch(err){toast.error(err instanceof Error?err.message:"요소 위치를 저장하지 못했어요.");return false;}
                   finally{busyLock.current=false;setBusy(false);}
                 } : undefined}
-                onText={!preview && textMode && canMutate ? item => setSelection({ ...item, slideId: current.slideId, revision: view.image_revision }) : undefined}
+                onText={!preview && canMutate ? item => {
+                  setTextMode(true);
+                  setAdding(false);
+                  setSlotId(null);
+                  setSelection({ ...item, slideId: current.slideId, revision: view.image_revision });
+                } : undefined}
                 onSelect={preview ? undefined : (slot, position) => {
                   setPoint(position);
                   selectSlot(slot, position);
@@ -1519,71 +1527,6 @@ export function HtmlDeckWorkspace({
                   !preview && "border-0",
                 )}
               />
-              {!preview && selectedSlot && (
-                <div
-                  className="absolute z-20 inline-flex w-max max-w-none flex-nowrap items-center gap-1 whitespace-nowrap rounded-xl border border-[rgba(64,72,66,0.08)] bg-surface p-1"
-                  style={{ ...selectionToolbarStyle, boxShadow: "0 4px 12px 0 rgba(64, 72, 66, 0.1)" }}
-                  onPointerDown={(event) => event.stopPropagation()}
-                >
-                  <button
-                    className={toolbarButton}
-                    disabled={!canMutate}
-                    onClick={() => fileInput.current?.click()}
-                  >
-                    <GrowthJournalImageIcon className="size-3.5" />
-                    {selectedSlot.assetId ? "교체" : "업로드"}
-                  </button>
-                  {selectedSlot.origin === "user" && (
-                    <>
-                      <button
-                        className={toolbarButton}
-                        disabled={!canMutate}
-                        onClick={() => changeLayer("front")}
-                      >
-                        <ArrowUpToLine className="size-3.5" />
-                        맨 앞으로
-                      </button>
-                      <button
-                        className={toolbarButton}
-                        disabled={!canMutate}
-                        onClick={() => changeLayer("back")}
-                      >
-                        <ArrowDownToLine className="size-3.5" />
-                        맨 뒤로
-                      </button>
-                    </>
-                  )}
-                  {selectedSlot.assetId && (
-                    <button
-                      className="inline-flex size-10 shrink-0 items-center justify-center rounded-lg p-0 text-icon-muted transition-colors hover:bg-destructive-surface hover:text-destructive disabled:cursor-not-allowed disabled:opacity-40"
-                      aria-label="이미지 제거"
-                      title="이미지 제거"
-                      disabled={!canMutate}
-                      onClick={() =>
-                        void mutate(
-                          binding(selectedSlot, null, selectedSlot.origin === "user"),
-                          { before: cloneImageSlot(selectedSlot), after: null },
-                        )
-                      }
-                    >
-                      <span
-                        aria-hidden="true"
-                        className="block size-[18px] bg-current"
-                        style={{
-                          maskImage: "url('/assets/sidebar/delete.svg')",
-                          WebkitMaskImage: "url('/assets/sidebar/delete.svg')",
-                          maskRepeat: "no-repeat",
-                          WebkitMaskRepeat: "no-repeat",
-                          maskPosition: "center",
-                          WebkitMaskPosition: "center",
-                          maskSize: "contain",
-                          WebkitMaskSize: "contain",
-                        }}
-                      />
-                    </button>
-                  )}
-                </div>
-              )}
             </div>
           </div>
         </main>

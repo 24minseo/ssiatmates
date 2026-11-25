@@ -77,8 +77,9 @@ export function HtmlSlidePreview({
         identity.channel,
         mediaOrigin,
         interactive,
+        !!onText,
       ),
-    [slide, slideRenderKey, identity, mediaOrigin, interactive],
+    [slide, slideRenderKey, identity, mediaOrigin, interactive, onText],
   );
   function syncTextMode() {
     if (interactive) frame.current?.contentWindow?.postMessage({
