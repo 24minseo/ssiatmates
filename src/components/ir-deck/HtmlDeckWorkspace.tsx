@@ -1482,6 +1482,23 @@ export function HtmlDeckWorkspace({
                 urls={urls}
                 mediaOrigin={new URL(mediaBase()).origin}
                 activeTextId={textMode && selection?.slideId === current.slideId ? selection.id : undefined}
+                onGroupMove={!preview && canMutate && !adding && !textMode ? async(id,x,y)=>{
+                  if(busyLock.current)return false;
+                  busyLock.current=true;
+                  setBusy(true);
+                  try {
+                    const {data,error}=await supabase.rpc("save_ir_html_text_v1",{
+                      p_document_id:view.document_id,p_slide_id:current.slideId,p_text_id:id,
+                      p_revision:view.image_revision,p_edit:{x,y},
+                    });
+                    if(error)throw new Error(error.message);
+                    if(alive.current && owner.current===reference.userId){
+                      setView(parseView(data,reference.deckId));setDownload(null);
+                    }
+                    return true;
+                  } catch(err){toast.error(err instanceof Error?err.message:"요소 위치를 저장하지 못했어요.");return false;}
+                  finally{busyLock.current=false;setBusy(false);}
+                } : undefined}
                 onText={!preview && textMode && canMutate ? item => setSelection({ ...item, slideId: current.slideId, revision: view.image_revision }) : undefined}
                 onSelect={preview ? undefined : (slot, position) => {
                   setPoint(position);

@@ -14,11 +14,13 @@ export function HtmlSlidePreview({
   onSlideShortcut,
   onSlideWheel,
   onText,
+  onGroupMove,
   activeTextId,
   style,
   className,
 }: {
   slide: HtmlSlide;
+  onGroupMove?: ((id:string,x:number,y:number)=>Promise<boolean>) | undefined;
   activeTextId?: string | undefined;
   onText?: ((s: import("@/lib/ir-slide-text").TextSelection) => void) | undefined;
   view: HtmlView;
@@ -64,6 +66,7 @@ export function HtmlSlidePreview({
       }),
     [slide.slideId, urls, view.document.designTokens.colors, view.imageSlots],
   );
+  const moveGroups=!!onGroupMove;
   const html = useMemo(
     () =>
       previewHtml(
@@ -79,14 +82,14 @@ export function HtmlSlidePreview({
   );
   function syncTextMode() {
     if (interactive) frame.current?.contentWindow?.postMessage({
-      type: "ir-text-mode", channel: identity.channel, enabled: editText,
+      type: "ir-text-mode", channel: identity.channel, enabled: editText, moveGroups,
     }, "*");
   }
   function syncSelection() {
     if(interactive) frame.current?.contentWindow?.postMessage({type:"ir-text-active",channel:identity.channel,id:activeTextId},"*");
   }
   useEffect(syncSelection,[interactive,identity.channel,activeTextId]);
-  useEffect(syncTextMode, [interactive, identity.channel, editText]);
+  useEffect(syncTextMode, [interactive, identity.channel, editText, moveGroups]);
   useEffect(() => {
     const observer = new ResizeObserver((entries) => setWidth(entries[0]?.contentRect.width || 0));
     if (host.current) observer.observe(host.current);
@@ -111,11 +114,20 @@ export function HtmlSlidePreview({
           "ir-slide-wheel",
           "ir-text-select",
           "ir-inline-event",
+          "ir-group-move",
         ].includes(e.data.type) ||
         e.data.channel !== identity.channel ||
         e.data.slideId !== slide.slideId
       )
         return;
+      if(e.data.type==="ir-group-move"){
+        const {id,x,y}=e.data;
+        if(typeof id==="string" && /^g[0-9]{1,5}$/.test(id) && Number.isInteger(x) && Number.isInteger(y) && Math.abs(x)<=1920 && Math.abs(y)<=1080)
+          void onGroupMove?.(id,x,y).then(ok=>{
+            if(!ok)frame.current?.contentWindow?.postMessage({type:"ir-group-restore",channel:identity.channel,id,slideId:slide.slideId},"*");
+          });
+        return;
+      }
       if(e.data.type === "ir-inline-event"){
         host.current?.dispatchEvent(new CustomEvent("ir-inline-event",{bubbles:true,detail:e.data}));
         return;
@@ -173,7 +185,7 @@ export function HtmlSlidePreview({
     parent?.addEventListener("ir-inline-style",style);
     window.addEventListener("message", receive);
     return ()=>{parent?.removeEventListener("ir-inline-style",style);window.removeEventListener("message",receive);};
-  }, [identity, interactive, onText, onDrag, onSelect, onSlideShortcut, onSlideWheel, slide, view.imageSlots]);
+  }, [identity, interactive, onGroupMove, onText, onDrag, onSelect, onSlideShortcut, onSlideWheel, slide, view.imageSlots]);
   return (
     <div
       ref={host}

@@ -1,5 +1,5 @@
 import type { HtmlSlide, HtmlView } from "./html-api";
-import { prepareSlideText } from "@/lib/ir-slide-text";
+import { prepareSlideText, prepareSlideGroups } from "@/lib/ir-slide-text";
 
 const fontCss = `@font-face{font-family:Pretendard;font-style:normal;font-weight:100 900;font-display:swap;src:url(https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/packages/pretendard/dist/web/variable/woff2/PretendardVariable.woff2) format('woff2')}@font-face{font-family:Paperlogy;font-style:normal;font-weight:400;font-display:swap;src:url(https://cdn.jsdelivr.net/gh/fonts-archive/Paperlogy/Paperlogy-4Regular.woff2) format('woff2')}@font-face{font-family:Paperlogy;font-style:normal;font-weight:700;font-display:swap;src:url(https://cdn.jsdelivr.net/gh/fonts-archive/Paperlogy/Paperlogy-7Bold.woff2) format('woff2')}`;
 
@@ -31,6 +31,7 @@ export function previewHtml(
   const root = parsed.querySelector<HTMLElement>("section.ir-slide[data-slide-id]");
   if (!root || root.dataset["slideId"] !== slide.slideId)
     throw new Error("슬라이드 HTML을 확인하지 못했습니다.");
+  prepareSlideGroups(root,slide.groupEdits);
   prepareSlideText(root, slide.textEdits);
   for (const slot of view.imageSlots.filter((s) => s.slideId === slide.slideId)) {
     let host: HTMLElement | undefined;
@@ -152,7 +153,10 @@ export function previewHtml(
         window.addEventListener('message',function(e){
           var m=e.data;
           if(e.source!==parent || !m || m.channel!==${JSON.stringify(channel)}) return;
-          if(m.type==='ir-text-mode') { textMode=m.enabled===true;return; }
+          if(m.type==='ir-group-restore' && lastMove && lastMove.node.dataset.irGroup===m.id){
+            lastMove.node.style.translate=lastMove.original;lastMove=null;return;
+          }
+          if(m.type==='ir-text-mode') { textMode=m.enabled===true;allowGroups=m.moveGroups===true;if(textMode)selectGroup(null);return; }
           if(m.type==='ir-text-active') {
             if(editing && editing.dataset.irText!==m.id){editing.removeAttribute('contenteditable');editing=null;}
             return;
@@ -210,6 +214,24 @@ export function previewHtml(
           var rect=editing.getBoundingClientRect();
           editEvent('geometry',{left:rect.left,top:rect.top,width:rect.width,height:rect.height});
         });
+        var groupDrag=null, selectedGroup=null, allowGroups=false, lastMove=null;
+        function selectGroup(el){
+          if(selectedGroup) selectedGroup.removeAttribute('data-ir-selected-group');
+          selectedGroup=el;
+          if(el)el.setAttribute('data-ir-selected-group','');
+        }
+        function groupAt(target){
+          var fallback=null, chart=null;
+          for(var el=target;el && !el.matches('section.ir-slide');el=el.parentElement){
+            if(!el.hasAttribute('data-ir-group'))continue;
+            var name=(el.getAttribute('class') || '').toLowerCase().split(/[^a-z0-9]+/);
+            if(el.matches('figure,article') || name.includes('card') || name.includes('panel'))return el;
+            if(el.matches('table,svg') || name.some(k=>['chart','graph','plot','diagram'].includes(k)))chart=el;
+            var r=el.getBoundingClientRect(), css=getComputedStyle(el);
+            if(!fallback && r.width*r.height<1920*1080*.85 && (css.backgroundColor!=='rgba(0, 0, 0, 0)' || el.childElementCount>1))fallback=el;
+          }
+          return chart || fallback;
+        }
         document.addEventListener('pointerdown',function(e){
           if(e.button !== 0) return;
           var target=e.target instanceof Element ? e.target : null;
@@ -234,6 +256,16 @@ export function previewHtml(
           var resize=target && target.closest('[data-image-resize-handle]');
           var n=resize ? resize.closest('[data-image-slot-id]') : target && target.closest('[data-image-slot-id]');
           e.preventDefault();
+          if(allowGroups && !n){
+            var group=target && groupAt(target);
+            selectGroup(group);
+            if(group){
+              var offset=group.style.translate.split(' ');
+              groupDrag={node:group,original:group.style.translate,fromX:number(offset[0],0),fromY:number(offset[1],0),sx:e.clientX,sy:e.clientY,pointer:e.pointerId};
+              group.setPointerCapture(e.pointerId);
+              return;
+            }
+          } else selectGroup(null);
           active=n ? {
             node:n,
             mode:resize ? 'resize' : 'move',
@@ -252,19 +284,31 @@ export function previewHtml(
           );
         });
         document.addEventListener('pointermove',function(e){
+          if(groupDrag && e.pointerId===groupDrag.pointer){
+            var g=groupDrag;
+            g.x=clamp(Math.round(g.fromX+e.clientX-g.sx),-1920,1920);
+            g.y=clamp(Math.round(g.fromY+e.clientY-g.sy),-1080,1080);
+            g.node.style.translate=g.x+'px '+g.y+'px';
+            return;
+          }
           if(!active) return;
           e.preventDefault();
           updateDrag(e);
           send(active.mode === 'resize' ? 'ir-image-resize-move' : 'ir-image-drag-move',active.node,e);
         });
         document.addEventListener('pointerup',function(e){
+          if(groupDrag && e.pointerId===groupDrag.pointer){
+            var g=groupDrag;groupDrag=null;lastMove=g;
+            if(g.x!==undefined && (g.x!==g.fromX || g.y!==g.fromY))parent.postMessage({type:'ir-group-move',channel:${JSON.stringify(channel)},slideId:${JSON.stringify(slide.slideId)},id:g.node.dataset.irGroup,x:g.x,y:g.y},'*');
+            return;
+          }
           if(!active) return;
           e.preventDefault();
           updateDrag(e);
           send(active.mode === 'resize' ? 'ir-image-resize-end' : 'ir-image-drag-end',active.node,e);
           active=null;
         });
-        document.addEventListener('pointercancel',function(){ active=null; });
+        document.addEventListener('pointercancel',function(){ active=null;if(groupDrag)groupDrag.node.style.translate=groupDrag.original;groupDrag=null; });
         document.addEventListener('keydown',function(e){
           if(editing) return;
           if(e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
@@ -290,5 +334,5 @@ export function previewHtml(
       })();
     </script>`
     : "";
-  return `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="${csp}"><style>${fontCss}:root{${vars}}*{box-sizing:border-box}html,body{margin:0;padding:0;width:1920px;height:1080px;overflow:hidden;background:var(--ir-canvas);font-family:Pretendard,sans-serif}.ir-host-page{position:relative;width:1920px;height:1080px;margin:0;padding:0;background:var(--ir-canvas)}section.ir-slide{width:1920px;height:1080px;position:relative;margin:0}:where([data-image-slot-id]){position:relative;touch-action:none}:where([data-image-resize-handle]){position:absolute;right:4px;bottom:4px;width:20px;height:20px;border:1px solid rgba(23,61,49,.18);border-radius:4px;background:rgba(255,255,255,.92);box-shadow:0 1px 4px rgba(0,13,59,.12);cursor:nwse-resize;opacity:0;pointer-events:none;transition:opacity 120ms ease}:where([data-image-slot-id]):hover [data-image-resize-handle]{opacity:1;pointer-events:auto}${safeCss}[data-ir-text][contenteditable]{outline:none;user-select:text;-webkit-user-select:text;cursor:text}</style></head><body><div class="ir-host-page">${root.outerHTML}</div>${bridge}</body></html>`;
+  return `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="${csp}"><style>${fontCss}:root{${vars}}*{box-sizing:border-box}html,body{margin:0;padding:0;width:1920px;height:1080px;overflow:hidden;background:var(--ir-canvas);font-family:Pretendard,sans-serif}.ir-host-page{position:relative;width:1920px;height:1080px;margin:0;padding:0;background:var(--ir-canvas)}section.ir-slide{width:1920px;height:1080px;position:relative;margin:0}:where([data-image-slot-id]){position:relative;touch-action:none}:where([data-image-resize-handle]){position:absolute;right:4px;bottom:4px;width:20px;height:20px;border:1px solid rgba(23,61,49,.18);border-radius:4px;background:rgba(255,255,255,.92);box-shadow:0 1px 4px rgba(0,13,59,.12);cursor:nwse-resize;opacity:0;pointer-events:none;transition:opacity 120ms ease}:where([data-image-slot-id]):hover [data-image-resize-handle]{opacity:1;pointer-events:auto}${safeCss}[data-ir-selected-group]{outline:2px solid #238767!important}[data-ir-text][contenteditable]{outline:none;user-select:text;-webkit-user-select:text;cursor:text}</style></head><body><div class="ir-host-page">${root.outerHTML}</div>${bridge}</body></html>`;
 }

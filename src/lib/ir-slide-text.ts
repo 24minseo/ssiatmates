@@ -28,6 +28,20 @@ export type TextSelection = {
   y: number;
 };
 
+export type GroupOffsets = Record<string,{x:number;y:number}>;
+
+// Use the unmodified slide tree so editor and export assign the same IDs.
+export function prepareSlideGroups(root:Element, offsets:GroupOffsets = {}) {
+  root.querySelectorAll<HTMLElement>("div,article,aside,figure,table,section,svg").forEach((el,index)=>{
+    if(el.closest("[data-image-slot-id]")) return;
+    const id="g"+index;
+    el.setAttribute("data-ir-group",id);
+    const shift=offsets[id];
+    if(shift && Number.isFinite(shift.x) && Number.isFinite(shift.y))
+      el.style.translate=shift.x+"px "+shift.y+"px";
+  });
+}
+
 // Also evaluated directly in Chromium. Keep this function self-contained.
 export function prepareSlideText(root: Element, edits: Record<string, SlideTextEdit> = {}) {
   const inline = "span,strong,b,em,i,u,s,small,mark,sub,sup,br";

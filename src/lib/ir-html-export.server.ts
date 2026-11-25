@@ -2,7 +2,7 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import { acceptResidualContrast, acceptResidualVisualIssues } from "./ir-html-contrast.server";
 import type { Browser } from "puppeteer-core";
-import { prepareSlideText } from "./ir-slide-text";
+import { prepareSlideGroups, prepareSlideText } from "./ir-slide-text";
 import { takeSlideText } from "./ir-pptx-text.server";
 import {
   assembleHtml,
@@ -153,8 +153,10 @@ export async function renderExportFile(
     await page.emulateMediaType("screen");
     await page.setContent(assembleHtml(document, fontCss), { waitUntil: "load", timeout: 25000 });
     const slides = await page.$$(".ir-host-page > section.ir-slide");
-    for (const [index, slide] of slides.entries())
+    for (const [index, slide] of slides.entries()) {
+      await slide.evaluate(prepareSlideGroups, document.slides[index]?.groupEdits ?? {});
       await slide.evaluate(prepareSlideText, document.slides[index]?.textEdits ?? {});
+    }
     await page.evaluate(composeImagesInPage, images);
     // Only saved ready documents reach this export path. Do not block a deck
     // already accepted after its single repair because it still has visual defects.
