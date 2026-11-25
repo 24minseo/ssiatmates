@@ -717,7 +717,16 @@ export function HtmlDeckWorkspace({
       let revision = view?.image_revision ?? 0;
       for (const pending of queuedImageChanges) {
         pending.body.expected_revision = revision;
-        revision = await saveBinding(pending);
+        try {
+          revision = await saveBinding(pending);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          if (!message.includes("IMAGE_REVISION_CONFLICT")) throw error;
+          const fresh = await refreshView();
+          revision = fresh.image_revision;
+          pending.body.expected_revision = revision;
+          revision = await saveBinding(pending);
+        }
       }
       setQueuedImageChanges([]);
       toast.success("이미지 변경사항을 저장했어요.");
