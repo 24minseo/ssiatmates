@@ -72,10 +72,15 @@ export function HtmlSlidePreview({
         identity.channel,
         mediaOrigin,
         interactive,
-        editText,
       ),
-    [slide, slideRenderKey, identity, mediaOrigin, interactive, editText],
+    [slide, slideRenderKey, identity, mediaOrigin, interactive],
   );
+  function syncTextMode() {
+    if (interactive) frame.current?.contentWindow?.postMessage({
+      type: "ir-text-mode", channel: identity.channel, enabled: editText,
+    }, "*");
+  }
+  useEffect(syncTextMode, [interactive, identity.channel, editText]);
   useEffect(() => {
     const observer = new ResizeObserver((entries) => setWidth(entries[0]?.contentRect.width || 0));
     if (host.current) observer.observe(host.current);
@@ -167,6 +172,7 @@ export function HtmlSlidePreview({
         title={`${slide.sectionLabel}: ${slide.headline}`}
         sandbox={interactive ? "allow-scripts" : ""}
         referrerPolicy="no-referrer"
+        onLoad={syncTextMode}
         srcDoc={html}
         className="absolute left-0 top-0 border-0"
         style={{

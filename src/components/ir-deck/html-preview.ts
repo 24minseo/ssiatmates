@@ -12,7 +12,6 @@ export function previewHtml(
   channel: string,
   mediaOrigin: string,
   interactive: boolean,
-  editText = false,
 ): string {
   const parsed = new DOMParser().parseFromString(slide.html, "text/html");
   parsed
@@ -136,10 +135,18 @@ export function previewHtml(
           active.node.style.width=Math.round(width)+'px';
           active.node.style.height=Math.round(height)+'px';
         }
+        var textMode=false;
+        window.addEventListener('message',function(e){
+          var m=e.data;
+          if(e.source!==parent || !m || m.channel!==${JSON.stringify(channel)} || m.type!=='ir-text-mode' || typeof m.enabled!=='boolean') return;
+          textMode=m.enabled;
+          if(movingText) movingText.block.style.translate=movingText.original;
+          movingText=null;
+        });
         document.addEventListener('pointerdown',function(e){
           if(e.button !== 0) return;
           var target=e.target instanceof Element ? e.target : null;
-          if (${editText}) {
+          if (textMode) {
             var block=target && target.closest('[data-ir-text]');
             if (block) {
               var css=getComputedStyle(block), offset=css.translate.split(' ');

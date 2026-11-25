@@ -1178,6 +1178,7 @@ export function HtmlDeckWorkspace({
     >
       {isFullscreen && <Toaster position="bottom-center" duration={1200} />}
       {selection && current.slideId === selection.slideId && !preview && <SlideTextEditor
+        palette={Object.values(view.document.designTokens.colors)}
         selection={selection} stored={current.textEdits?.[selection.id] ?? {}}
         close={() => setSelection(null)}
         save={async edit => {
@@ -1204,12 +1205,17 @@ export function HtmlDeckWorkspace({
               className="inline-flex w-fit items-center gap-0.5 rounded-xl border border-[rgba(64,72,66,0.08)] bg-surface p-1"
               style={{ boxShadow: "0 4px 12px 0 rgba(64, 72, 66, 0.1)" }}
             >
-              <button type="button" aria-pressed={textMode} disabled={!canMutate}
-                className={cn(toolbarButton, textMode && "bg-item-hover text-brand")}
+              <div className="relative">
+              <button type="button" aria-pressed={textMode} disabled={!canMutate} aria-describedby="ir-text-edit-tip"
+                className={cn(toolbarButton, "peer", textMode && "bg-item-hover text-brand")}
                 onClick={() => { setTextMode(!textMode); setAdding(false); setSlotId(null); }}>
                 텍스트 편집
               </button>
-              {textMode && <span className="text-xs text-ink-muted">글자를 클릭하거나 끌어서 이동하세요</span>}
+              <span id="ir-text-edit-tip" role="tooltip"
+                className="pointer-events-none absolute left-0 top-full z-50 mt-2 hidden whitespace-nowrap rounded-md bg-ink px-3 py-2 text-xs text-white shadow-md peer-hover:block peer-focus-visible:block">
+                글자를 클릭하거나 끌어서 이동하세요
+              </span>
+              </div>
               <div className="flex items-center gap-0">
                 <button
                   className={historyButton}

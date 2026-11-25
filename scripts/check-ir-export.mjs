@@ -208,7 +208,7 @@ if (process.env.IR_EXPORT_BROWSER_TEST === "1") {
       );
     const images = await prepareImageComposition(actualSnapshot, async () => picture);
     const actualDoc = actualSnapshot.document;
-    actualDoc.slides[0].textEdits = { t0: { text: "편집한 발표 제목", size: 54, bold: true, x: 90, y: 40 } };
+    actualDoc.slides[0].textEdits = { t0: { text: "편집한 발표 제목", colors: [{ start: 4, end: 6, color: "#fa3456" }], size: 54, bold: true, x: 90, y: 40 } };
     const pdf = await renderExportFile(browser, actualDoc, images, "pdf", css);
     assert.equal(pdf.bytes.subarray(0, 5).toString(), "%PDF-");
     assert.equal((pdf.bytes.toString("latin1").match(/\/Type \/Page\b/g) || []).length, 7);
@@ -220,9 +220,9 @@ if (process.env.IR_EXPORT_BROWSER_TEST === "1") {
     for (let i=1; i<=7; i++) {
       const xml = await zip.file(`ppt/slides/slide${i}.xml`).async("string");
       assert.ok(xml.includes("<p:sp>"));
-      assert.ok(xml.includes(i === 1 ? "편집한 발표 제목" : `사업계획서 핵심 내용 ${i}`));
+      if (i > 1) assert.ok(xml.includes(`사업계획서 핵심 내용 ${i}`));
       if (i === 1) {
-        assert.ok(!xml.includes("사업계획서 핵심 내용"));
+        assert.match(xml, /<a:r>\s*<a:rPr\b(?:(?!<\/a:rPr>)[\s\S])*?fa3456[\s\S]*?<\/a:rPr>\s*<a:t>발표<\/a:t>/i);
         assert.match(xml, /sz="2700"/);
         assert.match(xml, /b="1"/);
       }

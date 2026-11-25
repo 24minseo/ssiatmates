@@ -1,5 +1,7 @@
+export type ColorRange = { start: number; end: number; color: string };
 export type SlideTextEdit = {
   text?: string;
+  colors?: ColorRange[];
   size?: number;
   bold?: boolean;
   x?: number;
@@ -49,7 +51,7 @@ export function prepareSlideText(root: Element, edits: Record<string, SlideTextE
     el.setAttribute("data-ir-text", id);
     const edit = edits[id];
     if (!edit) continue;
-    if (typeof edit.text === "string") {
+    if (typeof edit.text === "string" && el.textContent !== edit.text) {
       el.textContent = edit.text;
       el.style.whiteSpace = "pre-wrap";
     }
@@ -59,6 +61,33 @@ export function prepareSlideText(root: Element, edits: Record<string, SlideTextE
           part.style.setProperty("font-size", edit.size + "px", "important");
         if (edit.bold !== undefined)
           part.style.setProperty("font-weight", edit.bold ? "700" : "400", "important");
+      }
+    }
+    if (edit.colors?.length) {
+      const walker = el.ownerDocument.createTreeWalker(el, 4);
+      const nodes: Text[] = [];
+      while (walker.nextNode()) nodes.push(walker.currentNode as Text);
+      let offset = 0;
+      for (const node of nodes) {
+        const value = node.data;
+        let cursor = 0;
+        const fragment = el.ownerDocument.createDocumentFragment();
+        for (const range of edit.colors) {
+          const start = Math.max(cursor, range.start - offset, 0);
+          const end = Math.min(value.length, range.end - offset);
+          if (end <= start || !/^#[0-9a-f]{6}$/i.test(range.color)) continue;
+          fragment.append(value.slice(cursor, start));
+          const span = el.ownerDocument.createElement("span");
+          span.style.setProperty("color", range.color, "important");
+          span.textContent = value.slice(start, end);
+          fragment.append(span);
+          cursor = end;
+        }
+        if (cursor) {
+          fragment.append(value.slice(cursor));
+          node.replaceWith(fragment);
+        }
+        offset += value.length;
       }
     }
     if (edit.x || edit.y) {
