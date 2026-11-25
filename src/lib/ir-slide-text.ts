@@ -28,7 +28,7 @@ export type TextSelection = {
   y: number;
 };
 
-export type GroupOffsets = Record<string,{x:number;y:number}>;
+export type GroupOffsets = Record<string,{x:number;y:number;scale?:number}>;
 
 // Use the unmodified slide tree so editor and export assign the same IDs.
 export function prepareSlideGroups(root:Element, offsets:GroupOffsets = {}) {
@@ -37,6 +37,11 @@ export function prepareSlideGroups(root:Element, offsets:GroupOffsets = {}) {
     const id="g"+index;
     el.setAttribute("data-ir-group",id);
     const shift=offsets[id];
+    if(shift?.scale && shift.scale!==1){
+      el.style.transformOrigin="0 0";
+      el.style.scale=String(shift.scale);
+      el.dataset.irGroupScale=String(shift.scale);
+    }
     if(shift && Number.isFinite(shift.x) && Number.isFinite(shift.y))
       el.style.translate=shift.x+"px "+shift.y+"px";
   });

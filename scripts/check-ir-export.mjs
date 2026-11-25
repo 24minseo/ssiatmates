@@ -210,8 +210,9 @@ if (process.env.IR_EXPORT_BROWSER_TEST === "1") {
     const actualDoc = actualSnapshot.document;
     actualDoc.slides[0].textEdits = { t0: { text: "편집한 발표 제목", colors: [{ start: 4, end: 6, color: "#fa3456" }], size: 54, bold: true, x: 90, y: 40 } };
     // Identical slides apart from the persisted group translation.
-    for (const i of [2,3]) actualDoc.slides[i].html=actualDoc.slides[i].html.replace("<p>","<figure style='margin:0;background:#ddd'><p>").replace("</p>","</p></figure>");
+    for (const i of [2,3,4]) actualDoc.slides[i].html=actualDoc.slides[i].html.replace("<p>","<figure style='margin:0;background:#ddd'><p>").replace("</p>","</p></figure>");
     actualDoc.slides[3].groupEdits={g0:{x:48,y:96}};
+    actualDoc.slides[4].groupEdits={g0:{x:48,y:96,scale:0.5}};
     const pdf = await renderExportFile(browser, actualDoc, images, "pdf", css);
     assert.equal(pdf.bytes.subarray(0, 5).toString(), "%PDF-");
     assert.equal((pdf.bytes.toString("latin1").match(/\/Type \/Page\b/g) || []).length, 7);
@@ -225,6 +226,10 @@ if (process.env.IR_EXPORT_BROWSER_TEST === "1") {
       const pos=xml.match(/<p:sp>[\s\S]*?<a:off x="(\d+)" y="(\d+)"/);
       return [Number(pos[1]),Number(pos[2])];
     }
+    const normalXml=await zip.file("ppt/slides/slide3.xml").async("string");
+    const scaledXml=await zip.file("ppt/slides/slide5.xml").async("string");
+    const fontSize=xml=>Number(xml.match(/<a:rPr[^>]+sz="(\d+)"/)[1]);
+    assert.equal(fontSize(scaledXml),fontSize(normalXml)/2);
     const base=await textPosition(3), shifted=await textPosition(4);
     assert.equal(shifted[0]-base[0],48*6350);
     assert.equal(shifted[1]-base[1],96*6350);

@@ -93,7 +93,11 @@ type TextHistoryEntry = {
   before: SlideTextEdit;
   after: SlideTextEdit;
 };
-type EditHistoryEntry = ImageHistoryEntry | TextHistoryEntry;
+type GroupHistoryEntry = {
+  kind:"group";slideId:string;groupId:string;
+  before:{x:number;y:number;scale?:number};after:{x:number;y:number;scale?:number};
+};
+type EditHistoryEntry = ImageHistoryEntry | TextHistoryEntry | GroupHistoryEntry;
 
 function cloneImageSlot(slot: ImageSlot | null | undefined): ImageSlot | null {
   return slot
@@ -748,7 +752,7 @@ export function HtmlDeckWorkspace({
         const { data, error } = await supabase.rpc("save_ir_html_text_v1", {
           p_document_id: view.document_id,
           p_slide_id: entry.slideId,
-          p_text_id: entry.textId,
+          p_text_id: entry.kind==="group" ? entry.groupId : entry.textId,
           p_revision: view.image_revision,
           p_edit: direction === "undo" ? entry.before : entry.after,
         });
@@ -762,7 +766,7 @@ export function HtmlDeckWorkspace({
           ? { past: state.past.slice(0, -1), future: [...state.future, entry] }
           : { past: [...state.past, entry], future: state.future.slice(0, -1) });
       } catch (error) {
-        if (alive.current) toast.error(error instanceof Error ? error.message : "텍스트 변경을 되돌리지 못했어요.");
+        if (alive.current) toast.error(error instanceof Error ? error.message : "변경을 되돌리지 못했어요.");
       } finally {
         busyLock.current = false;
         if (alive.current) setBusy(false);
@@ -1482,18 +1486,21 @@ export function HtmlDeckWorkspace({
                 urls={urls}
                 mediaOrigin={new URL(mediaBase()).origin}
                 activeTextId={textMode && selection?.slideId === current.slideId ? selection.id : undefined}
-                onGroupMove={!preview && canMutate && !adding && !textMode ? async(id,x,y)=>{
+                onGroupMove={!preview && canMutate && !adding && !textMode ? async(id,x,y,scale)=>{
                   if(busyLock.current)return false;
                   busyLock.current=true;
                   setBusy(true);
                   try {
                     const {data,error}=await supabase.rpc("save_ir_html_text_v1",{
                       p_document_id:view.document_id,p_slide_id:current.slideId,p_text_id:id,
-                      p_revision:view.image_revision,p_edit:{x,y},
+                      p_revision:view.image_revision,p_edit:scale===1?{x,y}:{x,y,scale},
                     });
                     if(error)throw new Error(error.message);
                     if(alive.current && owner.current===reference.userId){
+                      const entry:GroupHistoryEntry={kind:"group",slideId:current.slideId,groupId:id,
+                        before:current.groupEdits?.[id] ?? {x:0,y:0},after:scale===1?{x,y}:{x,y,scale}};
                       setView(parseView(data,reference.deckId));setDownload(null);
+                      setHistory(h=>({past:[...h.past,entry].slice(-30),future:[]}));
                     }
                     return true;
                   } catch(err){toast.error(err instanceof Error?err.message:"요소 위치를 저장하지 못했어요.");return false;}

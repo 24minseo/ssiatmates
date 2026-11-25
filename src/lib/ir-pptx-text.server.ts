@@ -34,6 +34,9 @@ export function takeSlideText(pageRoot: Element) {
         breakLine?: boolean;
       };
     };
+    let groupScale=1;
+    for(let ancestor:Element|null=block;ancestor && ancestor!==pageRoot;ancestor=ancestor.parentElement)
+      groupScale*=Number(ancestor.getAttribute("data-ir-group-scale") || 1);
     const runs: Run[] = [];
     let lastLineTop: number | undefined;
     const walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT);
@@ -46,7 +49,7 @@ export function takeSlideText(pageRoot: Element) {
       const options = {
         color: channels.map((c) => Math.round(Number(c)).toString(16).padStart(2, "0")).join(""),
         fontFace: css.fontFamily.split(",")[0]!.trim().replace(/["']/g, ""),
-        fontSize: parseFloat(css.fontSize) / 2,
+        fontSize: parseFloat(css.fontSize) * groupScale / 2,
         bold: Number(css.fontWeight) >= 600,
         italic: css.fontStyle === "italic",
       };
@@ -66,7 +69,7 @@ export function takeSlideText(pageRoot: Element) {
         if (rect.height && rect.width) {
           if (
             lastLineTop !== undefined &&
-            rect.top - lastLineTop > parseFloat(css.fontSize) * 0.55 &&
+            rect.top - lastLineTop > parseFloat(css.fontSize) * groupScale * 0.55 &&
             runs.length
           )
             runs[runs.length - 1]!.options.breakLine = true;
@@ -85,7 +88,7 @@ export function takeSlideText(pageRoot: Element) {
       y: (bounds.y - page.y) / 144,
       w: bounds.width / 144,
       h: bounds.height / 144,
-      lineHeight: parseFloat(style.lineHeight) / 2,
+      lineHeight: parseFloat(style.lineHeight) * groupScale / 2,
       align:
         style.textAlign === "center"
           ? ("center" as const)

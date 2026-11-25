@@ -154,7 +154,7 @@ export function previewHtml(
           var m=e.data;
           if(e.source!==parent || !m || m.channel!==${JSON.stringify(channel)}) return;
           if(m.type==='ir-group-restore' && lastMove && lastMove.node.dataset.irGroup===m.id){
-            lastMove.node.style.translate=lastMove.original;lastMove=null;return;
+            resetGroup(lastMove);lastMove=null;return;
           }
           if(m.type==='ir-text-mode') { textMode=m.enabled===true;allowGroups=m.moveGroups===true;if(textMode)selectGroup(null);return; }
           if(m.type==='ir-text-active') {
@@ -215,10 +215,24 @@ export function previewHtml(
           editEvent('geometry',{left:rect.left,top:rect.top,width:rect.width,height:rect.height});
         });
         var groupDrag=null, selectedGroup=null, allowGroups=false, lastMove=null;
+        var grip=document.createElement('button');
+        grip.type='button';grip.setAttribute('aria-label','카드 크기 조절');
+        grip.style.cssText='position:fixed;display:none;width:20px;height:20px;padding:0;background:white;border:2px solid #238767;cursor:nwse-resize;touch-action:none;z-index:2147483647';
+        document.body.appendChild(grip);
+        function placeGrip(){
+          grip.style.display=selectedGroup?'block':'none';
+          if(selectedGroup){var r=selectedGroup.getBoundingClientRect();grip.style.left=(r.right-20)+'px';grip.style.top=(r.bottom-20)+'px';}
+        }
+        function resetGroup(g){
+          g.node.style.translate=g.original;
+          g.node.style.scale=g.originalScale;
+          g.node.style.transformOrigin=g.originalOrigin;
+          placeGrip();
+        }
         function selectGroup(el){
           if(selectedGroup) selectedGroup.removeAttribute('data-ir-selected-group');
           selectedGroup=el;
-          if(el)el.setAttribute('data-ir-selected-group','');
+          if(el)el.setAttribute('data-ir-selected-group','');placeGrip();
         }
         function groupAt(target){
           var fallback=null, chart=null;
@@ -257,11 +271,13 @@ export function previewHtml(
           var n=resize ? resize.closest('[data-image-slot-id]') : target && target.closest('[data-image-slot-id]');
           e.preventDefault();
           if(allowGroups && !n){
-            var group=target && groupAt(target);
+            var resizing=target===grip;
+            var group=resizing?selectedGroup:target && groupAt(target);
             selectGroup(group);
             if(group){
               var offset=group.style.translate.split(' ');
-              groupDrag={node:group,original:group.style.translate,fromX:number(offset[0],0),fromY:number(offset[1],0),sx:e.clientX,sy:e.clientY,pointer:e.pointerId};
+              var rect=group.getBoundingClientRect();
+              groupDrag={node:group,resizing:resizing,w:rect.width,h:rect.height,baseScale:number(group.style.scale,1),originalScale:group.style.scale,originalOrigin:group.style.transformOrigin,original:group.style.translate,fromX:number(offset[0],0),fromY:number(offset[1],0),sx:e.clientX,sy:e.clientY,pointer:e.pointerId};
               group.setPointerCapture(e.pointerId);
               return;
             }
@@ -286,9 +302,17 @@ export function previewHtml(
         document.addEventListener('pointermove',function(e){
           if(groupDrag && e.pointerId===groupDrag.pointer){
             var g=groupDrag;
+            if(g.resizing){
+              var dx=e.clientX-g.sx, dy=e.clientY-g.sy;
+              g.scale=clamp(Math.round(g.baseScale*(1+(dx*g.w+dy*g.h)/Math.max(1,g.w*g.w+g.h*g.h))*1000)/1000,.1,8);
+              g.node.style.transformOrigin='0 0';
+              g.node.style.scale=String(g.scale);
+              placeGrip();
+              return;
+            }
             g.x=clamp(Math.round(g.fromX+e.clientX-g.sx),-1920,1920);
             g.y=clamp(Math.round(g.fromY+e.clientY-g.sy),-1080,1080);
-            g.node.style.translate=g.x+'px '+g.y+'px';
+            g.node.style.translate=g.x+'px '+g.y+'px';placeGrip();
             return;
           }
           if(!active) return;
@@ -299,7 +323,7 @@ export function previewHtml(
         document.addEventListener('pointerup',function(e){
           if(groupDrag && e.pointerId===groupDrag.pointer){
             var g=groupDrag;groupDrag=null;lastMove=g;
-            if(g.x!==undefined && (g.x!==g.fromX || g.y!==g.fromY))parent.postMessage({type:'ir-group-move',channel:${JSON.stringify(channel)},slideId:${JSON.stringify(slide.slideId)},id:g.node.dataset.irGroup,x:g.x,y:g.y},'*');
+            if((g.scale!==undefined && g.scale!==g.baseScale) || (g.x!==undefined && (g.x!==g.fromX || g.y!==g.fromY)))parent.postMessage({type:'ir-group-move',channel:${JSON.stringify(channel)},slideId:${JSON.stringify(slide.slideId)},id:g.node.dataset.irGroup,x:g.x??g.fromX,y:g.y??g.fromY,scale:g.scale??g.baseScale},'*');
             return;
           }
           if(!active) return;
@@ -308,7 +332,7 @@ export function previewHtml(
           send(active.mode === 'resize' ? 'ir-image-resize-end' : 'ir-image-drag-end',active.node,e);
           active=null;
         });
-        document.addEventListener('pointercancel',function(){ active=null;if(groupDrag)groupDrag.node.style.translate=groupDrag.original;groupDrag=null; });
+        document.addEventListener('pointercancel',function(){ active=null;if(groupDrag)resetGroup(groupDrag);groupDrag=null; });
         document.addEventListener('keydown',function(e){
           if(editing) return;
           if(e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;

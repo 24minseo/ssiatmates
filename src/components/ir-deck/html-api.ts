@@ -27,7 +27,7 @@ export type ImageSlot = {
   placement: Placement | null;
 };
 export type HtmlSlide = {
-  groupEdits?: Record<string,{x:number;y:number}>; textEdits?: Record<string, import("@/lib/ir-slide-text").SlideTextEdit>;
+  groupEdits?: Record<string,{x:number;y:number;scale?:number}>; textEdits?: Record<string, import("@/lib/ir-slide-text").SlideTextEdit>;
   slideId: string;
   sectionLabel: string;
   headline: string;

@@ -20,7 +20,7 @@ export function HtmlSlidePreview({
   className,
 }: {
   slide: HtmlSlide;
-  onGroupMove?: ((id:string,x:number,y:number)=>Promise<boolean>) | undefined;
+  onGroupMove?: ((id:string,x:number,y:number,scale:number)=>Promise<boolean>) | undefined;
   activeTextId?: string | undefined;
   onText?: ((s: import("@/lib/ir-slide-text").TextSelection) => void) | undefined;
   view: HtmlView;
@@ -121,9 +121,9 @@ export function HtmlSlidePreview({
       )
         return;
       if(e.data.type==="ir-group-move"){
-        const {id,x,y}=e.data;
-        if(typeof id==="string" && /^g[0-9]{1,5}$/.test(id) && Number.isInteger(x) && Number.isInteger(y) && Math.abs(x)<=1920 && Math.abs(y)<=1080)
-          void onGroupMove?.(id,x,y).then(ok=>{
+        const {id,x,y,scale}=e.data;
+        if(typeof id==="string" && /^g[0-9]{1,5}$/.test(id) && Number.isInteger(x) && Number.isInteger(y) && Math.abs(x)<=1920 && Math.abs(y)<=1080 && Number.isFinite(scale) && scale>=0.1 && scale<=8)
+          void onGroupMove?.(id,x,y,scale).then(ok=>{
             if(!ok)frame.current?.contentWindow?.postMessage({type:"ir-group-restore",channel:identity.channel,id,slideId:slide.slideId},"*");
           });
         return;
