@@ -189,6 +189,7 @@ export function SlideTextEditor({
     const weight=weights.find(r=>r.start<=at && r.end>at);
     return <span key={at} style={{color:colors.find(r=>r.start<=at && r.end>at)?.color,fontWeight:weight?(weight.bold?700:400):undefined}}>{draft.text.slice(at,boundaries[i+1])}</span>;
   });
+  if (inactive) return null;
   return <fieldset disabled={inactive} ref={toolbar as React.RefObject<HTMLFieldSetElement>} role="toolbar" aria-label="선택한 텍스트 서식" className="flex h-10 flex-wrap items-center gap-1 px-1">
     <div className="relative flex size-8 shrink-0 items-center justify-center">
       <button type="button" title="글자 색상" aria-label="글자 색상" aria-expanded={showPalette}

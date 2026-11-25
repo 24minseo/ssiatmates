@@ -734,10 +734,10 @@ export function HtmlDeckWorkspace({
         }
       }
       setQueuedImageChanges([]);
-      toast.success("이미지 변경사항을 저장했어요.");
+      toast.success("이미지 변경사항을 저장했어요.", { id: "ir-deck-save" });
       return true;
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "이미지 변경사항을 저장하지 못했어요.");
+      toast.error(e instanceof Error ? e.message : "이미지 변경사항을 저장하지 못했어요.", { id: "ir-deck-save" });
       return false;
     } finally {
       busyLock.current = false;
@@ -1425,9 +1425,10 @@ export function HtmlDeckWorkspace({
             className={cn(primary, "px-5 text-white")}
             disabled={busy || !!pendingImage}
             onClick={async () => {
+              toast.loading("변경사항을 저장하고 있어요.", { id: "ir-deck-save" });
               if (!(await saveQueuedImages())) return;
               onSave();
-              toast.success("완성된 IR 덱을 최근 파일에 저장했어요.");
+              toast.success("변경사항을 저장했어요.", { id: "ir-deck-save" });
             }}
           >
             저장
