@@ -68,7 +68,7 @@ const secondaryButton =
   "inline-flex h-12 items-center justify-center rounded-[12px] bg-secondary-btn px-5 text-[16px] font-semibold text-secondary-btn-text shadow-none transition-colors hover:bg-secondary-btn-hover hover:text-secondary-btn-text-hover focus-visible:ring-1 focus-visible:ring-focus-soft";
 const primary = `${button} border-brand bg-brand text-brand-foreground hover:bg-brand/90`;
 const toolbarButton =
-  "inline-flex h-10 items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold text-ink-muted transition-colors hover:bg-item-hover-selected hover:text-brand disabled:cursor-not-allowed disabled:opacity-40";
+  "inline-flex h-10 items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold text-ink-muted transition-colors hover:bg-item-hover hover:text-ink disabled:cursor-not-allowed disabled:opacity-40";
 const historyButton =
   "inline-flex size-10 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-item-hover disabled:cursor-not-allowed";
 const field =
