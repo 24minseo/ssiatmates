@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { AlignLeft, AlignCenter, AlignRight, Trash2 } from "lucide-react";
+import { AlignLeft, AlignCenter, AlignRight } from "lucide-react";
 import type { WeightRange, SlideTextEdit, TextSelection } from "@/lib/ir-slide-text";
 
 export function SlideTextEditor({
@@ -188,7 +188,20 @@ export function SlideTextEditor({
       return <button key={align} aria-label={["왼쪽 정렬","가운데 정렬","오른쪽 정렬"][i]} aria-pressed={draft.align===align}
         className="rounded p-1 aria-pressed:bg-item-hover" onClick={()=>{setDraft({...draft,align});command("align",align);}}><Icon size={17}/></button>;
     })}
-    <button aria-label="텍스트 삭제" title="텍스트 삭제" onClick={()=>void finish(true)}><Trash2 size={17}/></button>
+    <button aria-label="텍스트 삭제" title="텍스트 삭제" onClick={()=>void finish(true)}><span
+      aria-hidden="true"
+      className="block size-[18px] bg-current"
+      style={{
+        maskImage: "url('/assets/sidebar/delete.svg')",
+        WebkitMaskImage: "url('/assets/sidebar/delete.svg')",
+        maskRepeat: "no-repeat",
+        WebkitMaskRepeat: "no-repeat",
+        maskPosition: "center",
+        WebkitMaskPosition: "center",
+        maskSize: "contain",
+        WebkitMaskSize: "contain",
+      }}
+    /></button>
     {error && <button role="alert" onClick={()=>void finish()}>{error} · 다시 저장</button>}
     {stage && createPortal(<div className="absolute inset-0 z-20 overflow-hidden" style={{pointerEvents:selection.isNew?"auto":"none"}} onClick={e=>{if(e.target===e.currentTarget)void finish();}}>
       <div style={{width:1920,height:1080,transformOrigin:"top left",transform:"scale("+scale+")",pointerEvents:"none"}}>

@@ -6,11 +6,8 @@ import {
   ArrowUpToLine,
   ChevronDown,
   Download,
-  ImagePlus,
   LoaderCircle,
   Redo2,
-  RefreshCw,
-  Trash2,
   Undo2,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -25,7 +22,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { HtmlSlidePreview } from "./HtmlSlidePreview";
 import { SlideTextEditor } from "./SlideTextEditor";
-import type { TextSelection } from "@/lib/ir-slide-text";
+import type { SlideTextEdit, TextSelection } from "@/lib/ir-slide-text";
 import { supabase } from "@/integrations/supabase/client";
 import { htmlCall, imageUrl, mediaBase, uploadImage } from "./html-client";
 import { previewHtml } from "./html-preview";
@@ -88,6 +85,15 @@ type ImageHistoryEntry = {
   before: ImageSlot | null;
   after: ImageSlot | null;
 };
+
+type TextHistoryEntry = {
+  kind: "text";
+  slideId: string;
+  textId: string;
+  before: SlideTextEdit;
+  after: SlideTextEdit;
+};
+type EditHistoryEntry = ImageHistoryEntry | TextHistoryEntry;
 
 function cloneImageSlot(slot: ImageSlot | null | undefined): ImageSlot | null {
   return slot
@@ -248,7 +254,7 @@ export function HtmlDeckWorkspace({
   const textStage = useRef<HTMLDivElement>(null);
   const [textMode, setTextMode] = useState(false);
   const [selection, setSelection] = useState<(TextSelection & { slideId: string; revision: number }) | null>(null);
-  const [history, setHistory] = useState<{ past: ImageHistoryEntry[]; future: ImageHistoryEntry[] }>({
+  const [history, setHistory] = useState<{ past: EditHistoryEntry[]; future: EditHistoryEntry[] }>({
     past: [],
     future: [],
   });
@@ -566,7 +572,7 @@ export function HtmlDeckWorkspace({
         if (!cancelled && owner.current === reference.userId) setUrls(Object.fromEntries(entries));
       } catch {
         if (!cancelled)
-          toast.error("일부 이미지를 불러오지 못했습니다. 이미지 새로고침으로 다시 확인해 주세요.");
+          toast.error("일부 이미지를 불러오지 못했습니다. 잠시 후 덱을 다시 열어 주세요.");
       }
       if (!cancelled) timer = setTimeout(() => void renew(), 240000);
     }
@@ -732,9 +738,37 @@ export function HtmlDeckWorkspace({
     };
   }
   async function applyHistory(direction: "undo" | "redo") {
-    if (!view || busy || pendingImage || !canMutate) return;
+    if (!view || busy || busyLock.current || pendingImage || !canMutate) return;
     const entry = direction === "undo" ? history.past.at(-1) : history.future.at(-1);
     if (!entry) return;
+    if ("kind" in entry) {
+      busyLock.current = true;
+      setBusy(true);
+      try {
+        const { data, error } = await supabase.rpc("save_ir_html_text_v1", {
+          p_document_id: view.document_id,
+          p_slide_id: entry.slideId,
+          p_text_id: entry.textId,
+          p_revision: view.image_revision,
+          p_edit: direction === "undo" ? entry.before : entry.after,
+        });
+        if (error) throw new Error(error.message);
+        const restored = parseView(data, reference.deckId);
+        if (!alive.current || owner.current !== reference.userId) return;
+        setSelection(null);
+        setView(restored);
+        setDownload(null);
+        setHistory(state => direction === "undo"
+          ? { past: state.past.slice(0, -1), future: [...state.future, entry] }
+          : { past: [...state.past, entry], future: state.future.slice(0, -1) });
+      } catch (error) {
+        if (alive.current) toast.error(error instanceof Error ? error.message : "텍스트 변경을 되돌리지 못했어요.");
+      } finally {
+        busyLock.current = false;
+        if (alive.current) setBusy(false);
+      }
+      return;
+    }
     const next = direction === "undo" ? entry.before : entry.after;
     const template = next || (direction === "undo" ? entry.after : entry.before);
     if (!template) return;
@@ -1185,51 +1219,6 @@ export function HtmlDeckWorkspace({
               className="inline-flex max-w-full flex-wrap items-center gap-0.5 rounded-xl border border-[rgba(64,72,66,0.08)] bg-surface p-1"
               style={{ boxShadow: "0 4px 12px 0 rgba(64, 72, 66, 0.1)" }}
             >
-              <div className="relative">
-              <button type="button" aria-pressed={textMode} disabled={!canMutate} aria-describedby="ir-text-edit-tip"
-                className={cn(toolbarButton, "peer", textMode && "bg-item-hover text-brand")}
-                onClick={() => { setTextMode(!textMode); setAdding(false); setSlotId(null); }}>
-                텍스트 편집
-              </button>
-              <span id="ir-text-edit-tip" role="tooltip"
-                className="pointer-events-none absolute left-0 top-full z-50 mt-2 hidden whitespace-nowrap rounded-md bg-ink px-3 py-2 text-xs text-white shadow-md peer-hover:block peer-focus-visible:block">
-                글자를 클릭하거나 끌어서 이동하세요
-              </span>
-              </div>
-              {textMode && <>
-              <button type="button" className={toolbarButton} disabled={!canMutate || busy}
-                onClick={() => {
-                  setTextMode(true);
-                  setAdding(false);
-                  setSlotId(null);
-                  setSelection({ id: "u"+crypto.randomUUID().replaceAll("-",""), text: "", size: 40,
-                    bold: false, x: 0, y: 0, align: "left", isNew: true,
-                    slideId: current.slideId, revision: view.image_revision });
-                }} aria-label="Text · 텍스트 추가" title="텍스트 추가">Text</button>
-      {selection && current.slideId === selection.slideId && !preview ? <SlideTextEditor
-        key={selection.id} stage={textStage.current} font={reference.settings.fontFamily}
-        palette={Object.values(view.document.designTokens.colors)}
-        selection={selection} stored={current.textEdits?.[selection.id] ?? {}}
-        close={() => setSelection(null)}
-        save={async edit => {
-          if (!canMutate || busyLock.current) throw new Error("다른 저장 작업이 끝나면 다시 시도해 주세요.");
-          busyLock.current = true;
-          setBusy(true);
-          try {
-            const { data, error } = await supabase.rpc("save_ir_html_text_v1", {
-              p_document_id: view.document_id, p_slide_id: selection.slideId,
-              p_text_id: selection.id, p_revision: selection.revision, p_edit: selection.isNew ? { ...edit, designFont: reference.settings.fontFamily } : edit,
-            });
-            if (error) throw new Error(error.message);
-            if (alive.current && owner.current === reference.userId) {
-              setView(parseView(data, reference.deckId));
-              setDownload(null);
-            }
-          } finally { busyLock.current = false; setBusy(false); }
-        }}
-      /> : <SlideTextEditor inactive stage={null} font={reference.settings.fontFamily} palette={[]} stored={{}}
-        selection={{id:"",text:"",size:40,bold:false,x:0,y:0}} close={()=>{}} save={async()=>{}} />}
-              </>}
               <div className="flex items-center gap-0">
                 <button
                   className={historyButton}
@@ -1251,6 +1240,62 @@ export function HtmlDeckWorkspace({
                 </button>
               </div>
               <span className="h-5 w-px shrink-0 bg-field-border/70" aria-hidden="true" />
+              <div className="relative">
+              <button type="button" aria-pressed={textMode} disabled={!canMutate} aria-describedby="ir-text-edit-tip"
+                className={cn(toolbarButton, "peer", textMode && "bg-item-hover text-brand")}
+                onClick={() => { setTextMode(!textMode); setAdding(false); setSlotId(null); }}>
+                텍스트 편집
+              </button>
+              <span id="ir-text-edit-tip" role="tooltip"
+                className="pointer-events-none absolute left-0 top-full z-50 mt-2 hidden whitespace-nowrap rounded-md bg-ink px-3 py-2 text-xs text-white shadow-md peer-hover:block peer-focus-visible:block">
+                텍스트를 클릭해서 시작하세요.
+              </span>
+              </div>
+              {textMode && <>
+              <button type="button" className={toolbarButton} disabled={!canMutate || busy}
+                onClick={() => {
+                  setTextMode(true);
+                  setAdding(false);
+                  setSlotId(null);
+                  setSelection({ id: "u"+crypto.randomUUID().replaceAll("-",""), text: "", size: 40,
+                    bold: false, x: 0, y: 0, align: "left", isNew: true,
+                    slideId: current.slideId, revision: view.image_revision });
+                }} aria-label="Text · 텍스트 추가" title="텍스트 추가">Text</button>
+      {selection && current.slideId === selection.slideId && !preview ? <SlideTextEditor
+        key={selection.id} stage={textStage.current} font={reference.settings.fontFamily}
+        palette={Object.values(view.document.designTokens.colors)}
+        selection={selection} stored={current.textEdits?.[selection.id] ?? {}}
+        close={() => setSelection(null)}
+        save={async edit => {
+          if (!canMutate || busyLock.current) throw new Error("다른 저장 작업이 끝나면 다시 시도해 주세요.");
+          const before = structuredClone(current.textEdits?.[selection.id] ??
+            (selection.id.startsWith("u") ? { deleted: true } : {}));
+          const after: SlideTextEdit = edit.deleted ? { deleted: true } :
+            selection.isNew ? { ...edit, designFont: reference.settings.fontFamily } : edit;
+          busyLock.current = true;
+          setBusy(true);
+          try {
+            const { data, error } = await supabase.rpc("save_ir_html_text_v1", {
+              p_document_id: view.document_id, p_slide_id: selection.slideId,
+              p_text_id: selection.id, p_revision: selection.revision, p_edit: after,
+            });
+            if (error) throw new Error(error.message);
+            if (alive.current && owner.current === reference.userId) {
+              setView(parseView(data, reference.deckId));
+              setDownload(null);
+              if (JSON.stringify(before) !== JSON.stringify(after)) {
+                const entry: TextHistoryEntry = {
+                  kind: "text", slideId: selection.slideId, textId: selection.id,
+                  before, after: structuredClone(after),
+                };
+                setHistory(state => ({ past: [...state.past, entry].slice(-30), future: [] }));
+              }
+            }
+          } finally { busyLock.current = false; setBusy(false); }
+        }}
+      /> : <SlideTextEditor inactive stage={null} font={reference.settings.fontFamily} palette={[]} stored={{}}
+        selection={{id:"",text:"",size:40,bold:false,x:0,y:0}} close={()=>{}} save={async()=>{}} />}
+              </>}
               <button
                 className={toolbarButton}
                 disabled={!canMutate && !devPreview}
@@ -1263,14 +1308,6 @@ export function HtmlDeckWorkspace({
               >
                 <GrowthJournalImageIcon className="size-3.5" />
                 {adding ? "추가 위치 선택 취소" : "이미지 추가"}
-              </button>
-              <button
-                className={toolbarButton}
-                disabled={busy}
-                onClick={() => setAttempt((a) => a + 1)}
-              >
-                <RefreshCw className="size-3.5" />
-                이미지 새로고침
               </button>
             </div>
           </div>
@@ -1469,7 +1506,7 @@ export function HtmlDeckWorkspace({
                     disabled={!canMutate}
                     onClick={() => fileInput.current?.click()}
                   >
-                    <ImagePlus className="size-3.5" />
+                    <GrowthJournalImageIcon className="size-3.5" />
                     {selectedSlot.assetId ? "교체" : "업로드"}
                   </button>
                   {selectedSlot.origin === "user" && (
@@ -1505,7 +1542,20 @@ export function HtmlDeckWorkspace({
                         )
                       }
                     >
-                      <Trash2 className="size-3.5" />
+                      <span
+                        aria-hidden="true"
+                        className="block size-[18px] bg-current"
+                        style={{
+                          maskImage: "url('/assets/sidebar/delete.svg')",
+                          WebkitMaskImage: "url('/assets/sidebar/delete.svg')",
+                          maskRepeat: "no-repeat",
+                          WebkitMaskRepeat: "no-repeat",
+                          maskPosition: "center",
+                          WebkitMaskPosition: "center",
+                          maskSize: "contain",
+                          WebkitMaskSize: "contain",
+                        }}
+                      />
                     </button>
                   )}
                 </div>
