@@ -11,7 +11,7 @@ import {
   Download,
   LoaderCircle,
   Redo2,
-  TextCursorInput,
+  Type,
   Undo2,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -1365,7 +1365,7 @@ export function HtmlDeckWorkspace({
                   setSelection({ id: "u"+crypto.randomUUID().replaceAll("-",""), text: "", size: 40,
                     bold: false, x: 0, y: 0, align: "left", isNew: true,
                     slideId: current.slideId, revision: view.image_revision });
-                }} aria-label="텍스트 추가" title="텍스트 추가"><TextCursorInput className="size-4" /></button>}
+                }} aria-label="텍스트 추가" title="텍스트 추가"><Type className="size-4" /></button>}
               {selection && <>
                 <button type="button" className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg text-icon-muted transition-colors hover:bg-item-hover hover:text-ink disabled:cursor-not-allowed disabled:opacity-40" disabled={!canMutate || busy}
                   onClick={() => {
@@ -1375,7 +1375,7 @@ export function HtmlDeckWorkspace({
                     setSelection({ id: "u" + crypto.randomUUID().replaceAll("-", ""), text: "", size: 40,
                       bold: false, x: 0, y: 0, align: "left", isNew: true,
                       slideId: current.slideId, revision: view.image_revision });
-                  }} aria-label="텍스트 추가" title="텍스트 추가"><TextCursorInput className="size-4" /></button>
+                  }} aria-label="텍스트 추가" title="텍스트 추가"><Type className="size-4" /></button>
                 <button type="button" className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg text-icon-muted transition-colors hover:bg-item-hover hover:text-ink disabled:cursor-not-allowed disabled:opacity-40" disabled={!canMutate}
                   onClick={() => fileInput.current?.click()} aria-label="이미지 추가" title="이미지 추가"><GrowthJournalImageIcon className="size-[18px]" /></button>
                 <span className="mx-1 h-5 w-px shrink-0 bg-field-border/70" aria-hidden="true" />
