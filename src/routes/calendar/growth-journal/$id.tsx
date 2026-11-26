@@ -208,9 +208,9 @@ function GrowthJournalDetailPage() {
               {Object.entries(attachmentUrls).map(([path, url]) => (
                 <div
                   key={path}
-                  className="group inline-flex h-8 max-w-[360px] items-center gap-2 rounded-[4px] bg-[#f5f5f5] px-3 text-[14px] font-medium text-ink-muted hover:bg-secondary-btn-hover"
+                className="group inline-flex h-8 max-w-[360px] items-center gap-2 rounded-[4px] bg-[#f5f5f5] px-3 text-[14px] font-medium text-ink-muted hover:bg-secondary-btn-hover hover:text-ink"
                 >
-                  <FileInsertIcon className="size-4 shrink-0 text-icon-muted transition-colors group-hover:text-ink" />
+                  <FileInsertIcon className="size-4 shrink-0 text-ink-muted transition-colors group-hover:text-ink" />
                   <a href={url} target="_blank" rel="noreferrer" className="min-w-0 max-w-[220px] truncate text-ink-muted hover:text-ink">
                     {path.split("/").pop()?.replace(/^[^-]+-/, "") || path}
                   </a>
