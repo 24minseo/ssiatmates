@@ -9,8 +9,6 @@ export function SlideTextEditor({
   palette,
   save,
   close,
-  addText,
-  addImage,
 }: {
   stage: HTMLDivElement | null;
   font: string;
@@ -20,8 +18,6 @@ export function SlideTextEditor({
   palette: (string | null | undefined)[];
   save: (edit: SlideTextEdit) => Promise<void>;
   close: () => void;
-  addText: () => void;
-  addImage: () => void;
 }) {
   const toolbar = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLDivElement>(null);
@@ -231,9 +227,6 @@ export function SlideTextEditor({
       return <button key={align} aria-label={["왼쪽 정렬","가운데 정렬","오른쪽 정렬"][i]} aria-pressed={draft.align===align}
         className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg text-icon-muted transition-colors hover:bg-item-hover hover:text-ink aria-pressed:bg-brand/10 aria-pressed:text-brand" onClick={()=>{setDraft({...draft,align});command("align",align);}}><Icon size={17}/></button>;
     })}
-    <span className="mx-1 h-5 w-px shrink-0 bg-field-border/70" aria-hidden="true" />
-    <button type="button" className="inline-flex h-9 shrink-0 items-center justify-center rounded-lg px-3 text-xs font-semibold text-ink-muted transition-colors hover:bg-item-hover hover:text-ink" onClick={addText}>텍스트 추가</button>
-    <button type="button" className="inline-flex h-9 shrink-0 items-center justify-center rounded-lg px-3 text-xs font-semibold text-ink-muted transition-colors hover:bg-item-hover hover:text-ink" onClick={addImage}>이미지 추가</button>
     <button type="button" className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg text-icon-muted transition-colors hover:bg-destructive-surface hover:text-destructive" aria-label="텍스트 삭제" title="텍스트 삭제" onClick={()=>void finish(true)}><span
       aria-hidden="true"
       className="block size-[18px] bg-current"
