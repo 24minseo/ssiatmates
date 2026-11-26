@@ -187,3 +187,7 @@
     display: none;
   }
 }
+.ir-deck-editor {
+  --icon-muted: #596963;
+}
+
