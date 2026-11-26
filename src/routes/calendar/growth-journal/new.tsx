@@ -6,7 +6,6 @@ import {
   Heading2,
   Heading3,
   Italic,
-  Link as LinkIcon,
   List,
   ListOrdered,
   Minus,
@@ -76,6 +75,13 @@ const MAX_TAGS = 5;
 const MAX_IMAGES = 10;
 const MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024;
 const JOURNAL_IMAGE_BUCKET = "growth-journal-images";
+const isImageStoragePath = (path: string) => /\.(?:avif|gif|jpe?g|png|webp)$/i.test(path);
+
+function FileInsertIcon({ className }: { className?: string }) {
+  return <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className} aria-hidden="true">
+    <path d="M12 2V7C12 7.44313 11.9982 7.87603 12.0459 8.23047C12.0974 8.61367 12.2227 9.05085 12.5859 9.41406C12.9492 9.77728 13.3863 9.90258 13.7695 9.9541C14.124 10.0018 14.5569 10 15 10H20V16C20 18.8284 19.9998 20.2424 19.1211 21.1211C18.2424 21.9998 16.8284 22 14 22H10C7.17157 22 5.75759 21.9998 4.87891 21.1211C4.00023 20.2424 4 18.8284 4 16V8C4 5.17157 4.00023 3.75759 4.87891 2.87891C5.75759 2.00023 7.17157 2 10 2H12ZM14 2.00586C14.4115 2.01605 14.6837 2.0477 14.9365 2.15234C15.3041 2.30458 15.5938 2.59381 16.1719 3.17188L18.8281 5.82812C19.4062 6.40619 19.6954 6.69593 19.8477 7.06348C19.9523 7.31627 19.983 7.58856 19.9932 8H15C14.5005 8 14.2263 7.9982 14.0361 7.97266C14.0335 7.9723 14.0308 7.97106 14.0283 7.9707C14.028 7.96853 14.0276 7.96612 14.0273 7.96387C14.0018 7.77368 14 7.4995 14 7V2.00586Z" fill="currentColor" />
+  </svg>;
+}
 type DateEditPart = "year" | "month" | "day";
 
 type JournalDraftSnapshot = {
@@ -384,6 +390,7 @@ function GrowthJournalNewPage() {
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [stickySaveStyle, setStickySaveStyle] = useState<CSSProperties>();
   const [imagePaths, setImagePaths] = useState<string[]>([]);
+  const [attachmentPaths, setAttachmentPaths] = useState<string[]>([]);
   const imageUrlPathsRef = useRef(new Map<string, string>());
   const imageDataPathsRef = useRef(new Map<string, string>());
   const initialDraftRef = useRef<JournalDraftSnapshot>({
@@ -396,6 +403,7 @@ function GrowthJournalNewPage() {
   const allowSavedNavigationRef = useRef(false);
   const [editorVersion, setEditorVersion] = useState(0);
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const toolbarRef = useRef<HTMLDivElement>(null);
   const saveAnchorRef = useRef<HTMLDivElement>(null);
   const saveStickyRef = useRef(false);
@@ -518,6 +526,7 @@ function GrowthJournalNewPage() {
       setRecordDate(data.diary_date);
       setTags(data.tags);
       setImagePaths(data.image_paths);
+      setAttachmentPaths(data.image_paths.filter((path: string) => !isImageStoragePath(path)));
 
       let hydratedContent = data.content ?? "";
       for (const path of data.image_paths) {
@@ -723,17 +732,42 @@ function GrowthJournalNewPage() {
     event.target.value = "";
   };
 
-  const toggleLink = () => {
-    if (!editor) return;
-    const previousUrl = editor.getAttributes("link")["href"];
-    const url = window.prompt("링크 주소를 입력해주세요.", previousUrl ?? "https://");
-
-    if (url === null) return;
-    if (url === "") {
-      editor.chain().focus().unsetLink().run();
+  const handleFilePick = async (event: ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files ?? []);
+    if (!files.length || !editor) return;
+    if (imagePaths.length + files.length > MAX_IMAGES) {
+      setSaveError(`파일과 이미지는 최대 ${MAX_IMAGES}개까지 첨부할 수 있어요.`);
+      event.target.value = "";
       return;
     }
-    editor.chain().focus().setLink({ href: url }).run();
+    const { data: userData, error: userError } = await supabase.auth.getUser();
+    if (userError || !userData.user) {
+      setSaveError("로그인한 사용자만 파일을 첨부할 수 있어요.");
+      event.target.value = "";
+      return;
+    }
+    try {
+      for (const file of files) {
+        if (file.size > MAX_IMAGE_SIZE_BYTES) throw new Error("파일당 10MB 이하만 첨부할 수 있어요.");
+        const path = `${userData.user.id}/${crypto.randomUUID()}-${file.name.replace(/[^\w.-]+/g, "_")}`;
+        const { error } = await supabase.storage
+          .from(JOURNAL_IMAGE_BUCKET)
+          .upload(path, file, { contentType: file.type || "application/octet-stream", upsert: false });
+        if (error) throw error;
+        setImagePaths((current) => [...current, path]);
+        setAttachmentPaths((current) => [...current, path]);
+      }
+      markDirty();
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : "파일을 첨부하지 못했어요.");
+    } finally {
+      event.target.value = "";
+    }
+  };
+
+  const openAttachment = async (path: string) => {
+    const { data } = await supabase.storage.from(JOURNAL_IMAGE_BUCKET).createSignedUrl(path, 60 * 60);
+    if (data?.signedUrl) window.open(data.signedUrl, "_blank", "noopener,noreferrer");
   };
 
   const saveJournal = async (navigateAfterSave = true) => {
@@ -791,7 +825,7 @@ function GrowthJournalNewPage() {
       const nextImagePaths = [
         ...new Set(
           [...imagePaths, ...uploadedImagePaths].filter((path) =>
-            content.includes(`storage://${path}`),
+            attachmentPaths.includes(path) || uploadedImagePaths.includes(path) || content.includes(`storage://${path}`),
           ),
         ),
       ];
@@ -1234,9 +1268,6 @@ function GrowthJournalNewPage() {
                 <Minus className="size-[18px]" strokeWidth={2} />
               </ToolbarButton>
               <ToolbarSeparator />
-              <ToolbarButton label="링크" onClick={toggleLink}>
-                <LinkIcon className="size-[18px]" strokeWidth={2} />
-              </ToolbarButton>
               <ToolbarButton label="이미지" onClick={() => imageInputRef.current?.click()}>
                 <svg aria-hidden="true" className="size-[18px]" viewBox="0 0 24 24" fill="none">
                   <path
@@ -1255,6 +1286,9 @@ function GrowthJournalNewPage() {
                   />
                 </svg>
               </ToolbarButton>
+              <ToolbarButton label="파일 삽입" onClick={() => fileInputRef.current?.click()}>
+                <FileInsertIcon className="size-[18px]" />
+              </ToolbarButton>
             </div>
             <input
               ref={imageInputRef}
@@ -1262,6 +1296,13 @@ function GrowthJournalNewPage() {
               accept="image/*"
               multiple
               onChange={handleImagePick}
+              className="hidden"
+            />
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              onChange={handleFilePick}
               className="hidden"
             />
           </div>
@@ -1310,6 +1351,25 @@ function GrowthJournalNewPage() {
               />
             )}
           </div>
+          {attachmentPaths.length > 0 && (
+            <div className="mt-3 flex flex-wrap items-center gap-2" aria-label="첨부 파일">
+              {attachmentPaths.map((path) => {
+                const fileName = path.split("/").pop()?.replace(/^[^-]+-/, "") || path;
+                return (
+                  <button
+                    key={path}
+                    type="button"
+                    onClick={() => void openAttachment(path)}
+                    className="inline-flex h-8 max-w-full items-center gap-2 rounded-[4px] bg-[#f5f5f5] px-3 text-[14px] font-medium text-ink-muted hover:bg-item-hover hover:text-ink"
+                    title="파일 열기"
+                  >
+                    <FileInsertIcon className="size-4 shrink-0" />
+                    <span className="truncate">{fileName}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
           {saveError ? (
             <p className="mt-2 text-right text-[13px] text-destructive">{saveError}</p>
           ) : null}

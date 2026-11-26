@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowUp, Loader2 } from "lucide-react";
+import { ArrowLeft, ArrowUp, Download, Loader2 } from "lucide-react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { createElement, useEffect, useState, type ReactNode } from "react";
 
@@ -7,6 +7,13 @@ import { LoadingDots } from "@/components/ui/loading-dots";
 import { supabase } from "@/integrations/supabase/client";
 
 const JOURNAL_IMAGE_BUCKET = "growth-journal-images";
+const isImageStoragePath = (path: string) => /\.(?:avif|gif|jpe?g|png|webp)$/i.test(path);
+
+function FileInsertIcon({ className }: { className?: string }) {
+  return <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className={className} aria-hidden="true">
+    <path d="M12 2V7C12 7.44313 11.9982 7.87603 12.0459 8.23047C12.0974 8.61367 12.2227 9.05085 12.5859 9.41406C12.9492 9.77728 13.3863 9.90258 13.7695 9.9541C14.124 10.0018 14.5569 10 15 10H20V16C20 18.8284 19.9998 20.2424 19.1211 21.1211C18.2424 21.9998 16.8284 22 14 22H10C7.17157 22 5.75759 21.9998 4.87891 21.1211C4.00023 20.2424 4 18.8284 4 16V8C4 5.17157 4.00023 3.75759 4.87891 2.87891C5.75759 2.00023 7.17157 2 10 2H12ZM14 2.00586C14.4115 2.01605 14.6837 2.0477 14.9365 2.15234C15.3041 2.30458 15.5938 2.59381 16.1719 3.17188L18.8281 5.82812C19.4062 6.40619 19.6954 6.69593 19.8477 7.06348C19.9523 7.31627 19.983 7.58856 19.9932 8H15C14.5005 8 14.2263 7.9982 14.0361 7.97266C14.0335 7.9723 14.0308 7.97106 14.0283 7.9707C14.028 7.96853 14.0276 7.96612 14.0273 7.96387C14.0018 7.77368 14 7.4995 14 7V2.00586Z" fill="currentColor" />
+  </svg>;
+}
 const allowedTags = new Set([
   "P",
   "H2",
@@ -88,6 +95,7 @@ function GrowthJournalDetailPage() {
     image_paths: string[];
   } | null>(null);
   const [content, setContent] = useState("");
+  const [attachmentUrls, setAttachmentUrls] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
   const [showBackToTop, setShowBackToTop] = useState(false);
 
@@ -115,11 +123,13 @@ function GrowthJournalDetailPage() {
       }
 
       let hydratedContent = data.content ?? "";
+      const nextAttachmentUrls: Record<string, string> = {};
       for (const path of data.image_paths) {
         const { data: signedUrlData } = await supabase.storage
           .from(JOURNAL_IMAGE_BUCKET)
           .createSignedUrl(path, 60 * 60);
         if (signedUrlData?.signedUrl) {
+          if (!isImageStoragePath(path)) nextAttachmentUrls[path] = signedUrlData.signedUrl;
           hydratedContent = hydratedContent
             .split(`storage://${path}`)
             .join(signedUrlData.signedUrl);
@@ -128,6 +138,7 @@ function GrowthJournalDetailPage() {
       if (cancelled) return;
       setEntry(data);
       setContent(hydratedContent);
+      setAttachmentUrls(nextAttachmentUrls);
     };
     void loadEntry();
     return () => {
@@ -190,6 +201,24 @@ function GrowthJournalDetailPage() {
         <div className="mt-6 border-t border-field-border pt-6 text-[16px] leading-7 text-ink [&_a]:text-brand [&_a]:underline [&_blockquote]:my-5 [&_blockquote]:border-l-2 [&_blockquote]:border-brand/30 [&_blockquote]:pl-4 [&_h2]:mb-3 [&_h2]:mt-8 [&_h2]:text-[24px] [&_h2]:font-bold [&_h2]:leading-8 [&_h3]:mb-2 [&_h3]:mt-6 [&_h3]:text-[20px] [&_h3]:font-semibold [&_h3]:leading-7 [&_hr]:my-6 [&_hr]:border-field-border/60 [&_img]:my-5 [&_img]:max-h-[520px] [&_img]:max-w-full [&_img]:rounded-[12px] [&_ol]:list-decimal [&_ol]:pl-6 [&_p]:my-2 [&_s]:decoration-ink-muted [&_ul]:list-disc [&_ul]:pl-6 [&_u]:underline">
           {renderSafeHtml(content)}
         </div>
+        {Object.keys(attachmentUrls).length > 0 && (
+          <div className="mt-6 flex flex-wrap gap-2" aria-label="첨부 파일">
+            {Object.entries(attachmentUrls).map(([path, url]) => (
+              <div
+                key={path}
+                className="inline-flex h-8 max-w-full items-center gap-2 rounded-[4px] bg-[#f5f5f5] px-3 text-[14px] font-medium text-ink-muted"
+              >
+                <FileInsertIcon className="size-4 shrink-0" />
+                <a href={url} target="_blank" rel="noreferrer" className="truncate hover:text-brand">
+                  {path.split("/").pop()?.replace(/^[^-]+-/, "") || path}
+                </a>
+                <a href={url} download={path.split("/").pop() || "첨부파일"} aria-label="파일 다운로드" title="다운로드" className="inline-flex size-6 shrink-0 items-center justify-center rounded-[4px] text-icon-muted hover:bg-item-hover hover:text-ink">
+                  <Download aria-hidden="true" className="size-4" />
+                </a>
+              </div>
+            ))}
+          </div>
+        )}
       </article>
       <button
         type="button"
