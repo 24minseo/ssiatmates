@@ -1331,7 +1331,7 @@ export function HtmlDeckWorkspace({
                   <Redo2 className="size-4" strokeWidth={2} />
                 </button>
               </div>
-              <span className="h-5 w-px shrink-0 bg-field-border/70" aria-hidden="true" />
+              <span className="mx-1 h-5 w-px shrink-0 bg-field-border/70" aria-hidden="true" />
               {selectedSlot ? <>
                 <button className={toolbarButton} disabled={!canMutate} onClick={() => fileInput.current?.click()}>
                   <GrowthJournalImageIcon className="size-[18px]" />
