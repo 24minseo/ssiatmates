@@ -200,7 +200,7 @@ export function SlideTextEditor({
     return <span key={at} style={{color:colors.find(r=>r.start<=at && r.end>at)?.color,fontWeight:weight?(weight.bold?700:400):undefined}}>{draft.text.slice(at,boundaries[i+1])}</span>;
   });
   if (inactive) return null;
-  return <fieldset disabled={inactive} ref={toolbar as React.RefObject<HTMLFieldSetElement>} role="toolbar" aria-label="선택한 텍스트 서식" className="flex h-9 flex-wrap items-center gap-1 px-1">
+  return <fieldset disabled={inactive} ref={toolbar as React.RefObject<HTMLFieldSetElement>} role="toolbar" aria-label="선택한 텍스트 서식" className="flex h-9 flex-wrap items-center gap-1 px-0">
     <button type="button" aria-label="굵게" aria-pressed={pressed} className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg font-bold text-ink transition-colors hover:bg-item-hover hover:text-ink aria-pressed:bg-brand/10 aria-pressed:text-brand" onMouseDown={e=>e.preventDefault()} onClick={toggleBold}>B</button>
     <div className="relative flex size-9 shrink-0 items-center justify-center">
       <button type="button" title="글자 색상" aria-label="글자 색상" aria-expanded={showPalette}
