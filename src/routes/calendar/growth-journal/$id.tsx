@@ -208,7 +208,7 @@ function GrowthJournalDetailPage() {
               {Object.entries(attachmentUrls).map(([path, url]) => (
                 <div
                   key={path}
-                className="inline-flex h-8 max-w-[360px] items-center gap-0 rounded-[4px] bg-[#f5f5f5] pl-3 pr-0 text-[14px] font-medium text-ink-muted"
+                className="inline-flex h-8 max-w-[440px] items-center gap-0 rounded-[4px] bg-[#f5f5f5] pl-3 pr-0 text-[14px] font-medium text-ink-muted"
                 >
                   <span className="group/name -ml-3 inline-flex h-8 min-w-0 items-center gap-2 rounded-l-[4px] rounded-r-none pl-3 pr-1 hover:bg-secondary-btn-hover">
                     <FileInsertIcon className="size-4 shrink-0 text-ink-muted transition-colors group-hover/name:text-ink" />

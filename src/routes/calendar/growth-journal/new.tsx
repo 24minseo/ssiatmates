@@ -1356,16 +1356,32 @@ function GrowthJournalNewPage() {
               {attachmentPaths.map((path) => {
                 const fileName = path.split("/").pop()?.replace(/^[^-]+-/, "") || path;
                 return (
-                  <button
+                  <div
                     key={path}
-                    type="button"
-                    onClick={() => void openAttachment(path)}
-                    className="inline-flex h-8 max-w-[360px] items-center gap-2 rounded-[4px] bg-[#f5f5f5] px-3 text-[14px] font-medium text-ink-muted hover:bg-secondary-btn-hover hover:text-ink"
-                    title="파일 열기"
+                    className="inline-flex h-8 max-w-[440px] items-center gap-0 rounded-[4px] bg-[#f5f5f5] pl-2 pr-0 text-[14px] font-medium text-ink-muted"
                   >
-                    <FileInsertIcon className="size-4 shrink-0" />
-                    <span className="min-w-0 max-w-[220px] truncate">{fileName}</span>
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => void openAttachment(path)}
+                      className="inline-flex h-8 min-w-0 items-center gap-2 rounded-l-[4px] rounded-r-none px-1 hover:bg-secondary-btn-hover hover:text-ink"
+                      title="파일 열기"
+                    >
+                      <FileInsertIcon className="size-4 shrink-0" />
+                      <span className="min-w-0 max-w-[220px] truncate">{fileName}</span>
+                    </button>
+                    <button
+                      type="button"
+                      aria-label={`${fileName} 첨부 삭제`}
+                      onClick={() => {
+                        markDirty();
+                        setAttachmentPaths((current) => current.filter((currentPath) => currentPath !== path));
+                        setImagePaths((current) => current.filter((currentPath) => currentPath !== path));
+                      }}
+                      className="inline-flex h-8 shrink-0 items-center justify-center rounded-l-none rounded-r-[4px] px-3 text-icon-muted hover:bg-secondary-btn-hover hover:text-ink"
+                    >
+                      <X aria-hidden="true" className="size-3" strokeWidth={2.5} />
+                    </button>
+                  </div>
                 );
               })}
             </div>
