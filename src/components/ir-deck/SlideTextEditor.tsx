@@ -17,6 +17,7 @@ export function SlideTextEditor({
   save,
   close,
   addImage,
+  addText,
 }: {
   stage: HTMLDivElement | null;
   font: string;
@@ -27,6 +28,7 @@ export function SlideTextEditor({
   save: (edit: SlideTextEdit) => Promise<void>;
   close: () => void;
   addImage: () => void;
+  addText: () => void;
 }) {
   const toolbar = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLDivElement>(null);
@@ -210,6 +212,7 @@ export function SlideTextEditor({
   });
   if (inactive) return null;
   return <fieldset disabled={inactive} ref={toolbar as React.RefObject<HTMLFieldSetElement>} role="toolbar" aria-label="선택한 텍스트 서식" className="flex h-9 flex-wrap items-center gap-1 px-1">
+    <button type="button" className="inline-flex h-9 shrink-0 items-center justify-center rounded-lg px-2 text-sm font-semibold text-ink-muted transition-colors hover:bg-item-hover hover:text-ink" aria-label="텍스트 추가" title="텍스트 추가" onClick={addText}>Text</button>
     <button type="button" aria-label="굵게" aria-pressed={pressed} className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg font-bold text-ink transition-colors hover:bg-item-hover hover:text-ink aria-pressed:bg-brand/10 aria-pressed:text-brand" onMouseDown={e=>e.preventDefault()} onClick={toggleBold}>B</button>
     <div className="relative flex size-9 shrink-0 items-center justify-center">
       <button type="button" title="글자 색상" aria-label="글자 색상" aria-expanded={showPalette}

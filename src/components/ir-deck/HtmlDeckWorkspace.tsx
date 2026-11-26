@@ -1368,6 +1368,14 @@ export function HtmlDeckWorkspace({
         selection={selection} stored={current.textEdits?.[selection.id] ?? {}}
         close={() => { setSelection(null); setTextMode(false); }}
         addImage={() => fileInput.current?.click()}
+        addText={() => {
+          setAdding(false);
+          setTextMode(true);
+          setSlotId(null);
+          setSelection({ id: "u" + crypto.randomUUID().replaceAll("-", ""), text: "", size: 40,
+            bold: false, x: 0, y: 0, align: "left", isNew: true,
+            slideId: current.slideId, revision: view.image_revision });
+        }}
         save={async edit => {
           if (!canMutate || busyLock.current) throw new Error("다른 저장 작업이 끝나면 다시 시도해 주세요.");
           const before = structuredClone(current.textEdits?.[selection.id] ??
@@ -1396,7 +1404,7 @@ export function HtmlDeckWorkspace({
           } finally { busyLock.current = false; setBusy(false); }
         }}
       /> : <SlideTextEditor inactive stage={null} font={reference.settings.fontFamily} palette={[]} stored={{}}
-        selection={{id:"",text:"",size:40,bold:false,x:0,y:0}} close={()=>{}} addImage={()=>{}} save={async()=>{}} />}
+        selection={{id:"",text:"",size:40,bold:false,x:0,y:0}} close={()=>{}} addImage={()=>{}} addText={()=>{}} save={async()=>{}} />}
               {!selection && <button
                 className={toolbarButton}
                 disabled={!canMutate && !devPreview}
@@ -1410,6 +1418,14 @@ export function HtmlDeckWorkspace({
                 <GrowthJournalImageIcon className="size-3.5" />
                 {adding ? "추가 위치 선택 취소" : "이미지 추가"}
               </button>}
+              {!selection && <>
+                <span className="mx-1 h-5 w-px shrink-0 bg-field-border/70" aria-hidden="true" />
+                <button type="button" disabled aria-label="굵게" className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg font-bold text-icon-muted opacity-40">B</button>
+                <button type="button" disabled aria-label="글자 색상" className="relative inline-flex size-9 shrink-0 items-center justify-center rounded-lg text-[16px] font-medium text-icon-muted opacity-40">A<span aria-hidden="true" className="absolute bottom-1 h-1 w-5 rounded-full bg-icon-muted" /></button>
+                {(["크기", "X", "Y"] as const).map(label => <label key={label} className="flex h-8 shrink-0 items-center gap-1 rounded-lg px-1 text-xs text-ink-muted opacity-40">{label}<input disabled aria-label={label} className="h-8 w-[72px] rounded-lg border border-field-border bg-field px-2 text-sm" /></label>)}
+                {(["왼쪽 정렬", "가운데 정렬", "오른쪽 정렬"] as const).map(label => <button key={label} type="button" disabled aria-label={label} className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg text-icon-muted opacity-40">≡</button>)}
+                <button type="button" disabled aria-label="텍스트 삭제" className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg text-icon-muted opacity-40"><span aria-hidden="true" className="block size-[18px] bg-current" style={{ maskImage: "url('/assets/sidebar/delete.svg')", WebkitMaskImage: "url('/assets/sidebar/delete.svg')", maskRepeat: "no-repeat", WebkitMaskRepeat: "no-repeat", maskPosition: "center", WebkitMaskPosition: "center", maskSize: "contain", WebkitMaskSize: "contain" }} /></button>
+              </>}
               </>}
             </div>
           </div>
