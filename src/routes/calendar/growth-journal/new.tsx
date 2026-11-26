@@ -1360,11 +1360,11 @@ function GrowthJournalNewPage() {
                     key={path}
                     type="button"
                     onClick={() => void openAttachment(path)}
-                    className="inline-flex h-8 max-w-full items-center gap-2 rounded-[4px] bg-[#f5f5f5] px-3 text-[14px] font-medium text-ink-muted hover:bg-item-hover hover:text-ink"
+                    className="inline-flex h-8 max-w-[360px] items-center gap-2 rounded-[4px] bg-[#f5f5f5] px-3 text-[14px] font-medium text-ink-muted hover:bg-secondary-btn-hover hover:text-ink"
                     title="파일 열기"
                   >
                     <FileInsertIcon className="size-4 shrink-0" />
-                    <span className="truncate">{fileName}</span>
+                    <span className="min-w-0 max-w-[220px] truncate">{fileName}</span>
                   </button>
                 );
               })}
