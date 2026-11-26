@@ -96,6 +96,8 @@ type JournalEntry = (typeof journalMockEntries)[number] & {
   tags?: string[];
 };
 
+const isImageStoragePath = (path: string) => /\.(?:avif|gif|jpe?g|png|webp)$/i.test(path);
+
 function mapDiaryRow(row: {
   id: string;
   diary_date: string;
@@ -120,7 +122,7 @@ function mapDiaryRow(row: {
     body,
     tag: row.tags.join(" · "),
     tags: row.tags,
-    imageCount: row.image_paths.length,
+    imageCount: row.image_paths.filter(isImageStoragePath).length,
     image_paths: row.image_paths,
   };
 }
@@ -276,7 +278,7 @@ function GrowthJournalPage() {
       );
       const results = await Promise.all(
         entriesWithImages.map(async (entry) => {
-          const firstPath = entry.image_paths[0];
+          const firstPath = entry.image_paths.find(isImageStoragePath);
           if (!firstPath) return null;
           const { data } = await supabase.storage
             .from("growth-journal-images")
