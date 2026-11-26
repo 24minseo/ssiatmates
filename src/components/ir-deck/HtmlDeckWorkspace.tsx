@@ -73,6 +73,8 @@ const secondaryButton =
 const primary = `${button} border-brand bg-brand text-brand-foreground hover:bg-brand/90`;
 const toolbarButton =
   "inline-flex h-9 items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold text-ink-muted transition-colors hover:bg-item-hover hover:text-ink disabled:cursor-not-allowed disabled:opacity-40";
+const toolbarIconButton =
+  "inline-flex size-9 shrink-0 items-center justify-center rounded-lg text-icon-muted transition-colors hover:bg-item-hover hover:text-ink disabled:cursor-not-allowed disabled:opacity-40";
 const historyButton =
   "inline-flex size-9 items-center justify-center rounded-lg text-ink-muted transition-colors hover:bg-item-hover disabled:cursor-not-allowed";
 const field =
@@ -1332,7 +1334,7 @@ export function HtmlDeckWorkspace({
               <span className="h-5 w-px shrink-0 bg-field-border/70" aria-hidden="true" />
               {selectedSlot ? <>
                 <button className={toolbarButton} disabled={!canMutate} onClick={() => fileInput.current?.click()}>
-                  <GrowthJournalImageIcon className="size-3.5" />
+                  <GrowthJournalImageIcon className="size-[18px]" />
                   {selectedSlot.assetId ? "교체" : "업로드"}
                 </button>
                 {selectedSlot.origin === "user" && <>
@@ -1357,7 +1359,7 @@ export function HtmlDeckWorkspace({
                   }} />
                 </button>}
               </> : <>
-              {!selection && <button type="button" className={toolbarButton} disabled={!canMutate || busy}
+              {!selection && <button type="button" className={toolbarIconButton} disabled={!canMutate || busy}
                 onClick={() => {
                   setTextMode(true);
                   setAdding(false);
@@ -1415,7 +1417,7 @@ export function HtmlDeckWorkspace({
       /> : <SlideTextEditor inactive stage={null} font={reference.settings.fontFamily} palette={[]} stored={{}}
         selection={{id:"",text:"",size:40,bold:false,x:0,y:0}} close={()=>{}} save={async()=>{}} />}
               {!selection && <button
-                className={toolbarButton}
+                className={toolbarIconButton}
                 disabled={!canMutate && !devPreview}
                 onClick={() => {
                   setAdding(false);
@@ -1424,7 +1426,7 @@ export function HtmlDeckWorkspace({
                   window.requestAnimationFrame(() => fileInput.current?.click());
                 }}
               >
-                <GrowthJournalImageIcon className="size-3.5" />
+                <GrowthJournalImageIcon className="size-[18px]" />
               </button>}
               {!selection && <>
                 <span className="mx-1 h-5 w-px shrink-0 bg-field-border/70" aria-hidden="true" />
