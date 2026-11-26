@@ -725,6 +725,7 @@
 }
 
 .growth-journal-toolbar-sticky {
+  --icon-muted: #596963;
   position: sticky;
   top: 0;
   z-index: 30;
