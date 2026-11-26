@@ -1,14 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { AlignLeft, AlignCenter, AlignRight, TextCursorInput } from "lucide-react";
+import { AlignLeft, AlignCenter, AlignRight } from "lucide-react";
 import type { WeightRange, SlideTextEdit, TextSelection } from "@/lib/ir-slide-text";
-
-function GrowthJournalImageIcon({ className }: { className?: string }) {
-  return <svg aria-hidden="true" className={className} viewBox="0 0 24 24" fill="none">
-    <path d="M16.3525 2.00037C19.7294 2.00037 21.9989 4.36223 21.999 7.88806V16.1019C21.999 16.2529 21.9719 16.3885 21.9639 16.5345C21.9589 16.6195 21.9601 16.7045 21.9531 16.7894C21.9491 16.8274 21.9376 16.8628 21.9336 16.9008C21.9006 17.2145 21.8502 17.5143 21.7793 17.8051C21.7613 17.8831 21.7397 17.9585 21.7188 18.0345C21.6388 18.3164 21.5446 18.5852 21.4316 18.8422C21.3987 18.9141 21.3631 18.9832 21.3291 19.0541C21.2071 19.299 21.0749 19.5343 20.9219 19.7523C20.8749 19.8193 20.8234 19.8797 20.7744 19.9447C20.6154 20.1507 20.4487 20.3477 20.2607 20.5267C20.1998 20.5846 20.1313 20.6349 20.0674 20.6898C19.8744 20.8558 19.677 21.0148 19.46 21.1508C19.382 21.1997 19.2957 21.2357 19.2158 21.2797C18.995 21.4016 18.7721 21.5207 18.5293 21.6127C18.4293 21.6505 18.3179 21.6705 18.2139 21.7035C17.975 21.7774 17.7392 21.8548 17.4824 21.8988C17.2884 21.9328 17.077 21.9365 16.873 21.9535C16.699 21.9665 16.5335 22.0004 16.3525 22.0004H7.63672C7.26083 22.0003 6.90159 21.9626 6.55469 21.9056C6.5418 21.9037 6.52949 21.9018 6.51758 21.8998C5.1648 21.6667 4.04181 21.0135 3.25488 20.0287C3.24603 20.0286 3.24622 20.0181 3.2373 20.0092C2.4463 19.0132 1.99902 17.6739 1.99902 16.1019V7.88806C1.99915 4.36234 4.26998 2.00051 7.63672 2.00037H16.3525ZM7.63672 3.3949C5.05999 3.39504 3.39563 5.16234 3.39551 7.88806V16.1019C3.39551 16.8668 3.53733 17.55 3.78027 18.141C3.82106 18.092 5.72893 15.7658 5.75684 15.7347C6.44882 14.9448 7.74817 13.766 9.45312 14.4789C9.86298 14.6488 10.2228 14.8881 10.5527 15.098C11.1257 15.481 11.4635 15.6612 11.8135 15.6312C11.9582 15.6112 12.0939 15.5686 12.2227 15.4886C12.7807 15.1446 14.3581 12.8441 14.4531 12.7191C15.5431 11.2993 17.2231 10.9193 18.623 11.7592C18.811 11.871 20.1585 12.8128 20.6045 13.1908V7.88806C20.6044 5.16223 18.9384 3.3949 16.3525 3.3949ZM8.47852 6.00037C9.17611 6.00042 9.80827 6.2931 10.2607 6.76111C10.7151 7.21275 11 7.83565 11 8.51501C10.9999 9.86979 9.8661 11.0001 8.50488 11.0004C7.30818 11.0004 6.28728 10.1256 6.05859 8.99353C6.02082 8.82371 6 8.64857 6 8.46814C6.00025 7.10375 7.10852 6.00037 8.47852 6.00037Z" fill="currentColor" />
-    <rect x="2" y="2" width="20" height="20" rx="5.9" fill="none" stroke="currentColor" strokeWidth="1.5" />
-  </svg>;
-}
 
 export function SlideTextEditor({
   stage, font, selection, inactive=false,
@@ -16,8 +9,6 @@ export function SlideTextEditor({
   palette,
   save,
   close,
-  addImage,
-  addText,
 }: {
   stage: HTMLDivElement | null;
   font: string;
@@ -27,8 +18,6 @@ export function SlideTextEditor({
   palette: (string | null | undefined)[];
   save: (edit: SlideTextEdit) => Promise<void>;
   close: () => void;
-  addImage: () => void;
-  addText: () => void;
 }) {
   const toolbar = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLDivElement>(null);
@@ -212,7 +201,6 @@ export function SlideTextEditor({
   });
   if (inactive) return null;
   return <fieldset disabled={inactive} ref={toolbar as React.RefObject<HTMLFieldSetElement>} role="toolbar" aria-label="선택한 텍스트 서식" className="flex h-9 flex-wrap items-center gap-1 px-1">
-    <button type="button" className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg text-icon-muted transition-colors hover:bg-item-hover hover:text-ink" aria-label="텍스트 추가" title="텍스트 추가" onClick={addText}><TextCursorInput size={17} /></button>
     <button type="button" aria-label="굵게" aria-pressed={pressed} className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg font-bold text-ink transition-colors hover:bg-item-hover hover:text-ink aria-pressed:bg-brand/10 aria-pressed:text-brand" onMouseDown={e=>e.preventDefault()} onClick={toggleBold}>B</button>
     <div className="relative flex size-9 shrink-0 items-center justify-center">
       <button type="button" title="글자 색상" aria-label="글자 색상" aria-expanded={showPalette}
@@ -239,9 +227,6 @@ export function SlideTextEditor({
       return <button key={align} aria-label={["왼쪽 정렬","가운데 정렬","오른쪽 정렬"][i]} aria-pressed={draft.align===align}
         className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg text-icon-muted transition-colors hover:bg-item-hover hover:text-ink aria-pressed:bg-brand/10 aria-pressed:text-brand" onClick={()=>{setDraft({...draft,align});command("align",align);}}><Icon size={17}/></button>;
     })}
-    <button type="button" className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg text-icon-muted transition-colors hover:bg-item-hover hover:text-ink" aria-label="이미지 추가" title="이미지 추가" onClick={addImage}>
-      <GrowthJournalImageIcon className="size-[18px]" />
-    </button>
     <button type="button" className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg text-icon-muted transition-colors hover:bg-destructive-surface hover:text-destructive" aria-label="텍스트 삭제" title="텍스트 삭제" onClick={()=>void finish(true)}><span
       aria-hidden="true"
       className="block size-[18px] bg-current"

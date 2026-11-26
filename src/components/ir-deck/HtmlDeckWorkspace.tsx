@@ -1366,20 +1366,25 @@ export function HtmlDeckWorkspace({
                     bold: false, x: 0, y: 0, align: "left", isNew: true,
                     slideId: current.slideId, revision: view.image_revision });
                 }} aria-label="텍스트 추가" title="텍스트 추가"><TextCursorInput className="size-4" /></button>}
+              {selection && <>
+                <button type="button" className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg text-icon-muted transition-colors hover:bg-item-hover hover:text-ink disabled:cursor-not-allowed disabled:opacity-40" disabled={!canMutate || busy}
+                  onClick={() => {
+                    setTextMode(true);
+                    setAdding(false);
+                    setSlotId(null);
+                    setSelection({ id: "u" + crypto.randomUUID().replaceAll("-", ""), text: "", size: 40,
+                      bold: false, x: 0, y: 0, align: "left", isNew: true,
+                      slideId: current.slideId, revision: view.image_revision });
+                  }} aria-label="텍스트 추가" title="텍스트 추가"><TextCursorInput className="size-4" /></button>
+                <button type="button" className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg text-icon-muted transition-colors hover:bg-item-hover hover:text-ink disabled:cursor-not-allowed disabled:opacity-40" disabled={!canMutate}
+                  onClick={() => fileInput.current?.click()} aria-label="이미지 추가" title="이미지 추가"><GrowthJournalImageIcon className="size-[18px]" /></button>
+                <span className="mx-1 h-5 w-px shrink-0 bg-field-border/70" aria-hidden="true" />
+              </>}
       {selection && current.slideId === selection.slideId && !preview ? <SlideTextEditor
         key={selection.id} stage={textStage.current} font={reference.settings.fontFamily}
         palette={Object.values(view.document.designTokens.colors)}
         selection={selection} stored={current.textEdits?.[selection.id] ?? {}}
         close={() => { setSelection(null); setTextMode(false); }}
-        addImage={() => fileInput.current?.click()}
-        addText={() => {
-          setAdding(false);
-          setTextMode(true);
-          setSlotId(null);
-          setSelection({ id: "u" + crypto.randomUUID().replaceAll("-", ""), text: "", size: 40,
-            bold: false, x: 0, y: 0, align: "left", isNew: true,
-            slideId: current.slideId, revision: view.image_revision });
-        }}
         save={async edit => {
           if (!canMutate || busyLock.current) throw new Error("다른 저장 작업이 끝나면 다시 시도해 주세요.");
           const before = structuredClone(current.textEdits?.[selection.id] ??
@@ -1408,7 +1413,7 @@ export function HtmlDeckWorkspace({
           } finally { busyLock.current = false; setBusy(false); }
         }}
       /> : <SlideTextEditor inactive stage={null} font={reference.settings.fontFamily} palette={[]} stored={{}}
-        selection={{id:"",text:"",size:40,bold:false,x:0,y:0}} close={()=>{}} addImage={()=>{}} addText={()=>{}} save={async()=>{}} />}
+        selection={{id:"",text:"",size:40,bold:false,x:0,y:0}} close={()=>{}} save={async()=>{}} />}
               {!selection && <button
                 className={toolbarButton}
                 disabled={!canMutate && !devPreview}
