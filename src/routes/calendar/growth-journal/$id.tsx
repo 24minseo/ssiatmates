@@ -208,13 +208,15 @@ function GrowthJournalDetailPage() {
               {Object.entries(attachmentUrls).map(([path, url]) => (
                 <div
                   key={path}
-                className="group inline-flex h-8 max-w-[360px] items-center gap-2 rounded-[4px] bg-[#f5f5f5] px-3 text-[14px] font-medium text-ink-muted hover:bg-secondary-btn-hover hover:text-ink"
+                className="inline-flex h-8 max-w-[360px] items-center gap-0 rounded-[4px] bg-[#f5f5f5] pl-3 pr-0 text-[14px] font-medium text-ink-muted"
                 >
-                  <FileInsertIcon className="size-4 shrink-0 text-ink-muted transition-colors group-hover:text-ink" />
-                  <a href={url} target="_blank" rel="noreferrer" className="min-w-0 max-w-[220px] truncate text-ink-muted hover:text-ink">
-                    {path.split("/").pop()?.replace(/^[^-]+-/, "") || path}
-                  </a>
-                  <a href={url} download={path.split("/").pop() || "첨부파일"} aria-label="파일 다운로드" title="다운로드" className="inline-flex size-6 shrink-0 items-center justify-center rounded-[4px] text-icon-muted hover:bg-item-hover hover:text-ink">
+                  <span className="group/name -ml-3 inline-flex h-8 min-w-0 items-center gap-2 rounded-l-[4px] rounded-r-none pl-3 pr-1 hover:bg-secondary-btn-hover">
+                    <FileInsertIcon className="size-4 shrink-0 text-ink-muted transition-colors group-hover/name:text-ink" />
+                    <a href={url} target="_blank" rel="noreferrer" className="min-w-0 max-w-[220px] truncate text-ink-muted hover:text-ink">
+                      {path.split("/").pop()?.replace(/^[^-]+-/, "") || path}
+                    </a>
+                  </span>
+                  <a href={url} download={path.split("/").pop() || "첨부파일"} aria-label="파일 다운로드" title="다운로드" className="inline-flex h-8 shrink-0 items-center justify-center rounded-l-none rounded-r-[4px] px-2 text-icon-muted hover:bg-secondary-btn-hover hover:text-ink">
                     <Download aria-hidden="true" className="size-4" />
                   </a>
                 </div>
