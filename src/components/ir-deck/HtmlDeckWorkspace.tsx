@@ -1367,6 +1367,7 @@ export function HtmlDeckWorkspace({
         palette={Object.values(view.document.designTokens.colors)}
         selection={selection} stored={current.textEdits?.[selection.id] ?? {}}
         close={() => { setSelection(null); setTextMode(false); }}
+        addImage={() => fileInput.current?.click()}
         save={async edit => {
           if (!canMutate || busyLock.current) throw new Error("다른 저장 작업이 끝나면 다시 시도해 주세요.");
           const before = structuredClone(current.textEdits?.[selection.id] ??
@@ -1395,7 +1396,7 @@ export function HtmlDeckWorkspace({
           } finally { busyLock.current = false; setBusy(false); }
         }}
       /> : <SlideTextEditor inactive stage={null} font={reference.settings.fontFamily} palette={[]} stored={{}}
-        selection={{id:"",text:"",size:40,bold:false,x:0,y:0}} close={()=>{}} save={async()=>{}} />}
+        selection={{id:"",text:"",size:40,bold:false,x:0,y:0}} close={()=>{}} addImage={()=>{}} save={async()=>{}} />}
               {!selection && <button
                 className={toolbarButton}
                 disabled={!canMutate && !devPreview}

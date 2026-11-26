@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { AlignLeft, AlignCenter, AlignRight } from "lucide-react";
+import { AlignLeft, AlignCenter, AlignRight, ImagePlus } from "lucide-react";
 import type { WeightRange, SlideTextEdit, TextSelection } from "@/lib/ir-slide-text";
 
 export function SlideTextEditor({
@@ -9,6 +9,7 @@ export function SlideTextEditor({
   palette,
   save,
   close,
+  addImage,
 }: {
   stage: HTMLDivElement | null;
   font: string;
@@ -18,6 +19,7 @@ export function SlideTextEditor({
   palette: (string | null | undefined)[];
   save: (edit: SlideTextEdit) => Promise<void>;
   close: () => void;
+  addImage: () => void;
 }) {
   const toolbar = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLDivElement>(null);
@@ -241,6 +243,9 @@ export function SlideTextEditor({
         WebkitMaskSize: "contain",
       }}
     /></button>
+    <button type="button" className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg text-icon-muted transition-colors hover:bg-item-hover hover:text-ink" aria-label="이미지 추가" title="이미지 추가" onClick={addImage}>
+      <ImagePlus size={17} />
+    </button>
     {error && <button role="alert" onClick={()=>void finish()}>{error} · 다시 저장</button>}
     {stage && createPortal(<div className="absolute inset-0 z-20 overflow-hidden" style={{pointerEvents:selection.isNew?"auto":"none"}} onClick={e=>{if(e.target===e.currentTarget)void finish();}}>
       <div style={{width:1920,height:1080,transformOrigin:"top left",transform:"scale("+scale+")",pointerEvents:"none"}}>
