@@ -202,21 +202,24 @@ function GrowthJournalDetailPage() {
           {renderSafeHtml(content)}
         </div>
         {Object.keys(attachmentUrls).length > 0 && (
-          <div className="mt-6 flex flex-wrap gap-2" aria-label="첨부 파일">
-            {Object.entries(attachmentUrls).map(([path, url]) => (
-              <div
-                key={path}
-                className="group inline-flex h-8 max-w-[360px] items-center gap-2 rounded-[4px] bg-[#f5f5f5] px-3 text-[14px] font-medium text-ink-muted hover:bg-secondary-btn-hover"
-              >
-                <FileInsertIcon className="size-4 shrink-0 text-icon-muted transition-colors group-hover:text-ink" />
-                <a href={url} target="_blank" rel="noreferrer" className="min-w-0 max-w-[220px] truncate text-ink-muted hover:text-ink">
-                  {path.split("/").pop()?.replace(/^[^-]+-/, "") || path}
-                </a>
-                <a href={url} download={path.split("/").pop() || "첨부파일"} aria-label="파일 다운로드" title="다운로드" className="inline-flex size-6 shrink-0 items-center justify-center rounded-[4px] text-icon-muted hover:bg-item-hover hover:text-ink">
-                  <Download aria-hidden="true" className="size-4" />
-                </a>
-              </div>
-            ))}
+          <div className="mt-6 border-t border-field-border pt-4" aria-label="첨부 파일">
+            <p className="mb-3 text-[14px] font-medium text-ink-muted">첨부 파일</p>
+            <div className="flex flex-wrap gap-2">
+              {Object.entries(attachmentUrls).map(([path, url]) => (
+                <div
+                  key={path}
+                  className="group inline-flex h-8 max-w-[360px] items-center gap-2 rounded-[4px] bg-[#f5f5f5] px-3 text-[14px] font-medium text-ink-muted hover:bg-secondary-btn-hover"
+                >
+                  <FileInsertIcon className="size-4 shrink-0 text-icon-muted transition-colors group-hover:text-ink" />
+                  <a href={url} target="_blank" rel="noreferrer" className="min-w-0 max-w-[220px] truncate text-ink-muted hover:text-ink">
+                    {path.split("/").pop()?.replace(/^[^-]+-/, "") || path}
+                  </a>
+                  <a href={url} download={path.split("/").pop() || "첨부파일"} aria-label="파일 다운로드" title="다운로드" className="inline-flex size-6 shrink-0 items-center justify-center rounded-[4px] text-icon-muted hover:bg-item-hover hover:text-ink">
+                    <Download aria-hidden="true" className="size-4" />
+                  </a>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </article>
