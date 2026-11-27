@@ -2427,6 +2427,7 @@ function CalendarPage() {
                           onKeyDown={(event) => event.stopPropagation()}
                           className={cn(
                             "group/journal invisible flex h-6 w-max shrink-0 items-center gap-0.5 whitespace-nowrap rounded-[6px] bg-item-hover py-0.5 pl-[7px] pr-2 text-[13px] font-medium leading-5 text-ink-muted opacity-0 transition-opacity duration-150 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100 hover:bg-calendar-journal-hover hover:text-brand motion-reduce:transition-none",
+                            hoveredGrowthJournalDate === day.key && "pointer-events-none !invisible !opacity-0",
                           )}
                         >
                           <img src="/assets/sidebar/journal-edit-default.svg" alt="" aria-hidden="true" className="h-[18px] w-3.5 object-contain group-hover/journal:hidden" />
