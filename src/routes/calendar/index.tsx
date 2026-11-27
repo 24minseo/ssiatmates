@@ -1290,6 +1290,25 @@ function CalendarPage() {
     () => new Map(),
   );
   const [hoveredGrowthJournalDate, setHoveredGrowthJournalDate] = useState<string | null>(null);
+  const growthJournalHoverCloseRef = useRef<number | null>(null);
+
+  const keepGrowthJournalTooltipOpen = (date: string) => {
+    if (growthJournalHoverCloseRef.current !== null) {
+      window.clearTimeout(growthJournalHoverCloseRef.current);
+      growthJournalHoverCloseRef.current = null;
+    }
+    setHoveredGrowthJournalDate(date);
+  };
+
+  const scheduleGrowthJournalTooltipClose = () => {
+    if (growthJournalHoverCloseRef.current !== null) {
+      window.clearTimeout(growthJournalHoverCloseRef.current);
+    }
+    growthJournalHoverCloseRef.current = window.setTimeout(() => {
+      setHoveredGrowthJournalDate(null);
+      growthJournalHoverCloseRef.current = null;
+    }, 120);
+  };
   const growthJournalDateRequestRef = useRef(0);
   const { colors: stickerColors, ready: stickerColorsReady, cycleColor: cycleJournalStickerColor } =
     useJournalStickerColors(user?.id, visibleCalendarStartKey, visibleCalendarEndKey);
@@ -2350,8 +2369,8 @@ function CalendarPage() {
                                 disabled={!stickerColorsReady}
                                 onClick={(event) => { event.stopPropagation(); cycleJournalStickerColor(day.key); }}
                                 onPointerDown={(event) => { event.preventDefault(); event.stopPropagation(); }}
-                                onMouseEnter={() => setHoveredGrowthJournalDate(day.key)}
-                                onMouseLeave={() => setHoveredGrowthJournalDate(null)}
+                                onMouseEnter={() => keepGrowthJournalTooltipOpen(day.key)}
+                                onMouseLeave={scheduleGrowthJournalTooltipClose}
                                 onPointerUp={(event) => event.stopPropagation()}
                                 onKeyDown={(event) => event.stopPropagation()}
                                 className="flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
@@ -2366,7 +2385,7 @@ function CalendarPage() {
 </svg>
                               </button>
                             </TooltipTrigger>
-                            <TooltipContent side="bottom" align="start" sideOffset={7} onMouseEnter={() => setHoveredGrowthJournalDate(day.key)} onMouseLeave={() => setHoveredGrowthJournalDate(null)} className="!overflow-visible relative w-auto max-w-[240px] rounded-[8px] border-0 bg-tooltip px-2 py-1.5 text-tooltip-foreground shadow-[0_6px_16px_rgba(20,44,38,0.16)]">
+                            <TooltipContent side="bottom" align="start" sideOffset={4} onMouseEnter={() => keepGrowthJournalTooltipOpen(day.key)} onMouseLeave={scheduleGrowthJournalTooltipClose} className="preference-feedback-bubble !overflow-visible relative w-fit max-w-[240px] rounded-[8px] border-0 bg-tooltip px-1 py-1 text-tooltip-foreground shadow-[0_6px_16px_rgba(20,44,38,0.16)]">
                               <span
                                 aria-hidden="true"
                                 className="pointer-events-none absolute -top-[7px] left-[9px] z-10 block h-[8.64px] w-[15.84px] bg-tooltip"
@@ -2388,7 +2407,7 @@ function CalendarPage() {
                                     params={{ id: growthJournal.id }}
                                     search={{ from: "calendar" }}
                                     onClick={(event) => event.stopPropagation()}
-                                    className="truncate rounded-[4px] px-0.5 py-0.5 text-[13px] font-semibold text-tooltip-foreground hover:bg-white/10"
+                                    className="truncate rounded-[4px] px-1.5 py-0.5 text-[13px] font-semibold text-tooltip-foreground hover:bg-white/10"
                                   >
                                     {growthJournal.title}
                                   </Link>
