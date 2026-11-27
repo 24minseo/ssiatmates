@@ -82,11 +82,15 @@ function renderSafeHtml(html: string) {
 
 export const Route = createFileRoute("/calendar/growth-journal/$id")({
   head: () => ({ meta: [{ title: "성장일지" }] }),
+  validateSearch: (search: Record<string, unknown>): { from?: "calendar" } => ({
+    ...(search["from"] === "calendar" ? { from: "calendar" } : {}),
+  }),
   component: GrowthJournalDetailPage,
 });
 
 function GrowthJournalDetailPage() {
   const { id } = Route.useParams();
+  const { from } = Route.useSearch();
   const [entry, setEntry] = useState<{
     diary_date: string;
     title: string;
@@ -163,7 +167,10 @@ function GrowthJournalDetailPage() {
           variant="ghost"
           className="size-10 rounded-[8px] px-0 text-ink-muted hover:bg-item-hover hover:text-ink"
         >
-          <Link to="/calendar/growth-journal" aria-label="성장일지 목록으로 돌아가기">
+          <Link
+            to={from === "calendar" ? "/calendar" : "/calendar/growth-journal"}
+            aria-label={from === "calendar" ? "캘린더로 돌아가기" : "성장일지 목록으로 돌아가기"}
+          >
             <ArrowLeft className="size-5" strokeWidth={2} />
           </Link>
         </Button>

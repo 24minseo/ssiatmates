@@ -1286,9 +1286,10 @@ function CalendarPage() {
   const days = useMemo(() => buildCalendarDays(year, month), [year, month]);
   const visibleCalendarStartKey = days[0]?.key ?? null;
   const visibleCalendarEndKey = days[days.length - 1]?.key ?? null;
-  const [growthJournalDateKeys, setGrowthJournalDateKeys] = useState<Set<string>>(
-    () => new Set(),
+  const [growthJournalsByDate, setGrowthJournalsByDate] = useState<Map<string, Array<{ id: string; title: string }>>>(
+    () => new Map(),
   );
+  const [hoveredGrowthJournalDate, setHoveredGrowthJournalDate] = useState<string | null>(null);
   const growthJournalDateRequestRef = useRef(0);
   const { colors: stickerColors, ready: stickerColorsReady, cycleColor: cycleJournalStickerColor } =
     useJournalStickerColors(user?.id, visibleCalendarStartKey, visibleCalendarEndKey);
@@ -1296,13 +1297,13 @@ function CalendarPage() {
   const loadGrowthJournalDates = useCallback(async () => {
     const requestId = ++growthJournalDateRequestRef.current;
     if (authLoading || !user?.id || !visibleCalendarStartKey || !visibleCalendarEndKey) {
-      setGrowthJournalDateKeys(new Set());
+      setGrowthJournalsByDate(new Map());
       return;
     }
 
     const { data, error } = await supabase
       .from("startup_diaries")
-      .select("diary_date")
+      .select("id, diary_date, title")
       .eq("user_id", user.id)
       .gte("diary_date", visibleCalendarStartKey)
       .lte("diary_date", visibleCalendarEndKey);
@@ -1310,21 +1311,26 @@ function CalendarPage() {
     if (requestId !== growthJournalDateRequestRef.current) return;
     if (error) {
       console.error("[calendar] 성장일지 날짜 조회 실패", error);
-      setGrowthJournalDateKeys(new Set());
+      setGrowthJournalsByDate(new Map());
       return;
     }
 
-    setGrowthJournalDateKeys(
-      new Set(
-        (data ?? [])
-          .map((row) => row.diary_date)
-          .filter((date): date is string => typeof date === "string"),
-      ),
-    );
+    const journalsByDate = new Map<string, Array<{ id: string; title: string }>>();
+    for (const row of data ?? []) {
+      if (typeof row.diary_date === "string" && typeof row.id === "string") {
+        const journals = journalsByDate.get(row.diary_date) ?? [];
+        journals.push({
+          id: row.id,
+          title: typeof row.title === "string" && row.title.trim() ? row.title : "제목 없는 성장일지",
+        });
+        journalsByDate.set(row.diary_date, journals);
+      }
+    }
+    setGrowthJournalsByDate(journalsByDate);
   }, [authLoading, user?.id, visibleCalendarStartKey, visibleCalendarEndKey]);
 
   useEffect(() => {
-    setGrowthJournalDateKeys(new Set());
+    setGrowthJournalsByDate(new Map());
     void loadGrowthJournalDates();
     return () => { growthJournalDateRequestRef.current += 1; };
   }, [loadGrowthJournalDates]);
@@ -2265,7 +2271,8 @@ function CalendarPage() {
               {days.map((day, index) => {
                 const isSelected = selectedDate === day.key;
                 const isToday = todayKey === day.key;
-                const hasGrowthJournal = growthJournalDateKeys.has(day.key);
+                const growthJournals = growthJournalsByDate.get(day.key) ?? [];
+                const hasGrowthJournal = growthJournals.length > 0;
                 const stickerColorIndex = stickerColors[day.key] ?? 0;
                 const stickerColor = JOURNAL_STICKER_COLORS[stickerColorIndex]!;
                 const nextStickerColor = JOURNAL_STICKER_COLORS[(stickerColorIndex + 1) % JOURNAL_STICKER_COLORS.length]!;
@@ -2333,17 +2340,22 @@ function CalendarPage() {
                         {day.date.getDate()}
                       </span>
                         {hasGrowthJournal ? (
-                          <button
-                            type="button"
-                            aria-label={`성장일지 작성됨 · ${stickerColor.label} 스티커. 클릭하면 ${nextStickerColor.label}으로 변경`}
-                            title="성장일지 작성완료"
-                            disabled={!stickerColorsReady}
-                            onClick={(event) => { event.stopPropagation(); cycleJournalStickerColor(day.key); }}
-                            onPointerDown={(event) => event.stopPropagation()}
-                            onPointerUp={(event) => event.stopPropagation()}
-                            onKeyDown={(event) => event.stopPropagation()}
-                            className="flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
-                          >
+                          <Tooltip open={hoveredGrowthJournalDate === day.key} onOpenChange={(open) => {
+                            if (open) setHoveredGrowthJournalDate(day.key);
+                          }}>
+                            <TooltipTrigger asChild>
+                              <button
+                                type="button"
+                                aria-label={`성장일지 작성됨 · ${stickerColor.label} 스티커`}
+                                disabled={!stickerColorsReady}
+                                onClick={(event) => { event.stopPropagation(); cycleJournalStickerColor(day.key); }}
+                                onPointerDown={(event) => { event.preventDefault(); event.stopPropagation(); }}
+                                onMouseEnter={() => setHoveredGrowthJournalDate(day.key)}
+                                onMouseLeave={() => setHoveredGrowthJournalDate(null)}
+                                onPointerUp={(event) => event.stopPropagation()}
+                                onKeyDown={(event) => event.stopPropagation()}
+                                className="flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+                              >
 <svg className="size-5" aria-hidden="true" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
 <g transform="translate(12 12) scale(1.142857) translate(-12 -12)">
 <path d="M12 22.5C6.20101 22.5 1.5 17.799 1.5 12C1.5 6.20101 6.20101 1.5 12 1.5L18.6818 1.5C20.7905 1.5 22.5 3.20946 22.5 5.31818V12C22.5 17.799 17.799 22.5 12 22.5Z" fill={`var(--journal-sticker-${stickerColor.key}-surface)`}/>
@@ -2352,7 +2364,38 @@ function CalendarPage() {
 <path d="M16.5637 10.5476C17.2541 10.5476 17.8137 9.9964 17.8137 9.31651C17.8137 8.63662 17.2541 8.08545 16.5637 8.08545C15.8734 8.08545 15.3137 8.63662 15.3137 9.31651C15.3137 9.9964 15.8734 10.5476 16.5637 10.5476Z" fill={`var(--journal-sticker-${stickerColor.key}-ink)`} stroke={`var(--journal-sticker-${stickerColor.key}-ink)`} strokeWidth="0.2" strokeLinejoin="round"/>
 </g>
 </svg>
-                          </button>
+                              </button>
+                            </TooltipTrigger>
+                            <TooltipContent side="bottom" align="start" sideOffset={7} onMouseEnter={() => setHoveredGrowthJournalDate(day.key)} onMouseLeave={() => setHoveredGrowthJournalDate(null)} className="!overflow-visible relative w-auto max-w-[240px] rounded-[8px] border-0 bg-tooltip px-2 py-1.5 text-tooltip-foreground shadow-[0_6px_16px_rgba(20,44,38,0.16)]">
+                              <span
+                                aria-hidden="true"
+                                className="pointer-events-none absolute -top-[7px] left-[9px] z-10 block h-[8.64px] w-[15.84px] bg-tooltip"
+                                style={{
+                                  transform: "rotate(180deg)",
+                                  maskImage: "url('/assets/programs/preference-tail-success-8684.svg?v=1')",
+                                  WebkitMaskImage: "url('/assets/programs/preference-tail-success-8684.svg?v=1')",
+                                  maskRepeat: "no-repeat",
+                                  WebkitMaskRepeat: "no-repeat",
+                                  maskSize: "100% 100%",
+                                  WebkitMaskSize: "100% 100%",
+                                }}
+                              />
+                              <div className="relative flex max-w-[220px] flex-col gap-0.5">
+                                {growthJournals.map((growthJournal) => (
+                                  <Link
+                                    key={growthJournal.id}
+                                    to="/calendar/growth-journal/$id"
+                                    params={{ id: growthJournal.id }}
+                                    search={{ from: "calendar" }}
+                                    onClick={(event) => event.stopPropagation()}
+                                    className="truncate rounded-[4px] px-0.5 py-0.5 text-[13px] font-semibold text-tooltip-foreground hover:bg-white/10"
+                                  >
+                                    {growthJournal.title}
+                                  </Link>
+                                ))}
+                              </div>
+                            </TooltipContent>
+                          </Tooltip>
                         ) : null}
                       </div>
                       <div className="ml-auto h-6 shrink-0">
