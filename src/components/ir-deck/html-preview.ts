@@ -285,7 +285,7 @@ export function previewHtml(
               var clickedSize=parseFloat(clickedStyle.fontSize);
               if(Number.isFinite(clickedSize)) editEvent('style',{size:clickedSize,bold:Number(clickedStyle.fontWeight)>=600});
             }
-            return;
+            if(block) return;
           }
           var resize=target && target.closest('[data-image-resize-handle]');
           var n=resize ? resize.closest('[data-image-slot-id]') : target && target.closest('[data-image-slot-id]');
